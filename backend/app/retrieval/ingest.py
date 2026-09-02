@@ -1,15 +1,12 @@
 """PDF ingestion and chunking utilities for the Analyst's Guide.
 
 This module extracts text from a provided PDF, performs simple cleaning to
-remove common headers/footers and page artifacts, and chunks text at a
-paragraph/sentence-granularity into JSONL records with metadata.
+remove common headers/footers and page artifacts, and chunks text into
+question/answer units (the guide is written as a Q&A doc, each question
+wrapped in curly quotes and ending in '?') into JSONL records with metadata.
 
 Usage:
   python -m backend.app.retrieval.ingest --pdf data/raw/analysts_guide.pdf
-
-Note: The actual PDF isn't included here — upload it to `data/raw/` and
-then run the script. This scaffold focuses on deterministic, inspectable
-chunking (no embeddings yet).
 """
 from __future__ import annotations
 
@@ -20,7 +17,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import List
 
-import pdfplumber
+import pymupdf
 
 
 @dataclass
@@ -33,12 +30,22 @@ class Chunk:
     text: str
 
 
+# Curly-quoted questions used throughout the guide, e.g. 'What is a prime award?'.
+# We match on the *start* of a question (opening quote + a question word) rather
+# than pairing opening/closing quotes: the source PDF sometimes mis-renders a
+# closing quote using the opening-quote glyph, which breaks quote-pair matching
+# but leaves the start marker intact.
+QUESTION_START_RE = re.compile(
+    r"[‘']\s*(?=(?:What|How|Which|When|Where|Why|Who|Can|Could|Is|Are|Does|Do|Did|"
+    r"Should|Would|Will|May|Must|I)\b)"
+)
+
+
 def extract_pages(pdf_path: Path) -> List[str]:
     pages = []
-    with pdfplumber.open(pdf_path) as pdf:
-        for p in pdf.pages:
-            text = p.extract_text() or ""
-            pages.append(text)
+    with pymupdf.open(pdf_path) as doc:
+        for page in doc:
+            pages.append(page.get_text())
     return pages
 
 
@@ -55,7 +62,6 @@ def detect_repeated_lines(pages: List[str], min_count: int = 3, max_line_len: in
                 continue
             if len(ln) > max_line_len:
                 continue
-            # ignore numeric-only page numbers
             if re.fullmatch(r"\d+", ln):
                 continue
             lines.append(ln)
@@ -72,39 +78,72 @@ def clean_page_text(page_text: str, repeated_lines: set) -> str:
         if not ln_stripped:
             lines.append("")
             continue
-        # remove simple page markers and very short boilerplate
-        if re.fullmatch(r"Page\s*\d+", ln_stripped, flags=re.IGNORECASE):
+        # drop "Page N" / "PAGE N OF M" style footers regardless of the
+        # page number, since the number makes each line unique and defeats
+        # exact-repeat detection
+        if re.fullmatch(r"page\s*\d+", ln_stripped, flags=re.IGNORECASE):
+            continue
+        if re.fullmatch(r"page\s*\d+\s*of\s*\d+", ln_stripped, flags=re.IGNORECASE):
             continue
         if re.fullmatch(r"\d+", ln_stripped):
             continue
         if ln_stripped in repeated_lines:
             continue
-        # drop lines that are just sequences of hyphens/asterisks
         if re.fullmatch(r"[-*_]{3,}", ln_stripped):
             continue
         lines.append(ln.rstrip())
-    # join preserving paragraph breaks
     cleaned = "\n".join(lines)
-    # collapse multiple blank lines
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
     return cleaned
 
 
 def paragraph_split(text: str) -> List[str]:
-    # split on two-or-more newlines or other common paragraph markers
     paras = [p.strip() for p in re.split(r"\n\s*\n+", text) if p.strip()]
     return paras
 
 
+def question_split(text: str) -> List[str]:
+    """Split cleaned page text into Q&A units at each curly-quoted question.
+
+    Each unit starts at a question marker (e.g. 'What is a prime award?')
+    and runs up to (but not including) the next question marker, so a
+    question and its answer stay together in one chunk. Any text before the
+    first question (section headers) is kept as its own leading unit.
+    """
+    matches = list(QUESTION_START_RE.finditer(text))
+    if not matches:
+        return [text.strip()] if text.strip() else []
+
+    units = []
+    lead = text[: matches[0].start()].strip()
+    if lead:
+        units.append(lead)
+
+    for i, m in enumerate(matches):
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        unit = text[m.start():end].strip()
+        if unit:
+            units.append(unit)
+
+    return units
+
+
 def sentence_split(paragraph: str) -> List[str]:
-    # lightweight sentence split; good-enough for chunk boundaries
     sents = re.split(r'(?<=[.!?])\s+', paragraph)
     return [s.strip() for s in sents if s.strip()]
 
 
-def chunk_paragraph(paragraph: str, max_chars: int = 1000, overlap: int = 200) -> List[str]:
-    # Build chunks by sentences until max_chars (approx). Include small overlap.
-    sents = sentence_split(paragraph)
+def chunk_unit(unit: str, max_chars: int = 1000, overlap: int = 200) -> List[str]:
+    """Split a Q&A (or leading) unit into char-budgeted sub-chunks.
+
+    Units under max_chars pass through unchanged (the common case, since
+    most Q&A pairs in the guide are short). Longer units fall back to
+    sentence-level packing with overlap, same as before.
+    """
+    if len(unit) <= max_chars:
+        return [unit]
+
+    sents = sentence_split(unit)
     chunks = []
     cur = []
     cur_len = 0
@@ -114,9 +153,7 @@ def chunk_paragraph(paragraph: str, max_chars: int = 1000, overlap: int = 200) -
             cur_len += len(sent) + 1
         else:
             chunks.append(" ".join(cur))
-            # start next chunk with overlap sentences
             if overlap > 0:
-                # include as many sentences from the tail as fit in overlap
                 tail = []
                 tail_len = 0
                 for s in reversed(cur):
@@ -144,18 +181,17 @@ def ingest_pdf_to_chunks(pdf_path: Path, out_path: Path, source_name: str = "Ana
     chunk_id = 0
     for i, page_text in enumerate(pages, start=1):
         cleaned = clean_page_text(page_text, repeated)
-        paras = paragraph_split(cleaned)
-        for p_idx, para in enumerate(paras):
-            para_chunks = chunk_paragraph(para)
-            for sub_idx, ch_text in enumerate(para_chunks):
+        units = question_split(cleaned)
+        for u_idx, unit in enumerate(units):
+            for sub_text in chunk_unit(unit):
                 chunk_id += 1
                 c = Chunk(
                     id=f"{source_name.replace(' ', '_')}_p{chunk_id}",
                     source=source_name,
                     page_start=i,
                     page_end=i,
-                    paragraph_index=p_idx,
-                    text=ch_text,
+                    paragraph_index=u_idx,
+                    text=sub_text,
                 )
                 all_chunks.append(c)
 
@@ -171,7 +207,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pdf", required=True, help="Path to analysts_guide.pdf")
+    parser.add_argument("--pdf", required=True, help="Path to analyst-guide.pdf")
     parser.add_argument("--out", default="data/chunks/analysts_guide_chunks.jsonl")
     args = parser.parse_args()
 

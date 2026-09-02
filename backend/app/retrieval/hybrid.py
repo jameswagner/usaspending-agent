@@ -41,10 +41,22 @@ class HybridRetriever:
         results = self.collection.query(query_embeddings=embedding, n_results=self.dense_k)
 
         candidates = {}
-        for chunk_id, text, meta in zip(
-            results["ids"][0], results["documents"][0], results["metadatas"][0]
+        for rank, (chunk_id, text, meta, distance) in enumerate(
+            zip(
+                results["ids"][0],
+                results["documents"][0],
+                results["metadatas"][0],
+                results["distances"][0],
+            ),
+            start=1,
         ):
-            candidates[chunk_id] = {"id": chunk_id, "text": text, **meta}
+            candidates[chunk_id] = {
+                "id": chunk_id,
+                "text": text,
+                **meta,
+                "dense_rank": rank,
+                "dense_distance": distance,
+            }
         return candidates
 
     def _sparse_search(self, query: str) -> Dict[str, dict]:
@@ -52,7 +64,7 @@ class HybridRetriever:
         with self.whoosh_ix.searcher() as searcher:
             parser = QueryParser("text", self.whoosh_ix.schema)
             parsed_query = parser.parse(query)
-            for r in searcher.search(parsed_query, limit=self.sparse_k):
+            for rank, r in enumerate(searcher.search(parsed_query, limit=self.sparse_k), start=1):
                 candidates[r["id"]] = {
                     "id": r["id"],
                     "text": r["text"],
@@ -60,13 +72,21 @@ class HybridRetriever:
                     "page_start": r["page_start"],
                     "page_end": r["page_end"],
                     "paragraph_index": r["paragraph_index"],
+                    "sparse_rank": rank,
+                    "sparse_score": r.score,
                 }
         return candidates
 
     def retrieve(self, query: str, top_k: int = 5) -> List[dict]:
         merged: Dict[str, dict] = {}
-        merged.update(self._dense_search(query))
-        merged.update(self._sparse_search(query))
+        for chunk_id, c in self._dense_search(query).items():
+            merged[chunk_id] = c
+        for chunk_id, c in self._sparse_search(query).items():
+            if chunk_id in merged:
+                merged[chunk_id]["sparse_rank"] = c["sparse_rank"]
+                merged[chunk_id]["sparse_score"] = c["sparse_score"]
+            else:
+                merged[chunk_id] = c
         candidates = list(merged.values())
 
         if not candidates:
@@ -93,7 +113,19 @@ def main():
     results = retriever.retrieve(args.query, top_k=args.top_k)
 
     for i, r in enumerate(results, start=1):
-        print(f"--- rank {i} (rerank_score={r['rerank_score']:.4f}, page={r['page_start']}) ---")
+        dense_str = (
+            f"dense_rank={r['dense_rank']} dense_distance={r['dense_distance']:.4f}"
+            if "dense_rank" in r
+            else "dense_rank=- (not in dense top-k)"
+        )
+        sparse_str = (
+            f"sparse_rank={r['sparse_rank']} sparse_score={r['sparse_score']:.4f}"
+            if "sparse_rank" in r
+            else "sparse_rank=- (not in sparse top-k)"
+        )
+        print(f"--- final rank {i} | rerank_score={r['rerank_score']:.4f} | page={r['page_start']} ---")
+        print(f"    {dense_str}")
+        print(f"    {sparse_str}")
         print(r["text"][:300])
         print()
 

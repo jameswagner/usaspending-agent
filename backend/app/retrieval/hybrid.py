@@ -13,9 +13,16 @@ import os
 from typing import Dict, List
 
 import chromadb
+from dotenv import load_dotenv
+from langsmith import traceable
 from sentence_transformers import CrossEncoder, SentenceTransformer
 from whoosh.index import open_dir
 from whoosh.qparser import QueryParser
+
+# Loaded here (not just in main.py) so LANGSMITH_* and index-path env vars
+# also take effect when this module is run standalone (hybrid.py's own CLI,
+# sanity_check.py) rather than only inside the FastAPI server.
+load_dotenv()
 
 CHROMA_DB_DIR = os.environ.get("CHROMA_DB_DIR", "./data/chroma")
 WHOOSH_INDEX_DIR = os.environ.get("WHOOSH_INDEX_DIR", "./data/whoosh")
@@ -36,6 +43,7 @@ class HybridRetriever:
         self.collection = chroma_client.get_collection(COLLECTION_NAME)
         self.whoosh_ix = open_dir(WHOOSH_INDEX_DIR)
 
+    @traceable(run_type="retriever", name="dense_search_chroma")
     def _dense_search(self, query: str) -> Dict[str, dict]:
         embedding = self.embedding_model.encode([query]).tolist()
         results = self.collection.query(query_embeddings=embedding, n_results=self.dense_k)
@@ -59,6 +67,7 @@ class HybridRetriever:
             }
         return candidates
 
+    @traceable(run_type="retriever", name="sparse_search_bm25")
     def _sparse_search(self, query: str) -> Dict[str, dict]:
         candidates = {}
         with self.whoosh_ix.searcher() as searcher:
@@ -77,6 +86,17 @@ class HybridRetriever:
                 }
         return candidates
 
+    @traceable(run_type="chain", name="cross_encoder_rerank")
+    def _rerank(self, query: str, candidates: List[dict]) -> List[dict]:
+        pairs = [(query, c["text"]) for c in candidates]
+        scores = self.cross_encoder.predict(pairs)
+        for c, score in zip(candidates, scores):
+            c["rerank_score"] = float(score)
+
+        candidates.sort(key=lambda c: c["rerank_score"], reverse=True)
+        return candidates
+
+    @traceable(run_type="chain", name="hybrid_retrieve")
     def retrieve(self, query: str, top_k: int = 5) -> List[dict]:
         merged: Dict[str, dict] = {}
         for chunk_id, c in self._dense_search(query).items():
@@ -92,13 +112,8 @@ class HybridRetriever:
         if not candidates:
             return []
 
-        pairs = [(query, c["text"]) for c in candidates]
-        scores = self.cross_encoder.predict(pairs)
-        for c, score in zip(candidates, scores):
-            c["rerank_score"] = float(score)
-
-        candidates.sort(key=lambda c: c["rerank_score"], reverse=True)
-        return candidates[:top_k]
+        ranked = self._rerank(query, candidates)
+        return ranked[:top_k]
 
 
 def main():

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 load_dotenv()
 
+from backend.app.generation import synthesize_answer  # noqa: E402 (after load_dotenv)
 from backend.app.retrieval.hybrid import HybridRetriever  # noqa: E402 (after load_dotenv)
 
 # Below this, rerank scores tend to mean "nothing relevant" rather than a
@@ -65,7 +66,7 @@ def ask(request: AskRequest) -> AskResponse:
             citations=[],
         )
 
-    answer_text = "\n\n".join(m["text"] for m in matches)
+    answer_text = synthesize_answer(request.question, matches)
     citations = [
         Citation(chunk_id=m["id"], source=m["source"], page=m["page_start"])
         for m in matches

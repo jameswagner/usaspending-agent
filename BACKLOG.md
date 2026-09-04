@@ -18,29 +18,42 @@ reads that instead of the hardcoded list. Needs a scheduler + a persistence
 layer we don't have yet — worth doing if this becomes more than a side
 project, not before.
 
-## POST /ask returns empty citations
+## POST /ask: chart_data done, guide citations done, live-data citations still open
 
-`chart_data` is now wired up (2026-09-04): `get_spending_by_category` and
-`get_spending_over_time` each split into a `..._raw()` function (structured
-Pydantic response) and the `@beta_tool` wrapper (formats it for the LLM,
-unchanged behavior). `should_chart(tool_name, structured_result) -> ChartSpec | None`
-picks bar/line charts by result cardinality. A `contextvars.ContextVar`-based
-capture buffer records each spending tool's structured result during
-`ask()`'s tool-calling loop, isolated per request (verified live: two
-concurrent /ask calls with different chart-worthy questions each got back
-their own chart, no cross-contamination) — `ask()` now returns an
-`AgentResult` (`answer_text` + optional `chart`), and `main.py` reads
-`.chart` into the response's `chart_data`. If a turn calls more than one
-chart-worthy tool, the first one found is used — a deliberate, named
-simplification, not a silent default.
+`chart_data` (2026-09-04): `get_spending_by_category` and `get_spending_over_time`
+each split into a `..._raw()` function (structured Pydantic response) and the
+`@beta_tool` wrapper (formats it for the LLM, unchanged behavior).
+`should_chart(tool_name, structured_result) -> ChartSpec | None` picks bar/line
+charts by result cardinality. A `contextvars.ContextVar`-based capture buffer
+records each spending tool's structured result during `ask()`'s tool-calling
+loop, isolated per request (verified live: two concurrent /ask calls with
+different chart-worthy questions each got back their own chart, no cross-
+contamination). If a turn calls more than one chart-worthy tool, the first
+one found is used — a deliberate, named simplification, not a silent default.
 
-`citations` is still always empty, and remains a separate, deferred gap:
-the agent's tools return plain text to the LLM, not structured source
-metadata, so there's no clean list to build `AskResponse.citations` from.
-Idea: have each tool return structured data including source metadata, and
-have `agent.ask()` walk the tool_runner's message history (or the same
-capture-buffer mechanism used for charts) to collect which sources were
-actually used across the turn. Real work, not a quick fix.
+Guide citations (2026-09-04): `search_guide` now records its matched chunks
+into the same capture buffer; `ask()` builds `Citation(chunk_id, source, page)`
+from any `search_guide` calls in the turn, deduped by chunk id. Verified live
+via CLI and the running server.
+
+**Still open — live-data citations (lookup_agency, the three spending tools):**
+there's no "page" for a live API call, but the analog is straightforward:
+cite the tool name + exact query parameters used (agency, category, date
+range) — fully reproducible, and the data's already sitting in the same
+capture buffer used for charts/guide citations, so this is mechanical, not
+a design problem.
+
+**Genuinely unsolved, and a different kind of problem:** citing the raw data
+behind a spending answer doesn't verify any arithmetic the model does *on
+top of* that data in prose (e.g. "these top two categories account for over
+$458 million" — a sum the model computed, not a number the API returned).
+A citation to the underlying query would vouch for the raw numbers being
+real, not for whether the model added them correctly. The fix that fits how
+this project has generally handled model-trust problems (code-enforced
+correctness over prompt-trust, e.g. the agency-name-resolution fix) would be
+to stop letting the model compute aggregates freely - have the tool's own
+formatting code pre-compute verified totals for the model to reference
+instead - but that's a bigger behavior change, not attempted yet.
 
 ## Tied rerank scores in sanity_check.py
 

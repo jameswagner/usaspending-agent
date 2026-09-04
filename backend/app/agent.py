@@ -112,6 +112,9 @@ def search_guide(query: str) -> str:
     matches = [r for r in results if r["rerank_score"] > RERANK_CONFIDENCE_THRESHOLD]
     if not matches:
         return "No relevant content found in the Analyst's Guide for this query."
+
+    _record_tool_call("search_guide", matches)
+
     return "\n\n---\n\n".join(f"[Page {m['page_start']}]\n{m['text']}" for m in matches)
 
 
@@ -361,6 +364,12 @@ class ChartSpec(BaseModel):
     values: list[float]
 
 
+class Citation(BaseModel):
+    chunk_id: str
+    source: str
+    page: int
+
+
 # Tools whose results are never chart-worthy by shape (free text / a single
 # profile), regardless of what's in the result.
 NEVER_CHART_TOOLS = {"search_guide", "lookup_agency", "search_awards"}
@@ -467,6 +476,7 @@ SYSTEM_PROMPT = (
 class AgentResult(BaseModel):
     answer_text: str
     chart: ChartSpec | None = None
+    citations: list[Citation] = []
 
 
 @traceable(run_type="chain", name="agent_ask")
@@ -505,7 +515,22 @@ def ask(question: str) -> AgentResult:
         if chart is not None:
             break
 
-    return AgentResult(answer_text=answer_text, chart=chart)
+    # Guide citations only for now - live API-call citations (cite the
+    # query parameters, since there's no "page" for a live lookup) and
+    # verifying any arithmetic the model does on top of retrieved numbers
+    # are separate, harder problems, deferred (see BACKLOG.md).
+    seen_chunk_ids: set[str] = set()
+    citations: list[Citation] = []
+    for tool_name, result in _tool_call_log.get() or []:
+        if tool_name != "search_guide":
+            continue
+        for chunk in result:
+            if chunk["id"] in seen_chunk_ids:
+                continue
+            seen_chunk_ids.add(chunk["id"])
+            citations.append(Citation(chunk_id=chunk["id"], source=chunk["source"], page=chunk["page_start"]))
+
+    return AgentResult(answer_text=answer_text, chart=chart, citations=citations)
 
 
 def main():
@@ -523,6 +548,11 @@ def main():
         print(f"[chart: {result.chart.chart_type}] {result.chart.title}")
         print(f"  labels: {result.chart.labels}")
         print(f"  values: {result.chart.values}")
+    if result.citations:
+        print()
+        print("[citations]")
+        for c in result.citations:
+            print(f"  {c.chunk_id} ({c.source}, page {c.page})")
 
 
 if __name__ == "__main__":

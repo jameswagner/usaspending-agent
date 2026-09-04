@@ -33,9 +33,9 @@ ANTHROPIC_WORKSPACE_ID = os.environ.get("ANTHROPIC_WORKSPACE_ID")
 # test questions before picking one for tool-calling specifically.
 MODEL = os.environ.get("AGENT_MODEL", "claude-haiku-4-5")
 
-# Same floor established in main.py / sanity_check.py: below this, rerank
-# scores mean "nothing relevant" rather than a weak match.
-RERANK_CONFIDENCE_THRESHOLD = -5.0
+# Same floor as main.py, calibrated via dev_tools/calibrate_threshold.py
+# (data-driven optimum -1.89, using -2.0 for a small safety margin).
+RERANK_CONFIDENCE_THRESHOLD = -2.0
 
 _client: anthropic.Anthropic | None = None
 _retriever: HybridRetriever | None = None

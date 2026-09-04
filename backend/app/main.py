@@ -14,11 +14,13 @@ from backend.app.retrieval.hybrid import (
     HybridRetriever,
 )
 
-# Below this, rerank scores tend to mean "nothing relevant" rather than a
-# weak match: sanity_check.py showed misspelled/out-of-scope queries
-# clustering around -10 to -11, while genuine matches score from positive
-# down to roughly -3.
-RERANK_CONFIDENCE_THRESHOLD = -5.0
+# Calibrated via dev_tools/calibrate_threshold.py (LLM-generated labeled
+# question set, threshold chosen to best separate the two groups): the
+# data-driven optimum was -1.89 on that run; using -2.0 for a small safety
+# margin rather than the razor-exact value. Previously an eyeballed -5.0,
+# which calibration showed was too permissive (let some "sounds relevant
+# but needs live data" negatives through).
+RERANK_CONFIDENCE_THRESHOLD = -2.0
 
 retriever: HybridRetriever | None = None
 

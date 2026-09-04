@@ -64,6 +64,27 @@ def search_guide(query: str) -> str:
     return "\n\n---\n\n".join(f"[Page {m['page_start']}]\n{m['text']}" for m in matches)
 
 
+NOT_FOUND_MESSAGE = (
+    "I can only answer questions about USASpending.gov federal spending data, "
+    "and couldn't find anything relevant to this question."
+)
+
+
+def _guide_has_relevant_content(question: str) -> bool:
+    """Cheap pre-filter gate: only start the (LLM-costing) tool-calling loop
+    if the guide actually has something relevant, instead of relying on the
+    system prompt alone to stop the model from answering off-topic questions
+    from its own knowledge.
+
+    NOTE: this only reflects "the guide can answer this" — once live-data
+    tools (agency lookup, spending queries) are added, a question can be
+    legitimately in-scope without the guide matching it at all, so this gate
+    will need to be generalized rather than reused as-is.
+    """
+    results = _get_retriever().retrieve(question, top_k=3)
+    return any(r["rerank_score"] > RERANK_CONFIDENCE_THRESHOLD for r in results)
+
+
 SYSTEM_PROMPT = (
     "You answer questions about USASpending.gov federal spending data. "
     "You must call the search_guide tool at least once before writing any "
@@ -80,6 +101,9 @@ SYSTEM_PROMPT = (
 
 @traceable(run_type="chain", name="agent_ask")
 def ask(question: str) -> str:
+    if not _guide_has_relevant_content(question):
+        return NOT_FOUND_MESSAGE
+
     runner = _get_client().beta.messages.tool_runner(
         model=MODEL,
         max_tokens=2048,

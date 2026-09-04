@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 from langsmith import traceable
 
 from backend.app.retrieval.hybrid import HybridRetriever
+from backend.app.tools.usaspending_client import USASpendingClient
 
 load_dotenv()
 
@@ -33,6 +34,7 @@ RERANK_CONFIDENCE_THRESHOLD = -5.0
 
 _client: Optional[anthropic.Anthropic] = None
 _retriever: Optional[HybridRetriever] = None
+_usaspending_client: Optional[USASpendingClient] = None
 
 
 def _get_client() -> anthropic.Anthropic:
@@ -50,6 +52,13 @@ def _get_retriever() -> HybridRetriever:
     return _retriever
 
 
+def _get_usaspending_client() -> USASpendingClient:
+    global _usaspending_client
+    if _usaspending_client is None:
+        _usaspending_client = USASpendingClient()
+    return _usaspending_client
+
+
 @beta_tool
 def search_guide(query: str) -> str:
     """Search the Analyst's Guide to Federal Spending Data for conceptual or definitional information about USASpending — what a term means, how a data element is defined, which fields contain what.
@@ -64,51 +73,92 @@ def search_guide(query: str) -> str:
     return "\n\n---\n\n".join(f"[Page {m['page_start']}]\n{m['text']}" for m in matches)
 
 
+@beta_tool
+def lookup_agency(name: str) -> str:
+    """Look up a federal agency by name to get its basic profile: toptier code, abbreviation, mission, website, and subtier agency count. Use this for questions about what a specific agency is or does, or as a first step before any spending-data question that needs an agency's toptier code.
+
+    Args:
+        name: The agency name to search for, e.g. "National Science Foundation" or "NSF".
+    """
+    client = _get_usaspending_client()
+    agency = client.find_agency_by_name(name)
+    if agency is None:
+        return f"No agency found matching '{name}'."
+
+    overview = client.get_agency_overview(agency.toptier_code)
+    return (
+        f"Agency: {overview.name} ({overview.abbreviation})\n"
+        f"Toptier code: {overview.toptier_code}\n"
+        f"Fiscal year: {overview.fiscal_year}\n"
+        f"Subtier agency count: {overview.subtier_agency_count}\n"
+        f"Mission: {overview.mission or 'N/A'}\n"
+        f"Website: {overview.website or 'N/A'}"
+    )
+
+
 NOT_FOUND_MESSAGE = (
     "I can only answer questions about USASpending.gov federal spending data, "
     "and couldn't find anything relevant to this question."
 )
 
 
-def _guide_has_relevant_content(question: str) -> bool:
-    """Cheap pre-filter gate: only start the (LLM-costing) tool-calling loop
-    if the guide actually has something relevant, instead of relying on the
-    system prompt alone to stop the model from answering off-topic questions
-    from its own knowledge.
+SCOPE_CLASSIFIER_PROMPT = (
+    "You classify whether a user question is in scope for a USASpending.gov "
+    "assistant: federal spending, budgets, obligations/outlays, contracts, "
+    "grants/financial assistance, awards, recipients, federal agencies, or "
+    "USASpending.gov data/fields/API concepts. Respond with only YES or NO, "
+    "nothing else."
+)
 
-    NOTE: this only reflects "the guide can answer this" — once live-data
-    tools (agency lookup, spending queries) are added, a question can be
-    legitimately in-scope without the guide matching it at all, so this gate
-    will need to be generalized rather than reused as-is.
+
+@traceable(run_type="llm", name="scope_classifier")
+def _is_in_scope(question: str) -> bool:
+    """Cheap pre-filter gate: only start the (much more expensive) tool-
+    calling loop if the question is plausibly in-scope for this app's whole
+    domain, instead of relying on the system prompt alone to stop the model
+    from answering off-topic questions from its own knowledge.
+
+    Deliberately broader than "the guide has relevant content" — a
+    live-data question (e.g. an agency lookup) can be legitimately in scope
+    without matching anything in the static guide.
     """
-    results = _get_retriever().retrieve(question, top_k=3)
-    return any(r["rerank_score"] > RERANK_CONFIDENCE_THRESHOLD for r in results)
+    response = _get_client().messages.create(
+        model=MODEL,
+        max_tokens=5,
+        system=SCOPE_CLASSIFIER_PROMPT,
+        messages=[{"role": "user", "content": question}],
+    )
+    text = next((b.text for b in response.content if b.type == "text"), "")
+    return text.strip().upper().startswith("YES")
 
 
 SYSTEM_PROMPT = (
-    "You answer questions about USASpending.gov federal spending data. "
-    "You must call the search_guide tool at least once before writing any "
-    "answer, for every question, with no exceptions — including questions "
-    "that seem unrelated to federal spending, general-knowledge questions, "
-    "greetings, or anything else. Never answer from your own knowledge "
-    "without calling the tool first, even if you already know the answer. "
-    "Base your answer strictly on what the tool returns. If the tool finds "
-    "nothing relevant, or the question has nothing to do with USASpending "
-    "federal spending data, tell the user plainly that you can only answer "
-    "questions about USASpending data — do not answer the question anyway."
+    "You answer questions about USASpending.gov federal spending data. You "
+    "have two tools: search_guide (conceptual/definitional questions about "
+    "USASpending data, terms, and fields) and lookup_agency (what a specific "
+    "federal agency is, or its toptier code). You must call at least one of "
+    "these tools before writing any answer, for every question, with no "
+    "exceptions — including questions that seem unrelated to federal "
+    "spending, general-knowledge questions, greetings, or anything else. "
+    "Never answer from your own knowledge without calling a tool first, "
+    "even if you already know the answer. Base your answer strictly on what "
+    "the tools return. If no tool finds anything relevant, or the question "
+    "has nothing to do with USASpending federal spending data, tell the "
+    "user plainly that you can only answer questions about USASpending "
+    "data — do not answer the question anyway."
 )
 
 
 @traceable(run_type="chain", name="agent_ask")
 def ask(question: str) -> str:
-    if not _guide_has_relevant_content(question):
+    if not _is_in_scope(question):
         return NOT_FOUND_MESSAGE
 
     runner = _get_client().beta.messages.tool_runner(
         model=MODEL,
         max_tokens=2048,
         system=SYSTEM_PROMPT,
-        tools=[search_guide],
+        tools=[search_guide, lookup_agency],
         messages=[{"role": "user", "content": question}],
     )
 

@@ -21,6 +21,8 @@ from typing import Any, Dict, List, Literal, Optional
 
 import requests
 from pydantic import BaseModel, ConfigDict
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 BASE_URL = "https://api.usaspending.gov"
 
@@ -118,19 +120,53 @@ class SpendingOverTimeResponse(BaseModel):
     messages: Optional[List[str]] = None
 
 
+class USASpendingAPIError(Exception):
+    """Raised on a non-2xx response, with the API's own error detail (if any)
+    as the message instead of a raw requests traceback — callers (e.g. an
+    LLM tool wrapper) can surface str(e) directly without leaking internals.
+    """
+
+
+def _raise_with_detail(resp: requests.Response) -> None:
+    try:
+        resp.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        detail = None
+        try:
+            detail = resp.json().get("detail")
+        except ValueError:
+            pass
+        message = detail or str(e)
+        raise USASpendingAPIError(f"{resp.status_code}: {message}") from e
+
+
 class USASpendingClient:
     def __init__(self, timeout: float = 30.0):
         self.session = requests.Session()
         self.timeout = timeout
 
+        # Retry transient failures (connection errors, rate limiting, server
+        # errors) with backoff. Deliberately excludes 4xx like the 404s from
+        # unsupported category endpoints — those mean the request is wrong,
+        # not that the server had a bad moment, so retrying is pointless.
+        retry = Retry(
+            total=3,
+            backoff_factor=1.0,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET", "POST"],
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+
     def _get(self, path: str, params: Optional[dict] = None) -> dict:
         resp = self.session.get(f"{BASE_URL}{path}", params=params, timeout=self.timeout)
-        resp.raise_for_status()
+        _raise_with_detail(resp)
         return resp.json()
 
     def _post(self, path: str, body: dict) -> dict:
         resp = self.session.post(f"{BASE_URL}{path}", json=body, timeout=self.timeout)
-        resp.raise_for_status()
+        _raise_with_detail(resp)
         return resp.json()
 
     def list_toptier_agencies(self) -> List[ToptierAgency]:

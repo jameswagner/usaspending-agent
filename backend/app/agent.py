@@ -18,7 +18,13 @@ from dotenv import load_dotenv
 from langsmith import traceable
 
 from backend.app.retrieval.hybrid import HybridRetriever
-from backend.app.tools.usaspending_client import USASpendingClient
+from backend.app.tools.usaspending_client import (
+    AdvancedFilters,
+    AgencyFilter,
+    TimePeriod,
+    USASpendingAPIError,
+    USASpendingClient,
+)
 
 load_dotenv()
 
@@ -96,6 +102,40 @@ def lookup_agency(name: str) -> str:
     )
 
 
+@beta_tool
+def get_spending_by_category(
+    category: str,
+    agency_name: str,
+    start_date: str,
+    end_date: str,
+    limit: int = 5,
+) -> str:
+    """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for one awarding agency and date range, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions.
+
+    Args:
+        category: One of: awarding_agency, awarding_subagency, cfda, country, county, defc, district, federal_account, funding_agency, funding_subagency, naics, psc, recipient_duns, state_territory. (Only these are live-verified; other category names the API contract lists, like object_class or tas, 404 in practice.)
+        agency_name: The awarding agency's name, e.g. "National Science Foundation".
+        start_date: Start of the date range, YYYY-MM-DD. Data is only available from 2007-10-01 onward.
+        end_date: End of the date range, YYYY-MM-DD.
+        limit: Max number of results to return (default 5).
+    """
+    client = _get_usaspending_client()
+    filters = AdvancedFilters(
+        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency_name)],
+        time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
+    )
+    try:
+        response = client.spending_by_category(category, filters, limit=limit)
+    except USASpendingAPIError as e:
+        return f"This query failed: {e}. Do not substitute a different category and present it as answering the original question — tell the user this specific breakdown isn't available."
+
+    if not response.results:
+        return f"No {category} spending data found for {agency_name} between {start_date} and {end_date}."
+
+    lines = [f"{r.name or r.code or 'unknown'}: ${r.amount:,.2f}" for r in response.results]
+    return "\n".join(lines)
+
+
 NOT_FOUND_MESSAGE = (
     "I can only answer questions about USASpending.gov federal spending data, "
     "and couldn't find anything relevant to this question."
@@ -134,10 +174,12 @@ def _is_in_scope(question: str) -> bool:
 
 SYSTEM_PROMPT = (
     "You answer questions about USASpending.gov federal spending data. You "
-    "have two tools: search_guide (conceptual/definitional questions about "
-    "USASpending data, terms, and fields) and lookup_agency (what a specific "
-    "federal agency is, or its toptier code). You must call at least one of "
-    "these tools before writing any answer, for every question, with no "
+    "have three tools: search_guide (conceptual/definitional questions about "
+    "USASpending data, terms, and fields), lookup_agency (what a specific "
+    "federal agency is, or its toptier code), and get_spending_by_category "
+    "(an agency's spending broken down by NAICS/PSC/sub-agency/etc. for a "
+    "date range). You must call at least one of these tools before writing "
+    "any answer, for every question, with no "
     "exceptions — including questions that seem unrelated to federal "
     "spending, general-knowledge questions, greetings, or anything else. "
     "Never answer from your own knowledge without calling a tool first, "
@@ -145,7 +187,12 @@ SYSTEM_PROMPT = (
     "the tools return. If no tool finds anything relevant, or the question "
     "has nothing to do with USASpending federal spending data, tell the "
     "user plainly that you can only answer questions about USASpending "
-    "data — do not answer the question anyway."
+    "data — do not answer the question anyway. If a specific tool call "
+    "fails or the exact breakdown/data requested isn't available, say so "
+    "plainly. Do not silently substitute a different category, agency, or "
+    "time period and present those results as if they answered the "
+    "original question — if you use different parameters than what was "
+    "asked because the exact request failed, say so explicitly."
 )
 
 
@@ -158,7 +205,7 @@ def ask(question: str) -> str:
         model=MODEL,
         max_tokens=2048,
         system=SYSTEM_PROMPT,
-        tools=[search_guide, lookup_agency],
+        tools=[search_guide, lookup_agency, get_spending_by_category],
         messages=[{"role": "user", "content": question}],
     )
 

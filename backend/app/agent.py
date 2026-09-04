@@ -9,6 +9,7 @@ Usage:
 """
 from __future__ import annotations
 
+import contextvars
 import os
 from typing import Literal
 
@@ -76,6 +77,28 @@ def warm_up() -> None:
     _get_retriever()
     _get_usaspending_client()
     _get_client()
+
+
+# Per-request capture buffer for structured tool results, so chart-worthy
+# data survives past the @beta_tool wrapper that only returns a string to
+# the LLM. A plain module-level list would leak between concurrent requests
+# — main.py's /ask is a sync endpoint, which FastAPI runs on a real OS
+# thread pool, so concurrent requests genuinely run at the same time.
+# contextvars.ContextVar gives each call to ask() its own isolated buffer
+# automatically, the same mechanism LangSmith's own tracing relies on.
+_tool_call_log: contextvars.ContextVar[list[tuple[str, object]] | None] = contextvars.ContextVar(
+    "tool_call_log", default=None
+)
+
+
+def _record_tool_call(tool_name: str, result: object) -> None:
+    """Append to the current call's capture buffer, if one is active (set by
+    ask() before starting the tool loop). No-op outside ask() - e.g. a tool
+    function invoked directly, as the dev_tools scripts and tests do.
+    """
+    log = _tool_call_log.get()
+    if log is not None:
+        log.append((tool_name, result))
 
 
 @beta_tool
@@ -167,6 +190,8 @@ def get_spending_by_category(
     except USASpendingAPIError as e:
         return f"This query failed: {e}. Do not substitute a different category and present it as answering the original question — tell the user this specific breakdown isn't available."
 
+    _record_tool_call("get_spending_by_category", response)
+
     if not response.results:
         return f"No {category} spending data found for {agency_name} between {start_date} and {end_date}."
 
@@ -226,6 +251,8 @@ def get_spending_over_time(
         response = get_spending_over_time_raw(agency_name, start_date, end_date, group)
     except USASpendingAPIError as e:
         return f"This query failed: {e}."
+
+    _record_tool_call("get_spending_over_time", response)
 
     if not response.results:
         return f"No spending-over-time data found for {agency_name} between {start_date} and {end_date}."
@@ -344,10 +371,17 @@ SYSTEM_PROMPT = (
 )
 
 
+class AgentResult(BaseModel):
+    answer_text: str
+    chart: ChartSpec | None = None
+
+
 @traceable(run_type="chain", name="agent_ask")
-def ask(question: str) -> str:
+def ask(question: str) -> AgentResult:
     if not _is_in_scope(question):
-        return NOT_FOUND_MESSAGE
+        return AgentResult(answer_text=NOT_FOUND_MESSAGE)
+
+    _tool_call_log.set([])
 
     runner = _get_client().beta.messages.tool_runner(
         model=MODEL,
@@ -361,7 +395,18 @@ def ask(question: str) -> str:
     for message in runner:
         final = message
 
-    return next((b.text for b in final.content if b.type == "text"), "")
+    answer_text = next((b.text for b in final.content if b.type == "text"), "")
+
+    # If a turn calls more than one chart-worthy tool, take the first one -
+    # the response schema only has one chart_data slot, and that's a
+    # deliberate simplification rather than a silent default.
+    chart = None
+    for tool_name, result in _tool_call_log.get() or []:
+        chart = should_chart(tool_name, result)
+        if chart is not None:
+            break
+
+    return AgentResult(answer_text=answer_text, chart=chart)
 
 
 def main():
@@ -372,7 +417,13 @@ def main():
     args = parser.parse_args()
 
     print(f"[model={MODEL}]")
-    print(ask(args.question))
+    result = ask(args.question)
+    print(result.answer_text)
+    if result.chart:
+        print()
+        print(f"[chart: {result.chart.chart_type}] {result.chart.title}")
+        print(f"  labels: {result.chart.labels}")
+        print(f"  values: {result.chart.values}")
 
 
 if __name__ == "__main__":

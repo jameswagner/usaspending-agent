@@ -19,7 +19,6 @@ from __future__ import annotations
 import json
 import random
 from pathlib import Path
-from typing import List, Tuple
 
 from dotenv import load_dotenv
 
@@ -34,12 +33,12 @@ N_POSITIVE = 20
 N_NEGATIVE = 20
 
 
-def load_chunks() -> List[dict]:
+def load_chunks() -> list[dict]:
     with CHUNKS_PATH.open(encoding="utf-8") as fh:
         return [json.loads(line) for line in fh]
 
 
-def generate_positive_questions(chunks: List[dict], n: int) -> List[str]:
+def generate_positive_questions(chunks: list[dict], n: int) -> list[str]:
     """One natural question per sampled chunk, that the chunk directly answers."""
     client = _get_client()
     sample = random.sample(chunks, n)
@@ -62,7 +61,7 @@ def generate_positive_questions(chunks: List[dict], n: int) -> List[str]:
     return questions
 
 
-def generate_negative_questions(n: int) -> List[str]:
+def generate_negative_questions(n: int) -> list[str]:
     """Half off-domain entirely, half on-domain but needing live data the
     static guide can't provide — the harder, more realistic negative case.
     """
@@ -89,7 +88,7 @@ def generate_negative_questions(n: int) -> List[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
-def score_questions(retriever: HybridRetriever, questions: List[str], label: str) -> List[Tuple[float, str, str]]:
+def score_questions(retriever: HybridRetriever, questions: list[str], label: str) -> list[tuple[float, str, str]]:
     scored = []
     for q in questions:
         results = retriever.retrieve(q, top_k=1)
@@ -98,7 +97,7 @@ def score_questions(retriever: HybridRetriever, questions: List[str], label: str
     return scored
 
 
-def best_threshold(scored: List[Tuple[float, str, str]]) -> Tuple[float, float]:
+def best_threshold(scored: list[tuple[float, str, str]]) -> tuple[float, float]:
     """Try every midpoint between consecutive scores; return the one that
     maximizes accuracy (positive above threshold, negative at/below it).
     """
@@ -138,7 +137,7 @@ def main():
 
     threshold, accuracy = best_threshold(scored)
     print(f"\nBest-separating threshold: {threshold:.2f} (accuracy on this labeled set: {accuracy:.1%})")
-    print("Current RERANK_CONFIDENCE_THRESHOLD: -5.0")
+    print("Current RERANK_CONFIDENCE_THRESHOLD: -2.0")
 
 
 if __name__ == "__main__":

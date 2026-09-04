@@ -1,7 +1,7 @@
 """Embed chunks and load them into a persistent Chroma collection.
 
 Usage:
-  python -m backend.app.retrieval.vector_index --chunks data/chunks/analysts_guide_chunks.jsonl
+  python -m backend.app.retrieval.pipeline.vector_index --chunks data/chunks/analysts_guide_chunks.jsonl
 """
 from __future__ import annotations
 

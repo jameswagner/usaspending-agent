@@ -6,7 +6,7 @@ question/answer units (the guide is written as a Q&A doc, each question
 wrapped in curly quotes and ending in '?') into JSONL records with metadata.
 
 Usage:
-  python -m backend.app.retrieval.ingest --pdf data/raw/analysts_guide.pdf
+  python -m backend.app.retrieval.pipeline.ingest --pdf data/raw/analyst-guide.pdf
 """
 from __future__ import annotations
 

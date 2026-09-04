@@ -6,7 +6,7 @@ out-of-scope questions), without reloading the models on every query like
 the one-shot hybrid.py CLI does.
 
 Usage:
-  python -m backend.app.retrieval.sanity_check
+  python -m backend.app.retrieval.dev_tools.sanity_check
 """
 from __future__ import annotations
 

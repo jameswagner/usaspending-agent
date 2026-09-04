@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 .env
 data/
+!data/raw/
+!data/raw/**
 .DS_Store
 .pytest_cache/
 .ruff_cache/

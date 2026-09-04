@@ -1,7 +1,7 @@
 """Build a Whoosh BM25 index over chunks for sparse keyword search.
 
 Usage:
-  python -m backend.app.retrieval.bm25_index --chunks data/chunks/analysts_guide_chunks.jsonl
+  python -m backend.app.retrieval.pipeline.bm25_index --chunks data/chunks/analysts_guide_chunks.jsonl
 """
 from __future__ import annotations
 

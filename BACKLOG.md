@@ -20,6 +20,6 @@ project, not before.
 
 ## Tied rerank scores in sanity_check.py
 
-The `NAICS` query in `backend/app/retrieval/sanity_check.py` has two results
+The `NAICS` query in `backend/app/retrieval/dev_tools/sanity_check.py` has two results
 tied at the exact same rerank score (4.69). Noticed during hybrid retriever
 review, never investigated. Probably harmless, worth a second look sometime.

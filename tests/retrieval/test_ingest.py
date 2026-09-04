@@ -1,4 +1,4 @@
-from backend.app.retrieval.ingest import (
+from backend.app.retrieval.pipeline.ingest import (
     chunk_unit,
     clean_page_text,
     detect_repeated_lines,

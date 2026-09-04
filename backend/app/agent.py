@@ -1,8 +1,8 @@
 """Tool-calling agent over USASpending question-answering.
 
-First tool: search_guide (wraps HybridRetriever), matching the current
-/ask behavior. Live-data tools (agency lookup, spending queries, award
-search) are added one at a time after this is verified.
+Five tools: search_guide (wraps HybridRetriever, for conceptual/definitional
+questions), lookup_agency, get_spending_by_category, get_spending_over_time,
+and search_awards (all four live-data tools backed by usaspending_client).
 
 Usage:
   python -m backend.app.agent --question "What is a prime award?"
@@ -264,6 +264,96 @@ def get_spending_over_time(
     return "\n".join(lines)
 
 
+# award_type_codes has many more valid values than these three groups (see
+# search_filters.md's Award Type section), but exposing the full code list
+# to the model would mean a much larger error surface for little benefit -
+# same reasoning as get_spending_by_category's constrained category list.
+AWARD_TYPE_GROUPS: dict[str, list[str]] = {
+    "contracts": ["A", "B", "C", "D"],
+    "grants": ["02", "03", "04", "05"],
+    "loans": ["07", "08"],
+}
+
+# A base field set valid across award types (per spending_by_award.md's
+# "Base fields" list), so one fixed request shape works regardless of
+# award_type - avoids the model needing to know which fields are only
+# valid for contracts vs. loans vs. non-loan assistance.
+SEARCH_AWARDS_FIELDS = [
+    "Award ID",
+    "Recipient Name",
+    "Award Amount",
+    "Awarding Agency",
+    "Description",
+]
+
+
+def search_awards_raw(
+    agency_name: str,
+    start_date: str,
+    end_date: str,
+    award_type: str = "contracts",
+    limit: int = 5,
+) -> list[dict]:
+    """Call the API once, return the raw list of award result dicts. Same
+    agency_name resolution as the other spending tools, for the same
+    reason (an abbreviation would otherwise silently return zero results).
+    """
+    client = _get_usaspending_client()
+    agency = client.find_agency_by_name(agency_name)
+    if agency is None:
+        raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
+
+    award_type_codes = AWARD_TYPE_GROUPS.get(award_type)
+    if award_type_codes is None:
+        raise USASpendingAPIError(
+            f"Unknown award_type '{award_type}'. Must be one of: {', '.join(AWARD_TYPE_GROUPS)}"
+        )
+
+    filters = AdvancedFilters(
+        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)],
+        time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
+        award_type_codes=award_type_codes,
+    )
+    return client.search_awards(filters, fields=SEARCH_AWARDS_FIELDS, limit=limit)
+
+
+@beta_tool
+def search_awards(
+    agency_name: str,
+    start_date: str,
+    end_date: str,
+    award_type: str = "contracts",
+    limit: int = 5,
+) -> str:
+    """Search for individual award records (specific contracts, grants, or loans) for one awarding agency and date range. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead.
+
+    Args:
+        agency_name: The awarding agency's name, e.g. "National Science Foundation".
+        start_date: Start of the date range, YYYY-MM-DD. Data is only available from 2007-10-01 onward.
+        end_date: End of the date range, YYYY-MM-DD.
+        award_type: One of: contracts, grants, loans. Default contracts.
+        limit: Max number of results to return (default 5).
+    """
+    try:
+        results = search_awards_raw(agency_name, start_date, end_date, award_type, limit)
+    except USASpendingAPIError as e:
+        return f"This query failed: {e}."
+
+    _record_tool_call("search_awards", results)
+
+    if not results:
+        return f"No {award_type} awards found for {agency_name} between {start_date} and {end_date}."
+
+    lines = []
+    for r in results:
+        award_id = r.get("Award ID", "unknown")
+        recipient = r.get("Recipient Name", "unknown")
+        amount = r.get("Award Amount")
+        amount_str = f"${amount:,.2f}" if isinstance(amount, (int, float)) else "unknown amount"
+        lines.append(f"{award_id} — {recipient}: {amount_str}")
+    return "\n".join(lines)
+
+
 class ChartSpec(BaseModel):
     chart_type: Literal["bar", "line"]
     title: str
@@ -348,12 +438,15 @@ def _is_in_scope(question: str) -> bool:
 
 SYSTEM_PROMPT = (
     "You answer questions about USASpending.gov federal spending data. You "
-    "have four tools: search_guide (conceptual/definitional questions about "
+    "have five tools: search_guide (conceptual/definitional questions about "
     "USASpending data, terms, and fields), lookup_agency (what a specific "
     "federal agency is, or its toptier code), get_spending_by_category "
     "(an agency's spending broken down by NAICS/PSC/sub-agency/etc. for a "
-    "date range), and get_spending_over_time (an agency's spending trend "
-    "across fiscal years/quarters/months). You must call at least one of "
+    "date range), get_spending_over_time (an agency's spending trend "
+    "across fiscal years/quarters/months), and search_awards (individual "
+    "contract/grant/loan records for an agency and date range — use this "
+    "for 'show me awards from X' or 'who received money from X', not for "
+    "aggregate breakdowns or trends). You must call at least one of "
     "these tools before writing any answer, for every question, with no "
     "exceptions — including questions that seem unrelated to federal "
     "spending, general-knowledge questions, greetings, or anything else. "
@@ -387,7 +480,13 @@ def ask(question: str) -> AgentResult:
         model=MODEL,
         max_tokens=2048,
         system=SYSTEM_PROMPT,
-        tools=[search_guide, lookup_agency, get_spending_by_category, get_spending_over_time],
+        tools=[
+            search_guide,
+            lookup_agency,
+            get_spending_by_category,
+            get_spending_over_time,
+            search_awards,
+        ],
         messages=[{"role": "user", "content": question}],
     )
 

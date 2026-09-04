@@ -126,10 +126,20 @@ def get_spending_by_category_raw(
     USASpendingAPIError on failure — the @beta_tool wrapper decides how to
     present that to the model; this function stays presentation-free so the
     structured result is also available for chart-building later.
+
+    Resolves agency_name through find_agency_by_name first, rather than
+    passing whatever string the caller gave straight into the filter: the
+    live API silently returns zero results for an unrecognized name (e.g.
+    "NSF" instead of "National Science Foundation") instead of erroring, so
+    passing the raw string through would risk a false "no data" answer.
     """
     client = _get_usaspending_client()
+    agency = client.find_agency_by_name(agency_name)
+    if agency is None:
+        raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
+
     filters = AdvancedFilters(
-        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency_name)],
+        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)],
         time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
     )
     return client.spending_by_category(category, filters, limit=limit)
@@ -171,10 +181,14 @@ def get_spending_over_time_raw(
     group: str = "fiscal_year",
 ) -> SpendingOverTimeResponse:
     """Call the API once, return the structured response. Same split
-    rationale as get_spending_by_category_raw."""
+    rationale, and same agency_name resolution, as get_spending_by_category_raw."""
     client = _get_usaspending_client()
+    agency = client.find_agency_by_name(agency_name)
+    if agency is None:
+        raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
+
     filters = AdvancedFilters(
-        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency_name)],
+        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)],
         time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
     )
     return client.spending_over_time(filters, group=group)

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -10,8 +9,10 @@ from pydantic import BaseModel
 
 load_dotenv()
 
-from backend.app.generation import synthesize_answer  # noqa: E402 (after load_dotenv)
-from backend.app.retrieval.hybrid import HybridRetriever  # noqa: E402 (after load_dotenv)
+from backend.app.generation import synthesize_answer
+from backend.app.retrieval.hybrid import (
+    HybridRetriever,
+)
 
 # Below this, rerank scores tend to mean "nothing relevant" rather than a
 # weak match: sanity_check.py showed misspelled/out-of-scope queries
@@ -19,7 +20,7 @@ from backend.app.retrieval.hybrid import HybridRetriever  # noqa: E402 (after lo
 # down to roughly -3.
 RERANK_CONFIDENCE_THRESHOLD = -5.0
 
-retriever: Optional[HybridRetriever] = None
+retriever: HybridRetriever | None = None
 
 
 @asynccontextmanager
@@ -45,8 +46,8 @@ class AskRequest(BaseModel):
 class AskResponse(BaseModel):
     answer_text: str
     source_type: str
-    chart_data: Optional[dict] = None
-    citations: List[Citation] = []
+    chart_data: dict | None = None
+    citations: list[Citation] = []
 
 
 @app.get("/health")

@@ -7,7 +7,6 @@ no agent loop — a single Claude call per question.
 from __future__ import annotations
 
 import os
-from typing import List, Optional
 
 import anthropic
 from dotenv import load_dotenv
@@ -29,7 +28,7 @@ SYSTEM_PROMPT = (
     "instead of guessing or using outside knowledge."
 )
 
-_client: Optional[anthropic.Anthropic] = None
+_client: anthropic.Anthropic | None = None
 
 
 def _get_client() -> anthropic.Anthropic:
@@ -43,12 +42,12 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
-def _format_context(chunks: List[dict]) -> str:
+def _format_context(chunks: list[dict]) -> str:
     return "\n\n---\n\n".join(f"[Page {c['page_start']}]\n{c['text']}" for c in chunks)
 
 
 @traceable(run_type="llm", name="synthesize_answer")
-def synthesize_answer(question: str, chunks: List[dict]) -> str:
+def synthesize_answer(question: str, chunks: list[dict]) -> str:
     context = _format_context(chunks)
     response = _get_client().messages.create(
         model=MODEL,

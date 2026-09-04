@@ -9,7 +9,6 @@ import json
 import os
 import shutil
 from pathlib import Path
-from typing import List
 
 from whoosh.fields import ID, NUMERIC, STORED, TEXT, Schema
 from whoosh.index import create_in
@@ -26,7 +25,7 @@ SCHEMA = Schema(
 )
 
 
-def load_chunks(chunks_path: Path) -> List[dict]:
+def load_chunks(chunks_path: Path) -> list[dict]:
     with chunks_path.open(encoding="utf-8") as fh:
         return [json.loads(line) for line in fh]
 

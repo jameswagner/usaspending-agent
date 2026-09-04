@@ -17,7 +17,7 @@ without every one of them being modeled here.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 import requests
 from pydantic import BaseModel, ConfigDict
@@ -36,7 +36,7 @@ class AgencyFilter(BaseModel):
     type: Literal["awarding", "funding"]
     tier: Literal["toptier", "subtier"]
     name: str
-    toptier_name: Optional[str] = None
+    toptier_name: str | None = None
 
 
 class AdvancedFilters(BaseModel):
@@ -44,11 +44,11 @@ class AdvancedFilters(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    keywords: Optional[List[str]] = None
-    time_period: Optional[List[TimePeriod]] = None
-    agencies: Optional[List[AgencyFilter]] = None
-    award_type_codes: Optional[List[str]] = None
-    recipient_search_text: Optional[List[str]] = None
+    keywords: list[str] | None = None
+    time_period: list[TimePeriod] | None = None
+    agencies: list[AgencyFilter] | None = None
+    award_type_codes: list[str] | None = None
+    recipient_search_text: list[str] | None = None
 
 
 class ToptierAgency(BaseModel):
@@ -67,10 +67,10 @@ class AgencyOverview(BaseModel):
     fiscal_year: int
     toptier_code: str
     name: str
-    abbreviation: Optional[str] = None
+    abbreviation: str | None = None
     agency_id: int
-    mission: Optional[str] = None
-    website: Optional[str] = None
+    mission: str | None = None
+    website: str | None = None
     subtier_agency_count: int
 
 
@@ -79,29 +79,29 @@ class CategoryResult(BaseModel):
 
     # Contract says "required, number" (the DB key), but categories with no
     # single backing DB row (e.g. naics, psc) return null in practice.
-    id: Optional[int] = None
-    name: Optional[str] = None
-    code: Optional[str] = None
+    id: int | None = None
+    name: str | None = None
+    code: str | None = None
     amount: float
-    total_outlays: Optional[float] = None
+    total_outlays: float | None = None
 
 
 class SpendingByCategoryResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     category: str
-    results: List[CategoryResult]
+    results: list[CategoryResult]
     limit: int
-    messages: Optional[List[str]] = None
+    messages: list[str] | None = None
 
 
 class TimePeriodGroup(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    calendar_year: Optional[str] = None
-    fiscal_year: Optional[str] = None
-    quarter: Optional[str] = None
-    month: Optional[str] = None
+    calendar_year: str | None = None
+    fiscal_year: str | None = None
+    quarter: str | None = None
+    month: str | None = None
 
 
 class TimeResult(BaseModel):
@@ -109,15 +109,15 @@ class TimeResult(BaseModel):
 
     time_period: TimePeriodGroup
     aggregated_amount: float
-    total_outlays: Optional[float] = None
+    total_outlays: float | None = None
 
 
 class SpendingOverTimeResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     group: str
-    results: List[TimeResult]
-    messages: Optional[List[str]] = None
+    results: list[TimeResult]
+    messages: list[str] | None = None
 
 
 class USASpendingAPIError(Exception):
@@ -159,7 +159,7 @@ class USASpendingClient:
         self.session.mount("https://", adapter)
         self.session.mount("http://", adapter)
 
-    def _get(self, path: str, params: Optional[dict] = None) -> dict:
+    def _get(self, path: str, params: dict | None = None) -> dict:
         resp = self.session.get(f"{BASE_URL}{path}", params=params, timeout=self.timeout)
         _raise_with_detail(resp)
         return resp.json()
@@ -169,11 +169,11 @@ class USASpendingClient:
         _raise_with_detail(resp)
         return resp.json()
 
-    def list_toptier_agencies(self) -> List[ToptierAgency]:
+    def list_toptier_agencies(self) -> list[ToptierAgency]:
         data = self._get("/api/v2/references/toptier_agencies/")
         return [ToptierAgency(**r) for r in data["results"]]
 
-    def find_agency_by_name(self, name: str) -> Optional[ToptierAgency]:
+    def find_agency_by_name(self, name: str) -> ToptierAgency | None:
         """Case-insensitive match against agency name or abbreviation.
 
         Tries an exact match first, then falls back to substring match, since
@@ -191,7 +191,7 @@ class USASpendingClient:
                 return a
         return None
 
-    def get_agency_overview(self, toptier_code: str, fiscal_year: Optional[int] = None) -> AgencyOverview:
+    def get_agency_overview(self, toptier_code: str, fiscal_year: int | None = None) -> AgencyOverview:
         params = {"fiscal_year": fiscal_year} if fiscal_year else None
         data = self._get(f"/api/v2/agency/{toptier_code}/", params=params)
         return AgencyOverview(**data)
@@ -236,18 +236,18 @@ class USASpendingClient:
     def search_awards(
         self,
         filters: AdvancedFilters,
-        fields: List[str],
+        fields: list[str],
         limit: int = 10,
         order: str = "desc",
-        sort: Optional[str] = None,
+        sort: str | None = None,
         page: int = 1,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         # Unlike spending_by_category/spending_over_time, award_type_codes is
         # required here per the API contract, not just optional.
         if not filters.award_type_codes:
             raise ValueError("search_awards requires filters.award_type_codes to be set")
 
-        body: Dict[str, Any] = {
+        body: dict[str, Any] = {
             "filters": filters.model_dump(exclude_none=True),
             "fields": fields,
             "limit": limit,

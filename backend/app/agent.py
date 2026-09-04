@@ -10,7 +10,6 @@ Usage:
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 import anthropic
 from anthropic import beta_tool
@@ -38,9 +37,9 @@ MODEL = os.environ.get("AGENT_MODEL", "claude-haiku-4-5")
 # scores mean "nothing relevant" rather than a weak match.
 RERANK_CONFIDENCE_THRESHOLD = -5.0
 
-_client: Optional[anthropic.Anthropic] = None
-_retriever: Optional[HybridRetriever] = None
-_usaspending_client: Optional[USASpendingClient] = None
+_client: anthropic.Anthropic | None = None
+_retriever: HybridRetriever | None = None
+_usaspending_client: USASpendingClient | None = None
 
 
 def _get_client() -> anthropic.Anthropic:

@@ -13,9 +13,8 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import List
 
 import pymupdf
 
@@ -41,7 +40,7 @@ QUESTION_START_RE = re.compile(
 )
 
 
-def extract_pages(pdf_path: Path) -> List[str]:
+def extract_pages(pdf_path: Path) -> list[str]:
     pages = []
     with pymupdf.open(pdf_path) as doc:
         for page in doc:
@@ -49,7 +48,7 @@ def extract_pages(pdf_path: Path) -> List[str]:
     return pages
 
 
-def detect_repeated_lines(pages: List[str], min_count: int = 3, max_line_len: int = 200) -> set:
+def detect_repeated_lines(pages: list[str], min_count: int = 3, max_line_len: int = 200) -> set:
     """Find short lines repeated across pages (likely headers/footers).
 
     Returns a set of lines to remove from page text.
@@ -97,12 +96,12 @@ def clean_page_text(page_text: str, repeated_lines: set) -> str:
     return cleaned
 
 
-def paragraph_split(text: str) -> List[str]:
+def paragraph_split(text: str) -> list[str]:
     paras = [p.strip() for p in re.split(r"\n\s*\n+", text) if p.strip()]
     return paras
 
 
-def question_split(text: str) -> List[str]:
+def question_split(text: str) -> list[str]:
     """Split cleaned page text into Q&A units at each curly-quoted question.
 
     Each unit starts at a question marker (e.g. 'What is a prime award?')
@@ -128,12 +127,12 @@ def question_split(text: str) -> List[str]:
     return units
 
 
-def sentence_split(paragraph: str) -> List[str]:
+def sentence_split(paragraph: str) -> list[str]:
     sents = re.split(r'(?<=[.!?])\s+', paragraph)
     return [s.strip() for s in sents if s.strip()]
 
 
-def chunk_unit(unit: str, max_chars: int = 1000, overlap: int = 200) -> List[str]:
+def chunk_unit(unit: str, max_chars: int = 1000, overlap: int = 200) -> list[str]:
     """Split a Q&A (or leading) unit into char-budgeted sub-chunks.
 
     Units under max_chars pass through unchanged (the common case, since
@@ -173,11 +172,11 @@ def chunk_unit(unit: str, max_chars: int = 1000, overlap: int = 200) -> List[str
     return chunks
 
 
-def ingest_pdf_to_chunks(pdf_path: Path, out_path: Path, source_name: str = "Analyst's Guide") -> List[Chunk]:
+def ingest_pdf_to_chunks(pdf_path: Path, out_path: Path, source_name: str = "Analyst's Guide") -> list[Chunk]:
     pages = extract_pages(pdf_path)
     repeated = detect_repeated_lines(pages)
 
-    all_chunks: List[Chunk] = []
+    all_chunks: list[Chunk] = []
     chunk_id = 0
     for i, page_text in enumerate(pages, start=1):
         cleaned = clean_page_text(page_text, repeated)

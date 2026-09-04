@@ -10,7 +10,6 @@ Usage:
 from __future__ import annotations
 
 import os
-from typing import Dict, List
 
 import chromadb
 from dotenv import load_dotenv
@@ -31,6 +30,28 @@ CROSS_ENCODER_MODEL = os.environ.get("CROSS_ENCODER_MODEL", "cross-encoder/ms-ma
 COLLECTION_NAME = "analysts_guide"
 
 
+def merge_candidates(dense: dict[str, dict], sparse: dict[str, dict]) -> list[dict]:
+    """Union dense and sparse candidates by chunk id.
+
+    A chunk found by only one retriever keeps just that retriever's
+    rank/score fields; a chunk found by both keeps both (sparse fields
+    merged onto the dense dict, since either side already carries the full
+    chunk text/metadata). Pulled out as a standalone function so the merge
+    logic is unit-testable without loading the embedding/cross-encoder
+    models or touching Chroma/Whoosh.
+    """
+    merged: dict[str, dict] = {}
+    for chunk_id, c in dense.items():
+        merged[chunk_id] = c
+    for chunk_id, c in sparse.items():
+        if chunk_id in merged:
+            merged[chunk_id]["sparse_rank"] = c["sparse_rank"]
+            merged[chunk_id]["sparse_score"] = c["sparse_score"]
+        else:
+            merged[chunk_id] = c
+    return list(merged.values())
+
+
 class HybridRetriever:
     def __init__(self, dense_k: int = 10, sparse_k: int = 10):
         self.dense_k = dense_k
@@ -44,7 +65,7 @@ class HybridRetriever:
         self.whoosh_ix = open_dir(WHOOSH_INDEX_DIR)
 
     @traceable(run_type="retriever", name="dense_search_chroma")
-    def _dense_search(self, query: str) -> Dict[str, dict]:
+    def _dense_search(self, query: str) -> dict[str, dict]:
         embedding = self.embedding_model.encode([query]).tolist()
         results = self.collection.query(query_embeddings=embedding, n_results=self.dense_k)
 
@@ -68,7 +89,7 @@ class HybridRetriever:
         return candidates
 
     @traceable(run_type="retriever", name="sparse_search_bm25")
-    def _sparse_search(self, query: str) -> Dict[str, dict]:
+    def _sparse_search(self, query: str) -> dict[str, dict]:
         candidates = {}
         with self.whoosh_ix.searcher() as searcher:
             parser = QueryParser("text", self.whoosh_ix.schema)
@@ -87,7 +108,7 @@ class HybridRetriever:
         return candidates
 
     @traceable(run_type="chain", name="cross_encoder_rerank")
-    def _rerank(self, query: str, candidates: List[dict]) -> List[dict]:
+    def _rerank(self, query: str, candidates: list[dict]) -> list[dict]:
         pairs = [(query, c["text"]) for c in candidates]
         scores = self.cross_encoder.predict(pairs)
         for c, score in zip(candidates, scores):
@@ -97,17 +118,8 @@ class HybridRetriever:
         return candidates
 
     @traceable(run_type="chain", name="hybrid_retrieve")
-    def retrieve(self, query: str, top_k: int = 5) -> List[dict]:
-        merged: Dict[str, dict] = {}
-        for chunk_id, c in self._dense_search(query).items():
-            merged[chunk_id] = c
-        for chunk_id, c in self._sparse_search(query).items():
-            if chunk_id in merged:
-                merged[chunk_id]["sparse_rank"] = c["sparse_rank"]
-                merged[chunk_id]["sparse_score"] = c["sparse_score"]
-            else:
-                merged[chunk_id] = c
-        candidates = list(merged.values())
+    def retrieve(self, query: str, top_k: int = 5) -> list[dict]:
+        candidates = merge_candidates(self._dense_search(query), self._sparse_search(query))
 
         if not candidates:
             return []

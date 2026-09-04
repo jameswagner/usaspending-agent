@@ -8,7 +8,6 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import List
 
 import chromadb
 from sentence_transformers import SentenceTransformer
@@ -18,7 +17,7 @@ EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 COLLECTION_NAME = "analysts_guide"
 
 
-def load_chunks(chunks_path: Path) -> List[dict]:
+def load_chunks(chunks_path: Path) -> list[dict]:
     with chunks_path.open(encoding="utf-8") as fh:
         return [json.loads(line) for line in fh]
 

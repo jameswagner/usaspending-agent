@@ -10,16 +10,20 @@ Usage:
 from __future__ import annotations
 
 import os
+from typing import Literal
 
 import anthropic
 from anthropic import beta_tool
 from dotenv import load_dotenv
 from langsmith import traceable
+from pydantic import BaseModel
 
 from backend.app.retrieval.hybrid import HybridRetriever
 from backend.app.tools.usaspending_client import (
     AdvancedFilters,
     AgencyFilter,
+    SpendingByCategoryResponse,
+    SpendingOverTimeResponse,
     TimePeriod,
     USASpendingAPIError,
     USASpendingClient,
@@ -111,6 +115,26 @@ def lookup_agency(name: str) -> str:
     )
 
 
+def get_spending_by_category_raw(
+    category: str,
+    agency_name: str,
+    start_date: str,
+    end_date: str,
+    limit: int = 5,
+) -> SpendingByCategoryResponse:
+    """Call the API once, return the structured response. Raises
+    USASpendingAPIError on failure — the @beta_tool wrapper decides how to
+    present that to the model; this function stays presentation-free so the
+    structured result is also available for chart-building later.
+    """
+    client = _get_usaspending_client()
+    filters = AdvancedFilters(
+        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency_name)],
+        time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
+    )
+    return client.spending_by_category(category, filters, limit=limit)
+
+
 @beta_tool
 def get_spending_by_category(
     category: str,
@@ -128,13 +152,8 @@ def get_spending_by_category(
         end_date: End of the date range, YYYY-MM-DD.
         limit: Max number of results to return (default 5).
     """
-    client = _get_usaspending_client()
-    filters = AdvancedFilters(
-        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency_name)],
-        time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
-    )
     try:
-        response = client.spending_by_category(category, filters, limit=limit)
+        response = get_spending_by_category_raw(category, agency_name, start_date, end_date, limit)
     except USASpendingAPIError as e:
         return f"This query failed: {e}. Do not substitute a different category and present it as answering the original question — tell the user this specific breakdown isn't available."
 
@@ -143,6 +162,111 @@ def get_spending_by_category(
 
     lines = [f"{r.name or r.code or 'unknown'}: ${r.amount:,.2f}" for r in response.results]
     return "\n".join(lines)
+
+
+def get_spending_over_time_raw(
+    agency_name: str,
+    start_date: str,
+    end_date: str,
+    group: str = "fiscal_year",
+) -> SpendingOverTimeResponse:
+    """Call the API once, return the structured response. Same split
+    rationale as get_spending_by_category_raw."""
+    client = _get_usaspending_client()
+    filters = AdvancedFilters(
+        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency_name)],
+        time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
+    )
+    return client.spending_over_time(filters, group=group)
+
+
+def _format_time_period(period) -> str:
+    # Wrapped in str() at assignment: TimePeriodGroup declares these fields
+    # as Optional[str], but nothing has actually exercised group="quarter"
+    # or group="month" against the live API yet, so this doesn't rely on
+    # that declared type holding at runtime.
+    label = str(period.fiscal_year or period.calendar_year or "?")
+    if period.quarter:
+        label += f" Q{period.quarter}"
+    if period.month:
+        label += f" month {period.month}"
+    return label
+
+
+@beta_tool
+def get_spending_over_time(
+    agency_name: str,
+    start_date: str,
+    end_date: str,
+    group: str = "fiscal_year",
+) -> str:
+    """Get USASpending spending trends over time for one awarding agency, grouped by period. Use this for "how has X's spending changed/trended over time" questions.
+
+    Args:
+        agency_name: The awarding agency's name, e.g. "National Science Foundation".
+        start_date: Start of the date range, YYYY-MM-DD. Data is only available from 2007-10-01 onward.
+        end_date: End of the date range, YYYY-MM-DD.
+        group: One of: fiscal_year, calendar_year, quarter, month. Default fiscal_year.
+    """
+    try:
+        response = get_spending_over_time_raw(agency_name, start_date, end_date, group)
+    except USASpendingAPIError as e:
+        return f"This query failed: {e}."
+
+    if not response.results:
+        return f"No spending-over-time data found for {agency_name} between {start_date} and {end_date}."
+
+    lines = [
+        f"{_format_time_period(r.time_period)}: ${r.aggregated_amount:,.2f}"
+        for r in response.results
+    ]
+    return "\n".join(lines)
+
+
+class ChartSpec(BaseModel):
+    chart_type: Literal["bar", "line"]
+    title: str
+    labels: list[str]
+    values: list[float]
+
+
+# Tools whose results are never chart-worthy by shape (free text / a single
+# profile), regardless of what's in the result.
+NEVER_CHART_TOOLS = {"search_guide", "lookup_agency", "search_awards"}
+
+
+def should_chart(tool_name: str, structured_result) -> ChartSpec | None:
+    """Deterministic, unit-testable chart-eligibility check keyed on the
+    actual result's cardinality — not on guessing intent from the question,
+    since the tool call has already resolved that ambiguity by the time
+    we're deciding whether to chart. A single data point reads better as
+    prose than a one-bar/one-point chart, so both branches require 2+
+    results.
+    """
+    if tool_name in NEVER_CHART_TOOLS:
+        return None
+
+    if tool_name == "get_spending_by_category":
+        if len(structured_result.results) < 2:
+            return None
+        return ChartSpec(
+            chart_type="bar",
+            title=f"Spending by {structured_result.category}",
+            labels=[r.name or r.code or "unknown" for r in structured_result.results],
+            values=[r.amount for r in structured_result.results],
+        )
+
+    if tool_name == "get_spending_over_time":
+        if len(structured_result.results) < 2:
+            return None
+        return ChartSpec(
+            chart_type="line",
+            title=f"Spending over time ({structured_result.group})",
+            labels=[_format_time_period(r.time_period) for r in structured_result.results],
+            values=[r.aggregated_amount for r in structured_result.results],
+        )
+
+    return None
 
 
 NOT_FOUND_MESSAGE = (
@@ -183,12 +307,13 @@ def _is_in_scope(question: str) -> bool:
 
 SYSTEM_PROMPT = (
     "You answer questions about USASpending.gov federal spending data. You "
-    "have three tools: search_guide (conceptual/definitional questions about "
+    "have four tools: search_guide (conceptual/definitional questions about "
     "USASpending data, terms, and fields), lookup_agency (what a specific "
-    "federal agency is, or its toptier code), and get_spending_by_category "
+    "federal agency is, or its toptier code), get_spending_by_category "
     "(an agency's spending broken down by NAICS/PSC/sub-agency/etc. for a "
-    "date range). You must call at least one of these tools before writing "
-    "any answer, for every question, with no "
+    "date range), and get_spending_over_time (an agency's spending trend "
+    "across fiscal years/quarters/months). You must call at least one of "
+    "these tools before writing any answer, for every question, with no "
     "exceptions — including questions that seem unrelated to federal "
     "spending, general-knowledge questions, greetings, or anything else. "
     "Never answer from your own knowledge without calling a tool first, "
@@ -214,7 +339,7 @@ def ask(question: str) -> str:
         model=MODEL,
         max_tokens=2048,
         system=SYSTEM_PROMPT,
-        tools=[search_guide, lookup_agency, get_spending_by_category],
+        tools=[search_guide, lookup_agency, get_spending_by_category, get_spending_over_time],
         messages=[{"role": "user", "content": question}],
     )
 

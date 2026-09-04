@@ -51,7 +51,8 @@
     padding: 2px 8px;
     border-radius: 10px;
   }
-  #chart-container { margin-top: 24px; max-width: 640px; display: none; }
+  #charts-container { margin-top: 24px; }
+  .chart-box { max-width: 640px; margin-bottom: 28px; }
   #citations {
     margin-top: 20px;
     padding-top: 14px;
@@ -75,7 +76,7 @@
   <div id="answer"></div>
   <span id="source-type" style="display:none;"></span>
 
-  <div id="chart-container"><canvas id="chart"></canvas></div>
+  <div id="charts-container"></div>
 
   <div id="citations" style="display:none;">
     <h3>Sources</h3>
@@ -88,11 +89,10 @@
   const statusEl = document.getElementById('status');
   const answerEl = document.getElementById('answer');
   const sourceTypeEl = document.getElementById('source-type');
-  const chartContainer = document.getElementById('chart-container');
-  const chartCanvas = document.getElementById('chart');
+  const chartsContainer = document.getElementById('charts-container');
   const citationsBlock = document.getElementById('citations');
   const citationsList = document.getElementById('citations-list');
-  let chartInstance = null;
+  let chartInstances = [];
 
   async function ask() {
     const question = questionInput.value.trim();
@@ -103,10 +103,11 @@
     statusEl.textContent = 'Thinking...';
     answerEl.innerHTML = '';
     sourceTypeEl.style.display = 'none';
-    chartContainer.style.display = 'none';
     citationsBlock.style.display = 'none';
     citationsList.innerHTML = '';
-    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+    chartInstances.forEach(c => c.destroy());
+    chartInstances = [];
+    chartsContainer.innerHTML = '';
 
     try {
       const resp = await fetch('/ask', {
@@ -130,20 +131,25 @@
         citationsBlock.style.display = 'block';
       }
 
-      if (data.chart_data) {
-        chartContainer.style.display = 'block';
-        chartInstance = new Chart(chartCanvas, {
-          type: data.chart_data.chart_type,
+      (data.charts || []).forEach(chart => {
+        const box = document.createElement('div');
+        box.className = 'chart-box';
+        const canvas = document.createElement('canvas');
+        box.appendChild(canvas);
+        chartsContainer.appendChild(box);
+
+        chartInstances.push(new Chart(canvas, {
+          type: chart.chart_type,
           data: {
-            labels: data.chart_data.labels,
-            datasets: [{ label: data.chart_data.title, data: data.chart_data.values }],
+            labels: chart.labels,
+            datasets: [{ label: chart.title, data: chart.values }],
           },
           options: {
             responsive: true,
-            plugins: { title: { display: true, text: data.chart_data.title } },
+            plugins: { title: { display: true, text: chart.title } },
           },
-        });
-      }
+        }));
+      });
     } catch (err) {
       statusEl.className = 'error';
       statusEl.textContent = err.message;

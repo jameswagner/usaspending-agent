@@ -86,19 +86,24 @@ def warm_up() -> None:
 # thread pool, so concurrent requests genuinely run at the same time.
 # contextvars.ContextVar gives each call to ask() its own isolated buffer
 # automatically, the same mechanism LangSmith's own tracing relies on.
-_tool_call_log: contextvars.ContextVar[list[tuple[str, object]] | None] = contextvars.ContextVar(
+_tool_call_log: contextvars.ContextVar[list[tuple[str, object, dict]] | None] = contextvars.ContextVar(
     "tool_call_log", default=None
 )
 
 
-def _record_tool_call(tool_name: str, result: object) -> None:
+def _record_tool_call(tool_name: str, result: object, context: dict | None = None) -> None:
     """Append to the current call's capture buffer, if one is active (set by
     ask() before starting the tool loop). No-op outside ask() - e.g. a tool
     function invoked directly, as the dev_tools scripts and tests do.
+
+    context carries call-specific info the structured result itself doesn't
+    include (e.g. agency_name, since the API response doesn't echo back the
+    filters it was queried with) - used for things like chart titles that
+    need to distinguish multiple calls to the same tool in one turn.
     """
     log = _tool_call_log.get()
     if log is not None:
-        log.append((tool_name, result))
+        log.append((tool_name, result, context or {}))
 
 
 @beta_tool
@@ -193,7 +198,7 @@ def get_spending_by_category(
     except USASpendingAPIError as e:
         return f"This query failed: {e}. Do not substitute a different category and present it as answering the original question — tell the user this specific breakdown isn't available."
 
-    _record_tool_call("get_spending_by_category", response)
+    _record_tool_call("get_spending_by_category", response, {"agency_name": agency_name})
 
     if not response.results:
         return f"No {category} spending data found for {agency_name} between {start_date} and {end_date}."
@@ -255,7 +260,7 @@ def get_spending_over_time(
     except USASpendingAPIError as e:
         return f"This query failed: {e}."
 
-    _record_tool_call("get_spending_over_time", response)
+    _record_tool_call("get_spending_over_time", response, {"agency_name": agency_name})
 
     if not response.results:
         return f"No spending-over-time data found for {agency_name} between {start_date} and {end_date}."
@@ -375,23 +380,33 @@ class Citation(BaseModel):
 NEVER_CHART_TOOLS = {"search_guide", "lookup_agency", "search_awards"}
 
 
-def should_chart(tool_name: str, structured_result) -> ChartSpec | None:
+def should_chart(tool_name: str, structured_result, context: dict | None = None) -> ChartSpec | None:
     """Deterministic, unit-testable chart-eligibility check keyed on the
     actual result's cardinality — not on guessing intent from the question,
     since the tool call has already resolved that ambiguity by the time
     we're deciding whether to chart. A single data point reads better as
     prose than a one-bar/one-point chart, so both branches require 2+
     results.
+
+    context (e.g. {"agency_name": ...}) is optional and only used to make
+    the title distinguish multiple charts of the same type in one turn
+    (e.g. comparing two agencies' trends) - omitting it just yields a
+    more generic title, not a failure.
     """
     if tool_name in NEVER_CHART_TOOLS:
         return None
 
+    agency_name = (context or {}).get("agency_name")
+
     if tool_name == "get_spending_by_category":
         if len(structured_result.results) < 2:
             return None
+        title = f"Spending by {structured_result.category}"
+        if agency_name:
+            title += f" — {agency_name}"
         return ChartSpec(
             chart_type="bar",
-            title=f"Spending by {structured_result.category}",
+            title=title,
             labels=[r.name or r.code or "unknown" for r in structured_result.results],
             values=[r.amount for r in structured_result.results],
         )
@@ -399,9 +414,12 @@ def should_chart(tool_name: str, structured_result) -> ChartSpec | None:
     if tool_name == "get_spending_over_time":
         if len(structured_result.results) < 2:
             return None
+        title = f"Spending over time ({structured_result.group})"
+        if agency_name:
+            title += f" — {agency_name}"
         return ChartSpec(
             chart_type="line",
-            title=f"Spending over time ({structured_result.group})",
+            title=title,
             labels=[_format_time_period(r.time_period) for r in structured_result.results],
             values=[r.aggregated_amount for r in structured_result.results],
         )
@@ -475,7 +493,7 @@ SYSTEM_PROMPT = (
 
 class AgentResult(BaseModel):
     answer_text: str
-    chart: ChartSpec | None = None
+    charts: list[ChartSpec] = []
     citations: list[Citation] = []
 
 
@@ -506,22 +524,26 @@ def ask(question: str) -> AgentResult:
 
     answer_text = next((b.text for b in final.content if b.type == "text"), "")
 
-    # If a turn calls more than one chart-worthy tool, take the first one -
-    # the response schema only has one chart_data slot, and that's a
-    # deliberate simplification rather than a silent default.
-    chart = None
-    for tool_name, result in _tool_call_log.get() or []:
-        chart = should_chart(tool_name, result)
-        if chart is not None:
-            break
-
-    # Guide citations only for now - live API-call citations (cite the
-    # query parameters, since there's no "page" for a live lookup) and
-    # verifying any arithmetic the model does on top of retrieved numbers
-    # are separate, harder problems, deferred (see BACKLOG.md).
+    # One chart per chart-worthy tool call in the turn (e.g. a "compare NSF
+    # and Education's spending trend" question makes two get_spending_over_time
+    # calls, each its own chart) - previously took only the first and
+    # silently dropped the rest, which a real two-agency comparison question
+    # surfaced immediately. Deliberately not merged into one multi-series
+    # chart: two calls aren't guaranteed to cover the same fiscal years, and
+    # aligning them onto one shared axis is real logic this doesn't attempt.
+    #
+    # Guide citations only for now - live API-call citations (cite the query
+    # parameters, since there's no "page" for a live lookup) and verifying
+    # any arithmetic the model does on top of retrieved numbers are separate,
+    # harder problems, deferred (see BACKLOG.md).
+    charts: list[ChartSpec] = []
     seen_chunk_ids: set[str] = set()
     citations: list[Citation] = []
-    for tool_name, result in _tool_call_log.get() or []:
+    for tool_name, result, context in _tool_call_log.get() or []:
+        chart = should_chart(tool_name, result, context)
+        if chart is not None:
+            charts.append(chart)
+
         if tool_name != "search_guide":
             continue
         for chunk in result:
@@ -530,7 +552,7 @@ def ask(question: str) -> AgentResult:
             seen_chunk_ids.add(chunk["id"])
             citations.append(Citation(chunk_id=chunk["id"], source=chunk["source"], page=chunk["page_start"]))
 
-    return AgentResult(answer_text=answer_text, chart=chart, citations=citations)
+    return AgentResult(answer_text=answer_text, charts=charts, citations=citations)
 
 
 def main():
@@ -543,11 +565,11 @@ def main():
     print(f"[model={MODEL}]")
     result = ask(args.question)
     print(result.answer_text)
-    if result.chart:
+    for chart in result.charts:
         print()
-        print(f"[chart: {result.chart.chart_type}] {result.chart.title}")
-        print(f"  labels: {result.chart.labels}")
-        print(f"  values: {result.chart.values}")
+        print(f"[chart: {chart.chart_type}] {chart.title}")
+        print(f"  labels: {chart.labels}")
+        print(f"  values: {chart.values}")
     if result.citations:
         print()
         print("[citations]")

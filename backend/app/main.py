@@ -30,7 +30,7 @@ class AskRequest(BaseModel):
 class AskResponse(BaseModel):
     answer_text: str
     source_type: str
-    chart_data: dict | None = None
+    charts: list[dict] = []
     citations: list[Citation] = []
 
 
@@ -46,11 +46,10 @@ def ask(request: AskRequest) -> AskResponse:
     # live API-call citation (query parameters, no "page" to point to) is
     # a separate, deferred piece. See BACKLOG.md.
     source_type = "not_found" if result.answer_text == NOT_FOUND_MESSAGE else "agent"
-    chart_data = result.chart.model_dump() if result.chart else None
     return AskResponse(
         answer_text=result.answer_text,
         source_type=source_type,
-        chart_data=chart_data,
+        charts=[c.model_dump() for c in result.charts],
         citations=result.citations,
     )
 

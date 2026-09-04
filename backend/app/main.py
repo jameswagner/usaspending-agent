@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 load_dotenv()
@@ -52,3 +53,8 @@ def ask(request: AskRequest) -> AskResponse:
         chart_data=chart_data,
         citations=result.citations,
     )
+
+
+# Minimal no-build frontend (plain HTML/JS, no npm) - mounted after the API
+# routes above, at /ui rather than "/", so it can't shadow /ask or /health.
+app.mount("/ui", StaticFiles(directory="frontend", html=True), name="ui")

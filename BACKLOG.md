@@ -18,18 +18,37 @@ reads that instead of the hardcoded list. Needs a scheduler + a persistence
 layer we don't have yet — worth doing if this becomes more than a side
 project, not before.
 
-## POST /ask returns empty citations
+## POST /ask returns empty citations AND null chart_data — in-progress state
 
-`main.py` now calls the tool-calling agent (`backend/app/agent.py`) instead of
-the old retrieve-then-synthesize flow, but the agent's tools (`search_guide`,
-`lookup_agency`, `get_spending_by_category`) return plain text, not structured
-chunk/agency metadata — so there's no clean list to build `AskResponse.citations`
-from anymore. It's returned empty rather than faked.
+`main.py` calls the tool-calling agent (`backend/app/agent.py`) instead of
+the old retrieve-then-synthesize flow, but the agent's tools return plain
+text to the LLM, not structured metadata — so there's no clean list to
+build `AskResponse.citations` from, and `chart_data` is always `None`.
 
-Idea: have each tool return structured data (text + source metadata) instead
-of a plain string, and have `agent.ask()` walk the tool_runner's message
-history to collect which sources were actually used across the turn. Real
-work, not a quick fix — deferred rather than done half-right.
+**Current state of the chart_data half (as of 2026-09-04):** `get_spending_by_category`
+and `get_spending_over_time` are each split into a `..._raw()` function
+(calls the API once, returns the structured Pydantic response) and the
+`@beta_tool`-decorated wrapper (formats that into the string the LLM sees,
+behavior unchanged). `should_chart(tool_name, structured_result) -> ChartSpec | None`
+exists in `agent.py`, is unit tested (`tests/test_agent.py`), and is
+verified live to produce correct bar/line specs from real API data.
+
+**Not yet done, deliberately staged as a separate decision:** nothing
+in `agent.ask()`'s tool-calling loop captures which `_raw()` result
+corresponds to which tool call as the loop executes, and nothing in
+`main.py` reads a captured result to populate `chart_data`. The
+mechanism for "capture the structured result alongside the string result
+during the loop, make it available after the loop ends" hasn't been
+designed yet — needs its own discussion before implementing, since it
+touches the tool-calling loop shared by every tool, not just the two
+chart-relevant ones.
+
+The citations half (structured source metadata, not just chart data) is
+a related but separate deferred idea: have each tool return structured
+data including source metadata, and have `agent.ask()` walk the
+tool_runner's message history to collect which sources were actually
+used across the turn. Real work, not a quick fix — deferred rather than
+done half-right.
 
 ## Tied rerank scores in sanity_check.py
 

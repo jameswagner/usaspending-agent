@@ -10,3 +10,4 @@ data/
 .ruff_cache/
 *.egg-info/
 DEMO_SCRIPT.md
+HUMAN_INTERVENTIONS.md

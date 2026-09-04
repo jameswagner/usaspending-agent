@@ -1,4 +1,4 @@
-"""FastAPI app exposing POST /ask, backed by the hybrid dense+BM25 retriever."""
+"""FastAPI app exposing POST /ask, backed by the tool-calling agent."""
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -9,26 +9,12 @@ from pydantic import BaseModel
 
 load_dotenv()
 
-from backend.app.generation import synthesize_answer
-from backend.app.retrieval.hybrid import (
-    HybridRetriever,
-)
-
-# Calibrated via dev_tools/calibrate_threshold.py (LLM-generated labeled
-# question set, threshold chosen to best separate the two groups): the
-# data-driven optimum was -1.89 on that run; using -2.0 for a small safety
-# margin rather than the razor-exact value. Previously an eyeballed -5.0,
-# which calibration showed was too permissive (let some "sounds relevant
-# but needs live data" negatives through).
-RERANK_CONFIDENCE_THRESHOLD = -2.0
-
-retriever: HybridRetriever | None = None
+from backend.app.agent import NOT_FOUND_MESSAGE, ask as agent_ask, warm_up
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global retriever
-    retriever = HybridRetriever()
+    warm_up()
     yield
 
 
@@ -59,19 +45,9 @@ def health() -> dict:
 
 @app.post("/ask", response_model=AskResponse)
 def ask(request: AskRequest) -> AskResponse:
-    results = retriever.retrieve(request.question, top_k=3)
-    matches = [r for r in results if r["rerank_score"] > RERANK_CONFIDENCE_THRESHOLD]
-
-    if not matches:
-        return AskResponse(
-            answer_text="I couldn't find anything in the Analyst's Guide that confidently answers this question.",
-            source_type="document",
-            citations=[],
-        )
-
-    answer_text = synthesize_answer(request.question, matches)
-    citations = [
-        Citation(chunk_id=m["id"], source=m["source"], page=m["page_start"])
-        for m in matches
-    ]
-    return AskResponse(answer_text=answer_text, source_type="document", citations=citations)
+    answer_text = agent_ask(request.question)
+    # The agent's tools return plain text, not structured chunk/agency
+    # metadata, so there's no clean citation list to build yet - tracked
+    # in BACKLOG.md as a real gap, not silently dropped.
+    source_type = "not_found" if answer_text == NOT_FOUND_MESSAGE else "agent"
+    return AskResponse(answer_text=answer_text, source_type=source_type, citations=[])

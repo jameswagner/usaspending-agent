@@ -64,6 +64,16 @@ def _get_usaspending_client() -> USASpendingClient:
     return _usaspending_client
 
 
+def warm_up() -> None:
+    """Pre-load the retriever's models and both clients once, at server
+    startup, instead of paying that cost on whichever request happens to
+    be first.
+    """
+    _get_retriever()
+    _get_usaspending_client()
+    _get_client()
+
+
 @beta_tool
 def search_guide(query: str) -> str:
     """Search the Analyst's Guide to Federal Spending Data for conceptual or definitional information about USASpending — what a term means, how a data element is defined, which fields contain what.

@@ -225,6 +225,29 @@ project, but if this were ever exposed to untrusted traffic, a `limit`
 cap, a per-turn tool-call cap, and rate limiting on `/ask` itself (not yet
 implemented anywhere) would be the first things to add.
 
+## Idea: calibrate the scope classifier the way RERANK_CONFIDENCE_THRESHOLD was calibrated
+
+Raised while red-teaming (2026-09-05): several jailbreak/extraction test
+questions got rejected by `_is_in_scope` (`agent/scope.py`) before the tool
+loop ran, which is the desired outcome for those — but along the way, a
+plain, non-adversarial question ("what is NSF's mission?") also got
+rejected, even though `lookup_agency`'s own description says it answers
+"what a specific federal agency is." Whether that's actually a bug is a
+real, debatable design question — a spending site's assistant answering
+pure agency-identity questions isn't obviously in scope — not something to
+decide from 2-3 hand-picked examples the way it was initially checked.
+
+Same shape as the `RERANK_CONFIDENCE_THRESHOLD` story
+(`retrieval/dev_tools/calibrate_threshold.py`): build a labeled set of
+questions spanning clearly-in-scope, clearly-out-of-scope, and boundary
+cases (agency-identity questions, conceptual guide questions the tool set
+can actually answer), decide the *intended* label for each based on what
+the tools can do — not on the classifier's current behavior — then measure
+where `_is_in_scope`'s actual YES/NO boundary falls against that labeled
+set. Would turn "this one example looked wrong" into an actual measured
+error rate on a defined category, the same rigor upgrade that threshold
+calibration already got. Not started.
+
 ## Tied rerank scores in sanity_check.py
 
 The `NAICS` query in `backend/app/retrieval/dev_tools/sanity_check.py` has two results

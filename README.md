@@ -65,7 +65,8 @@ uv run ruff check .
 ```
 backend/app/
   main.py                 FastAPI app (POST /ask, GET /health, serves frontend/ at /ui)
-  agent.py                Tool-calling agent: tool definitions, scope gate, chart/citation logic
+  agent/                  Tool-calling agent (package): clients, tool definitions, scope gate,
+                            chart/citation logic (response_shaping.py), orchestrator, CLI
   retrieval/
     hybrid.py              Dense+sparse retriever with cross-encoder reranking (used at request time)
     pipeline/               One-off scripts: PDF -> chunks -> indexes

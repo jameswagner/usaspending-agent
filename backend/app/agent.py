@@ -146,11 +146,28 @@ def lookup_agency(name: str) -> str:
     )
 
 
+def fiscal_year_to_date_range(start_fiscal_year: int, end_fiscal_year: int) -> tuple[str, str]:
+    """Convert a fiscal year range to the API's YYYY-MM-DD date bounds.
+
+    Federal fiscal years are named by the calendar year they END in - FY2021
+    runs 2020-10-01 through 2021-09-30. Doing this conversion in code rather
+    than asking the model to compute date strings directly closes off a
+    demonstrated failure mode: asked for "2021 to 2024," the model passed
+    start_date="2021-10-01" - the start of FY2022, not FY2021 - an off-by-
+    one-fiscal-year error in date arithmetic the model has no reliable way
+    to get right consistently. The model only has to identify which years
+    are being asked about now, not compute a date boundary.
+    """
+    start_date = f"{start_fiscal_year - 1}-10-01"
+    end_date = f"{end_fiscal_year}-09-30"
+    return start_date, end_date
+
+
 def get_spending_by_category_raw(
     category: str,
     agency_name: str,
-    start_date: str,
-    end_date: str,
+    start_fiscal_year: int,
+    end_fiscal_year: int,
     limit: int = 5,
 ) -> SpendingByCategoryResponse:
     """Call the API once, return the structured response. Raises
@@ -169,6 +186,7 @@ def get_spending_by_category_raw(
     if agency is None:
         raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
 
+    start_date, end_date = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
     filters = AdvancedFilters(
         agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)],
         time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
@@ -180,28 +198,28 @@ def get_spending_by_category_raw(
 def get_spending_by_category(
     category: str,
     agency_name: str,
-    start_date: str,
-    end_date: str,
+    start_fiscal_year: int,
+    end_fiscal_year: int,
     limit: int = 5,
 ) -> str:
-    """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for one awarding agency and date range, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions.
+    """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for one awarding agency and fiscal year range, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions.
 
     Args:
         category: One of: awarding_agency, awarding_subagency, cfda, country, county, defc, district, federal_account, funding_agency, funding_subagency, naics, psc, recipient_duns, state_territory. (Only these are live-verified; other category names the API contract lists, like object_class or tas, 404 in practice.)
         agency_name: The awarding agency's name, e.g. "National Science Foundation".
-        start_date: Start of the date range, YYYY-MM-DD. Data is only available from 2007-10-01 onward.
-        end_date: End of the date range, YYYY-MM-DD.
+        start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
+        end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
         limit: Max number of results to return (default 5).
     """
     try:
-        response = get_spending_by_category_raw(category, agency_name, start_date, end_date, limit)
+        response = get_spending_by_category_raw(category, agency_name, start_fiscal_year, end_fiscal_year, limit)
     except USASpendingAPIError as e:
         return f"This query failed: {e}. Do not substitute a different category and present it as answering the original question — tell the user this specific breakdown isn't available."
 
     _record_tool_call("get_spending_by_category", response, {"agency_name": agency_name})
 
     if not response.results:
-        return f"No {category} spending data found for {agency_name} between {start_date} and {end_date}."
+        return f"No {category} spending data found for {agency_name} between FY{start_fiscal_year} and FY{end_fiscal_year}."
 
     lines = [f"{r.name or r.code or 'unknown'}: ${r.amount:,.2f}" for r in response.results]
     return "\n".join(lines)
@@ -209,8 +227,8 @@ def get_spending_by_category(
 
 def get_spending_over_time_raw(
     agency_name: str,
-    start_date: str,
-    end_date: str,
+    start_fiscal_year: int,
+    end_fiscal_year: int,
     group: str = "fiscal_year",
 ) -> SpendingOverTimeResponse:
     """Call the API once, return the structured response. Same split
@@ -220,6 +238,7 @@ def get_spending_over_time_raw(
     if agency is None:
         raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
 
+    start_date, end_date = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
     filters = AdvancedFilters(
         agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)],
         time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
@@ -228,11 +247,16 @@ def get_spending_over_time_raw(
 
 
 def _format_time_period(period) -> str:
-    # Wrapped in str() at assignment: TimePeriodGroup declares these fields
-    # as Optional[str], but nothing has actually exercised group="quarter"
-    # or group="month" against the live API yet, so this doesn't rely on
-    # that declared type holding at runtime.
-    label = str(period.fiscal_year or period.calendar_year or "?")
+    # Labeled "FY"/"CY" explicitly (not a bare year number) so the label
+    # unambiguously carries fiscal-vs-calendar-year meaning through to
+    # whatever prose the model writes from it, rather than depending on the
+    # model to re-add that context itself.
+    if period.fiscal_year:
+        label = f"FY{period.fiscal_year}"
+    elif period.calendar_year:
+        label = f"CY{period.calendar_year}"
+    else:
+        label = "?"
     if period.quarter:
         label += f" Q{period.quarter}"
     if period.month:
@@ -243,27 +267,27 @@ def _format_time_period(period) -> str:
 @beta_tool
 def get_spending_over_time(
     agency_name: str,
-    start_date: str,
-    end_date: str,
+    start_fiscal_year: int,
+    end_fiscal_year: int,
     group: str = "fiscal_year",
 ) -> str:
     """Get USASpending spending trends over time for one awarding agency, grouped by period. Use this for "how has X's spending changed/trended over time" questions.
 
     Args:
         agency_name: The awarding agency's name, e.g. "National Science Foundation".
-        start_date: Start of the date range, YYYY-MM-DD. Data is only available from 2007-10-01 onward.
-        end_date: End of the date range, YYYY-MM-DD.
+        start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
+        end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
         group: One of: fiscal_year, calendar_year, quarter, month. Default fiscal_year.
     """
     try:
-        response = get_spending_over_time_raw(agency_name, start_date, end_date, group)
+        response = get_spending_over_time_raw(agency_name, start_fiscal_year, end_fiscal_year, group)
     except USASpendingAPIError as e:
         return f"This query failed: {e}."
 
     _record_tool_call("get_spending_over_time", response, {"agency_name": agency_name})
 
     if not response.results:
-        return f"No spending-over-time data found for {agency_name} between {start_date} and {end_date}."
+        return f"No spending-over-time data found for {agency_name} between FY{start_fiscal_year} and FY{end_fiscal_year}."
 
     lines = [
         f"{_format_time_period(r.time_period)}: ${r.aggregated_amount:,.2f}"
@@ -297,8 +321,8 @@ SEARCH_AWARDS_FIELDS = [
 
 def search_awards_raw(
     agency_name: str,
-    start_date: str,
-    end_date: str,
+    start_fiscal_year: int,
+    end_fiscal_year: int,
     award_type: str = "contracts",
     limit: int = 5,
 ) -> list[dict]:
@@ -317,6 +341,7 @@ def search_awards_raw(
             f"Unknown award_type '{award_type}'. Must be one of: {', '.join(AWARD_TYPE_GROUPS)}"
         )
 
+    start_date, end_date = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
     filters = AdvancedFilters(
         agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)],
         time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
@@ -328,29 +353,29 @@ def search_awards_raw(
 @beta_tool
 def search_awards(
     agency_name: str,
-    start_date: str,
-    end_date: str,
+    start_fiscal_year: int,
+    end_fiscal_year: int,
     award_type: str = "contracts",
     limit: int = 5,
 ) -> str:
-    """Search for individual award records (specific contracts, grants, or loans) for one awarding agency and date range. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead.
+    """Search for individual award records (specific contracts, grants, or loans) for one awarding agency and fiscal year range. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead.
 
     Args:
         agency_name: The awarding agency's name, e.g. "National Science Foundation".
-        start_date: Start of the date range, YYYY-MM-DD. Data is only available from 2007-10-01 onward.
-        end_date: End of the date range, YYYY-MM-DD.
+        start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
+        end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
         award_type: One of: contracts, grants, loans. Default contracts.
         limit: Max number of results to return (default 5).
     """
     try:
-        results = search_awards_raw(agency_name, start_date, end_date, award_type, limit)
+        results = search_awards_raw(agency_name, start_fiscal_year, end_fiscal_year, award_type, limit)
     except USASpendingAPIError as e:
         return f"This query failed: {e}."
 
     _record_tool_call("search_awards", results)
 
     if not results:
-        return f"No {award_type} awards found for {agency_name} between {start_date} and {end_date}."
+        return f"No {award_type} awards found for {agency_name} between FY{start_fiscal_year} and FY{end_fiscal_year}."
 
     lines = []
     for r in results:
@@ -469,11 +494,11 @@ SYSTEM_PROMPT = (
     "USASpending data, terms, and fields), lookup_agency (what a specific "
     "federal agency is, or its toptier code), get_spending_by_category "
     "(an agency's spending broken down by NAICS/PSC/sub-agency/etc. for a "
-    "date range), get_spending_over_time (an agency's spending trend "
+    "fiscal year range), get_spending_over_time (an agency's spending trend "
     "across fiscal years/quarters/months), and search_awards (individual "
-    "contract/grant/loan records for an agency and date range — use this "
-    "for 'show me awards from X' or 'who received money from X', not for "
-    "aggregate breakdowns or trends). You must call at least one of "
+    "contract/grant/loan records for an agency and fiscal year range — use "
+    "this for 'show me awards from X' or 'who received money from X', not "
+    "for aggregate breakdowns or trends). You must call at least one of "
     "these tools before writing any answer, for every question, with no "
     "exceptions — including questions that seem unrelated to federal "
     "spending, general-knowledge questions, greetings, or anything else. "
@@ -487,7 +512,12 @@ SYSTEM_PROMPT = (
     "plainly. Do not silently substitute a different category, agency, or "
     "time period and present those results as if they answered the "
     "original question — if you use different parameters than what was "
-    "asked because the exact request failed, say so explicitly."
+    "asked because the exact request failed, say so explicitly. These "
+    "tools use federal fiscal years (FY2021 = October 2020-September "
+    "2021, named by the year it ends in) — always label years explicitly "
+    "as fiscal years (e.g. 'FY2021' or 'fiscal year 2021') in your answer, "
+    "never a bare year number, since it is easily confused with a "
+    "calendar year."
 )
 
 

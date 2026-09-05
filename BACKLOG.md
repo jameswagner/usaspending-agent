@@ -102,17 +102,93 @@ trusting model arithmetic) is the same one still open for the "verifying
 retrieved-number arithmetic" problem above, and it's a useful example
 precedent for whoever tackles that one.
 
-**Genuinely unsolved, and a different kind of problem:** citing the raw data
-behind a spending answer doesn't verify any arithmetic the model does *on
-top of* that data in prose (e.g. "these top two categories account for over
-$458 million" — a sum the model computed, not a number the API returned).
-A citation to the underlying query would vouch for the raw numbers being
-real, not for whether the model added them correctly. The fix that fits how
-this project has generally handled model-trust problems (code-enforced
-correctness over prompt-trust, e.g. the agency-name-resolution fix) would be
-to stop letting the model compute aggregates freely - have the tool's own
-formatting code pre-compute verified totals for the model to reference
-instead - but that's a bigger behavior change, not attempted yet.
+**Fixed (2026-09-05) — see "Model doing arithmetic in prose" below.** Citing
+the raw data behind a spending answer never verified any arithmetic the
+model did *on top of* that data in prose (e.g. "these top two categories
+account for over $458 million" — a sum the model computed, not a number the
+API returned). A citation to the underlying query vouches for the raw
+numbers being real, not for whether the model added them correctly.
+
+## Fixed: model doing arithmetic in prose — six typed tools + code_execution fallback
+
+Raised by the user directly: after fixing the fiscal-year date-arithmetic
+bug above with a code-enforced approach, the same class of problem was
+still open for percent-change, ratios, sums, and rankings the model
+computes over numbers tool results already returned — "these two
+categories account for over $458 million" was never a number any tool
+actually returned, just the model's own uncomputed addition.
+
+**Six typed tools** (2026-09-05, `backend/app/agent/arithmetic_tools.py`):
+`sum_values`, `average`, `percentage_of`, `delta`, `ratio`, `rank_values` —
+deterministic, unit-tested (24 tests) pure functions covering totals,
+shares of a whole, before/after change over time, same-period cross-entity
+comparison, and ranking. Deliberately not a generic `calculate(expression)`
+tool (re-opens the "trust the model to get the math right" problem this
+closes; the Anthropic cookbook's own `calculator_tool.ipynb` example does
+this and calls it out as bad practice) and deliberately not `code_execution`
+for the common cases (disproportionate sandbox billing for simple
+arithmetic). `percentage_of`/`ratio`/`delta` each name the other two in
+their docstrings so the model doesn't reach for the wrong one (unit-tested
+via `TestDisambiguationDocstrings`, so the disambiguation can't silently
+drift out of the code). `sum_values`/`average`/`delta` take an
+`as_currency` flag (default `True`) rather than assuming a unit — the model
+already knows from the prior tool call it read the numbers from whether
+they're dollar amounts, so this is a presentation choice, not a correctness
+one. Wired into `orchestrator.py`'s tool list and system prompt; verified
+live (asked for NSF's top 2 NAICS categories and their total, the model
+called `get_spending_by_category` then `sum_values` with the exact two
+amounts, not its own addition).
+
+**`code_execution` fallback** (2026-09-05): Anthropic's server-side sandbox
+tool (`code_execution_20260521` — latest version; no `anthropic-beta` header
+required for any current version, confirmed against current docs, not
+assumed) for calculations the six typed tools don't cover — multi-step
+combinations of their outputs, statistics none of them compute (median,
+standard deviation), or an explicitly requested calculation type. System
+prompt tells the model to prefer the six typed tools whenever they apply
+and use `code_execution` only when they don't; verified live both
+directions (a standard-deviation question correctly used `code_execution`,
+a sum-of-two-categories question correctly used `sum_values`, not
+`code_execution`).
+
+Citation handling required new logic, not the `_record_tool_call()`-inside-
+a-function pattern every other tool uses: `code_execution` is server-side,
+not one of our `@beta_tool` functions, so there's no function of ours in
+the call path. `tools.py`'s new `_record_code_execution_calls(message)`
+scans each message's content for `bash_code_execution` tool-use/result
+pairs (server tools put both in the same message, unlike our own tools'
+client round-trip) and records them the normal way; `build_tool_citation`
+cites the actual command that ran, not just "code was run." Only
+`bash_code_execution` is handled — `text_editor_code_execution` (file
+view/create/edit) calls aren't recorded, since this fallback's intended use
+is expected to run as Bash/Python commands, not file edits; would silently
+go uncited if that assumption turns out wrong. `code_execution` added to
+`NEVER_CHART_TOOLS` (single derived value, not a series).
+
+**Real bug found via live verification, not anticipated:** `ask()` took the
+*first* text block in the final message (`next(...)`) as the answer.
+Every other tool requires a full client round-trip, so a final message
+only ever had one text block — safe until now. A server-side tool's
+tool_use/result appear *inline* within a message that can also carry text
+before and after them, and Claude's normal tool-use behavior is to narrate
+before calling a tool ("Now I'll calculate the standard deviation..."). A
+live test asking for a standard deviation returned exactly that narration
+sentence as the entire answer, silently discarding the real synthesized
+answer (with the actual computed number) that came after the tool result
+in the same message. Fixed by taking the *last* text block instead — a
+strict generalization, not a behavior change, for every other tool (which
+never had more than one candidate block anyway). Considered concatenating
+all text blocks instead of taking the last one; rejected because Claude's
+narrate-before-tool-call behavior is the documented norm, not an edge
+case, so concatenation would prepend a throwaway "Now I'll calculate..."
+sentence onto *every* `code_execution`-touched answer — a near-certain
+cosmetic regression traded against a narrower, less likely risk (an
+earlier block holding content the last block doesn't restate).
+
+Opt-in verification script: `backend/app/agent/dev_tools/verify_code_execution.py`
+(manual, not in CI, real billed calls — code_execution also bills a
+5-minute sandbox-time minimum per Anthropic's pricing, separate from token
+cost).
 
 ## Red team: data-injection via tool-returned text — safe so far, one gap found along the way
 

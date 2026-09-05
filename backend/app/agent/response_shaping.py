@@ -99,7 +99,7 @@ class ToolCitation(BaseModel):
 
 # Tools whose results are never chart-worthy by shape (free text / a single
 # profile), regardless of what's in the result.
-NEVER_CHART_TOOLS = {"search_guide", "lookup_agency", "search_awards"}
+NEVER_CHART_TOOLS = {"search_guide", "lookup_agency", "search_awards", "code_execution"}
 
 
 def should_chart(tool_name: str, structured_result, context: dict | None = None) -> ChartSpec | None:
@@ -209,5 +209,18 @@ def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
         )
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+
+    if tool_name == "code_execution":
+        # Cite the actual command that ran, not just "code was run" - a
+        # user or auditor should be able to see what was computed and from
+        # what, the same way a spending tool's citation shows the query
+        # that was run, not just that a call succeeded.
+        command = context.get("command", "")
+        shown_command = command if len(command) <= 200 else f"{command[:200]}..."
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"command": command},
+            description=f"Code execution: {shown_command}",
+        )
 
     return None

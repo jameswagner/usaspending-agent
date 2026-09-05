@@ -28,6 +28,7 @@ from .response_shaping import (
 )
 from .scope import _is_in_scope
 from .tools import (
+    _record_code_execution_calls,
     _tool_call_log,
     get_spending_by_category,
     get_spending_over_time,
@@ -35,6 +36,16 @@ from .tools import (
     search_awards,
     search_guide,
 )
+
+# code_execution_20260521 is the latest tool version - on Haiku 4.5 (the
+# default AGENT_MODEL) it behaves identically to code_execution_20250825
+# (no REPL persistence/programmatic tool calling available on Haiku
+# regardless), so there's no cost to using the latest version now, and it
+# means nothing needs to change here if AGENT_MODEL is ever swapped to a
+# more capable model. No anthropic-beta header is required for any current
+# tool version (only the legacy Python-only code_execution_20250522 needed
+# one) - verified against the current docs, not assumed.
+_CODE_EXECUTION_TOOL = {"type": "code_execution_20260521", "name": "code_execution"}
 
 NOT_FOUND_MESSAGE = (
     "I can only answer questions about USASpending.gov federal spending data, "
@@ -56,7 +67,7 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have eleven tools. Five retrieve data: search_guide "
+        "have twelve tools. Five retrieve data: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
         "toptier code), get_spending_by_category (an agency's spending broken "
@@ -66,8 +77,9 @@ def _build_system_prompt() -> str:
         "loan records for an agency and fiscal year range — use this for "
         "'show me awards from X' or 'who received money from X', not for "
         "aggregate breakdowns or trends). Six do arithmetic: sum_values, "
-        "average, percentage_of, delta, ratio, and rank_values. You must call "
-        "at least one of the five data tools before writing any answer, for "
+        "average, percentage_of, delta, ratio, and rank_values. One more, "
+        "code_execution, is a general-purpose Python/Bash sandbox. You must "
+        "call at least one of the five data tools before writing any answer, "
         "every question, with no exceptions — including questions that seem "
         "unrelated to federal spending, general-knowledge questions, "
         "greetings, or anything else. Never answer from your own knowledge "
@@ -94,6 +106,18 @@ def _build_system_prompt() -> str:
         "results: totals, averages, one value's share of a total, a value's "
         "change over two time periods, a comparison between two different "
         "entities, or ranking several such results.\n\n"
+        "Prefer the six typed arithmetic tools above whenever they directly "
+        "support the calculation — they're faster and free. Use "
+        "code_execution only when a calculation doesn't fit one of the six: "
+        "combining more than one of their outputs in a multi-step way, a "
+        "statistic none of them compute (e.g. median, standard deviation), "
+        "or a calculation type explicitly requested that isn't covered "
+        "above. Never compute anything yourself in prose regardless of "
+        "which tool would apply — this rule holds unconditionally. When you "
+        "use code_execution, operate only on numbers already returned by "
+        "your other tools in this conversation — never fetch external "
+        "data, install packages, or run anything unrelated to computing a "
+        "derived value from results you already have.\n\n"
         "These tools use federal fiscal years (FY2021 = October 2020-"
         "September 2021, named by the year it ends in) — always label years "
         "explicitly as fiscal years (e.g. 'FY2021' or 'fiscal year 2021') in "
@@ -141,6 +165,7 @@ def ask(question: str) -> AgentResult:
             delta,
             ratio,
             rank_values,
+            _CODE_EXECUTION_TOOL,
         ],
         messages=[{"role": "user", "content": question}],
     )
@@ -148,8 +173,21 @@ def ask(question: str) -> AgentResult:
     final = None
     for message in runner:
         final = message
+        _record_code_execution_calls(message)
 
-    answer_text = next((b.text for b in final.content if b.type == "text"), "")
+    # The LAST text block, not the first: a message can contain more than
+    # one when a server-side tool (code_execution) runs mid-message, since
+    # its tool_use/result appear inline rather than needing a client round
+    # trip. Claude typically narrates before calling a tool ("Now I'll
+    # calculate...") and then writes a separate, self-contained synthesis
+    # after the tool result - taking the first block silently returned the
+    # throwaway narration instead of the real answer (caught live: asked
+    # for a standard deviation, got back "Now I'll calculate..." with no
+    # number). Every other tool here requires a full round trip, so its
+    # final message only ever has one text block anyway - this is a
+    # strict generalization, not a behavior change for those cases.
+    text_blocks = [b.text for b in final.content if b.type == "text"]
+    answer_text = text_blocks[-1] if text_blocks else ""
 
     # One chart per chart-worthy tool call in the turn (e.g. a "compare NSF
     # and Education's spending trend" question makes two get_spending_over_time
@@ -164,8 +202,12 @@ def ask(question: str) -> AgentResult:
     # built from the same capture buffer. Arithmetic the model does on top
     # of retrieved numbers (totals, percentages, deltas, ratios, rankings)
     # is verified by routing it through arithmetic_tools.py instead of
-    # trusting the model's own prose math - those calls aren't citation-
-    # worthy the way a data lookup is, so they're not recorded here.
+    # trusting the model's own prose math - those six calls are pure,
+    # deterministic recomputation with no new source to point to, so
+    # they're not cited. code_execution is different: it's a general-
+    # purpose sandbox that can run arbitrary computation, so its calls ARE
+    # recorded (_record_code_execution_calls, above) and cited with the
+    # actual command that ran, the same way a data lookup cites its query.
     charts: list[ChartSpec] = []
     seen_chunk_ids: set[str] = set()
     citations: list[Citation] = []

@@ -51,6 +51,36 @@ def _record_tool_call(tool_name: str, result: object, context: dict | None = Non
         log.append((tool_name, result, context or {}))
 
 
+def _record_code_execution_calls(message) -> None:
+    """Record any bash_code_execution calls in this message into the same
+    capture buffer as every other tool, for citation purposes.
+
+    code_execution is Anthropic's server-side tool, not one of our own
+    @beta_tool functions - there's no function of ours in the call path to
+    put a _record_tool_call() line inside, unlike every other tool here.
+    Both the tool_use and its result appear in the same message's content
+    list for a server tool (no client round-trip the way our own tools
+    work), so this can be checked per-message rather than needing to track
+    pending calls across turns.
+
+    Only bash_code_execution is handled - text_editor_code_execution (file
+    view/create/edit) calls aren't recorded, since this fallback's intended
+    use (multi-step math, statistics none of the six typed tools compute)
+    is expected to run as Bash/Python commands, not file edits. If that
+    assumption turns out wrong, file operations would silently go uncited -
+    worth revisiting if it comes up.
+    """
+    tool_use_blocks = {b.id: b for b in message.content if getattr(b, "type", None) == "server_tool_use"}
+    for block in message.content:
+        if getattr(block, "type", None) != "bash_code_execution_tool_result":
+            continue
+        tool_use = tool_use_blocks.get(block.tool_use_id)
+        if tool_use is None or tool_use.name != "bash_code_execution":
+            continue
+        command = tool_use.input.get("command", "")
+        _record_tool_call("code_execution", block.content, {"command": command})
+
+
 @beta_tool
 def search_guide(query: str) -> str:
     """Search the Analyst's Guide to Federal Spending Data for conceptual or definitional information about USASpending — what a term means, how a data element is defined, which fields contain what.

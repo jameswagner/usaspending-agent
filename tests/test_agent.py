@@ -1,4 +1,11 @@
-from backend.app.agent import fiscal_year_to_date_range, should_chart
+from datetime import date, datetime, timezone
+
+from backend.app.agent.response_shaping import (
+    build_tool_citation,
+    current_fiscal_year,
+    fiscal_year_to_date_range,
+    should_chart,
+)
 from backend.app.tools.usaspending_client import (
     CategoryResult,
     SpendingByCategoryResponse,
@@ -30,6 +37,27 @@ def make_time_response(n: int) -> SpendingOverTimeResponse:
             for i in range(n)
         ],
     )
+
+
+class TestCurrentFiscalYear:
+    # Regression coverage for the real bug: asked for NSF's "most recent
+    # fiscal year" NAICS breakdown, the model answered FY2024 while FY2025
+    # data was already live, because nothing told it what today's date
+    # actually is. These pin exact dates across the Oct 1 rollover so the
+    # boundary itself is asserted, not just "some plausible year."
+
+    def test_mid_fiscal_year(self):
+        # Sep 4 2026 falls in FY2026 (Oct 2025-Sep 2026).
+        assert current_fiscal_year(date(2026, 9, 4)) == 2026
+
+    def test_day_before_rollover_is_still_prior_fy(self):
+        assert current_fiscal_year(date(2025, 9, 30)) == 2025
+
+    def test_rollover_day_is_next_fy(self):
+        assert current_fiscal_year(date(2025, 10, 1)) == 2026
+
+    def test_defaults_to_the_real_current_date(self):
+        assert current_fiscal_year() == current_fiscal_year(datetime.now(timezone.utc).date())
 
 
 class TestFiscalYearToDateRange:
@@ -93,3 +121,69 @@ class TestNeverChartTools:
 
     def test_unknown_tool_name_returns_none(self):
         assert should_chart("some_future_tool", make_category_response(5)) is None
+
+
+class TestBuildToolCitation:
+    def test_lookup_agency(self):
+        citation = build_tool_citation("lookup_agency", {"name": "National Science Foundation"})
+        assert citation is not None
+        assert citation.tool_name == "lookup_agency"
+        assert citation.parameters == {"name": "National Science Foundation"}
+        assert citation.description == "Agency lookup: National Science Foundation"
+
+    def test_get_spending_by_category(self):
+        citation = build_tool_citation(
+            "get_spending_by_category",
+            {
+                "agency_name": "National Science Foundation",
+                "category": "naics",
+                "start_fiscal_year": 2023,
+                "end_fiscal_year": 2024,
+            },
+        )
+        assert citation is not None
+        assert citation.tool_name == "get_spending_by_category"
+        assert citation.description == "naics breakdown, National Science Foundation, FY2023-FY2024"
+
+    def test_get_spending_over_time(self):
+        citation = build_tool_citation(
+            "get_spending_over_time",
+            {
+                "agency_name": "National Science Foundation",
+                "start_fiscal_year": 2021,
+                "end_fiscal_year": 2024,
+                "group": "fiscal_year",
+            },
+        )
+        assert citation is not None
+        assert citation.tool_name == "get_spending_over_time"
+        assert citation.description == (
+            "Spending over time (fiscal_year), National Science Foundation, FY2021-FY2024"
+        )
+
+    def test_search_awards(self):
+        citation = build_tool_citation(
+            "search_awards",
+            {
+                "agency_name": "National Science Foundation",
+                "start_fiscal_year": 2023,
+                "end_fiscal_year": 2023,
+                "award_type": "grants",
+            },
+        )
+        assert citation is not None
+        assert citation.tool_name == "search_awards"
+        assert citation.description == "grants awards search, National Science Foundation, FY2023-FY2023"
+
+    def test_search_guide_returns_none(self):
+        # search_guide is cited separately, by chunk id/page - not via
+        # build_tool_citation.
+        assert build_tool_citation("search_guide", {}) is None
+
+    def test_empty_context_returns_none(self):
+        # A failed call that returned before _record_tool_call ran (or any
+        # call whose context wasn't populated) shouldn't produce a citation.
+        assert build_tool_citation("lookup_agency", {}) is None
+
+    def test_unknown_tool_name_returns_none(self):
+        assert build_tool_citation("some_future_tool", {"foo": "bar"}) is None

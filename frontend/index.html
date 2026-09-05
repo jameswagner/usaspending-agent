@@ -94,6 +94,19 @@
   const citationsList = document.getElementById('citations-list');
   let chartInstances = [];
 
+  // Tool-citation text (agency names, categories, etc.) traces back to
+  // tool-call arguments the model chose, which are themselves downstream
+  // of user-supplied question text - so it's untrusted for innerHTML
+  // purposes and must be escaped before insertion.
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   async function ask() {
     const question = questionInput.value.trim();
     if (!question) return;
@@ -124,10 +137,11 @@
       sourceTypeEl.textContent = data.source_type;
       sourceTypeEl.style.display = 'inline-block';
 
-      if (data.citations && data.citations.length) {
-        citationsList.innerHTML = data.citations
-          .map(c => `<li>${c.source}, page ${c.page}</li>`)
-          .join('');
+      const guideItems = (data.citations || []).map(c => `<li>${escapeHtml(c.source)}, page ${escapeHtml(c.page)}</li>`);
+      const toolItems = (data.tool_citations || []).map(c => `<li>${escapeHtml(c.description)}</li>`);
+      const sourceItems = guideItems.concat(toolItems);
+      if (sourceItems.length) {
+        citationsList.innerHTML = sourceItems.join('');
         citationsBlock.style.display = 'block';
       }
 

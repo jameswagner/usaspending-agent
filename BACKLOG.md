@@ -4,7 +4,7 @@ Deferred ideas and known minor issues — not urgent, not forgotten.
 
 ## Daily health check for USASpending API category support
 
-`get_spending_by_category` in `backend/app/agent.py` hardcodes a list of 14
+`get_spending_by_category` in `backend/app/agent/tools.py` hardcodes a list of 14
 verified-working categories out of the 18 the API contract documents (4 —
 `object_class`, `program_activity`, `recipient_parent_duns`, `tas` — 404 live
 despite being in the docs, checked 2026-09-03). The tool's error handling
@@ -18,7 +18,7 @@ reads that instead of the hardcoded list. Needs a scheduler + a persistence
 layer we don't have yet — worth doing if this becomes more than a side
 project, not before.
 
-## POST /ask: chart_data done, guide citations done, live-data citations still open
+## POST /ask: chart_data, guide citations, and live-data citations all done
 
 `chart_data` (2026-09-04): `get_spending_by_category` and `get_spending_over_time`
 each split into a `..._raw()` function (structured Pydantic response) and the
@@ -39,15 +39,44 @@ into the same capture buffer; `ask()` builds `Citation(chunk_id, source, page)`
 from any `search_guide` calls in the turn, deduped by chunk id. Verified live
 via CLI and the running server.
 
-**Still open — live-data citations (lookup_agency, the three spending tools):**
-there's no "page" for a live API call, but the analog is straightforward:
-cite the tool name + exact query parameters used (agency, category, fiscal
-year range) — fully reproducible, and the data's already sitting in the
-same capture buffer used for charts/guide citations, so this is mechanical,
-not a design problem. (The spending tools now take start_fiscal_year/
-end_fiscal_year as integers rather than raw date strings — see the fiscal-
-year fix below — so a citation would read even more cleanly, e.g. "NAICS
-breakdown, National Science Foundation, FY2023-FY2024".)
+Live-data citations (2026-09-04): `lookup_agency`, `get_spending_by_category`,
+`get_spending_over_time`, and `search_awards` now all record a context dict
+(tool params — agency name, category, fiscal year range, group, award type)
+into the same capture buffer, and `ask()` builds one `ToolCitation` per call
+via a new pure function, `build_tool_citation(tool_name, context)` (same role
+`should_chart` plays for charts — unit-tested the same way, see
+`TestBuildToolCitation`). Design choice made deliberately: `ToolCitation` is
+a *separate* Pydantic model from `Citation` (chunk_id/source/page), not a
+shared/discriminated shape — there's no chunk id or page number for a live
+API call, and forcing one in would mean fake/null values. `AgentResult` and
+`AskResponse` carry two separate lists, `citations` and `tool_citations`;
+this serializes cleanly through FastAPI's `response_model` (no union/
+discriminator needed) and the frontend renders both under one "Sources"
+list, guide entries as "source, page N" and tool entries as their
+`description` (e.g. "naics breakdown, National Science Foundation,
+FY2023-FY2023"). Tool citations dedup by (tool_name, sorted params) — exact
+duplicate calls collapse, but two calls to the same tool with different
+params (e.g. comparing two agencies' trends) each keep their own citation;
+verified live that this doesn't over-merge. `lookup_agency` previously
+didn't call `_record_tool_call` at all, and `search_awards` called it with
+no context — both fixed as part of this.
+
+Found while wiring the frontend and fixed inline (not a separate bug report,
+since it's in code being added by this same change, not pre-existing code):
+`ToolCitation.description` is built from tool-call parameters, which trace
+back to arguments the model chose — themselves downstream of user-supplied
+question text, i.e. a prompt-injection path. The frontend was inserting
+citation text into the DOM via `innerHTML`; without escaping, a question
+engineered to make the model pass an agency_name like `<img
+src=x onerror=...>` as a tool argument would have been a stored-XSS vector.
+Added an `escapeHtml()` helper in `frontend/index.html` and applied it to
+all interpolated citation fields (including the pre-existing guide
+`source`/`page` fields, for consistency).
+
+Verified live via CLI (`lookup_agency`, each spending tool individually, and
+a two-agency comparison question that produces two distinct
+`get_spending_over_time` citations) and via the running server + `/ask`
+(response validates through `AskResponse`, `/ui` serves the updated JS).
 
 ## Fixed: off-by-one-fiscal-year bug in date-range tools
 

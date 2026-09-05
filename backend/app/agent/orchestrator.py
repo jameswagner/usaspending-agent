@@ -9,6 +9,14 @@ from datetime import datetime, timezone
 from langsmith import traceable
 from pydantic import BaseModel
 
+from .arithmetic_tools import (
+    average,
+    delta,
+    percentage_of,
+    rank_values,
+    ratio,
+    sum_values,
+)
 from .clients import MODEL, _get_client
 from .response_shaping import (
     ChartSpec,
@@ -48,36 +56,51 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have five tools: search_guide (conceptual/definitional questions about "
-        "USASpending data, terms, and fields), lookup_agency (what a specific "
-        "federal agency is, or its toptier code), get_spending_by_category "
-        "(an agency's spending broken down by NAICS/PSC/sub-agency/etc. for a "
-        "fiscal year range), get_spending_over_time (an agency's spending trend "
-        "across fiscal years/quarters/months), and search_awards (individual "
-        "contract/grant/loan records for an agency and fiscal year range — use "
-        "this for 'show me awards from X' or 'who received money from X', not "
-        "for aggregate breakdowns or trends). You must call at least one of "
-        "these tools before writing any answer, for every question, with no "
-        "exceptions — including questions that seem unrelated to federal "
-        "spending, general-knowledge questions, greetings, or anything else. "
-        "Never answer from your own knowledge without calling a tool first, "
-        "even if you already know the answer. Base your answer strictly on what "
-        "the tools return. If no tool finds anything relevant, or the question "
-        "has nothing to do with USASpending federal spending data, tell the "
-        "user plainly that you can only answer questions about USASpending "
-        "data — do not answer the question anyway. If a specific tool call "
-        "fails or the exact breakdown/data requested isn't available, say so "
-        "plainly. Do not silently substitute a different category, agency, or "
-        "time period and present those results as if they answered the "
-        "original question — if you use different parameters than what was "
-        "asked because the exact request failed, say so explicitly. These "
-        "tools use federal fiscal years (FY2021 = October 2020-September "
-        "2021, named by the year it ends in) — always label years explicitly "
-        "as fiscal years (e.g. 'FY2021' or 'fiscal year 2021') in your answer, "
-        "never a bare year number, since it is easily confused with a "
-        f"calendar year. Today's date is {today.isoformat()}, so the current "
-        f"(in-progress, incomplete) fiscal year is FY{current_fy} and the most "
-        f"recently *completed* fiscal year is FY{most_recent_completed_fy}. "
+        "have eleven tools. Five retrieve data: search_guide "
+        "(conceptual/definitional questions about USASpending data, terms, and "
+        "fields), lookup_agency (what a specific federal agency is, or its "
+        "toptier code), get_spending_by_category (an agency's spending broken "
+        "down by NAICS/PSC/sub-agency/etc. for a fiscal year range), "
+        "get_spending_over_time (an agency's spending trend across fiscal "
+        "years/quarters/months), and search_awards (individual contract/grant/"
+        "loan records for an agency and fiscal year range — use this for "
+        "'show me awards from X' or 'who received money from X', not for "
+        "aggregate breakdowns or trends). Six do arithmetic: sum_values, "
+        "average, percentage_of, delta, ratio, and rank_values. You must call "
+        "at least one of the five data tools before writing any answer, for "
+        "every question, with no exceptions — including questions that seem "
+        "unrelated to federal spending, general-knowledge questions, "
+        "greetings, or anything else. Never answer from your own knowledge "
+        "without calling a tool first, even if you already know the answer. "
+        "Base your answer strictly on what the tools return. If no tool finds "
+        "anything relevant, or the question has nothing to do with "
+        "USASpending federal spending data, tell the user plainly that you "
+        "can only answer questions about USASpending data — do not answer "
+        "the question anyway. If a specific tool call fails or the exact "
+        "breakdown/data requested isn't available, say so plainly. Do not "
+        "silently substitute a different category, agency, or time period "
+        "and present those results as if they answered the original "
+        "question — if you use different parameters than what was asked "
+        "because the exact request failed, say so explicitly.\n\n"
+        "Never add, subtract, average, compute a percentage or ratio, or "
+        "rank multiple numbers yourself in prose — always call the matching "
+        "arithmetic tool (sum_values, average, percentage_of, delta, ratio, "
+        "rank_values) and state its result, even for arithmetic that looks "
+        "simple, like adding two numbers together. For example, if two "
+        "categories' amounts are $300 million and $158 million, do not write "
+        "'these two categories account for over $458 million' from your own "
+        "addition — call sum_values first and use what it returns. This "
+        "applies to any combination of two or more numbers from tool "
+        "results: totals, averages, one value's share of a total, a value's "
+        "change over two time periods, a comparison between two different "
+        "entities, or ranking several such results.\n\n"
+        "These tools use federal fiscal years (FY2021 = October 2020-"
+        "September 2021, named by the year it ends in) — always label years "
+        "explicitly as fiscal years (e.g. 'FY2021' or 'fiscal year 2021') in "
+        "your answer, never a bare year number, since it is easily confused "
+        f"with a calendar year. Today's date is {today.isoformat()}, so the "
+        f"current (in-progress, incomplete) fiscal year is FY{current_fy} and "
+        f"the most recently *completed* fiscal year is FY{most_recent_completed_fy}. "
         "When a question says 'most recent,' 'latest,' 'current,' 'this "
         "year,' or similar with no fiscal year stated explicitly, use these "
         "values — do not guess a year from your own training data, since it "
@@ -112,6 +135,12 @@ def ask(question: str) -> AgentResult:
             get_spending_by_category,
             get_spending_over_time,
             search_awards,
+            sum_values,
+            average,
+            percentage_of,
+            delta,
+            ratio,
+            rank_values,
         ],
         messages=[{"role": "user", "content": question}],
     )
@@ -132,9 +161,11 @@ def ask(question: str) -> AgentResult:
     #
     # Guide citations (chunk id/source/page) and live-data citations (tool +
     # query parameters, since there's no "page" for a live lookup) are both
-    # built from the same capture buffer. Verifying any arithmetic the model
-    # does on top of retrieved numbers is a separate, harder problem,
-    # deferred (see BACKLOG.md).
+    # built from the same capture buffer. Arithmetic the model does on top
+    # of retrieved numbers (totals, percentages, deltas, ratios, rankings)
+    # is verified by routing it through arithmetic_tools.py instead of
+    # trusting the model's own prose math - those calls aren't citation-
+    # worthy the way a data lookup is, so they're not recorded here.
     charts: list[ChartSpec] = []
     seen_chunk_ids: set[str] = set()
     citations: list[Citation] = []

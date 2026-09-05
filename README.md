@@ -8,6 +8,7 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 - **Live-data questions** ("how much did NSF spend on X?") are answered by calling the real USASpending.gov API.
 - A tool-calling agent (Claude, via the Anthropic SDK's tool runner) decides which tool(s) a question needs, including questions that need both.
 - A cheap classifier gates obviously out-of-scope questions before the (more expensive) agent loop runs at all.
+- The model never does multi-number math (totals, percentages, ratios, before/after change, rankings) in its own prose — it calls one of six typed arithmetic tools, or `code_execution` as a fallback for calculations those six don't cover.
 
 ### Tools available to the agent
 
@@ -18,6 +19,8 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 | `get_spending_by_category` | One agency's spending broken down by NAICS/PSC/sub-agency/etc. for a fiscal year range — charts when 2+ categories come back |
 | `get_spending_over_time` | One agency's spending trend across fiscal years/quarters/months — charts when 2+ periods come back |
 | `search_awards` | Individual contract/grant/loan records for an agency and fiscal year range |
+| `sum_values`, `average`, `percentage_of`, `delta`, `ratio`, `rank_values` | Deterministic arithmetic over numbers the tools above already returned — totals, shares, before/after change, cross-entity comparison, ranking |
+| `code_execution` | Anthropic's sandboxed Python/Bash fallback for calculations the six typed tools don't cover (e.g. a statistic like standard deviation) |
 
 ## Setup
 
@@ -43,7 +46,7 @@ uv run uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 - Browser UI: `http://127.0.0.1:8000/ui/`
-- API: `POST /ask` with `{"question": "..."}`, returns `{answer_text, source_type, charts, citations}`
+- API: `POST /ask` with `{"question": "..."}`, returns `{answer_text, source_type, charts, citations, tool_citations}`
 - Health check: `GET /health`
 
 You can also run the agent directly from the CLI, without starting the server:
@@ -56,7 +59,8 @@ uv run python -m backend.app.agent --question "What is a prime award?"
 
 ```bash
 uv run pytest -q      # unit tests: chunking, retrieval merge logic, chart/citation
-                       # eligibility, API client parsing — no network calls, no API cost
+                       # eligibility, arithmetic tools, API client parsing — no network
+                       # calls, no API cost
 uv run ruff check .
 ```
 
@@ -65,10 +69,12 @@ uv run ruff check .
 ```
 backend/app/
   main.py                 FastAPI app (POST /ask, GET /health, serves frontend/ at /ui)
-  agent/                  Tool-calling agent (package): clients, tool definitions, scope gate,
-                            chart/citation logic (response_shaping.py), orchestrator, CLI
-    dev_tools/              Manual, opt-in red-team scripts (real billed LLM calls, not in CI):
-                              data-injection, jailbreak, prompt-extraction, resource-abuse
+  agent/                  Tool-calling agent (package): clients, tool definitions, arithmetic
+                            tools, scope gate, chart/citation logic (response_shaping.py),
+                            orchestrator, CLI
+    dev_tools/              Manual, opt-in scripts (real billed LLM calls, not in CI):
+                              red-team (data-injection, jailbreak, prompt-extraction,
+                              resource-abuse) and a code_execution wiring check
   retrieval/
     hybrid.py              Dense+sparse retriever with cross-encoder reranking (used at request time)
     pipeline/               One-off scripts: PDF -> chunks -> indexes

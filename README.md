@@ -67,6 +67,8 @@ backend/app/
   main.py                 FastAPI app (POST /ask, GET /health, serves frontend/ at /ui)
   agent/                  Tool-calling agent (package): clients, tool definitions, scope gate,
                             chart/citation logic (response_shaping.py), orchestrator, CLI
+    dev_tools/              Manual, opt-in red-team scripts (real billed LLM calls, not in CI):
+                              data-injection, jailbreak, prompt-extraction, resource-abuse
   retrieval/
     hybrid.py              Dense+sparse retriever with cross-encoder reranking (used at request time)
     pipeline/               One-off scripts: PDF -> chunks -> indexes

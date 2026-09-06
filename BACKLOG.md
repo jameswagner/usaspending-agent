@@ -463,12 +463,28 @@ stability, not just a single noisy sample. Three variants compared:
   (cheap-gate, more-expensive-loop) round trip for a question that gets
   handled correctly downstream anyway, not a security hole.
 
-**Not yet decided**: whether to actually ship the RAG-augmented gate.
-Given the measured numbers, leaning toward yes, but this needs the same
-duplicate-retrieval design question flagged when the idea first came up
-(if the tool loop later calls `search_guide` itself, that's the same
-retrieval running twice) resolved before wiring it into `scope.py` for
-real.
+**Shipped (2026-09-06)**: `scope.py`'s `_is_in_scope` now runs retrieval
+before the classifier call (`_get_top_passage`, reusing the same
+`HybridRetriever` singleton `search_guide` uses) and passes the top result
+into the prompt, matching the RAG-augmented variant above. The
+duplicate-retrieval question was resolved by deliberately not engineering
+around it: if the tool loop later calls `search_guide` for the same
+question, retrieval just runs again - it's local (no LLM cost) and cheap
+over this corpus's size (221 chunks), so the added complexity of avoiding
+it (injecting a synthetic tool result into the conversation, hand-building
+citation bookkeeping outside `search_guide`'s own function) wasn't
+justified. Verified live: all of "what is a basic ordering agreement,"
+"what is an acquisition of assets," and "what is a BOA" (the cases that
+started this investigation) now pass the gate; off-topic and adversarial
+cases still correctly rejected.
+
+Deliberately not extended further: feeding the same retrieved context
+into the *agent loop* itself (not just the gate) was considered and
+explicitly deferred - that's a different, unverified claim (whether
+context helps downstream answer quality, not classification accuracy) and
+carries the same weak-match risk for live-data questions the gate's
+prompt already has to explicitly guard against. Worth its own eval if
+pursued later, not bundled into this change.
 
 ## Tied rerank scores in sanity_check.py
 

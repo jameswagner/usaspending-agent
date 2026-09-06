@@ -3,7 +3,7 @@ import json
 import pytest
 import requests
 
-from backend.app.tools.usaspending_client import (
+from backend.app.usaspending_client import (
     AdvancedFilters,
     ToptierAgency,
     USASpendingAPIError,

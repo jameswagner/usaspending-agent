@@ -34,7 +34,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from backend.app.agent.orchestrator import ask
-from backend.app.tools.usaspending_client import USASpendingClient
+from backend.app.usaspending_client import USASpendingClient
 
 
 def spy(method_name: str):

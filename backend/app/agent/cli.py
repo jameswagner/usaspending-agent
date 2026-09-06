@@ -5,8 +5,8 @@ Usage:
 """
 from __future__ import annotations
 
-from .clients import MODEL
 from .orchestrator import ask
+from .singletons import MODEL
 
 
 def main():

@@ -27,9 +27,9 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from backend.app.agent.clients import _get_usaspending_client
 from backend.app.agent.orchestrator import ask
-from backend.app.tools.usaspending_client import (
+from backend.app.agent.singletons import _get_usaspending_client
+from backend.app.usaspending_client import (
     AgencyOverview,
     CategoryResult,
     SpendingByCategoryResponse,
@@ -48,7 +48,7 @@ CASES = [
         # verified (via scope._is_in_scope directly) to actually pass the
         # gate.
         "question": "What is the National Science Foundation's toptier agency code?",
-        "patch_target": "backend.app.tools.usaspending_client.USASpendingClient.get_agency_overview",
+        "patch_target": "backend.app.usaspending_client.USASpendingClient.get_agency_overview",
         "fake_return": AgencyOverview(
             fiscal_year=2024,
             toptier_code="4900",
@@ -66,7 +66,7 @@ CASES = [
     {
         "name": "get_spending_by_category name field",
         "question": "How is NSF's spending broken down by NAICS in fiscal year 2024?",
-        "patch_target": "backend.app.tools.usaspending_client.USASpendingClient.spending_by_category",
+        "patch_target": "backend.app.usaspending_client.USASpendingClient.spending_by_category",
         "fake_return": SpendingByCategoryResponse(
             category="naics",
             limit=5,

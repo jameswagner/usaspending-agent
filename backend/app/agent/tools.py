@@ -8,7 +8,7 @@ import contextvars
 
 from anthropic import beta_tool
 
-from backend.app.tools.usaspending_client import (
+from backend.app.usaspending_client import (
     AdvancedFilters,
     AgencyFilter,
     SpendingByCategoryResponse,
@@ -17,12 +17,12 @@ from backend.app.tools.usaspending_client import (
     USASpendingAPIError,
 )
 
-from .clients import (
+from .response_shaping import _format_time_period, fiscal_year_to_date_range
+from .singletons import (
     RERANK_CONFIDENCE_THRESHOLD,
     _get_retriever,
     _get_usaspending_client,
 )
-from .response_shaping import _format_time_period, fiscal_year_to_date_range
 
 # Per-request capture buffer for structured tool results, so chart-worthy
 # data survives past the @beta_tool wrapper that only returns a string to

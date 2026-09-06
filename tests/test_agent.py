@@ -6,7 +6,7 @@ from backend.app.agent.response_shaping import (
     fiscal_year_to_date_range,
     should_chart,
 )
-from backend.app.tools.usaspending_client import (
+from backend.app.usaspending_client import (
     CategoryResult,
     SpendingByCategoryResponse,
     SpendingOverTimeResponse,

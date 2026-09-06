@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from langsmith import traceable
 
-from .clients import MODEL, _get_client
+from .singletons import MODEL, _get_client
 
 SCOPE_CLASSIFIER_PROMPT = (
     "You classify whether a user question is in scope for a USASpending.gov "

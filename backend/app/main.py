@@ -11,9 +11,9 @@ from pydantic import BaseModel
 load_dotenv()
 
 from backend.app.agent import ask as agent_ask
-from backend.app.agent.clients import warm_up
 from backend.app.agent.orchestrator import NOT_FOUND_MESSAGE
 from backend.app.agent.response_shaping import Citation, ToolCitation
+from backend.app.agent.singletons import warm_up
 
 
 @asynccontextmanager

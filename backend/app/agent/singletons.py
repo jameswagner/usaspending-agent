@@ -9,7 +9,7 @@ import anthropic
 from dotenv import load_dotenv
 
 from backend.app.retrieval.hybrid import HybridRetriever
-from backend.app.tools.usaspending_client import USASpendingClient
+from backend.app.usaspending_client import USASpendingClient
 
 load_dotenv()
 

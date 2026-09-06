@@ -22,7 +22,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from backend.app.agent.clients import _get_client
+from backend.app.agent.singletons import _get_client
 from backend.app.retrieval.hybrid import HybridRetriever
 
 load_dotenv()

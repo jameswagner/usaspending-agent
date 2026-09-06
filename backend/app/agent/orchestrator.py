@@ -17,7 +17,6 @@ from .arithmetic_tools import (
     ratio,
     sum_values,
 )
-from .clients import MODEL, _get_client
 from .response_shaping import (
     ChartSpec,
     Citation,
@@ -27,6 +26,7 @@ from .response_shaping import (
     should_chart,
 )
 from .scope import _is_in_scope
+from .singletons import MODEL, _get_client
 from .tools import (
     _record_code_execution_calls,
     _tool_call_log,

@@ -4,6 +4,7 @@ capture buffer afterward.
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 from langsmith import traceable
@@ -46,6 +47,8 @@ from .tools import (
 # tool version (only the legacy Python-only code_execution_20250522 needed
 # one) - verified against the current docs, not assumed.
 _CODE_EXECUTION_TOOL = {"type": "code_execution_20260521", "name": "code_execution"}
+
+logger = logging.getLogger(__name__)
 
 NOT_FOUND_MESSAGE = (
     "I can only answer questions about USASpending.gov federal spending data, "
@@ -145,6 +148,10 @@ class AgentResult(BaseModel):
 @traceable(run_type="chain", name="agent_ask")
 def ask(question: str) -> AgentResult:
     if not _is_in_scope(question):
+        # Currently the only trace of a scope-gate rejection anywhere - the
+        # question and the fact it never reached the tool loop, without
+        # this, wasn't recorded at all.
+        logger.info("Scope gate rejected question: %r", question)
         return AgentResult(answer_text=NOT_FOUND_MESSAGE)
 
     _tool_call_log.set([])

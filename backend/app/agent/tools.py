@@ -5,6 +5,7 @@ should_chart/build_tool_citation after the tool-calling loop finishes.
 from __future__ import annotations
 
 import contextvars
+import logging
 
 from anthropic import beta_tool
 
@@ -23,6 +24,8 @@ from .singletons import (
     _get_retriever,
     _get_usaspending_client,
 )
+
+logger = logging.getLogger(__name__)
 
 # Per-request capture buffer for structured tool results, so chart-worthy
 # data survives past the @beta_tool wrapper that only returns a string to
@@ -108,6 +111,7 @@ def lookup_agency(name: str) -> str:
     client = _get_usaspending_client()
     agency = client.find_agency_by_name(name)
     if agency is None:
+        logger.warning("lookup_agency: no agency found matching %r", name)
         return f"No agency found matching '{name}'."
 
     overview = client.get_agency_overview(agency.toptier_code)
@@ -173,6 +177,7 @@ def get_spending_by_category(
     try:
         response = get_spending_by_category_raw(category, agency_name, start_fiscal_year, end_fiscal_year, limit)
     except USASpendingAPIError as e:
+        logger.warning("get_spending_by_category failed for %s/%s: %s", agency_name, category, e)
         return f"This query failed: {e}. Do not substitute a different category and present it as answering the original question — tell the user this specific breakdown isn't available."
 
     _record_tool_call(
@@ -232,6 +237,7 @@ def get_spending_over_time(
     try:
         response = get_spending_over_time_raw(agency_name, start_fiscal_year, end_fiscal_year, group)
     except USASpendingAPIError as e:
+        logger.warning("get_spending_over_time failed for %s: %s", agency_name, e)
         return f"This query failed: {e}."
 
     _record_tool_call(
@@ -329,6 +335,7 @@ def search_awards(
     try:
         results = search_awards_raw(agency_name, start_fiscal_year, end_fiscal_year, award_type, limit)
     except USASpendingAPIError as e:
+        logger.warning("search_awards failed for %s: %s", agency_name, e)
         return f"This query failed: {e}."
 
     _record_tool_call(

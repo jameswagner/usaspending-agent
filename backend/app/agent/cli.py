@@ -5,12 +5,16 @@ Usage:
 """
 from __future__ import annotations
 
+from backend.app.logging_config import configure_logging
+
 from .orchestrator import ask
 from .singletons import MODEL
 
 
 def main():
     import argparse
+
+    configure_logging()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--question", required=True)

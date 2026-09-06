@@ -1,6 +1,7 @@
 """FastAPI app exposing POST /ask, backed by the tool-calling agent."""
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -14,10 +15,14 @@ from backend.app.agent import ask as agent_ask
 from backend.app.agent.orchestrator import NOT_FOUND_MESSAGE
 from backend.app.agent.response_shaping import Citation, ToolCitation
 from backend.app.agent.singletons import warm_up
+from backend.app.logging_config import configure_logging
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    configure_logging()
     warm_up()
     yield
 
@@ -44,12 +49,22 @@ def health() -> dict:
 
 @app.post("/ask", response_model=AskResponse)
 def ask(request: AskRequest) -> AskResponse:
-    result = agent_ask(request.question)
+    logger.info("Received question: %r", request.question)
+    try:
+        result = agent_ask(request.question)
+    except Exception:
+        # Without this, an exception here (a bug in the agent loop, an
+        # unhandled API error) would only ever surface as FastAPI's generic
+        # 500 response - no application-level record of what actually
+        # broke or which question triggered it.
+        logger.exception("agent_ask raised for question: %r", request.question)
+        raise
     # citations covers search_guide (chunk id/source/page); tool_citations
     # covers the four live-data tools (tool name + query parameters, since
     # there's no "page" to point to for a live lookup). Kept as two lists
     # rather than one discriminated model since the shapes don't overlap.
     source_type = "not_found" if result.answer_text == NOT_FOUND_MESSAGE else "agent"
+    logger.info("Answered question with source_type=%s", source_type)
     return AskResponse(
         answer_text=result.answer_text,
         source_type=source_type,

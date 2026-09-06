@@ -2,6 +2,18 @@
 
 Deferred ideas and known minor issues — not urgent, not forgotten.
 
+## Rate limiting on /ask
+
+`POST /ask` has no request-rate limiting at all — any caller can send
+unlimited requests, each of which costs a real Claude call (and, per the
+resource-abuse red-team findings above, an uncapped number of live
+USASpending API calls and tool-call fan-out within a single request on top
+of that). Not a concern for local-only use, but load-bearing the moment
+this is ever deployed somewhere reachable by the public. Would pair
+naturally with the other findings from that red-team pass (a `limit`
+clamp, a per-turn tool-call cap) as one pass of hardening before any
+deployment. Not started.
+
 ## Daily health check for USASpending API category support
 
 `get_spending_by_category` in `backend/app/agent/tools.py` hardcodes a list of 14

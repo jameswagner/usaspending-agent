@@ -46,7 +46,31 @@ from .tools import (
 # more capable model. No anthropic-beta header is required for any current
 # tool version (only the legacy Python-only code_execution_20250522 needed
 # one) - verified against the current docs, not assumed.
-_CODE_EXECUTION_TOOL = {"type": "code_execution_20260521", "name": "code_execution"}
+#
+# cache_control on the LAST tool in the tools=[...] list, in addition to
+# the marker on the system block itself (see the tool_runner call below).
+# The docs claim a tool-level marker alone caches the system prompt too
+# ("tools, then system" hierarchy) - verified live that this claim did NOT
+# hold in practice: a tool-only marker produced zero
+# cache_creation_input_tokens even with a system prompt well over Haiku
+# 4.5's 4,096-token minimum. Only marking the system block directly
+# actually created a cache entry. Kept this tool-level marker anyway
+# (harmless, may still help cache the tools portion on its own) but don't
+# rely on it alone - always verify against real usage_metadata
+# (cache_creation_input_tokens / cache_read_input_tokens), not the docs'
+# stated behavior.
+#
+# ttl: "1h" over the "5m" default - this app's real traffic pattern is
+# sporadic (a demo, someone testing it out), not sustained load. A 1h
+# cache write costs 2x base input price vs. 1.25x for 5m, but on this
+# ~5-6K token prefix at Haiku pricing that's a few thousandths of a cent
+# either way - negligible - while 5m would expire between most real
+# requests and pay the write premium repeatedly for near-zero read benefit.
+_CODE_EXECUTION_TOOL = {
+    "type": "code_execution_20260521",
+    "name": "code_execution",
+    "cache_control": {"type": "ephemeral", "ttl": "1h"},
+}
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +188,24 @@ def ask(question: str) -> AgentResult:
     runner = _get_client().beta.messages.tool_runner(
         model=MODEL,
         max_tokens=2048,
-        system=_build_system_prompt(),
+        # cache_control goes on the system block itself, not just the last
+        # tool - verified live that a tool-only marker (matching what the
+        # docs describe as sufficient to cover the system prompt too)
+        # produced zero cache_creation_input_tokens, while marking the
+        # system block directly worked. Kept the tool-level marker too
+        # (see _CODE_EXECUTION_TOOL) since it's harmless and may still
+        # help cache the tools portion separately.
+        system=[
+            {
+                "type": "text",
+                "text": _build_system_prompt(),
+                # ttl: "1h", not the "5m" default - see _CODE_EXECUTION_TOOL's
+                # comment for why this app's sporadic traffic pattern makes
+                # the longer TTL worth its (negligible, on this prefix size)
+                # extra write cost.
+                "cache_control": {"type": "ephemeral", "ttl": "1h"},
+            }
+        ],
         tools=[
             search_guide,
             lookup_agency,

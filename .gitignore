@@ -11,3 +11,5 @@ data/
 *.egg-info/
 DEMO_SCRIPT.md
 HUMAN_INTERVENTIONS.md
+BLOG_POST.md
+trace.json

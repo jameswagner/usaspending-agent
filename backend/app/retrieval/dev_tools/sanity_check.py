@@ -42,7 +42,8 @@ def run(top_k: int = 3) -> None:
             dense = f"dense_rank={r['dense_rank']}" if "dense_rank" in r else "dense_rank=-"
             sparse = f"sparse_rank={r['sparse_rank']}" if "sparse_rank" in r else "sparse_rank=-"
             preview = r["text"][:150].replace("\n", " ")
-            print(f"  {i}. rerank={r['rerank_score']:.2f}  {dense}  {sparse}  page={r['page_start']}")
+            locator = f"term={r['term']!r}" if r.get("term") else f"page={r['page_start']}"
+            print(f"  {i}. rerank={r['rerank_score']:.2f}  {dense}  {sparse}  {locator}")
             print(f"     {preview}...")
 
 

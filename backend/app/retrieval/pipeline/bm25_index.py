@@ -1,7 +1,8 @@
 """Build a Whoosh BM25 index over chunks for sparse keyword search.
 
 Usage:
-  python -m backend.app.retrieval.pipeline.bm25_index --chunks data/chunks/analysts_guide_chunks.jsonl
+  python -m backend.app.retrieval.pipeline.bm25_index \\
+      --chunks data/chunks/analysts_guide_chunks.jsonl data/chunks/glossary_chunks.jsonl
 """
 from __future__ import annotations
 
@@ -22,6 +23,12 @@ SCHEMA = Schema(
     page_start=NUMERIC(stored=True),
     page_end=STORED,
     paragraph_index=STORED,
+    # Glossary-only fields, stored but not separately searchable (the
+    # term is already embedded in `text`, same as page_start etc. above
+    # for the Guide) - "" / [] for Guide chunks, which don't have these.
+    term=STORED,
+    slug=STORED,
+    related_slugs=STORED,
 )
 
 
@@ -30,12 +37,14 @@ def load_chunks(chunks_path: Path) -> list[dict]:
         return [json.loads(line) for line in fh]
 
 
-def build_index(chunks_path: Path) -> None:
-    chunks = load_chunks(chunks_path)
+def build_index(chunks_paths: list[Path]) -> None:
+    # Same reasoning as vector_index.py: every source's chunks go into one
+    # index, rebuilt from all of them together in one shot.
+    chunks = [c for p in chunks_paths for c in load_chunks(p)]
 
     index_dir = Path(WHOOSH_INDEX_DIR)
-    # Rebuild from scratch each run, same as the Chroma index, so
-    # re-ingesting the same source doesn't leave stale documents behind.
+    # Rebuild from scratch each run so re-ingesting doesn't leave stale
+    # documents behind.
     if index_dir.exists():
         shutil.rmtree(index_dir)
     index_dir.mkdir(parents=True, exist_ok=True)
@@ -50,6 +59,13 @@ def build_index(chunks_path: Path) -> None:
             page_start=c["page_start"],
             page_end=c["page_end"],
             paragraph_index=c["paragraph_index"],
+            term=c.get("term", ""),
+            slug=c.get("slug", ""),
+            # JSON-encoded, matching vector_index.py - Chroma metadata
+            # can't hold a list, so this keeps the type consistent
+            # regardless of which retriever (dense or sparse) surfaces a
+            # given chunk, rather than a list here and a string there.
+            related_slugs=json.dumps(c.get("related_slugs", [])),
         )
     writer.commit()
     print(f"Indexed {len(chunks)} chunks into Whoosh index at {index_dir}")
@@ -59,10 +75,14 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--chunks", default="data/chunks/analysts_guide_chunks.jsonl")
+    parser.add_argument(
+        "--chunks",
+        nargs="+",
+        default=["data/chunks/analysts_guide_chunks.jsonl", "data/chunks/glossary_chunks.jsonl"],
+    )
     args = parser.parse_args()
 
-    build_index(Path(args.chunks))
+    build_index([Path(p) for p in args.chunks])
 
 
 if __name__ == "__main__":

@@ -1,10 +1,10 @@
 # usaspending-rag
 
-A tool-calling assistant for questions about USASpending.gov federal spending data. An LLM agent picks between two kinds of tools per question: retrieval over a static PDF guide for conceptual/definitional questions, and live USASpending API calls for actual numbers.
+A tool-calling assistant for questions about USASpending.gov federal spending data. An LLM agent picks between two kinds of tools per question: retrieval over two conceptual/definitional sources for term lookups, and live USASpending API calls for actual numbers.
 
 ## Architecture
 
-- **Conceptual questions** ("what is a sub-award?") are answered by hybrid retrieval over the Analyst's Guide to Federal Spending Data: dense embeddings (Chroma) + BM25 keyword search (Whoosh), merged and reranked with a cross-encoder.
+- **Conceptual questions** ("what is a sub-award?", "what is an IDV?") are answered by hybrid retrieval over two sources — the Analyst's Guide to Federal Spending Data (a PDF, Q&A-chunked) and the live USASpending Glossary API (~150 terms, one chunk per term) — combined into one Chroma + Whoosh index: dense embeddings (Chroma) + BM25 keyword search (Whoosh), merged and reranked with a cross-encoder.
 - **Live-data questions** ("how much did NSF spend on X?") are answered by calling the real USASpending.gov API.
 - A tool-calling agent (Claude, via the Anthropic SDK's tool runner) decides which tool(s) a question needs, including questions that need both.
 - A cheap classifier gates obviously out-of-scope questions before the (more expensive) agent loop runs at all.
@@ -14,7 +14,7 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 
 | Tool | Answers |
 |---|---|
-| `search_guide` | Definitions and concepts from the Analyst's Guide, with page citations |
+| `search_guide` | Definitions and concepts from the Analyst's Guide and the USASpending Glossary, with page or term citations |
 | `lookup_agency` | An agency's basic profile (toptier code, mission, website) |
 | `get_spending_by_category` | One agency's spending broken down by NAICS/PSC/sub-agency/etc. for a fiscal year range — charts when 2+ categories come back |
 | `get_spending_over_time` | One agency's spending trend across fiscal years/quarters/months — charts when 2+ periods come back |
@@ -30,13 +30,14 @@ cp .env.example .env   # fill in ANTHROPIC_API_KEY (and ANTHROPIC_WORKSPACE_ID i
                         # identity-linked key); LANGSMITH_* is optional, for tracing
 ```
 
-## Building the retrieval indexes (one-time, or whenever the source PDF changes)
+## Building the retrieval indexes (one-time, or whenever a source changes)
 
 ```bash
 uv run python -m backend.app.retrieval.pipeline.ingest \
   --pdf data/raw/analyst-guide.pdf --out data/chunks/analysts_guide_chunks.jsonl
-uv run python -m backend.app.retrieval.pipeline.vector_index --chunks data/chunks/analysts_guide_chunks.jsonl
-uv run python -m backend.app.retrieval.pipeline.bm25_index --chunks data/chunks/analysts_guide_chunks.jsonl
+uv run python -m backend.app.retrieval.pipeline.ingest_glossary   # fetches the live Glossary API
+uv run python -m backend.app.retrieval.pipeline.vector_index     # both sources into one Chroma collection
+uv run python -m backend.app.retrieval.pipeline.bm25_index       # both sources into one Whoosh index
 ```
 
 ## Running
@@ -77,7 +78,7 @@ backend/app/
                               resource-abuse) and a code_execution wiring check
   retrieval/
     hybrid.py              Dense+sparse retriever with cross-encoder reranking (used at request time)
-    pipeline/               One-off scripts: PDF -> chunks -> indexes
+    pipeline/               One-off scripts: PDF/Glossary API -> chunks -> indexes
     dev_tools/              Manual scripts: sanity_check.py, calibrate_threshold.py
   usaspending_client.py   Typed client for the live USASpending.gov API
 frontend/index.html        Minimal no-build UI (vanilla JS, served by FastAPI, no separate process)

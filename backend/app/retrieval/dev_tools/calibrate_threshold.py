@@ -27,15 +27,21 @@ from backend.app.retrieval.hybrid import HybridRetriever
 
 load_dotenv()
 
-CHUNKS_PATH = Path("data/chunks/analysts_guide_chunks.jsonl")
+CHUNKS_PATHS = [
+    Path("data/chunks/analysts_guide_chunks.jsonl"),
+    Path("data/chunks/glossary_chunks.jsonl"),
+]
 MODEL = "claude-haiku-4-5"
 N_POSITIVE = 20
 N_NEGATIVE = 20
 
 
 def load_chunks() -> list[dict]:
-    with CHUNKS_PATH.open(encoding="utf-8") as fh:
-        return [json.loads(line) for line in fh]
+    chunks = []
+    for path in CHUNKS_PATHS:
+        with path.open(encoding="utf-8") as fh:
+            chunks.extend(json.loads(line) for line in fh)
+    return chunks
 
 
 def generate_positive_questions(chunks: list[dict], n: int) -> list[str]:

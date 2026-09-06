@@ -102,6 +102,9 @@ class HybridRetriever:
                     "page_start": r["page_start"],
                     "page_end": r["page_end"],
                     "paragraph_index": r["paragraph_index"],
+                    "term": r.get("term", ""),
+                    "slug": r.get("slug", ""),
+                    "related_slugs": r.get("related_slugs", []),
                     "sparse_rank": rank,
                     "sparse_score": r.score,
                 }
@@ -150,7 +153,8 @@ def main():
             if "sparse_rank" in r
             else "sparse_rank=- (not in sparse top-k)"
         )
-        print(f"--- final rank {i} | rerank_score={r['rerank_score']:.4f} | page={r['page_start']} ---")
+        locator = f"term={r['term']!r}" if r.get("term") else f"page={r['page_start']}"
+        print(f"--- final rank {i} | rerank_score={r['rerank_score']:.4f} | {locator} ---")
         print(f"    {dense_str}")
         print(f"    {sparse_str}")
         print(r["text"][:300])

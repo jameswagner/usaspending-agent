@@ -26,6 +26,10 @@ def _is_in_scope(question: str) -> bool:
     Deliberately broader than "the guide has relevant content" — a
     live-data question (e.g. an agency lookup) can be legitimately in scope
     without matching anything in the static guide.
+
+    No temperature control is available on this model - sampling
+    parameters are deprecated/rejected outright by the current API, with
+    no direct replacement - so this call is inherently non-deterministic.
     """
     response = _get_client().messages.create(
         model=MODEL,

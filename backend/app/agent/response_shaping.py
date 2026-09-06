@@ -82,7 +82,13 @@ class ChartSpec(BaseModel):
 class Citation(BaseModel):
     chunk_id: str
     source: str
-    page: int
+    # Exactly one of these is set - page for the page-based Analyst's
+    # Guide, term for the USASpending Glossary (which has no real page
+    # number to point to). Two optional fields rather than a shared
+    # required "locator" string so the frontend can render each source
+    # type's natural format ("source, page N" vs "source: term").
+    page: int | None = None
+    term: str | None = None
 
 
 class ToolCitation(BaseModel):

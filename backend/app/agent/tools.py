@@ -54,6 +54,21 @@ def _record_tool_call(tool_name: str, result: object, context: dict | None = Non
         log.append((tool_name, result, context or {}))
 
 
+def _wrap_untrusted(text: str) -> str:
+    """Mark tool-returned content as data, not instructions.
+
+    Retrieved guide/glossary text and live API fields (agency names,
+    category labels, mission statements, recipient names) are real-world
+    text this app doesn't control or validate. This is defense-in-depth,
+    not a fix for a demonstrated gap - red-teaming already found the model
+    resists a naive "ignore instructions" payload embedded in this kind of
+    content without any wrapping - but making the instruction/data
+    boundary explicit costs nothing. See _build_system_prompt for the
+    matching instruction.
+    """
+    return f"<untrusted_data>\n{text}\n</untrusted_data>"
+
+
 def _record_code_execution_calls(message) -> None:
     """Record any bash_code_execution calls in this message into the same
     capture buffer as every other tool, for citation purposes.
@@ -86,19 +101,24 @@ def _record_code_execution_calls(message) -> None:
 
 @beta_tool
 def search_guide(query: str) -> str:
-    """Search the Analyst's Guide to Federal Spending Data for conceptual or definitional information about USASpending — what a term means, how a data element is defined, which fields contain what.
+    """Search the Analyst's Guide to Federal Spending Data and the USASpending Glossary for conceptual or definitional information about USASpending — what a term means, how a data element is defined, which fields contain what.
 
     Args:
-        query: What to search for in the guide.
+        query: What to search for in the guide or glossary.
     """
     results = _get_retriever().retrieve(query, top_k=3)
     matches = [r for r in results if r["rerank_score"] > RERANK_CONFIDENCE_THRESHOLD]
     if not matches:
-        return "No relevant content found in the Analyst's Guide for this query."
+        return "No relevant content found in the Analyst's Guide or Glossary for this query."
 
     _record_tool_call("search_guide", matches)
 
-    return "\n\n---\n\n".join(f"[Page {m['page_start']}]\n{m['text']}" for m in matches)
+    def _label(m: dict) -> str:
+        # Glossary chunks carry a term and no real page number; Guide
+        # chunks carry a page and no term - see ingest_glossary.py.
+        return f"[{m['source']}: {m['term']}]" if m.get("term") else f"[Page {m['page_start']}]"
+
+    return _wrap_untrusted("\n\n---\n\n".join(f"{_label(m)}\n{m['text']}" for m in matches))
 
 
 @beta_tool
@@ -116,7 +136,7 @@ def lookup_agency(name: str) -> str:
 
     overview = client.get_agency_overview(agency.toptier_code)
     _record_tool_call("lookup_agency", overview, {"name": name})
-    return (
+    return _wrap_untrusted(
         f"Agency: {overview.name} ({overview.abbreviation})\n"
         f"Toptier code: {overview.toptier_code}\n"
         f"Fiscal year: {overview.fiscal_year}\n"
@@ -195,7 +215,7 @@ def get_spending_by_category(
         return f"No {category} spending data found for {agency_name} between FY{start_fiscal_year} and FY{end_fiscal_year}."
 
     lines = [f"{r.name or r.code or 'unknown'}: ${r.amount:,.2f}" for r in response.results]
-    return "\n".join(lines)
+    return _wrap_untrusted("\n".join(lines))
 
 
 def get_spending_over_time_raw(
@@ -258,7 +278,7 @@ def get_spending_over_time(
         f"{_format_time_period(r.time_period)}: ${r.aggregated_amount:,.2f}"
         for r in response.results
     ]
-    return "\n".join(lines)
+    return _wrap_untrusted("\n".join(lines))
 
 
 # award_type_codes has many more valid values than these three groups (see
@@ -359,4 +379,4 @@ def search_awards(
         amount = r.get("Award Amount")
         amount_str = f"${amount:,.2f}" if isinstance(amount, (int, float)) else "unknown amount"
         lines.append(f"{award_id} — {recipient}: {amount_str}")
-    return "\n".join(lines)
+    return _wrap_untrusted("\n".join(lines))

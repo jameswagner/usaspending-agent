@@ -137,7 +137,13 @@
       sourceTypeEl.textContent = data.source_type;
       sourceTypeEl.style.display = 'inline-block';
 
-      const guideItems = (data.citations || []).map(c => `<li>${escapeHtml(c.source)}, page ${escapeHtml(c.page)}</li>`);
+      // Glossary citations carry a term and no real page number; Guide
+      // citations carry a page and no term - see Citation in
+      // response_shaping.py.
+      const guideItems = (data.citations || []).map(c => {
+        const locator = c.term ? `: ${escapeHtml(c.term)}` : `, page ${escapeHtml(c.page)}`;
+        return `<li>${escapeHtml(c.source)}${locator}</li>`;
+      });
       const toolItems = (data.tool_citations || []).map(c => `<li>${escapeHtml(c.description)}</li>`);
       const sourceItems = guideItems.concat(toolItems);
       if (sourceItems.length) {

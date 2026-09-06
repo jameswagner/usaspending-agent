@@ -14,12 +14,19 @@ project's questions (keywords, time period, agencies, award types,
 recipient text). It allows extra fields so a caller can still pass any of
 the API's other filter options (naics_codes, psc_codes, tas_codes, etc.)
 without every one of them being modeled here.
+
+The public methods are @traceable - wrapping the Anthropic client
+(see agent/singletons.py) already traces every tool_use/tool_result
+exchange with the model, but that never sees what happens *inside* a
+tool: real latency and failures of these actual network calls to
+api.usaspending.gov are otherwise invisible to LangSmith entirely.
 """
 from __future__ import annotations
 
 from typing import Any, Literal
 
 import requests
+from langsmith import traceable
 from pydantic import BaseModel, ConfigDict
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -173,6 +180,7 @@ class USASpendingClient:
         data = self._get("/api/v2/references/toptier_agencies/")
         return [ToptierAgency(**r) for r in data["results"]]
 
+    @traceable(run_type="tool", name="find_agency_by_name")
     def find_agency_by_name(self, name: str) -> ToptierAgency | None:
         """Case-insensitive match against agency name or abbreviation.
 
@@ -191,11 +199,13 @@ class USASpendingClient:
                 return a
         return None
 
+    @traceable(run_type="tool", name="get_agency_overview")
     def get_agency_overview(self, toptier_code: str, fiscal_year: int | None = None) -> AgencyOverview:
         params = {"fiscal_year": fiscal_year} if fiscal_year else None
         data = self._get(f"/api/v2/agency/{toptier_code}/", params=params)
         return AgencyOverview(**data)
 
+    @traceable(run_type="tool", name="spending_by_category")
     def spending_by_category(
         self,
         category: str,
@@ -217,6 +227,7 @@ class USASpendingClient:
         data = self._post(f"/api/v2/search/spending_by_category/{category}/", body)
         return SpendingByCategoryResponse(**data)
 
+    @traceable(run_type="tool", name="spending_over_time")
     def spending_over_time(
         self,
         filters: AdvancedFilters,
@@ -233,6 +244,7 @@ class USASpendingClient:
         data = self._post("/api/v2/search/spending_over_time/", body)
         return SpendingOverTimeResponse(**data)
 
+    @traceable(run_type="tool", name="search_awards_api")
     def search_awards(
         self,
         filters: AdvancedFilters,

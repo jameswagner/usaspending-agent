@@ -1,6 +1,15 @@
 """The five @beta_tool-decorated functions the agent calls, and their _raw
 variants (structured Pydantic responses, presentation-free) that also feed
 should_chart/build_tool_citation after the tool-calling loop finishes.
+
+The _raw variants (not the @beta_tool wrappers) are @traceable. Tried
+stacking @traceable directly under @beta_tool first and it broke tool
+schemas: traceable injects its own optional `config` kwarg into the
+wrapped function's signature, and beta_tool's schema generation picked it
+up as a real, model-visible tool parameter. The _raw functions were never
+@beta_tool in the first place, so tracing them is risk-free and also puts
+the trace where the actual work (agency resolution, API calls) happens,
+not on the thin formatting wrapper around it.
 """
 from __future__ import annotations
 
@@ -8,6 +17,7 @@ import contextvars
 import logging
 
 from anthropic import beta_tool
+from langsmith import traceable
 
 from backend.app.usaspending_client import (
     AdvancedFilters,
@@ -146,6 +156,7 @@ def lookup_agency(name: str) -> str:
     )
 
 
+@traceable(run_type="tool", name="get_spending_by_category_raw")
 def get_spending_by_category_raw(
     category: str,
     agency_name: str,
@@ -218,6 +229,7 @@ def get_spending_by_category(
     return _wrap_untrusted("\n".join(lines))
 
 
+@traceable(run_type="tool", name="get_spending_over_time_raw")
 def get_spending_over_time_raw(
     agency_name: str,
     start_fiscal_year: int,
@@ -304,6 +316,7 @@ SEARCH_AWARDS_FIELDS = [
 ]
 
 
+@traceable(run_type="tool", name="search_awards_raw")
 def search_awards_raw(
     agency_name: str,
     start_fiscal_year: int,

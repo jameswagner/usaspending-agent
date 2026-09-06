@@ -105,6 +105,63 @@ class TestFindAgencyByName:
         assert result.toptier_code == "049"
 
 
+class TestListToptierAgenciesCaching:
+    # Found live: a 5-agency fan-out question re-fetched this same,
+    # essentially-static ~100-agency list 5 times in one request, since
+    # find_agency_by_name calls this on every invocation with no caching.
+
+    @pytest.fixture
+    def client(self):
+        return USASpendingClient()
+
+    def _fake_get_counting(self, call_count: dict):
+        def fake_get(path, params=None):
+            call_count["n"] += 1
+            return {
+                "results": [
+                    {
+                        "agency_id": 1,
+                        "agency_name": "National Science Foundation",
+                        "toptier_code": "049",
+                        "abbreviation": "NSF",
+                        "agency_slug": "nsf",
+                    }
+                ]
+            }
+
+        return fake_get
+
+    def test_second_call_within_ttl_does_not_refetch(self, client, monkeypatch):
+        call_count = {"n": 0}
+        monkeypatch.setattr(client, "_get", self._fake_get_counting(call_count))
+
+        client.list_toptier_agencies()
+        client.list_toptier_agencies()
+
+        assert call_count["n"] == 1
+
+    def test_refetches_after_ttl_expires(self, client, monkeypatch):
+        call_count = {"n": 0}
+        monkeypatch.setattr(client, "_get", self._fake_get_counting(call_count))
+
+        client.list_toptier_agencies()
+        # Simulate the TTL elapsing by backdating the cache timestamp,
+        # rather than actually sleeping in a test.
+        client._toptier_agencies_cached_at -= USASpendingClient.TOPTIER_AGENCIES_CACHE_TTL_SECONDS + 1
+        client.list_toptier_agencies()
+
+        assert call_count["n"] == 2
+
+    def test_returns_parsed_agencies(self, client, monkeypatch):
+        call_count = {"n": 0}
+        monkeypatch.setattr(client, "_get", self._fake_get_counting(call_count))
+
+        result = client.list_toptier_agencies()
+
+        assert len(result) == 1
+        assert result[0].agency_name == "National Science Foundation"
+
+
 class TestSearchAwardsValidation:
     def test_raises_without_award_type_codes(self):
         client = USASpendingClient()

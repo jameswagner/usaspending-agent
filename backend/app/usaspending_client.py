@@ -23,6 +23,7 @@ api.usaspending.gov are otherwise invisible to LangSmith entirely.
 """
 from __future__ import annotations
 
+import time
 from typing import Any, Literal
 
 import requests
@@ -148,9 +149,17 @@ def _raise_with_detail(resp: requests.Response) -> None:
 
 
 class USASpendingClient:
+    # Toptier agencies (name -> code) change essentially never - a
+    # legislative reorg, not something that happens mid-request or even
+    # mid-day. 24h is a generous refresh cadence for data this static, not
+    # a tuned value.
+    TOPTIER_AGENCIES_CACHE_TTL_SECONDS = 24 * 60 * 60
+
     def __init__(self, timeout: float = 30.0):
         self.session = requests.Session()
         self.timeout = timeout
+        self._toptier_agencies_cache: list[ToptierAgency] | None = None
+        self._toptier_agencies_cached_at: float | None = None
 
         # Retry transient failures (connection errors, rate limiting, server
         # errors) with backoff. Deliberately excludes 4xx like the 404s from
@@ -176,9 +185,37 @@ class USASpendingClient:
         _raise_with_detail(resp)
         return resp.json()
 
+    @traceable(run_type="tool", name="list_toptier_agencies")
     def list_toptier_agencies(self) -> list[ToptierAgency]:
+        """Cached for TOPTIER_AGENCIES_CACHE_TTL_SECONDS. Found live via a
+        5-agency fan-out question: find_agency_by_name calls this on every
+        invocation, and this endpoint returns the same ~100-agency list
+        regardless of which name is being searched for - a 5-agency
+        question was re-fetching the identical, essentially-static
+        reference data 5 times in one request for no reason. Cache-hit vs.
+        cache-miss is now traceable directly (this method wasn't @traceable
+        before - a pass-through call had nothing worth tracing, but a
+        cache means there's now a real, visible difference in what
+        happened between calls).
+
+        No lock around the check-then-set: the worst case if two threads
+        race is both missing the cache and both fetching the same correct
+        data once each, not incorrect data - a redundant fetch this rare
+        isn't worth the complexity of synchronizing it.
+        """
+        now = time.monotonic()
+        if (
+            self._toptier_agencies_cache is not None
+            and self._toptier_agencies_cached_at is not None
+            and now - self._toptier_agencies_cached_at < self.TOPTIER_AGENCIES_CACHE_TTL_SECONDS
+        ):
+            return self._toptier_agencies_cache
+
         data = self._get("/api/v2/references/toptier_agencies/")
-        return [ToptierAgency(**r) for r in data["results"]]
+        agencies = [ToptierAgency(**r) for r in data["results"]]
+        self._toptier_agencies_cache = agencies
+        self._toptier_agencies_cached_at = now
+        return agencies
 
     @traceable(run_type="tool", name="find_agency_by_name")
     def find_agency_by_name(self, name: str) -> ToptierAgency | None:

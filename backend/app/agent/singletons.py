@@ -4,9 +4,11 @@ the constants that configure them.
 from __future__ import annotations
 
 import os
+import types
 
 import anthropic
 from dotenv import load_dotenv
+from langsmith.wrappers import wrap_anthropic
 
 from backend.app.retrieval.hybrid import HybridRetriever
 from backend.app.usaspending_client import USASpendingClient
@@ -32,7 +34,30 @@ def _get_client() -> anthropic.Anthropic:
     global _client
     if _client is None:
         headers = {"anthropic-workspace-id": ANTHROPIC_WORKSPACE_ID} if ANTHROPIC_WORKSPACE_ID else None
-        _client = anthropic.Anthropic(default_headers=headers)
+        # wrap_anthropic patches client.messages.create/.stream and
+        # client.beta.messages.create/.parse in place - it does NOT wrap
+        # tool_runner directly (no such method exists to patch), but
+        # BetaToolRunner's non-streaming path calls the now-patched
+        # self._client.beta.messages.parse(...) internally (verified
+        # against the installed SDK's source, since the docs only show
+        # bare messages.create usage), so tool_runner calls still get
+        # fully traced - every tool_use/tool_result block, not just the
+        # question and final answer @traceable(agent_ask) alone captured
+        # before this. Only meaningful for the non-streaming path this
+        # app actually uses (tool_runner is never called with stream=True
+        # here) - client.beta.messages.stream isn't wrapped at all.
+        raw_client = anthropic.Anthropic(default_headers=headers)
+        # wrap_anthropic (langsmith 0.12.1/0.12.2, confirmed both) always
+        # tries to patch client.completions.create with no hasattr guard -
+        # unlike its beta.messages patches, which do guard - but this SDK
+        # version has no `completions` attribute at all (the legacy Text
+        # Completions API is gone), so it raises AttributeError outright.
+        # A real upstream bug, not something to route around by catching
+        # the exception: give it a placeholder to patch instead, which is
+        # never actually called since nothing here uses the Completions API.
+        if not hasattr(raw_client, "completions"):
+            raw_client.completions = types.SimpleNamespace(create=lambda *a, **k: None)
+        _client = wrap_anthropic(raw_client)
     return _client
 
 

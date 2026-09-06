@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 load_dotenv()
 
@@ -19,6 +23,19 @@ from backend.app.logging_config import configure_logging
 
 logger = logging.getLogger(__name__)
 
+# Requests allowed per client IP per minute, configurable via env var so a
+# public deployment can tighten this without a code change. See BACKLOG.md's
+# "Rate limiting on /ask" entry: without this, any caller could send
+# unlimited requests, each costing a real Claude call plus an uncapped
+# number of live USASpending API calls. Keyed on remote address (slowapi's
+# get_remote_address) - doesn't look at X-Forwarded-For, so behind a
+# reverse proxy every request would look like it comes from the proxy's
+# IP; not an issue for direct local/demo use, would need addressing before
+# deploying behind one.
+ASK_RATE_LIMIT_PER_MINUTE = int(os.environ.get("ASK_RATE_LIMIT_PER_MINUTE", "20"))
+
+limiter = Limiter(key_func=get_remote_address, headers_enabled=True)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,6 +45,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="USASpending RAG", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 class AskRequest(BaseModel):
@@ -48,16 +67,24 @@ def health() -> dict:
 
 
 @app.post("/ask", response_model=AskResponse)
-def ask(request: AskRequest) -> AskResponse:
-    logger.info("Received question: %r", request.question)
+@limiter.limit(f"{ASK_RATE_LIMIT_PER_MINUTE}/minute")
+def ask(request: Request, response: Response, payload: AskRequest) -> AskResponse:
+    # slowapi's @limiter.limit needs a starlette Request (by convention
+    # named "request") to key the limit on the caller's IP, and a
+    # starlette Response (by convention named "response") to write
+    # X-RateLimit-*/Retry-After headers onto on a *successful* call - since
+    # this endpoint returns a plain AskResponse, not a Response object,
+    # slowapi has nothing to write headers onto without it. That's why the
+    # request body param below is "payload", not "request".
+    logger.info("Received question: %r", payload.question)
     try:
-        result = agent_ask(request.question)
+        result = agent_ask(payload.question)
     except Exception:
         # Without this, an exception here (a bug in the agent loop, an
         # unhandled API error) would only ever surface as FastAPI's generic
         # 500 response - no application-level record of what actually
         # broke or which question triggered it.
-        logger.exception("agent_ask raised for question: %r", request.question)
+        logger.exception("agent_ask raised for question: %r", payload.question)
         raise
     # citations covers search_guide (chunk id/source/page); tool_citations
     # covers the four live-data tools (tool name + query parameters, since

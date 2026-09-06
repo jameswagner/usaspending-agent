@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.agent.orchestrator import NOT_FOUND_MESSAGE, AgentResult
 from backend.app.agent.response_shaping import ChartSpec, Citation, ToolCitation
-from backend.app.main import app
+from backend.app.main import ASK_RATE_LIMIT_PER_MINUTE, app, limiter
 
 
 @pytest.fixture
@@ -14,6 +14,11 @@ def client(monkeypatch):
     # to test the HTTP layer in isolation, and it wouldn't exist in a fresh
     # CI checkout anyway (data/ is gitignored).
     monkeypatch.setattr("backend.app.main.warm_up", lambda: None)
+    # limiter's in-memory storage is attached to the module-level `app`,
+    # which is imported once and shared across every test in this file -
+    # without resetting it, request counts from one test would carry over
+    # and could trip the limit in a later, unrelated test.
+    limiter.reset()
     with TestClient(app) as c:
         yield c
 
@@ -87,6 +92,19 @@ def test_ask_missing_question_field_returns_422(client):
 def test_ask_wrong_type_returns_422(client):
     resp = client.post("/ask", json={"question": 12345})
     assert resp.status_code == 422
+
+
+def test_ask_rate_limited_after_exceeding_limit(client, monkeypatch):
+    monkeypatch.setattr("backend.app.main.agent_ask", lambda question: AgentResult(answer_text="ok"))
+
+    for _ in range(ASK_RATE_LIMIT_PER_MINUTE):
+        resp = client.post("/ask", json={"question": "What is a prime award?"})
+        assert resp.status_code == 200
+
+    resp = client.post("/ask", json={"question": "What is a prime award?"})
+
+    assert resp.status_code == 429
+    assert "Retry-After" in resp.headers
 
 
 def test_ui_serves_frontend(client):

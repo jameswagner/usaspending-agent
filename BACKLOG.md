@@ -111,7 +111,27 @@ of that). Not a concern for local-only use, but load-bearing the moment
 this is ever deployed somewhere reachable by the public. Would pair
 naturally with the other findings from that red-team pass (a `limit`
 clamp, a per-turn tool-call cap) as one pass of hardening before any
-deployment. Not started.
+deployment.
+
+**Implemented (2026-09-06):** `POST /ask` now rate-limits per client IP via
+`slowapi` (`backend/app/main.py`) — deliberately not hand-rolled: an
+initial in-memory-dict draft had a real bug (never evicted old client
+entries, an unbounded memory leak), which is exactly the kind of
+concurrency/cleanup subtlety a maintained library already handles.
+Default `ASK_RATE_LIMIT_PER_MINUTE=20`, configurable via env var without a
+code change. Keyed on `get_remote_address` (the raw connecting IP, not
+`X-Forwarded-For`) — fine for direct local/demo use, but every request
+would look like it comes from the proxy's IP if this ever runs behind a
+reverse proxy; would need addressing first. Exceeding the limit returns
+`429` with a `Retry-After` header (`slowapi`'s `headers_enabled=True`,
+which requires the route to accept a `response: Response` param to write
+the header onto on the success path too — otherwise `_inject_headers`
+raises rather than silently no-op'ing). Tested in
+`tests/test_main.py::test_ask_rate_limited_after_exceeding_limit`; the
+`client` fixture calls `limiter.reset()` since the limiter's in-memory
+storage lives on the module-level `app` shared across every test in the
+file. The sibling findings from the same red-team pass — a `limit` clamp
+and a per-turn tool-call cap — remain separate, open items below.
 
 ## Daily health check for USASpending API category support
 
@@ -469,7 +489,7 @@ before the classifier call (`_get_top_passage`, reusing the same
 into the prompt, matching the RAG-augmented variant above. The
 duplicate-retrieval question was resolved by deliberately not engineering
 around it: if the tool loop later calls `search_guide` for the same
-question, retrieval just runs again - it's local (no LLM cost) and cheap
+question, retrieval just runs again — it's local (no LLM cost) and cheap
 over this corpus's size (221 chunks), so the added complexity of avoiding
 it (injecting a synthetic tool result into the conversation, hand-building
 citation bookkeeping outside `search_guide`'s own function) wasn't
@@ -480,7 +500,7 @@ cases still correctly rejected.
 
 Deliberately not extended further: feeding the same retrieved context
 into the *agent loop* itself (not just the gate) was considered and
-explicitly deferred - that's a different, unverified claim (whether
+explicitly deferred — that's a different, unverified claim (whether
 context helps downstream answer quality, not classification accuracy) and
 carries the same weak-match risk for live-data questions the gate's
 prompt already has to explicitly guard against. Worth its own eval if

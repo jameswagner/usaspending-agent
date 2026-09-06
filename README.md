@@ -69,7 +69,7 @@ uv run ruff check .
 ```
 backend/app/
   main.py                 FastAPI app (POST /ask, GET /health, serves frontend/ at /ui)
-  agent/                  Tool-calling agent (package): clients, tool definitions, arithmetic
+  agent/                  Tool-calling agent (package): singletons, tool definitions, arithmetic
                             tools, scope gate, chart/citation logic (response_shaping.py),
                             orchestrator, CLI
     dev_tools/              Manual, opt-in scripts (real billed LLM calls, not in CI):
@@ -79,7 +79,7 @@ backend/app/
     hybrid.py              Dense+sparse retriever with cross-encoder reranking (used at request time)
     pipeline/               One-off scripts: PDF -> chunks -> indexes
     dev_tools/              Manual scripts: sanity_check.py, calibrate_threshold.py
-  tools/usaspending_client.py   Typed client for the live USASpending.gov API
+  usaspending_client.py   Typed client for the live USASpending.gov API
 frontend/index.html        Minimal no-build UI (vanilla JS, served by FastAPI, no separate process)
 tests/                     Unit tests
 BACKLOG.md                 Known gaps and deferred work

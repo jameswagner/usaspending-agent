@@ -20,6 +20,7 @@ from anthropic import beta_tool
 from langsmith import traceable
 
 from backend.app.usaspending_client import (
+    SearchAwardsResponse,
     SpendingByCategoryResponse,
     SpendingOverTimeResponse,
     USASpendingAPIError,
@@ -80,6 +81,37 @@ def _wrap_untrusted(text: str) -> str:
     matching instruction.
     """
     return f"<untrusted_data>\n{text}\n</untrusted_data>"
+
+
+def _truncation_note(has_next: bool, shown: int) -> str:
+    """A plain-language caveat appended to get_spending_by_category's and
+    search_awards's formatted output when the live API's
+    page_metadata.hasNext says more results exist beyond what `limit`
+    returned.
+
+    Found live (2026-09-06): a min_amount-filtered search_awards query
+    silently returned 5 of a larger real match set (page_metadata.hasNext
+    was true), and the model presented that partial slice as the complete
+    list of matching awards - the exact "confident but incomplete" failure
+    the filter layer above this was built to close, one layer further in.
+    hasNext was already in the live API response the whole time; it just
+    wasn't being read - client.search_awards/spending_by_category
+    previously discarded page_metadata entirely.
+
+    Appending this directly into the tool's own returned text (not just a
+    docstring warning) matches this file's existing pattern for steering
+    the model inline - see get_spending_by_category's failure message,
+    which tells the model what not to do in the returned string itself,
+    not just in the system prompt.
+    """
+    if not has_next:
+        return ""
+    return (
+        f"\n\n(Note: this shows the top {shown} by amount - more results match these "
+        "filters but aren't shown here. Do not present this as the complete or "
+        "exhaustive list; tell the user more results exist. A larger limit or a "
+        "narrower filter, e.g. a tighter min_amount, would show more of them.)"
+    )
 
 
 def _record_code_execution_calls(message) -> None:
@@ -172,15 +204,23 @@ def get_spending_by_category_raw(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    keywords: str | None = None,
+    date_type: str | None = None,
+    place_of_performance_scope: str | None = None,
+    recipient_scope: str | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
 ) -> SpendingByCategoryResponse:
     """Call the API once, return the structured response. Raises
     USASpendingAPIError on failure — the @beta_tool wrapper decides how to
     present that to the model; this function stays presentation-free so the
     structured result is also available for chart-building later.
 
-    Filter resolution (agency, award_type, recipient, amount, location) is
-    delegated to _build_filters - see its docstring for the "no behavior
-    change when the new params are omitted" guarantee and each failure mode.
+    Filter resolution (agency, award_type, recipient, amount, location,
+    keywords, date_type, scope, naics/psc/cfda code) is delegated to
+    _build_filters - see its docstring for the "no behavior change when
+    the new params are omitted" guarantee and each failure mode.
     """
     client = _get_usaspending_client()
     filters = _build_filters(
@@ -194,6 +234,13 @@ def get_spending_by_category_raw(
         max_amount=max_amount,
         performed_in_state=performed_in_state,
         recipient_in_state=recipient_in_state,
+        keywords=keywords,
+        date_type=date_type,
+        place_of_performance_scope=place_of_performance_scope,
+        recipient_scope=recipient_scope,
+        naics_code=naics_code,
+        psc_code=psc_code,
+        cfda_program=cfda_program,
     )
     return client.spending_by_category(category, filters, limit=limit)
 
@@ -211,6 +258,13 @@ def get_spending_by_category(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    keywords: str | None = None,
+    date_type: str | None = None,
+    place_of_performance_scope: str | None = None,
+    recipient_scope: str | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
 ) -> str:
     """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for one awarding agency and fiscal year range, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions.
 
@@ -234,6 +288,24 @@ def get_spending_by_category(
             headquartered/located in this US state - different from performed_in_state:
             a company headquartered in one state can perform work in another, and these
             can give substantially different totals.
+        keywords: Optional. Free-text search over award descriptions, e.g. "climate research".
+        date_type: Optional. Which award date the fiscal-year range is matched against - one of
+            action_date (default: any transaction/modification in the window - note this means
+            a multi-year award active in more than one fiscal year appears in results for EACH
+            of those years), date_signed (the award's original signing date), last_modified_date,
+            or new_awards_only (only awards that originated in this window - use this for "what
+            NEW contracts did X award in FY2024" as opposed to "what was X spending on in FY2024").
+        place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
+        recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
+        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511" for
+            Custom Computer Programming Services. Must be the real code (2-6 digits) - if you
+            only have a description, use category="naics" to browse the actual breakdown instead
+            of guessing a code.
+        psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030"
+            for Information Technology Software. Same guidance as naics_code: use category="psc"
+            to browse if you don't have the exact code.
+        cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
+            only), format NN.NNN, e.g. "10.001".
     """
     try:
         response = get_spending_by_category_raw(
@@ -248,6 +320,13 @@ def get_spending_by_category(
             max_amount=max_amount,
             performed_in_state=performed_in_state,
             recipient_in_state=recipient_in_state,
+            keywords=keywords,
+            date_type=date_type,
+            place_of_performance_scope=place_of_performance_scope,
+            recipient_scope=recipient_scope,
+            naics_code=naics_code,
+            psc_code=psc_code,
+            cfda_program=cfda_program,
         )
     except USASpendingAPIError as e:
         logger.warning("get_spending_by_category failed for %s/%s: %s", agency_name, category, e)
@@ -266,6 +345,13 @@ def get_spending_by_category(
         max_amount=max_amount,
         performed_in_state=performed_in_state,
         recipient_in_state=recipient_in_state,
+        keywords=keywords,
+        date_type=date_type,
+        place_of_performance_scope=place_of_performance_scope,
+        recipient_scope=recipient_scope,
+        naics_code=naics_code,
+        psc_code=psc_code,
+        cfda_program=cfda_program,
     )
     _record_tool_call("get_spending_by_category", response, context)
 
@@ -273,7 +359,9 @@ def get_spending_by_category(
         return f"No {category} spending data found for {agency_name} between FY{start_fiscal_year} and FY{end_fiscal_year}."
 
     lines = [f"{r.name or r.code or 'unknown'}: ${r.amount:,.2f}" for r in response.results]
-    return _wrap_untrusted("\n".join(lines))
+    has_next = response.page_metadata.hasNext if response.page_metadata else False
+    note = _truncation_note(has_next, len(response.results))
+    return _wrap_untrusted("\n".join(lines) + note)
 
 
 @traceable(run_type="tool", name="get_spending_over_time_raw")
@@ -288,6 +376,13 @@ def get_spending_over_time_raw(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    keywords: str | None = None,
+    date_type: str | None = None,
+    place_of_performance_scope: str | None = None,
+    recipient_scope: str | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
 ) -> SpendingOverTimeResponse:
     """Call the API once, return the structured response. Same filter
     resolution (via _build_filters) as get_spending_by_category_raw."""
@@ -303,6 +398,13 @@ def get_spending_over_time_raw(
         max_amount=max_amount,
         performed_in_state=performed_in_state,
         recipient_in_state=recipient_in_state,
+        keywords=keywords,
+        date_type=date_type,
+        place_of_performance_scope=place_of_performance_scope,
+        recipient_scope=recipient_scope,
+        naics_code=naics_code,
+        psc_code=psc_code,
+        cfda_program=cfda_program,
     )
     return client.spending_over_time(filters, group=group)
 
@@ -319,6 +421,13 @@ def get_spending_over_time(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    keywords: str | None = None,
+    date_type: str | None = None,
+    place_of_performance_scope: str | None = None,
+    recipient_scope: str | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
 ) -> str:
     """Get USASpending spending trends over time for one awarding agency, grouped by period. Use this for "how has X's spending changed/trended over time" questions.
 
@@ -341,6 +450,20 @@ def get_spending_over_time(
             headquartered/located in this US state - different from performed_in_state:
             a company headquartered in one state can perform work in another, and these
             can give substantially different totals.
+        keywords: Optional. Free-text search over award descriptions, e.g. "climate research".
+        date_type: Optional. Which award date the fiscal-year range is matched against - one of
+            action_date (default: any transaction/modification in the window - note this means
+            a multi-year award active in more than one fiscal year contributes to EACH of those
+            years' totals), date_signed (the award's original signing date), last_modified_date,
+            or new_awards_only (only awards that originated in this window).
+        place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
+        recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
+        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511". Must be
+            the real code - if you only have a description, use get_spending_by_category with
+            category="naics" to browse the actual breakdown instead of guessing a code.
+        psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
+        cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
+            only), format NN.NNN, e.g. "10.001".
     """
     try:
         response = get_spending_over_time_raw(
@@ -354,6 +477,13 @@ def get_spending_over_time(
             max_amount=max_amount,
             performed_in_state=performed_in_state,
             recipient_in_state=recipient_in_state,
+            keywords=keywords,
+            date_type=date_type,
+            place_of_performance_scope=place_of_performance_scope,
+            recipient_scope=recipient_scope,
+            naics_code=naics_code,
+            psc_code=psc_code,
+            cfda_program=cfda_program,
         )
     except USASpendingAPIError as e:
         logger.warning("get_spending_over_time failed for %s: %s", agency_name, e)
@@ -372,6 +502,13 @@ def get_spending_over_time(
         max_amount=max_amount,
         performed_in_state=performed_in_state,
         recipient_in_state=recipient_in_state,
+        keywords=keywords,
+        date_type=date_type,
+        place_of_performance_scope=place_of_performance_scope,
+        recipient_scope=recipient_scope,
+        naics_code=naics_code,
+        psc_code=psc_code,
+        cfda_program=cfda_program,
     )
     _record_tool_call("get_spending_over_time", response, context)
 
@@ -397,13 +534,20 @@ def search_awards_raw(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
-) -> list[dict]:
-    """Call the API once, return the raw list of award result dicts,
-    sorted largest-amount-first (Award Amount, or Loan Value for loan
-    award types - see _amount_field_for_award_type). This replaces the
-    prior default order, which was verified live to be essentially
-    arbitrary: an unsorted "top 5" NSF FY2023 contracts query returned
-    awards from $7K to $7.2M while the true largest that year was
+    keywords: str | None = None,
+    date_type: str | None = None,
+    place_of_performance_scope: str | None = None,
+    recipient_scope: str | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
+) -> SearchAwardsResponse:
+    """Call the API once, return the structured response (results +
+    page_metadata), sorted largest-amount-first (Award Amount, or Loan
+    Value for loan award types - see _amount_field_for_award_type). This
+    replaces the prior default order, which was verified live to be
+    essentially arbitrary: an unsorted "top 5" NSF FY2023 contracts query
+    returned awards from $7K to $7.2M while the true largest that year was
     $3.13B and never appeared. Unlike the filter params, which are all
     optional and behavior-preserving when omitted, this sort change is
     NOT optional - the old default had no meaningful ordering to
@@ -424,6 +568,13 @@ def search_awards_raw(
         max_amount=max_amount,
         performed_in_state=performed_in_state,
         recipient_in_state=recipient_in_state,
+        keywords=keywords,
+        date_type=date_type,
+        place_of_performance_scope=place_of_performance_scope,
+        recipient_scope=recipient_scope,
+        naics_code=naics_code,
+        psc_code=psc_code,
+        cfda_program=cfda_program,
     )
     amount_field = _amount_field_for_award_type(award_type)
     fields = SEARCH_AWARDS_FIELDS_BASE + [amount_field]
@@ -442,8 +593,28 @@ def search_awards(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    keywords: str | None = None,
+    date_type: str | None = None,
+    place_of_performance_scope: str | None = None,
+    recipient_scope: str | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
 ) -> str:
     """Search for individual award records (specific contracts, grants, or loans) for one awarding agency and fiscal year range. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead. Results are ranked largest-amount-first by default — use this directly for "biggest"/"top N" questions.
+
+    IMPORTANT about fiscal-year scoping: by default (date_type omitted), an
+    award appears here if it had ANY transaction/modification in the queried
+    fiscal year - not "this dollar amount was specifically obligated in this
+    year." Award Amount/Loan Value is each award's current TOTAL value, not a
+    per-year figure. A multi-year award active in more than one fiscal year
+    will appear in results for EACH of those years showing the SAME total -
+    do not sum or compare these across multiple fiscal-year calls to this
+    tool as if they were period-scoped and additive; use
+    get_spending_over_time for genuinely period-scoped, non-duplicative
+    totals instead. If the question is really "what NEW contracts did X
+    award in FY2024" rather than "what was X active on," set
+    date_type="new_awards_only" instead of leaving this default.
 
     Args:
         agency_name: The awarding agency's name, e.g. "National Science Foundation".
@@ -470,6 +641,17 @@ def search_awards(
             headquartered/located in this US state - different from performed_in_state:
             a company headquartered in one state can perform work in another, and these
             can give substantially different results.
+        keywords: Optional. Free-text search over award descriptions, e.g. "climate research".
+        date_type: Optional. See the IMPORTANT note above - one of action_date (default),
+            date_signed, last_modified_date, or new_awards_only.
+        place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
+        recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
+        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511". Must be
+            the real code - if you only have a description, browse via get_spending_by_category
+            (category="naics") instead of guessing a code.
+        psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
+        cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
+            only), format NN.NNN, e.g. "10.001".
     """
     try:
         results = search_awards_raw(
@@ -483,6 +665,13 @@ def search_awards(
             max_amount=max_amount,
             performed_in_state=performed_in_state,
             recipient_in_state=recipient_in_state,
+            keywords=keywords,
+            date_type=date_type,
+            place_of_performance_scope=place_of_performance_scope,
+            recipient_scope=recipient_scope,
+            naics_code=naics_code,
+            psc_code=psc_code,
+            cfda_program=cfda_program,
         )
     except USASpendingAPIError as e:
         logger.warning("search_awards failed for %s: %s", agency_name, e)
@@ -499,19 +688,28 @@ def search_awards(
         min_amount=min_amount,
         max_amount=max_amount,
         performed_in_state=performed_in_state,
+        keywords=keywords,
+        date_type=date_type,
+        place_of_performance_scope=place_of_performance_scope,
+        recipient_scope=recipient_scope,
+        naics_code=naics_code,
+        psc_code=psc_code,
+        cfda_program=cfda_program,
         recipient_in_state=recipient_in_state,
     )
     _record_tool_call("search_awards", results, context)
 
-    if not results:
+    if not results.results:
         return f"No {award_type} awards found for {agency_name} between FY{start_fiscal_year} and FY{end_fiscal_year}."
 
     amount_field = _amount_field_for_award_type(award_type)
     lines = []
-    for r in results:
+    for r in results.results:
         award_id = r.get("Award ID", "unknown")
         recipient = r.get("Recipient Name", "unknown")
         amount = r.get(amount_field)
         amount_str = f"${amount:,.2f}" if isinstance(amount, (int, float)) else "unknown amount"
         lines.append(f"{award_id} — {recipient}: {amount_str}")
-    return _wrap_untrusted("\n".join(lines))
+    has_next = results.page_metadata.hasNext if results.page_metadata else False
+    note = _truncation_note(has_next, len(results.results))
+    return _wrap_untrusted("\n".join(lines) + note)

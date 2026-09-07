@@ -12,11 +12,18 @@ from backend.app.agent.tool_filters import (
     AWARD_TYPE_GROUPS,
     LOAN_AWARD_TYPE_CODES,
     US_STATE_ABBREVIATIONS,
+    VALID_DATE_TYPES,
     _amount_field_for_award_type,
     _build_filters,
     _normalize_award_type,
+    _normalize_date_type,
+    _normalize_scope,
     _normalize_state,
+    _validate_cfda_program,
+    _validate_naics_code,
+    _validate_psc_code,
 )
+from backend.app.agent.tools import _truncation_note
 from backend.app.usaspending_client import (
     CategoryResult,
     SpendingByCategoryResponse,
@@ -373,6 +380,67 @@ class TestBuildFilters:
         with pytest.raises(USASpendingAPIError, match="Unrecognized state"):
             _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, performed_in_state="Narnia")
 
+    def test_keywords_becomes_single_item_list(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, keywords="climate research")
+        assert filters.keywords == ["climate research"]
+
+    def test_date_type_sets_it_on_the_time_period_object(self):
+        # Regression for the real finding: a multi-year award appeared
+        # under both FY2023 and FY2024 with the same total under the
+        # default action_date matching - new_awards_only eliminates that,
+        # verified live 2026-09-06 (see verify_shared_filters.py).
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", 2021, 2024, date_type="New Awards Only"
+        )
+        assert filters.time_period[0].date_type == "new_awards_only"
+
+    def test_omitting_date_type_leaves_it_unset(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024)
+        assert filters.time_period[0].date_type is None
+
+    def test_unrecognized_date_type_raises(self):
+        with pytest.raises(USASpendingAPIError, match="Unrecognized date_type"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, date_type="whenever")
+
+    def test_place_of_performance_and_recipient_scope_are_independent(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", 2021, 2024,
+            place_of_performance_scope="domestic", recipient_scope="foreign",
+        )
+        assert filters.place_of_performance_scope == "domestic"
+        assert filters.recipient_scope == "foreign"
+
+    def test_unrecognized_scope_raises(self):
+        with pytest.raises(USASpendingAPIError, match="Unrecognized place_of_performance_scope"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, place_of_performance_scope="martian")
+
+    def test_naics_code_becomes_require_list(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, naics_code="541511")
+        assert filters.naics_codes.require == ["541511"]
+
+    def test_malformed_naics_code_raises(self):
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a NAICS code"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, naics_code="software development")
+
+    def test_psc_code_becomes_flat_list_not_hierarchical_object(self):
+        # Verified live 2026-09-06: the flat list form (not the
+        # require/exclude path object) is what actually filters correctly
+        # for a single known code.
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, psc_code="7030")
+        assert filters.psc_codes == ["7030"]
+
+    def test_malformed_psc_code_raises(self):
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a PSC code"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, psc_code="software")
+
+    def test_cfda_program_becomes_program_numbers_list(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, cfda_program="10.001")
+        assert filters.program_numbers == ["10.001"]
+
+    def test_malformed_cfda_program_raises(self):
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a CFDA"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, cfda_program="research grants")
+
 
 class TestNormalizeState:
     def test_full_name_case_and_spacing_insensitive(self):
@@ -424,3 +492,84 @@ class TestAmountFieldForAwardType:
         # call in real usage - this is just the documented fallback
         # behavior for this function specifically, not a new validation path.
         assert _amount_field_for_award_type("not_a_real_type") == "Award Amount"
+
+
+class TestTruncationNote:
+    # Regression coverage for a real bug found live via the UI
+    # (2026-09-06): a min_amount-filtered search_awards query silently
+    # returned 5 of a larger real match set (page_metadata.hasNext was
+    # true, but discarded before this fix), and the model presented the
+    # partial slice as the complete list of matching awards.
+
+    def test_no_note_when_hasNext_is_false(self):
+        assert _truncation_note(False, shown=5) == ""
+
+    def test_note_when_hasNext_is_true(self):
+        note = _truncation_note(True, shown=5)
+        assert note != ""
+        assert "5" in note
+        assert "not" in note.lower()  # "not exhaustive"/"not the complete list"
+
+    def test_note_tells_the_model_not_to_claim_completeness(self):
+        # The literal wording matters here, not just presence/absence - a
+        # vague note ("results may be limited") is easy for a model to
+        # skip past; this asserts the instruction is explicit.
+        note = _truncation_note(True, shown=5)
+        assert "complete" in note.lower() or "exhaustive" in note.lower()
+
+
+class TestNormalizeDateType:
+    def test_case_and_spacing_insensitive(self):
+        assert _normalize_date_type("New Awards Only") == "new_awards_only"
+        assert _normalize_date_type("new-awards-only") == "new_awards_only"
+        assert _normalize_date_type("  action_date  ") == "action_date"
+
+    def test_all_four_real_api_values_accepted(self):
+        # action_date, date_signed, last_modified_date, new_awards_only -
+        # per search_filters.md's Award Search Time Period Object.
+        assert VALID_DATE_TYPES == {"action_date", "date_signed", "last_modified_date", "new_awards_only"}
+        for value in VALID_DATE_TYPES:
+            assert _normalize_date_type(value) == value
+
+    def test_garbage_raises(self):
+        with pytest.raises(USASpendingAPIError, match="Unrecognized date_type 'whenever'"):
+            _normalize_date_type("whenever")
+
+
+class TestNormalizeScope:
+    def test_domestic_and_foreign_accepted(self):
+        assert _normalize_scope("domestic", "recipient_scope") == "domestic"
+        assert _normalize_scope("Foreign", "recipient_scope") == "foreign"
+
+    def test_garbage_raises_with_the_right_param_name(self):
+        with pytest.raises(USASpendingAPIError, match="Unrecognized recipient_scope 'martian'"):
+            _normalize_scope("martian", "recipient_scope")
+
+
+class TestCodeValidation:
+    # Format-only validation, not existence checks against a real
+    # vocabulary - NAICS/PSC/CFDA are large government classification
+    # systems with no small closed list to hardcode, unlike award_type/
+    # state. See ADVANCED_FILTER_FIELD_COVERAGE's naics_codes entry.
+
+    def test_valid_naics_codes_of_various_lengths(self):
+        assert _validate_naics_code("54") == "54"
+        assert _validate_naics_code("541511") == "541511"
+
+    def test_naics_code_rejects_non_numeric(self):
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a NAICS code"):
+            _validate_naics_code("information technology")
+
+    def test_valid_psc_code(self):
+        assert _validate_psc_code("7030") == "7030"
+
+    def test_psc_code_rejects_wrong_length(self):
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a PSC code"):
+            _validate_psc_code("70")
+
+    def test_valid_cfda_program(self):
+        assert _validate_cfda_program("10.001") == "10.001"
+
+    def test_cfda_program_rejects_wrong_format(self):
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a CFDA"):
+            _validate_cfda_program("10-001")

@@ -13,11 +13,14 @@ machinery those don't need.
 """
 from __future__ import annotations
 
+import re
+
 from backend.app.usaspending_client import (
     AdvancedFilters,
     AgencyFilter,
     AwardAmount,
     LocationObject,
+    NAICSCodeObject,
     TimePeriod,
     USASpendingAPIError,
     USASpendingClient,
@@ -125,6 +128,74 @@ def _normalize_state(state: str) -> str:
     return code
 
 
+# The API's own real values (search_filters.md's Award/Transaction Search
+# Time Period Objects), not guessed. action_date is the API's own default
+# when omitted - kept in this set so an explicit "action_date" passed by
+# the model still validates instead of erroring on a value that's
+# actually correct.
+VALID_DATE_TYPES = {"action_date", "date_signed", "last_modified_date", "new_awards_only"}
+
+
+def _normalize_date_type(date_type: str) -> str:
+    """Case/spacing-insensitive lookup against VALID_DATE_TYPES, same
+    normalize-then-validate pattern as _normalize_award_type/_normalize_state.
+    """
+    normalized = date_type.strip().lower().replace(" ", "_").replace("-", "_")
+    if normalized not in VALID_DATE_TYPES:
+        raise USASpendingAPIError(
+            f"Unrecognized date_type '{date_type}'. Must be one of: {', '.join(sorted(VALID_DATE_TYPES))}"
+        )
+    return normalized
+
+
+def _normalize_scope(scope: str, param_name: str) -> str:
+    """domestic/foreign - the only two values place_of_performance_scope
+    and recipient_scope accept (search_filters.md)."""
+    normalized = scope.strip().lower()
+    if normalized not in ("domestic", "foreign"):
+        raise USASpendingAPIError(f"Unrecognized {param_name} '{scope}'. Must be 'domestic' or 'foreign'.")
+    return normalized
+
+
+# Format-only validation for the three code passthroughs below - these are
+# large government classification systems (thousands of NAICS/PSC codes,
+# hundreds of CFDA programs) with no small closed vocabulary to validate
+# existence against the way AWARD_TYPE_GROUPS/US_STATE_ABBREVIATIONS do.
+# Catching an obviously-malformed value (the model passing a description
+# instead of a code) is what's actually achievable here; a real invalid-
+# but-well-formed code still just gets a live 400/empty-results from the
+# API itself, the same graceful-decline shape as an unknown category.
+def _validate_naics_code(naics_code: str) -> str:
+    code = naics_code.strip()
+    if not code.isdigit() or not (2 <= len(code) <= 6):
+        raise USASpendingAPIError(
+            f"'{naics_code}' doesn't look like a NAICS code (expected 2-6 digits, e.g. '541511'). "
+            "If you don't have the exact code, ask for a category breakdown by naics instead."
+        )
+    return code
+
+
+def _validate_psc_code(psc_code: str) -> str:
+    code = psc_code.strip().upper()
+    if not (len(code) == 4 and code.isalnum()):
+        raise USASpendingAPIError(
+            f"'{psc_code}' doesn't look like a PSC code (expected a 4-character code, e.g. '7030')."
+        )
+    return code
+
+
+_CFDA_PATTERN = re.compile(r"^\d{2}\.\d{3}$")
+
+
+def _validate_cfda_program(cfda_program: str) -> str:
+    code = cfda_program.strip()
+    if not _CFDA_PATTERN.match(code):
+        raise USASpendingAPIError(
+            f"'{cfda_program}' doesn't look like a CFDA/assistance listing number (expected NN.NNN, e.g. '10.001')."
+        )
+    return code
+
+
 def _build_filters(
     client: USASpendingClient,
     agency_name: str,
@@ -137,6 +208,13 @@ def _build_filters(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    keywords: str | None = None,
+    date_type: str | None = None,
+    place_of_performance_scope: str | None = None,
+    recipient_scope: str | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
 ) -> AdvancedFilters:
     """Resolve agency_name + fiscal-year range into an AdvancedFilters -
     the shared first step of all three spending tools, replacing what was
@@ -171,6 +249,17 @@ def _build_filters(
     (recipient address) - a ~$16B gap, verified live 2026-09-06. They map
     to different AdvancedFilters fields (place_of_performance_locations
     vs. recipient_locations) and can both be set at once.
+
+    naics_code/psc_code/cfda_program are direct code passthroughs (format-
+    validated only, not looked up against a vocabulary) - unlike
+    award_type/state, these codes are already the exact value the API
+    wants once an analyst states them (e.g. "NAICS 541511"), the same way
+    a stock ticker doesn't need translating. No mapping table exists for
+    them the way AWARD_TYPE_GROUPS/US_STATE_ABBREVIATIONS do, because
+    there's no small closed vocabulary to hardcode - NAICS/PSC/CFDA are
+    each thousands of entries. A keyword->code lookup (the live
+    autocomplete/naics/psc/cfda endpoints) was considered and deliberately
+    not built - see ADVANCED_FILTER_FIELD_COVERAGE's naics_codes entry.
     """
     agency = client.find_agency_by_name(agency_name)
     if agency is None:
@@ -208,6 +297,32 @@ def _build_filters(
 
     if recipient_in_state is not None:
         kwargs["recipient_locations"] = [LocationObject(state=_normalize_state(recipient_in_state))]
+
+    if keywords is not None:
+        kwargs["keywords"] = [keywords]
+
+    if date_type is not None:
+        kwargs["time_period"][0].date_type = _normalize_date_type(date_type)
+
+    if place_of_performance_scope is not None:
+        kwargs["place_of_performance_scope"] = _normalize_scope(
+            place_of_performance_scope, "place_of_performance_scope"
+        )
+
+    if recipient_scope is not None:
+        kwargs["recipient_scope"] = _normalize_scope(recipient_scope, "recipient_scope")
+
+    if naics_code is not None:
+        kwargs["naics_codes"] = NAICSCodeObject(require=[_validate_naics_code(naics_code)])
+
+    if psc_code is not None:
+        # Flat list form, not the hierarchical require/exclude object -
+        # verified live 2026-09-06 that a plain psc_codes: [code] list
+        # correctly filters by that exact code.
+        kwargs["psc_codes"] = [_validate_psc_code(psc_code)]
+
+    if cfda_program is not None:
+        kwargs["program_numbers"] = [_validate_cfda_program(cfda_program)]
 
     return AdvancedFilters(**kwargs)
 
@@ -251,11 +366,18 @@ def _record_optional_filter_context(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    keywords: str | None = None,
+    date_type: str | None = None,
+    place_of_performance_scope: str | None = None,
+    recipient_scope: str | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
 ) -> dict:
-    """Adds each of the six optional filter params to a citation context
-    dict, but only the ones actually set - so a citation reflects exactly
-    which filters were used for that call, not every filter this tool
-    supports in the abstract."""
+    """Adds each optional filter param to a citation context dict, but
+    only the ones actually set - so a citation reflects exactly which
+    filters were used for that call, not every filter this tool supports
+    in the abstract."""
     for key, value in (
         ("award_type", award_type),
         ("recipient_name", recipient_name),
@@ -263,6 +385,13 @@ def _record_optional_filter_context(
         ("max_amount", max_amount),
         ("performed_in_state", performed_in_state),
         ("recipient_in_state", recipient_in_state),
+        ("keywords", keywords),
+        ("date_type", date_type),
+        ("place_of_performance_scope", place_of_performance_scope),
+        ("recipient_scope", recipient_scope),
+        ("naics_code", naics_code),
+        ("psc_code", psc_code),
+        ("cfda_program", cfda_program),
     ):
         if value is not None:
             context[key] = value

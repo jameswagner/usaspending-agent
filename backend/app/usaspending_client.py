@@ -38,6 +38,18 @@ BASE_URL = "https://api.usaspending.gov"
 class TimePeriod(BaseModel):
     start_date: str  # YYYY-MM-DD
     end_date: str
+    # One of action_date (default - any transaction in this window),
+    # date_signed (the award's original/base transaction date), or
+    # new_awards_only (only awards whose BASE transaction falls in this
+    # window). Live-verified 2026-09-06: a multi-year award with activity
+    # in both FY2023 and FY2024 appears in a search_awards query for
+    # EITHER year under the action_date default, each time showing its
+    # same cumulative Award Amount - not a bug, just what action_date
+    # actually filters on. new_awards_only eliminates that recurrence
+    # (verified: an award set that overlapped under action_date had zero
+    # overlap under new_awards_only) at the cost of omitting ongoing
+    # multi-year awards that didn't originate in the queried window.
+    date_type: str | None = None
 
 
 class AgencyFilter(BaseModel):
@@ -146,7 +158,12 @@ class AdvancedFilters(BaseModel):
     program_numbers: list[str] | None = None
     naics_codes: NAICSCodeObject | None = None
     tas_codes: CodePathObject | None = None
-    psc_codes: CodePathObject | None = None
+    # psc_codes accepts either the hierarchical require/exclude object OR
+    # a flat list of raw PSC code strings (search_filters.md: "Supports
+    # new PSCCodeObject or legacy array of codes") - the flat form is what
+    # this codebase actually uses (a single user-given code, not a tree
+    # path), verified live 2026-09-06 against a real PSC-filtered query.
+    psc_codes: CodePathObject | list[str] | None = None
     contract_pricing_type_codes: list[str] | None = None
     set_aside_type_codes: list[str] | None = None
     extent_competed_type_codes: list[str] | None = None
@@ -167,23 +184,32 @@ class AdvancedFilters(BaseModel):
 # AdvancedFilters so the two can't drift apart silently; re-diffed against
 # the live contracts by dev_tools/check_filter_coverage.py.
 ADVANCED_FILTER_FIELD_COVERAGE: dict[str, str] = {
-    "keywords": "modeled, not exposed",
+    "keywords": "exposed (keywords)",
     "description": "modeled, not exposed",
-    "time_period": "exposed (start_fiscal_year/end_fiscal_year)",
-    "place_of_performance_scope": "modeled, not exposed",
+    "time_period": "exposed (start_fiscal_year/end_fiscal_year, date_type)",
+    "place_of_performance_scope": "exposed (place_of_performance_scope)",
     "place_of_performance_locations": "exposed (performed_in_state)",
     "agencies": "exposed (agency_name)",
     "recipient_search_text": "exposed (recipient_name)",
-    "recipient_scope": "modeled, not exposed",
+    "recipient_scope": "exposed (recipient_scope)",
     "recipient_locations": "exposed (recipient_in_state)",
-    "recipient_type_names": "modeled, not exposed",
+    "recipient_type_names": "modeled, not exposed - vocabulary not yet verified against a real reference list, unlike award_type/state",
     "award_type_codes": "exposed (award_type)",
     "award_ids": "modeled, not exposed",
     "award_amounts": "exposed (min_amount/max_amount)",
-    "program_numbers": "modeled, not exposed - no analyst demand observed yet",
-    "naics_codes": "modeled, not exposed - no analyst demand observed yet",
+    "program_numbers": "exposed (cfda_program) - direct code passthrough, not a keyword lookup: verified live that "
+                        "an analyst asking about a specific CFDA program already knows the number (e.g. 10.001), the "
+                        "same way NAICS/PSC codes are domain-standard identifiers, not English descriptions needing "
+                        "translation the way award_type's buckets did",
+    "naics_codes": "exposed (naics_code) - direct code passthrough, same reasoning as program_numbers above. A "
+                    "keyword->code lookup via GET/POST /api/v2/autocomplete/naics/ exists and was verified live "
+                    "(2026-09-06) to work, but wasn't built: it solves a secondary scenario (analyst doesn't know "
+                    "the code) that wasn't established as the more likely one, and the endpoint's matching is a "
+                    "literal substring match against official titles, not semantic (e.g. 'information technology' "
+                    "and 'defense' alone both returned zero results live) - a real follow-up if demand shows up, "
+                    "not a naive win to build speculatively",
     "tas_codes": "modeled, not exposed - no analyst demand observed yet",
-    "psc_codes": "modeled, not exposed - no analyst demand observed yet",
+    "psc_codes": "exposed (psc_code) - direct code passthrough, same reasoning as program_numbers/naics_codes above",
     "contract_pricing_type_codes": "modeled, not exposed",
     "set_aside_type_codes": "modeled, not exposed",
     "extent_competed_type_codes": "modeled, not exposed",
@@ -232,12 +258,29 @@ class CategoryResult(BaseModel):
     total_outlays: float | None = None
 
 
+class PageMetadata(BaseModel):
+    """Per spending_by_category.md/spending_by_award.md's PageMetadataObject.
+    hasNext is the field this codebase actually cares about: whether `limit`
+    silently truncated the real result set. Kept as the literal wire-format
+    name (not snake_cased) rather than translated, matching this codebase's
+    existing convention of keeping the API's own field names visible
+    verbatim (e.g. the "Award ID"/"Recipient Name" dict keys in
+    search_awards's results) rather than a renamed Python-idiomatic layer
+    that would need to be remembered as a separate mapping."""
+
+    model_config = ConfigDict(extra="allow")
+
+    page: int
+    hasNext: bool
+
+
 class SpendingByCategoryResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     category: str
     results: list[CategoryResult]
     limit: int
+    page_metadata: PageMetadata | None = None
     messages: list[str] | None = None
 
 
@@ -264,6 +307,23 @@ class SpendingOverTimeResponse(BaseModel):
     group: str
     results: list[TimeResult]
     messages: list[str] | None = None
+
+
+class SearchAwardsResponse(BaseModel):
+    """search_awards previously returned a bare list[dict] (data["results"]),
+    silently discarding page_metadata - which meant hasNext (whether `limit`
+    actually truncated a larger real result set) was thrown away before
+    ever reaching the model. Found live (2026-09-06): a "contracts over
+    $10M" min_amount-filtered query with the default limit came back
+    hasNext=true (only 5 of the real matches returned), and the model
+    presented the truncated slice as if it were the complete list - the
+    same "confident but wrong/incomplete" failure shape the whole filter
+    layer was built to close, just one layer further in."""
+
+    model_config = ConfigDict(extra="allow")
+
+    results: list[dict[str, Any]]
+    page_metadata: PageMetadata | None = None
 
 
 class USASpendingAPIError(Exception):
@@ -428,7 +488,7 @@ class USASpendingClient:
         order: str = "desc",
         sort: str | None = None,
         page: int = 1,
-    ) -> list[dict[str, Any]]:
+    ) -> SearchAwardsResponse:
         # Unlike spending_by_category/spending_over_time, award_type_codes is
         # required here per the API contract, not just optional.
         if not filters.award_type_codes:
@@ -444,4 +504,4 @@ class USASpendingClient:
         if sort:
             body["sort"] = sort
         data = self._post("/api/v2/search/spending_by_award/", body)
-        return data["results"]
+        return SearchAwardsResponse(**data)

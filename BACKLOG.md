@@ -438,7 +438,7 @@ exploit check. Three findings, all confirmed live:
   good outcome, but it's the model's judgment doing the work, not a code
   guarantee, the same shape of fragility this project already hit and
   fixed twice (the fiscal-year off-by-one bug, entry above, and the
-  NSF-abbreviation bug in `HUMAN_INTERVENTIONS.md`).
+  NSF-abbreviation bug in `private/HUMAN_INTERVENTIONS.md`).
 
 None of these were exploited maliciously in testing (all values used were
 modest, deliberately — `api.usaspending.gov` is a shared public resource,

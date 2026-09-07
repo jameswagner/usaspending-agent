@@ -16,9 +16,10 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 |---|---|
 | `search_guide` | Definitions and concepts from the Analyst's Guide and the USASpending Glossary, with page or term citations |
 | `lookup_agency` | An agency's basic profile (toptier code, mission, website) |
-| `get_spending_by_category` | One agency's spending broken down by NAICS/PSC/sub-agency/etc. for a fiscal year range, optionally filtered by award type, recipient name, amount range, or US state (place of performance or recipient location) — charts when 2+ categories come back |
+| `get_agency_budget` | An agency's actual appropriated budgetary resources, obligations, and outlays for a fiscal year range — the real answer to "what is X's budget," as opposed to the three spending tools below, which report award-level spending (a different, non-interchangeable number) |
+| `get_spending_by_category` | One agency's spending broken down by NAICS/PSC/sub-agency/etc. for a fiscal year range, optionally filtered by award type, recipient name, amount range, US state (place of performance or recipient location), keywords, `date_type` (action_date/date_signed/last_modified_date/new_awards_only), domestic/foreign scope, or an exact NAICS/PSC/CFDA code — charts when 2+ categories come back |
 | `get_spending_over_time` | One agency's spending trend across fiscal years/quarters/months, with the same optional filters as `get_spending_by_category` — charts when 2+ periods come back |
-| `search_awards` | Individual contract/grant/loan records for an agency and fiscal year range, ranked largest-amount-first by default, with the same optional filters |
+| `search_awards` | Individual contract/grant/loan records for an agency and fiscal year range, ranked largest-amount-first by default, with the same optional filters as `get_spending_by_category`. Flags when a result list is truncated (more matches than shown) rather than presenting a partial list as complete |
 | `sum_values`, `average`, `percentage_of`, `delta`, `ratio`, `rank_values` | Deterministic arithmetic over numbers the tools above already returned — totals, shares, before/after change, cross-entity comparison, ranking |
 | `code_execution` | Anthropic's sandboxed Python/Bash fallback for calculations the six typed tools don't cover (e.g. a statistic like standard deviation) |
 
@@ -88,4 +89,5 @@ backend/app/
 frontend/index.html        Minimal no-build UI (vanilla JS, served by FastAPI, no separate process)
 tests/                     Unit tests
 BACKLOG.md                 Known gaps and deferred work
+private/                   Gitignored: demo script, dev narrative, blog posts - not part of the deliverable
 ```

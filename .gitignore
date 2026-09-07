@@ -9,7 +9,4 @@ data/
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
-DEMO_SCRIPT.md
-HUMAN_INTERVENTIONS.md
-BLOG_POST*.md
-trace*.json
+private/

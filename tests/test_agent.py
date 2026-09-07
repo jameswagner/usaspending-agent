@@ -139,11 +139,25 @@ class TestNeverChartTools:
     def test_search_awards_never_charts(self):
         assert should_chart("search_awards", make_category_response(5)) is None
 
+    def test_get_agency_budget_never_charts(self):
+        assert should_chart("get_agency_budget", make_category_response(5)) is None
+
     def test_unknown_tool_name_returns_none(self):
         assert should_chart("some_future_tool", make_category_response(5)) is None
 
 
 class TestBuildToolCitation:
+    def test_get_agency_budget(self):
+        citation = build_tool_citation(
+            "get_agency_budget",
+            {"agency_name": "National Science Foundation", "start_fiscal_year": 2021, "end_fiscal_year": 2024},
+        )
+        assert citation is not None
+        assert citation.tool_name == "get_agency_budget"
+        assert citation.description == (
+            "Budgetary resources, National Science Foundation, FY2021-FY2024"
+        )
+
     def test_lookup_agency(self):
         citation = build_tool_citation("lookup_agency", {"name": "National Science Foundation"})
         assert citation is not None

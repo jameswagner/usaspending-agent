@@ -31,6 +31,7 @@ from .singletons import MODEL, _get_client
 from .tools import (
     _record_code_execution_calls,
     _tool_call_log,
+    get_agency_budget,
     get_spending_by_category,
     get_spending_over_time,
     lookup_agency,
@@ -94,20 +95,28 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have twelve tools. Five retrieve data: search_guide "
+        "have thirteen tools. Six retrieve data: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
-        "toptier code), get_spending_by_category (an agency's spending broken "
+        "toptier code), get_agency_budget (an agency's appropriated budgetary "
+        "resources, obligations, and outlays for a fiscal year range — use "
+        "this for 'what is X's budget' or 'how much money does X have', "
+        "NEVER get_spending_over_time or get_spending_by_category for a "
+        "budget/appropriations question: budgetary resources and award "
+        "spending are different numbers for the same agency, not "
+        "interchangeable, even though both are dollar figures), "
+        "get_spending_by_category (an agency's award spending broken "
         "down by NAICS/PSC/sub-agency/etc. for a fiscal year range), "
-        "get_spending_over_time (an agency's spending trend across fiscal "
-        "years/quarters/months), and search_awards (individual contract/grant/"
-        "loan records for an agency and fiscal year range — use this for "
-        "'show me awards from X' or 'who received money from X', not for "
-        "aggregate breakdowns or trends). Six do arithmetic: sum_values, "
-        "average, percentage_of, delta, ratio, and rank_values. One more, "
-        "code_execution, is a general-purpose Python/Bash sandbox. You must "
-        "call at least one of the five data tools before writing any answer, "
-        "every question, with no exceptions — including questions that seem "
+        "get_spending_over_time (an agency's award spending trend across "
+        "fiscal years/quarters/months), and search_awards (individual "
+        "contract/grant/loan records for an agency and fiscal year range — "
+        "use this for 'show me awards from X' or 'who received money from "
+        "X', not for aggregate breakdowns or trends). Six do arithmetic: "
+        "sum_values, average, percentage_of, delta, ratio, and rank_values. "
+        "One more, code_execution, is a general-purpose Python/Bash sandbox. "
+        "You must call at least one of the six data tools before writing any "
+        "answer, every question, with no exceptions — including questions "
+        "that seem "
         "unrelated to federal spending, general-knowledge questions, "
         "greetings, or anything else. Never answer from your own knowledge "
         "without calling a tool first, even if you already know the answer. "
@@ -209,6 +218,7 @@ def ask(question: str) -> AgentResult:
         tools=[
             search_guide,
             lookup_agency,
+            get_agency_budget,
             get_spending_by_category,
             get_spending_over_time,
             search_awards,

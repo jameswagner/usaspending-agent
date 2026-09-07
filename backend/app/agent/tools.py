@@ -1,4 +1,4 @@
-"""The five @beta_tool-decorated functions the agent calls, and their _raw
+"""The @beta_tool-decorated functions the agent calls, and their _raw
 variants (structured Pydantic responses, presentation-free) that also feed
 should_chart/build_tool_citation after the tool-calling loop finishes.
 
@@ -20,6 +20,7 @@ from anthropic import beta_tool
 from langsmith import traceable
 
 from backend.app.usaspending_client import (
+    AgencyYearBudget,
     SearchAwardsResponse,
     SpendingByCategoryResponse,
     SpendingOverTimeResponse,
@@ -189,6 +190,69 @@ def lookup_agency(name: str) -> str:
         f"Mission: {overview.mission or 'N/A'}\n"
         f"Website: {overview.website or 'N/A'}"
     )
+
+
+@traceable(run_type="tool", name="get_agency_budget_raw")
+def get_agency_budget_raw(
+    agency_name: str, start_fiscal_year: int, end_fiscal_year: int
+) -> list[AgencyYearBudget]:
+    """Call the API once (it always returns every fiscal year it has - no
+    range param exists), return only the years actually asked for. Raises
+    USASpendingAPIError if agency_name doesn't resolve, same pattern as
+    the other tools' _raw functions.
+    """
+    client = _get_usaspending_client()
+    agency = client.find_agency_by_name(agency_name)
+    if agency is None:
+        raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
+
+    response = client.get_agency_budgetary_resources(agency.toptier_code)
+    return [
+        y for y in response.agency_data_by_year
+        if start_fiscal_year <= y.fiscal_year <= end_fiscal_year
+    ]
+
+
+@beta_tool
+def get_agency_budget(agency_name: str, start_fiscal_year: int, end_fiscal_year: int) -> str:
+    """Get an agency's actual appropriated budgetary resources, obligations, and outlays for a fiscal year range. Use this specifically for "what is X's budget," "how much money does X have," or "how much has X actually paid out" questions.
+
+    This is a genuinely different concept from what get_spending_by_category, get_spending_over_time, and search_awards report: those three track money obligated against specific contracts, grants, and loans (award-level spending activity), not the agency's appropriated budget authority. An agency's total budgetary resources for a fiscal year is NOT the same number as its total award spending in that year, and the two should never be presented as if interchangeable - if asked about budget/appropriations specifically, use this tool, not the spending tools, even though both involve dollar figures for the same agency.
+
+    Args:
+        agency_name: The awarding agency's name, e.g. "National Science Foundation".
+        start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021. This endpoint's
+            own data only goes back to FY2017 (a shorter history than the FY2008 floor the
+            spending tools have) - a range starting earlier than that will just return whatever
+            years are actually available, not error.
+        end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
+    """
+    try:
+        years = get_agency_budget_raw(agency_name, start_fiscal_year, end_fiscal_year)
+    except USASpendingAPIError as e:
+        logger.warning("get_agency_budget failed for %s: %s", agency_name, e)
+        return f"This query failed: {e}."
+
+    _record_tool_call(
+        "get_agency_budget",
+        years,
+        {"agency_name": agency_name, "start_fiscal_year": start_fiscal_year, "end_fiscal_year": end_fiscal_year},
+    )
+
+    if not years:
+        return f"No budget data found for {agency_name} between FY{start_fiscal_year} and FY{end_fiscal_year} (this endpoint's data starts at FY2017)."
+
+    def _fmt(amount: float | None) -> str:
+        return f"${amount:,.2f}" if amount is not None else "not reported"
+
+    lines = [
+        f"FY{y.fiscal_year}: budgetary resources {_fmt(y.agency_budgetary_resources)}, "
+        f"obligated {_fmt(y.agency_total_obligated)}, outlayed {_fmt(y.agency_total_outlayed)}"
+        for y in sorted(years, key=lambda y: y.fiscal_year)
+    ]
+    # total_budgetary_resources (government-wide, not this agency's figure -
+    # see AgencyYearBudget's docstring) is deliberately never included here.
+    return _wrap_untrusted("\n".join(lines))
 
 
 @traceable(run_type="tool", name="get_spending_by_category_raw")

@@ -105,7 +105,12 @@ class ToolCitation(BaseModel):
 
 # Tools whose results are never chart-worthy by shape (free text / a single
 # profile), regardless of what's in the result.
-NEVER_CHART_TOOLS = {"search_guide", "lookup_agency", "search_awards", "code_execution"}
+# get_agency_budget's multi-year results are chartable in principle (same
+# cardinality shape as get_spending_over_time), but which of its three
+# metrics (budgetary resources vs. obligated vs. outlayed) to chart is a
+# real design question deferred for now - excluded here rather than
+# guessing which one the model would want.
+NEVER_CHART_TOOLS = {"search_guide", "lookup_agency", "search_awards", "get_agency_budget", "code_execution"}
 
 
 def should_chart(tool_name: str, structured_result, context: dict | None = None) -> ChartSpec | None:
@@ -197,6 +202,18 @@ def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
             parameters={"name": name},
             description=f"Agency lookup: {name}",
         )
+
+    if tool_name == "get_agency_budget":
+        params = {
+            "agency_name": context["agency_name"],
+            "start_fiscal_year": context["start_fiscal_year"],
+            "end_fiscal_year": context["end_fiscal_year"],
+        }
+        description = (
+            f"Budgetary resources, {params['agency_name']}, "
+            f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
+        )
+        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
 
     if tool_name == "get_spending_by_category":
         params = {

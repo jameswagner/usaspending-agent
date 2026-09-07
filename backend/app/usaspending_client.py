@@ -1,13 +1,15 @@
 """Typed client for the public USASpending.gov API (https://api.usaspending.gov).
 
-Covers four endpoints, verified against the official API contracts at
+Verified against the official API contracts at
 https://github.com/fedspendingtransparency/usaspending-api/tree/master/usaspending_api/api_contracts/contracts/v2
-(checked 2026-09-02):
-  - GET  /api/v2/references/toptier_agencies/   (agency name -> code lookup)
-  - GET  /api/v2/agency/{toptier_code}/         (agency overview)
+(checked 2026-09-02, budgetary_resources added 2026-09-07):
+  - GET  /api/v2/references/toptier_agencies/            (agency name -> code lookup)
+  - GET  /api/v2/agency/{toptier_code}/                  (agency overview)
+  - GET  /api/v2/agency/{toptier_code}/budgetary_resources/  (appropriated budget, obligations, outlays by FY)
   - POST /api/v2/search/spending_by_category/
   - POST /api/v2/search/spending_over_time/
   - POST /api/v2/search/spending_by_award/
+  - POST /api/v2/autocomplete/{naics,psc,cfda}/          (verified live, not currently called by any tool)
 
 `AdvancedFilters` models the filter fields most likely to be used by this
 project's questions (keywords, time period, agencies, award types,
@@ -246,6 +248,41 @@ class AgencyOverview(BaseModel):
     subtier_agency_count: int
 
 
+class ObligationByPeriod(BaseModel):
+    period: int
+    obligated: float
+
+
+class AgencyYearBudget(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    fiscal_year: int
+    # The agency's own appropriated budget - what "what is X's budget"
+    # actually means. Nullable per the contract.
+    agency_budgetary_resources: float | None = None
+    agency_total_obligated: float | None = None
+    agency_total_outlayed: float | None = None
+    # NOT the agency's own figure - verified live 2026-09-07: for NSF
+    # FY2026, agency_budgetary_resources was ~$10.2B while this field was
+    # ~$15.5 TRILLION, a >1000x gap. Per the contract: "The budget for
+    # ALL agencies in the provided fiscal year" - i.e. government-wide,
+    # not agency-specific. Modeled here for completeness but deliberately
+    # never surfaced in get_agency_budget's formatted output - showing a
+    # trillion-dollar government-wide figure next to one agency's name
+    # would be exactly the kind of misleading-but-plausible number this
+    # whole tool exists to prevent.
+    total_budgetary_resources: float | None = None
+    agency_obligation_by_period: list[ObligationByPeriod] = []
+
+
+class AgencyBudgetaryResourcesResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    toptier_code: str
+    agency_data_by_year: list[AgencyYearBudget]
+    messages: list[str] | None = None
+
+
 class CategoryResult(BaseModel):
     model_config = ConfigDict(extra="allow")
 
@@ -439,6 +476,18 @@ class USASpendingClient:
         params = {"fiscal_year": fiscal_year} if fiscal_year else None
         data = self._get(f"/api/v2/agency/{toptier_code}/", params=params)
         return AgencyOverview(**data)
+
+    @traceable(run_type="tool", name="get_agency_budgetary_resources")
+    def get_agency_budgetary_resources(self, toptier_code: str) -> AgencyBudgetaryResourcesResponse:
+        """No fiscal_year param - the live API always returns every year it
+        has (verified 2026-09-07: NSF's response covers FY2017-FY2026 in
+        one call, oldest-data-availability differs from the FY2008 floor
+        the other tools document - this endpoint's own history is
+        shorter). Callers filter the returned list to the range they want
+        in code rather than the API taking a range param, since there
+        isn't one."""
+        data = self._get(f"/api/v2/agency/{toptier_code}/budgetary_resources/")
+        return AgencyBudgetaryResourcesResponse(**data)
 
     @traceable(run_type="tool", name="spending_by_category")
     def spending_by_category(

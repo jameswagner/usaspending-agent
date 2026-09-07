@@ -135,19 +135,34 @@ and a per-turn tool-call cap — remain separate, open items below.
 
 ## Daily health check for USASpending API category support
 
-`get_spending_by_category` in `backend/app/agent/tools.py` hardcodes a list of 14
-verified-working categories out of the 18 the API contract documents (4 —
+`get_spending_by_category` in `backend/app/agent/tools.py` hardcodes a list of 15
+verified-working categories (14 from the API contract's 18 documented ones,
+plus `recipient`, live-verified but undocumented at the top level - see
+"Fixed: category validation" below) out of 18 the contract documents (4 —
 `object_class`, `program_activity`, `recipient_parent_duns`, `tas` — 404 live
-despite being in the docs, checked 2026-09-03). The tool's error handling
-adapts to the live response regardless, so a stale list only costs an
-occasional wasted round-trip, never a wrong answer — this isn't correctness-
-critical.
+despite being in the docs, checked 2026-09-03).
 
-Idea: a scheduled job that re-verifies all 18 categories against the live API
-daily, persists the result (a JSON file is probably enough), and the tool
-reads that instead of the hardcoded list. Needs a scheduler + a persistence
-layer we don't have yet — worth doing if this becomes more than a side
-project, not before.
+**Fixed (2026-09-07):** the list is now enforced in code (`VALID_CATEGORIES`/
+`_normalize_category` in `tools.py`), not just documented in the tool's
+docstring — an unrecognized category now fails with a clean, code-owned error
+before ever reaching the live API, the same pattern already used for
+`award_type`. This was flagged in the original audit as the same anti-pattern
+the `award_type` fix closed elsewhere, just not yet exploited (an
+unrecognized category previously 404'd cleanly rather than substituting
+silently, so it was fragile, not dangerous). Verified live: all 15 categories
+confirmed still working against the real API; a deliberately-invalid category
+now gets an immediate, actionable error listing the real valid values instead
+of a bare API 404.
+
+What's still open: the list itself can still go *stale* (a category the live
+API adds later, or one of the 4 known-404 ones un-breaking) — `VALID_CATEGORIES`
+is a snapshot, re-verified by hand, not automatically. Idea: a scheduled job
+that re-verifies all 18 categories against the live API daily, persists the
+result, and the tool reads that instead of the hardcoded list. Needs a
+scheduler + a persistence layer we don't have yet — worth doing if this
+becomes more than a side project, not before. Lower urgency now than before
+this fix: staleness degrades to a clean, informative error either way, not a
+silent wrong answer.
 
 ## POST /ask: chart_data, guide citations, and live-data citations all done
 

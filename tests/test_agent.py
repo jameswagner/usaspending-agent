@@ -23,7 +23,11 @@ from backend.app.agent.tool_filters import (
     _validate_naics_code,
     _validate_psc_code,
 )
-from backend.app.agent.tools import _truncation_note
+from backend.app.agent.tools import (
+    VALID_CATEGORIES,
+    _normalize_category,
+    _truncation_note,
+)
 from backend.app.usaspending_client import (
     CategoryResult,
     SpendingByCategoryResponse,
@@ -587,3 +591,44 @@ class TestCodeValidation:
     def test_cfda_program_rejects_wrong_format(self):
         with pytest.raises(USASpendingAPIError, match="doesn't look like a CFDA"):
             _validate_cfda_program("10-001")
+
+
+class TestNormalizeCategory:
+    # Regression coverage for the real gap: category was a bare str with
+    # the valid values only in docstring prose (same anti-pattern
+    # AWARD_TYPE_GROUPS already fixed for award_type) - an unrecognized
+    # category previously reached the live API and came back as a raw
+    # 404 with no guidance; now it's a clean, code-owned error before any
+    # network call happens.
+
+    def test_all_fifteen_live_verified_categories_accepted(self):
+        # Verified live 2026-09-07 that every one of these actually works
+        # against the real API for a real agency/fiscal-year query -
+        # dev_tools verification, not just this list matching itself.
+        expected = {
+            "awarding_agency", "awarding_subagency", "cfda", "country", "county",
+            "defc", "district", "federal_account", "funding_agency",
+            "funding_subagency", "naics", "psc", "recipient", "recipient_duns",
+            "state_territory",
+        }
+        assert VALID_CATEGORIES == expected
+        for category in expected:
+            assert _normalize_category(category) == category
+
+    def test_case_and_spacing_insensitive(self):
+        assert _normalize_category("NAICS") == "naics"
+        assert _normalize_category("  State Territory  ") == "state_territory"
+        assert _normalize_category("awarding-agency") == "awarding_agency"
+
+    def test_documented_but_404ing_categories_are_rejected(self):
+        # These ARE in the live API's own top-level contract enum but 404
+        # in practice (BACKLOG.md's "Daily health check" entry) - the
+        # whole point of validating in code is catching these before a
+        # network round trip, not just catching made-up category names.
+        for category in ("object_class", "program_activity", "recipient_parent_duns", "tas"):
+            with pytest.raises(USASpendingAPIError, match="Unknown category"):
+                _normalize_category(category)
+
+    def test_garbage_raises_with_the_full_valid_list(self):
+        with pytest.raises(USASpendingAPIError, match="Unknown category 'vendor'"):
+            _normalize_category("vendor")

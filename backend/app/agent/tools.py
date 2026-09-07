@@ -255,6 +255,46 @@ def get_agency_budget(agency_name: str, start_fiscal_year: int, end_fiscal_year:
     return _wrap_untrusted("\n".join(lines))
 
 
+# Verified live against the real API (checked 2026-09-06/07), not the API
+# contract's own documented list - the contract lists 18 categories, but 4
+# of them (object_class, program_activity, recipient_parent_duns, tas) 404
+# in practice despite being documented (see BACKLOG.md's "Daily health
+# check" entry). Same "code owns the exact vocabulary, not the model"
+# pattern as AWARD_TYPE_GROUPS/US_STATE_ABBREVIATIONS - this used to be a
+# bare str parameter with the valid values only in docstring prose, the
+# same anti-pattern the award_type fix (see AWARD_TYPE_GROUPS's own
+# comment) closed elsewhere. Wasn't dangerous yet (an unrecognized value
+# 404s cleanly rather than silently substituting), but it's the same
+# fragility, just not yet exploited.
+#
+# "recipient" is real and live-verified (re-confirmed 2026-09-07) but
+# isn't in the API contract's own top-level category enum - found via the
+# live category subdirectory listing during the original audit. Kept
+# alongside recipient_duns (which returns identical results for every
+# case tested) rather than instead of it, since recipient additionally
+# carries a uei field and models a "MULTIPLE RECIPIENTS" rollup row that
+# recipient_duns's schema doesn't.
+VALID_CATEGORIES = {
+    "awarding_agency", "awarding_subagency", "cfda", "country", "county",
+    "defc", "district", "federal_account", "funding_agency",
+    "funding_subagency", "naics", "psc", "recipient", "recipient_duns",
+    "state_territory",
+}
+
+
+def _normalize_category(category: str) -> str:
+    """Same normalize-then-validate pattern as _normalize_award_type/
+    _normalize_state: raises a clean, actionable USASpendingAPIError
+    instead of letting an unrecognized category reach the live API and
+    come back as a bare 404 with no guidance on what would have worked."""
+    normalized = category.strip().lower().replace(" ", "_").replace("-", "_")
+    if normalized not in VALID_CATEGORIES:
+        raise USASpendingAPIError(
+            f"Unknown category '{category}'. Must be one of: {', '.join(sorted(VALID_CATEGORIES))}"
+        )
+    return normalized
+
+
 @traceable(run_type="tool", name="get_spending_by_category_raw")
 def get_spending_by_category_raw(
     category: str,
@@ -281,11 +321,15 @@ def get_spending_by_category_raw(
     present that to the model; this function stays presentation-free so the
     structured result is also available for chart-building later.
 
+    category is validated against VALID_CATEGORIES before ever reaching the
+    live API - same "code owns the exact vocabulary" pattern as award_type.
+
     Filter resolution (agency, award_type, recipient, amount, location,
     keywords, date_type, scope, naics/psc/cfda code) is delegated to
     _build_filters - see its docstring for the "no behavior change when
     the new params are omitted" guarantee and each failure mode.
     """
+    category = _normalize_category(category)
     client = _get_usaspending_client()
     filters = _build_filters(
         client,
@@ -333,7 +377,7 @@ def get_spending_by_category(
     """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for one awarding agency and fiscal year range, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions.
 
     Args:
-        category: One of: awarding_agency, awarding_subagency, cfda, country, county, defc, district, federal_account, funding_agency, funding_subagency, naics, psc, recipient_duns, state_territory. (Only these are live-verified; other category names the API contract lists, like object_class or tas, 404 in practice.)
+        category: One of: awarding_agency, awarding_subagency, cfda, country, county, defc, district, federal_account, funding_agency, funding_subagency, naics, psc, recipient, recipient_duns, state_territory. Enforced in code - any other value (including ones the API's own docs list, like object_class or tas, which 404 in practice) fails cleanly with this exact list rather than reaching the live API. recipient and recipient_duns return the same results for every case tested - either works for "top recipients" questions.
         agency_name: The awarding agency's name, e.g. "National Science Foundation".
         start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
         end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.

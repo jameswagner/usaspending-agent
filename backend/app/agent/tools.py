@@ -293,15 +293,53 @@ def get_spending_over_time(
     return _wrap_untrusted("\n".join(lines))
 
 
-# award_type_codes has many more valid values than these three groups (see
-# search_filters.md's Award Type section), but exposing the full code list
-# to the model would mean a much larger error surface for little benefit -
-# same reasoning as get_spending_by_category's constrained category list.
+# Verified against USASpending's own award_types.md contract (checked
+# 2026-09-06), not guessed. The three broad buckets stay for general
+# "show me X's contracts/grants/loans" questions, but a bare 3-way
+# classification isn't enough: found live that asked for NSF's
+# "cooperative agreements," the model picked award_type="contracts" -
+# not just a broader bucket than asked for, but the flat-out wrong one,
+# since a cooperative agreement isn't a contract at all. The fix isn't a
+# better docstring hint (still trusting the model to classify correctly
+# from a paragraph of prose) - it's exposing the real, specific sub-types
+# as their own values, the same "let code do the exact lookup" pattern as
+# find_agency_by_name, so the model only has to recognize a term close to
+# what it already is, not correctly classify it into a bucket first.
+#
+# IDV-family codes (IDV_A through IDV_E - GWACs, BOAs, BPAs, etc.) are
+# deliberately not included: those are a structurally different kind of
+# award record (a vehicle other awards get issued under, not a
+# transaction itself), and search_awards's field set/behavior for that
+# category hasn't been verified - a real scope limitation, not an
+# oversight, flagged here rather than silently extended to cover it.
 AWARD_TYPE_GROUPS: dict[str, list[str]] = {
     "contracts": ["A", "B", "C", "D"],
     "grants": ["02", "03", "04", "05"],
     "loans": ["07", "08"],
+    "bpa_call": ["A"],
+    "purchase_order": ["B"],
+    "delivery_order": ["C"],
+    "definitive_contract": ["D"],
+    "direct_loan": ["07"],
+    "guaranteed_loan": ["08"],
+    "block_grant": ["02"],
+    "formula_grant": ["03"],
+    "project_grant": ["04"],
+    "cooperative_agreement": ["05"],
+    "insurance": ["09"],
+    "other_financial_assistance": ["11"],
+    "direct_payment_specified": ["06"],
+    "direct_payment_unrestricted": ["10"],
 }
+
+
+def _normalize_award_type(award_type: str) -> str:
+    """"Cooperative Agreement", "cooperative agreement", and
+    "cooperative_agreement" should all resolve the same way - the model
+    isn't reliably going to reproduce the exact key format even when told
+    what it is, the same lesson already learned from agency-name matching
+    needing case-insensitive comparison."""
+    return award_type.strip().lower().replace(" ", "_").replace("-", "_")
 
 # A base field set valid across award types (per spending_by_award.md's
 # "Base fields" list), so one fixed request shape works regardless of
@@ -333,7 +371,7 @@ def search_awards_raw(
     if agency is None:
         raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
 
-    award_type_codes = AWARD_TYPE_GROUPS.get(award_type)
+    award_type_codes = AWARD_TYPE_GROUPS.get(_normalize_award_type(award_type))
     if award_type_codes is None:
         raise USASpendingAPIError(
             f"Unknown award_type '{award_type}'. Must be one of: {', '.join(AWARD_TYPE_GROUPS)}"
@@ -362,7 +400,16 @@ def search_awards(
         agency_name: The awarding agency's name, e.g. "National Science Foundation".
         start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
         end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
-        award_type: One of: contracts, grants, loans. Default contracts.
+        award_type: The broad buckets are contracts, grants, loans (default contracts) - use one
+            of these for a general "show me X's contracts/grants" question. For a question asking
+            about a SPECIFIC sub-type rather than the broad category, use the specific value
+            instead of guessing which broad bucket it falls under: bpa_call, purchase_order,
+            delivery_order, definitive_contract (contract sub-types); direct_loan, guaranteed_loan
+            (loan sub-types); block_grant, formula_grant, project_grant, cooperative_agreement
+            (grant sub-types - e.g. "cooperative agreement" is cooperative_agreement, NOT
+            contracts); insurance, other_financial_assistance, direct_payment_specified,
+            direct_payment_unrestricted (other assistance types). Case/spacing/hyphens don't
+            matter (e.g. "Cooperative Agreement" also works).
         limit: Max number of results to return (default 5).
     """
     try:

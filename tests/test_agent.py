@@ -6,6 +6,7 @@ from backend.app.agent.response_shaping import (
     fiscal_year_to_date_range,
     should_chart,
 )
+from backend.app.agent.tools import AWARD_TYPE_GROUPS, _normalize_award_type
 from backend.app.usaspending_client import (
     CategoryResult,
     SpendingByCategoryResponse,
@@ -187,3 +188,43 @@ class TestBuildToolCitation:
 
     def test_unknown_tool_name_returns_none(self):
         assert build_tool_citation("some_future_tool", {"foo": "bar"}) is None
+
+
+class TestAwardTypeNormalization:
+    # Regression coverage for the real bug: asked for NSF's "cooperative
+    # agreements," the model picked award_type="contracts" - not just a
+    # broader bucket than asked for, but the flat-out wrong one, since a
+    # cooperative agreement isn't a contract. Fixed by exposing the real,
+    # specific USASpending sub-types (verified against award_types.md) as
+    # their own values, not just the three broad buckets.
+
+    def test_normalizes_case_spacing_and_hyphens(self):
+        assert _normalize_award_type("Cooperative Agreement") == "cooperative_agreement"
+        assert _normalize_award_type("cooperative-agreement") == "cooperative_agreement"
+        assert _normalize_award_type("  BPA Call  ") == "bpa_call"
+
+    def test_broad_buckets_still_present(self):
+        assert AWARD_TYPE_GROUPS["contracts"] == ["A", "B", "C", "D"]
+        assert AWARD_TYPE_GROUPS["grants"] == ["02", "03", "04", "05"]
+        assert AWARD_TYPE_GROUPS["loans"] == ["07", "08"]
+
+    def test_cooperative_agreement_resolves_to_the_correct_single_code(self):
+        # Code 05 per USASpending's award_types.md - part of the broader
+        # "grants" bucket (02-05), but its own precise code, not the
+        # bucket as a whole.
+        assert AWARD_TYPE_GROUPS["cooperative_agreement"] == ["05"]
+
+    def test_every_specific_subtype_code_is_a_member_of_its_broad_bucket(self):
+        # The specific sub-types should be a strict refinement of the
+        # broad buckets, not a disjoint or inconsistent set of codes.
+        contract_subtypes = ["bpa_call", "purchase_order", "delivery_order", "definitive_contract"]
+        for key in contract_subtypes:
+            assert AWARD_TYPE_GROUPS[key][0] in AWARD_TYPE_GROUPS["contracts"]
+
+        grant_subtypes = ["block_grant", "formula_grant", "project_grant", "cooperative_agreement"]
+        for key in grant_subtypes:
+            assert AWARD_TYPE_GROUPS[key][0] in AWARD_TYPE_GROUPS["grants"]
+
+        loan_subtypes = ["direct_loan", "guaranteed_loan"]
+        for key in loan_subtypes:
+            assert AWARD_TYPE_GROUPS[key][0] in AWARD_TYPE_GROUPS["loans"]

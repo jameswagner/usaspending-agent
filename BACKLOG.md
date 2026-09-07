@@ -2,6 +2,48 @@
 
 Deferred ideas and known minor issues — not urgent, not forgotten.
 
+## Fixed: schema-level enum constraints for every fixed-vocabulary parameter
+
+Every fixed-vocabulary tool parameter (`award_type`, `category`, `date_type`,
+`group`, `place_of_performance_scope`, `recipient_scope`) was typed as a
+bare `str`, with the real valid values only enforced by runtime
+normalize-then-validate functions (`_normalize_award_type`, `_normalize_category`,
+etc.) added across several earlier fixes. That's a real check, but it's a
+check *after* the model has already generated a string — the model still
+has to correctly reproduce an exact value from docstring prose with no
+help from the tool schema itself.
+
+**Fixed (2026-09-07):** each of those six parameters is now typed with
+`typing.Literal[...]` (`AwardType`, `Category`, `DateType`, `Group`, `Scope`
+in `tool_filters.py`/`tools.py`), which makes `beta_tool`'s schema
+generation emit a real JSON-schema `enum` — verified live that this
+actually happens, not assumed. This is a stronger guarantee than runtime
+validation alone: the model is constrained by the tool schema itself at
+generation time, not just corrected after the fact. The runtime
+normalize/validate functions are kept, unchanged, as defense in depth
+(they still matter for direct Python callers - tests, dev_tools scripts -
+that bypass the model entirely, and for case/spacing variants like
+"Cooperative Agreement" the strict enum wouldn't itself normalize).
+
+Also closed a small standing gap while doing this: `group`
+(`get_spending_over_time`) previously had zero code-side validation at
+all, and had been explicitly judged "safe in practice" (BACKLOG discussion,
+not a written entry) since the live API's own 400 error for a bad value
+is clean and informative. Added `VALID_GROUPS`/`_normalize_group` for
+consistency with every other parameter now getting both a schema Literal
+and a runtime check, not because `group` specifically needed it.
+
+**Drift risk, addressed directly:** the Literals are written as static,
+hand-maintained lists (not derived from `AWARD_TYPE_GROUPS`/`VALID_CATEGORIES`/etc.
+via dynamic construction), specifically to avoid any uncertainty about how
+`Literal[*values]`-style unpacking interacts with this codebase's
+`from __future__ import annotations` use. That means nothing stops a
+Literal from silently drifting out of sync with its source dict/set on a
+future hand-edit — `TestLiteralTypesMatchVocabulary` (`tests/test_agent.py`)
+exists specifically to catch that: it asserts every Literal's `get_args()`
+matches its source vocabulary exactly, so a drift becomes a fast, obvious
+test failure instead of a silent schema/behavior mismatch.
+
 ## Idea: a dedicated prompt-injection/jailbreak guardrail
 
 Prompt-injection defense in this app is entirely hand-rolled right now:

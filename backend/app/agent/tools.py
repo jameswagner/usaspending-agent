@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import contextvars
 import logging
+from typing import Literal
 
 from anthropic import beta_tool
 from langsmith import traceable
@@ -35,6 +36,9 @@ from .singletons import (
 )
 from .tool_filters import (
     SEARCH_AWARDS_FIELDS_BASE,
+    AwardType,
+    DateType,
+    Scope,
     _amount_field_for_award_type,
     _build_filters,
     _record_optional_filter_context,
@@ -281,6 +285,18 @@ VALID_CATEGORIES = {
     "state_territory",
 }
 
+# Static Literal mirror of VALID_CATEGORIES, used as get_spending_by_category's
+# actual parameter type so beta_tool's schema generation emits a real
+# JSON-schema enum - same reasoning as AwardType in tool_filters.py.
+# TestLiteralTypesMatchVocabulary (tests/test_agent.py) asserts this can't
+# silently drift from VALID_CATEGORIES.
+Category = Literal[
+    "awarding_agency", "awarding_subagency", "cfda", "country", "county",
+    "defc", "district", "federal_account", "funding_agency",
+    "funding_subagency", "naics", "psc", "recipient", "recipient_duns",
+    "state_territory",
+]
+
 
 def _normalize_category(category: str) -> str:
     """Same normalize-then-validate pattern as _normalize_award_type/
@@ -297,21 +313,21 @@ def _normalize_category(category: str) -> str:
 
 @traceable(run_type="tool", name="get_spending_by_category_raw")
 def get_spending_by_category_raw(
-    category: str,
+    category: Category,
     agency_name: str,
     start_fiscal_year: int,
     end_fiscal_year: int,
     limit: int = 5,
-    award_type: str | None = None,
+    award_type: AwardType | None = None,
     recipient_name: str | None = None,
     min_amount: float | None = None,
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
     keywords: str | None = None,
-    date_type: str | None = None,
-    place_of_performance_scope: str | None = None,
-    recipient_scope: str | None = None,
+    date_type: DateType | None = None,
+    place_of_performance_scope: Scope | None = None,
+    recipient_scope: Scope | None = None,
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
@@ -355,21 +371,21 @@ def get_spending_by_category_raw(
 
 @beta_tool
 def get_spending_by_category(
-    category: str,
+    category: Category,
     agency_name: str,
     start_fiscal_year: int,
     end_fiscal_year: int,
     limit: int = 5,
-    award_type: str | None = None,
+    award_type: AwardType | None = None,
     recipient_name: str | None = None,
     min_amount: float | None = None,
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
     keywords: str | None = None,
-    date_type: str | None = None,
-    place_of_performance_scope: str | None = None,
-    recipient_scope: str | None = None,
+    date_type: DateType | None = None,
+    place_of_performance_scope: Scope | None = None,
+    recipient_scope: Scope | None = None,
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
@@ -472,22 +488,43 @@ def get_spending_by_category(
     return _wrap_untrusted("\n".join(lines) + note)
 
 
+# Per spending_over_time.md's `group` enum - previously unvalidated in
+# code at all (BACKLOG.md judged this "safe in practice" since the live
+# API's own 400 for a bad value is already clean and informative, unlike
+# category's bare 404). Added now anyway for consistency now that every
+# other fixed-vocabulary param gets both a schema-level Literal and a
+# runtime check - group was the one exception, not because it needed to
+# stay one.
+VALID_GROUPS = {"fiscal_year", "calendar_year", "quarter", "month"}
+
+Group = Literal["fiscal_year", "calendar_year", "quarter", "month"]
+
+
+def _normalize_group(group: str) -> str:
+    normalized = group.strip().lower().replace(" ", "_").replace("-", "_")
+    if normalized not in VALID_GROUPS:
+        raise USASpendingAPIError(
+            f"Unknown group '{group}'. Must be one of: {', '.join(sorted(VALID_GROUPS))}"
+        )
+    return normalized
+
+
 @traceable(run_type="tool", name="get_spending_over_time_raw")
 def get_spending_over_time_raw(
     agency_name: str,
     start_fiscal_year: int,
     end_fiscal_year: int,
-    group: str = "fiscal_year",
-    award_type: str | None = None,
+    group: Group = "fiscal_year",
+    award_type: AwardType | None = None,
     recipient_name: str | None = None,
     min_amount: float | None = None,
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
     keywords: str | None = None,
-    date_type: str | None = None,
-    place_of_performance_scope: str | None = None,
-    recipient_scope: str | None = None,
+    date_type: DateType | None = None,
+    place_of_performance_scope: Scope | None = None,
+    recipient_scope: Scope | None = None,
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
@@ -514,7 +551,7 @@ def get_spending_over_time_raw(
         psc_code=psc_code,
         cfda_program=cfda_program,
     )
-    return client.spending_over_time(filters, group=group)
+    return client.spending_over_time(filters, group=_normalize_group(group))
 
 
 @beta_tool
@@ -522,17 +559,17 @@ def get_spending_over_time(
     agency_name: str,
     start_fiscal_year: int,
     end_fiscal_year: int,
-    group: str = "fiscal_year",
-    award_type: str | None = None,
+    group: Group = "fiscal_year",
+    award_type: AwardType | None = None,
     recipient_name: str | None = None,
     min_amount: float | None = None,
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
     keywords: str | None = None,
-    date_type: str | None = None,
-    place_of_performance_scope: str | None = None,
-    recipient_scope: str | None = None,
+    date_type: DateType | None = None,
+    place_of_performance_scope: Scope | None = None,
+    recipient_scope: Scope | None = None,
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
@@ -635,7 +672,7 @@ def search_awards_raw(
     agency_name: str,
     start_fiscal_year: int,
     end_fiscal_year: int,
-    award_type: str = "contracts",
+    award_type: AwardType = "contracts",
     limit: int = 5,
     recipient_name: str | None = None,
     min_amount: float | None = None,
@@ -643,9 +680,9 @@ def search_awards_raw(
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
     keywords: str | None = None,
-    date_type: str | None = None,
-    place_of_performance_scope: str | None = None,
-    recipient_scope: str | None = None,
+    date_type: DateType | None = None,
+    place_of_performance_scope: Scope | None = None,
+    recipient_scope: Scope | None = None,
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
@@ -694,7 +731,7 @@ def search_awards(
     agency_name: str,
     start_fiscal_year: int,
     end_fiscal_year: int,
-    award_type: str = "contracts",
+    award_type: AwardType = "contracts",
     limit: int = 5,
     recipient_name: str | None = None,
     min_amount: float | None = None,
@@ -702,9 +739,9 @@ def search_awards(
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
     keywords: str | None = None,
-    date_type: str | None = None,
-    place_of_performance_scope: str | None = None,
-    recipient_scope: str | None = None,
+    date_type: DateType | None = None,
+    place_of_performance_scope: Scope | None = None,
+    recipient_scope: Scope | None = None,
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,

@@ -1,4 +1,5 @@
 from datetime import date, datetime, timezone
+from typing import get_args
 
 import pytest
 
@@ -13,6 +14,9 @@ from backend.app.agent.tool_filters import (
     LOAN_AWARD_TYPE_CODES,
     US_STATE_ABBREVIATIONS,
     VALID_DATE_TYPES,
+    AwardType,
+    DateType,
+    Scope,
     _amount_field_for_award_type,
     _build_filters,
     _normalize_award_type,
@@ -25,7 +29,11 @@ from backend.app.agent.tool_filters import (
 )
 from backend.app.agent.tools import (
     VALID_CATEGORIES,
+    VALID_GROUPS,
+    Category,
+    Group,
     _normalize_category,
+    _normalize_group,
     _truncation_note,
 )
 from backend.app.usaspending_client import (
@@ -632,3 +640,52 @@ class TestNormalizeCategory:
     def test_garbage_raises_with_the_full_valid_list(self):
         with pytest.raises(USASpendingAPIError, match="Unknown category 'vendor'"):
             _normalize_category("vendor")
+
+
+class TestNormalizeGroup:
+    # Regression coverage: group previously had NO code-side validation at
+    # all (BACKLOG.md judged this "safe in practice" since the live API's
+    # own error for a bad value is already clean) - added for consistency
+    # once every other fixed-vocabulary param got both a schema-level
+    # Literal and a runtime check.
+
+    def test_all_four_real_api_values_accepted(self):
+        assert VALID_GROUPS == {"fiscal_year", "calendar_year", "quarter", "month"}
+        for group in VALID_GROUPS:
+            assert _normalize_group(group) == group
+
+    def test_case_and_spacing_insensitive(self):
+        assert _normalize_group("Fiscal Year") == "fiscal_year"
+        assert _normalize_group("CALENDAR-YEAR") == "calendar_year"
+
+    def test_garbage_raises(self):
+        with pytest.raises(USASpendingAPIError, match="Unknown group 'week'"):
+            _normalize_group("week")
+
+
+class TestLiteralTypesMatchVocabulary:
+    # The whole point of adding typing.Literal types (so beta_tool's schema
+    # generation emits a real JSON-schema enum, constraining what the model
+    # can generate at the tool-call level, not just validating it after the
+    # fact) only holds if the Literal stays in sync with the runtime
+    # vocabulary it's supposed to mirror. These were written as static
+    # Literals, not derived from the dicts/sets, specifically to avoid any
+    # uncertainty around dynamic Literal construction interacting with
+    # `from __future__ import annotations` - which means nothing stops them
+    # from silently drifting apart by hand-edit. This is what actually
+    # keeps them honest instead.
+
+    def test_award_type_literal_matches_award_type_groups(self):
+        assert set(get_args(AwardType)) == set(AWARD_TYPE_GROUPS)
+
+    def test_category_literal_matches_valid_categories(self):
+        assert set(get_args(Category)) == VALID_CATEGORIES
+
+    def test_date_type_literal_matches_valid_date_types(self):
+        assert set(get_args(DateType)) == VALID_DATE_TYPES
+
+    def test_group_literal_matches_valid_groups(self):
+        assert set(get_args(Group)) == VALID_GROUPS
+
+    def test_scope_literal_is_domestic_foreign(self):
+        assert set(get_args(Scope)) == {"domestic", "foreign"}

@@ -14,6 +14,7 @@ machinery those don't need.
 from __future__ import annotations
 
 import re
+from typing import Literal
 
 from backend.app.usaspending_client import (
     AdvancedFilters,
@@ -66,6 +67,28 @@ AWARD_TYPE_GROUPS: dict[str, list[str]] = {
     "direct_payment_specified": ["06"],
     "direct_payment_unrestricted": ["10"],
 }
+
+
+# A static Literal mirror of AWARD_TYPE_GROUPS.keys(), used as the actual
+# type hint on every @beta_tool award_type parameter so beta_tool's schema
+# generation emits a real JSON-schema `enum` - a hard constraint on what
+# the model can generate, not just a runtime check after the fact (see
+# TestLiteralTypesMatchVocabulary in tests/test_agent.py, which asserts
+# this can't silently drift from AWARD_TYPE_GROUPS). Written statically
+# rather than derived (e.g. Literal[*AWARD_TYPE_GROUPS] via unpacking)
+# to avoid any uncertainty about dynamic Literal construction interacting
+# with `from __future__ import annotations`-deferred evaluation - verified
+# live that beta_tool correctly resolves a plain static Literal into a
+# real enum; the test is what actually keeps this in sync, not cleverness
+# in how it's built.
+AwardType = Literal[
+    "contracts", "grants", "loans",
+    "bpa_call", "purchase_order", "delivery_order", "definitive_contract",
+    "direct_loan", "guaranteed_loan",
+    "block_grant", "formula_grant", "project_grant", "cooperative_agreement",
+    "insurance", "other_financial_assistance",
+    "direct_payment_specified", "direct_payment_unrestricted",
+]
 
 
 def _normalize_award_type(award_type: str) -> str:
@@ -135,6 +158,9 @@ def _normalize_state(state: str) -> str:
 # actually correct.
 VALID_DATE_TYPES = {"action_date", "date_signed", "last_modified_date", "new_awards_only"}
 
+# Static Literal mirror of VALID_DATE_TYPES - same reasoning as AwardType above.
+DateType = Literal["action_date", "date_signed", "last_modified_date", "new_awards_only"]
+
 
 def _normalize_date_type(date_type: str) -> str:
     """Case/spacing-insensitive lookup against VALID_DATE_TYPES, same
@@ -146,6 +172,11 @@ def _normalize_date_type(date_type: str) -> str:
             f"Unrecognized date_type '{date_type}'. Must be one of: {', '.join(sorted(VALID_DATE_TYPES))}"
         )
     return normalized
+
+
+# Static Literal mirror of the domestic/foreign vocabulary - same
+# reasoning as AwardType above.
+Scope = Literal["domestic", "foreign"]
 
 
 def _normalize_scope(scope: str, param_name: str) -> str:

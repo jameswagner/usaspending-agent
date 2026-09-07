@@ -47,16 +47,154 @@ class AgencyFilter(BaseModel):
     toptier_name: str | None = None
 
 
+class AwardAmount(BaseModel):
+    lower_bound: float | None = None
+    upper_bound: float | None = None
+
+
+class LocationObject(BaseModel):
+    """StandardLocationObject per search_filters.md. Every field beyond
+    country/state is modeled (cheap, and already verified from the live
+    contract) even though no tool parameter exposes county/city/zip/
+    district yet - modeling a field's shape and exposing it as an
+    LLM-facing parameter are separate decisions; only the latter is meant
+    to stay incremental/demand-driven (see ADVANCED_FILTER_FIELD_COVERAGE
+    below)."""
+
+    country: str = "USA"
+    state: str | None = None
+    county: str | None = None
+    city: str | None = None
+    district_original: str | None = None
+    district_current: str | None = None
+    zip: str | None = None
+
+
+class NAICSCodeObject(BaseModel):
+    require: list[str] | None = None
+    exclude: list[str] | None = None
+
+
+class CodePathObject(BaseModel):
+    """Shared require/exclude-of-hierarchical-paths shape used by both
+    PSCCodeObject and TASCodeObject (identical structure per
+    search_filters.md, just different code vocabularies)."""
+
+    require: list[list[str]] | None = None
+    exclude: list[list[str]] | None = None
+
+
+class TreasuryAccountComponentsObject(BaseModel):
+    # aid/main are "required" per spending_by_category.md's version of
+    # this object but optional per spending_by_award.md's
+    # TASCodeComponentObject variant - the two contract docs disagree.
+    # Left optional here (the more permissive reading) rather than
+    # guessing which doc is authoritative; not live-verified.
+    ata: str | None = None
+    aid: str | None = None
+    bpoa: str | None = None
+    epoa: str | None = None
+    a: str | None = None
+    main: str | None = None
+    sub: str | None = None
+
+
+class ProgramActivityObject(BaseModel):
+    name: str | None = None
+    # code is typed as number in spending_by_award.md's ProgramActivityObject
+    # but string in spending_over_time.md's - another cross-doc
+    # inconsistency, not resolved by guessing; accept either.
+    code: str | int | None = None
+
+
 class AdvancedFilters(BaseModel):
-    """Subset of the API's AdvancedFilterObject. At least one field must be set."""
+    """Models the API's AdvancedFilterObject as completely as the live
+    contracts (search_filters.md + the search/*.md endpoint contracts)
+    support, as of 2026-09-06 - not just the fields this project's tools
+    currently expose to the model. Modeling a field's shape is cheap and
+    gives free validation to any future caller; which of these fields
+    actually get an LLM-facing tool parameter is a separate, deliberately
+    incremental decision (see ADVANCED_FILTER_FIELD_COVERAGE).
+
+    extra="allow" stays as a safety net for fields the live API adds
+    *after* this was last reviewed against the contracts - not as a
+    substitute for modeling fields already known about.
+
+    object_class/program_activity vs. object_classes/program_activities:
+    the older spending_by_category.md/spending_over_time.md contracts and
+    the newer spending_by_award.md one use different names and shapes for
+    what appears to be the same underlying filter concept. Both are kept
+    here rather than picking one - not live-verified which endpoints
+    accept which name.
+    """
 
     model_config = ConfigDict(extra="allow")
 
     keywords: list[str] | None = None
+    description: str | None = None
     time_period: list[TimePeriod] | None = None
+    place_of_performance_scope: Literal["domestic", "foreign"] | None = None
+    place_of_performance_locations: list[LocationObject] | None = None
     agencies: list[AgencyFilter] | None = None
-    award_type_codes: list[str] | None = None
     recipient_search_text: list[str] | None = None
+    recipient_scope: Literal["domestic", "foreign"] | None = None
+    recipient_locations: list[LocationObject] | None = None
+    recipient_type_names: list[str] | None = None
+    award_type_codes: list[str] | None = None
+    award_ids: list[str] | None = None
+    award_amounts: list[AwardAmount] | None = None
+    program_numbers: list[str] | None = None
+    naics_codes: NAICSCodeObject | None = None
+    tas_codes: CodePathObject | None = None
+    psc_codes: CodePathObject | None = None
+    contract_pricing_type_codes: list[str] | None = None
+    set_aside_type_codes: list[str] | None = None
+    extent_competed_type_codes: list[str] | None = None
+    treasury_account_components: list[TreasuryAccountComponentsObject] | None = None
+    program_activities: list[ProgramActivityObject] | None = None
+    object_classes: list[str] | None = None
+    # Older-contract field names for the same two concepts (see docstring).
+    object_class: list[str] | None = None
+    program_activity: list[str] | None = None
+    def_codes: list[str] | None = None
+    award_unique_id: str | None = None
+
+
+# Every AdvancedFilterObject field above, and whether it's actually reachable
+# by a model-visible tool parameter yet. "modeled" always means "has a typed
+# field on AdvancedFilters" (all of them, now) - this tracks exposure, the
+# genuinely incremental/demand-driven decision, not modeling. Kept next to
+# AdvancedFilters so the two can't drift apart silently; re-diffed against
+# the live contracts by dev_tools/check_filter_coverage.py.
+ADVANCED_FILTER_FIELD_COVERAGE: dict[str, str] = {
+    "keywords": "modeled, not exposed",
+    "description": "modeled, not exposed",
+    "time_period": "exposed (start_fiscal_year/end_fiscal_year)",
+    "place_of_performance_scope": "modeled, not exposed",
+    "place_of_performance_locations": "exposed (performed_in_state)",
+    "agencies": "exposed (agency_name)",
+    "recipient_search_text": "exposed (recipient_name)",
+    "recipient_scope": "modeled, not exposed",
+    "recipient_locations": "exposed (recipient_in_state)",
+    "recipient_type_names": "modeled, not exposed",
+    "award_type_codes": "exposed (award_type)",
+    "award_ids": "modeled, not exposed",
+    "award_amounts": "exposed (min_amount/max_amount)",
+    "program_numbers": "modeled, not exposed - no analyst demand observed yet",
+    "naics_codes": "modeled, not exposed - no analyst demand observed yet",
+    "tas_codes": "modeled, not exposed - no analyst demand observed yet",
+    "psc_codes": "modeled, not exposed - no analyst demand observed yet",
+    "contract_pricing_type_codes": "modeled, not exposed",
+    "set_aside_type_codes": "modeled, not exposed",
+    "extent_competed_type_codes": "modeled, not exposed",
+    "treasury_account_components": "modeled, not exposed",
+    "program_activities": "modeled, not exposed",
+    "object_classes": "modeled, not exposed",
+    "object_class": "modeled, not exposed (older-contract name, see AdvancedFilters docstring)",
+    "program_activity": "modeled, not exposed (older-contract name, see AdvancedFilters docstring)",
+    "def_codes": "modeled, not exposed",
+    "award_unique_id": "modeled, not exposed",
+}
 
 
 class ToptierAgency(BaseModel):

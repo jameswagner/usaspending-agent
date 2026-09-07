@@ -99,7 +99,7 @@ class ToolCitation(BaseModel):
     to re-run the same query and verify the numbers themselves."""
 
     tool_name: str
-    parameters: dict[str, str | int]
+    parameters: dict[str, str | int | float]
     description: str
 
 
@@ -155,6 +155,27 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
     return None
 
 
+# The six optional filter params get_spending_by_category, get_spending_over_time,
+# and search_awards now all accept (see tools.py's _build_filters/
+# _record_optional_filter_context) - present in a call's context dict only
+# when actually set for that call, so a citation reflects exactly which
+# filters were used, not every filter the tool supports in the abstract.
+_ALL_OPTIONAL_FILTER_KEYS = {
+    "award_type",
+    "recipient_name",
+    "min_amount",
+    "max_amount",
+    "performed_in_state",
+    "recipient_in_state",
+}
+
+
+def _merge_optional_filter_params(params: dict, context: dict, keys: set[str]) -> None:
+    for key in keys:
+        if key in context:
+            params[key] = context[key]
+
+
 def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
     """Deterministic, unit-testable citation builder for the four live-data
     tools - the same role should_chart plays for charts. Keyed on the
@@ -184,6 +205,7 @@ def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
             "start_fiscal_year": context["start_fiscal_year"],
             "end_fiscal_year": context["end_fiscal_year"],
         }
+        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         description = (
             f"{params['category']} breakdown, {params['agency_name']}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
@@ -197,6 +219,7 @@ def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
             "end_fiscal_year": context["end_fiscal_year"],
             "group": context["group"],
         }
+        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         description = (
             f"Spending over time ({params['group']}), {params['agency_name']}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
@@ -210,6 +233,10 @@ def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
             "end_fiscal_year": context["end_fiscal_year"],
             "award_type": context["award_type"],
         }
+        # award_type is already set above (unconditionally, unlike the
+        # other two tools where it's one of the optional filters) - merge
+        # only the remaining five.
+        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
         description = (
             f"{params['award_type']} awards search, {params['agency_name']}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"

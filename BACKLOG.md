@@ -506,6 +506,72 @@ carries the same weak-match risk for live-data questions the gate's
 prompt already has to explicitly guard against. Worth its own eval if
 pursued later, not bundled into this change.
 
+## Shared filter layer for the three spending tools, and what's still deferred
+
+An audit of `get_spending_by_category`, `get_spending_over_time`, and `search_awards`
+against the live USASpending API (fetched fresh from `fedspendingtransparency/
+usaspending-api`'s contracts, not assumed from training data) found several real
+gaps, two severe enough to produce confidently wrong answers rather than clean
+declines — verified live, not guessed:
+
+- **`search_awards` had no amount-based sort.** Its default order was
+  essentially arbitrary: an unsorted "top 5" NSF FY2023 contracts query
+  returned awards from $7K–$7.2M while the true largest that year
+  ($3.13B, `NSFDACS1219442`) never appeared. End to end, "What were NSF's
+  five biggest contracts in FY2023?" returned a confidently wrong answer.
+- **No `award_amounts`, `recipient_search_text`, or location filters were
+  wired to any tool**, despite the live API supporting all three. "How
+  much has Lockheed Martin received from DoD?" and "NSF contracts over
+  $10 million" both got incomplete or falsely-confident answers because
+  there was no way to actually ask the API these questions.
+
+**Fixed (2026-09-06):** `AdvancedFilters` (`usaspending_client.py`) now models the
+complete `AdvancedFilterObject` from the live contracts, not just a hand-picked
+subset — modeling a field's shape is cheap and gives free validation to any future
+caller, separate from the deliberately incremental decision of exposing it as an
+LLM-facing tool parameter (tracked in the new `ADVANCED_FILTER_FIELD_COVERAGE`
+dict). The three duplicated agency/date-resolution blocks in `tools.py` were
+consolidated into one `_build_filters()` helper (now in `tool_filters.py` — see
+below), which all three tools use to accept six new optional parameters:
+`award_type`, `recipient_name`, `min_amount`, `max_amount`, `performed_in_state`,
+`recipient_in_state`. `search_awards` now sorts largest-amount-first by default
+(`Loan Value` for loan award types, `Award Amount` otherwise — both live-verified,
+including that `place_of_performance_locations` and `recipient_locations` are
+genuinely different filters: ~$16B apart in aggregate for DoD/VA FY2023).
+21 new unit tests; two new opt-in dev_tools scripts
+(`verify_shared_filters.py` for live end-to-end replay of the original findings,
+`check_filter_coverage.py` for a free/local rerunnable diff against the live
+contract). All new parameters are optional and behavior-preserving when omitted
+— the sort fix is the one deliberate, non-optional behavior change, since the old
+default had no meaningful order to preserve.
+
+**Split (2026-09-06):** `tools.py` grew from 443 to 763 lines in one change and was
+doing two different jobs — generic, endpoint-agnostic filter-building
+infrastructure, and the five actual tool definitions. Split the former into
+`tool_filters.py` (`AWARD_TYPE_GROUPS`, state normalization, `_build_filters`,
+`_amount_field_for_award_type`); `tools.py` is back down to ~517 lines.
+
+**Deliberately out of scope, still open:**
+- **`category`'s lack of code-side validation** (`get_spending_by_category`) —
+  the same shape as the `award_type` bug already fixed elsewhere, but for this
+  parameter: no enum, just a plain string with the valid values only in prose.
+  Not yet dangerous (an unrecognized category 404s cleanly rather than silently
+  substituting), but it's the same anti-pattern this project has closed twice
+  already for other parameters, and it's the template every future
+  discriminator-style tool will face — should be the next piece of work here,
+  not a one-off cleanup.
+- **No tool for budget/appropriations data.** Asked "What is NSF's total budget
+  for FY2024?", the agent answered from `get_spending_over_time`'s aggregated
+  award spending, presented with full confidence as "total budget" — a real
+  concept substitution (obligated spending vs. appropriated budget authority),
+  not just an approximation. Would need a new tool against the
+  `budgetary_resources` endpoint, or at minimum an explicit system-prompt rule
+  that spending ≠ budget so the model declines instead of substituting.
+- **Location filters are state-level only** — no county/city/zip/district, and
+  no foreign-country granularity beyond the existing domestic/foreign scope.
+- The already-known-stale `category` list (4 of 18 documented categories 404
+  live) is unchanged by this work — see the "Daily health check" entry above.
+
 ## Tied rerank scores in sanity_check.py
 
 The `NAICS` query in `backend/app/retrieval/dev_tools/sanity_check.py` has two results

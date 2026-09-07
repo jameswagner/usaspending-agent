@@ -1,18 +1,30 @@
 from datetime import date, datetime, timezone
 
+import pytest
+
 from backend.app.agent.response_shaping import (
     build_tool_citation,
     current_fiscal_year,
     fiscal_year_to_date_range,
     should_chart,
 )
-from backend.app.agent.tools import AWARD_TYPE_GROUPS, _normalize_award_type
+from backend.app.agent.tool_filters import (
+    AWARD_TYPE_GROUPS,
+    LOAN_AWARD_TYPE_CODES,
+    US_STATE_ABBREVIATIONS,
+    _amount_field_for_award_type,
+    _build_filters,
+    _normalize_award_type,
+    _normalize_state,
+)
 from backend.app.usaspending_client import (
     CategoryResult,
     SpendingByCategoryResponse,
     SpendingOverTimeResponse,
     TimePeriodGroup,
     TimeResult,
+    ToptierAgency,
+    USASpendingAPIError,
 )
 
 
@@ -176,6 +188,53 @@ class TestBuildToolCitation:
         assert citation.tool_name == "search_awards"
         assert citation.description == "grants awards search, National Science Foundation, FY2023-FY2023"
 
+    def test_get_spending_by_category_includes_new_filters_when_present(self):
+        citation = build_tool_citation(
+            "get_spending_by_category",
+            {
+                "agency_name": "National Science Foundation",
+                "category": "naics",
+                "start_fiscal_year": 2023,
+                "end_fiscal_year": 2024,
+                "award_type": "grants",
+                "min_amount": 1_000_000.0,
+            },
+        )
+        assert citation.parameters["award_type"] == "grants"
+        assert citation.parameters["min_amount"] == 1_000_000.0
+        # description is unchanged by the new filters - not asserted here,
+        # already covered by test_get_spending_by_category above.
+
+    def test_omitted_new_filters_dont_appear_in_citation_params(self):
+        citation = build_tool_citation(
+            "get_spending_by_category",
+            {
+                "agency_name": "National Science Foundation",
+                "category": "naics",
+                "start_fiscal_year": 2023,
+                "end_fiscal_year": 2024,
+            },
+        )
+        assert "award_type" not in citation.parameters
+        assert "min_amount" not in citation.parameters
+
+    def test_search_awards_award_type_not_duplicated_by_optional_merge(self):
+        # award_type is always set for search_awards (unlike the other two
+        # tools, where it's one of the optional filters) - the optional
+        # merge must not clobber or duplicate it.
+        citation = build_tool_citation(
+            "search_awards",
+            {
+                "agency_name": "National Science Foundation",
+                "start_fiscal_year": 2023,
+                "end_fiscal_year": 2023,
+                "award_type": "grants",
+                "recipient_name": "Leidos",
+            },
+        )
+        assert citation.parameters["award_type"] == "grants"
+        assert citation.parameters["recipient_name"] == "Leidos"
+
     def test_search_guide_returns_none(self):
         # search_guide is cited separately, by chunk id/page - not via
         # build_tool_citation.
@@ -228,3 +287,140 @@ class TestAwardTypeNormalization:
         loan_subtypes = ["direct_loan", "guaranteed_loan"]
         for key in loan_subtypes:
             assert AWARD_TYPE_GROUPS[key][0] in AWARD_TYPE_GROUPS["loans"]
+
+
+def make_agency(name: str = "National Science Foundation") -> ToptierAgency:
+    return ToptierAgency(
+        agency_id=1, agency_name=name, toptier_code="049", abbreviation="NSF", agency_slug="nsf"
+    )
+
+
+class FakeClient:
+    """Stands in for USASpendingClient in _build_filters tests - only
+    find_agency_by_name is ever called by _build_filters, so that's all
+    that needs faking."""
+
+    def __init__(self, agency: ToptierAgency | None):
+        self._agency = agency
+
+    def find_agency_by_name(self, name):
+        return self._agency
+
+
+class TestBuildFilters:
+    # Regression coverage for the real findings: no amount-based sort, no
+    # award_amounts/recipient_search_text/location filters wired to any
+    # tool - all verified live against the real USASpending API before
+    # this fix (see BACKLOG.md / the shared-filter-layer plan).
+
+    def test_omitting_all_new_params_reproduces_the_original_filter_shape(self):
+        # Hard constraint: no new params set must be byte-for-byte
+        # identical to what get_spending_by_category_raw etc. built before
+        # this consolidation - agencies + time_period only.
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024)
+        dumped = filters.model_dump(exclude_none=True)
+        assert set(dumped.keys()) == {"agencies", "time_period"}
+
+    def test_unresolved_agency_raises(self):
+        with pytest.raises(USASpendingAPIError, match="No agency found"):
+            _build_filters(FakeClient(None), "Not A Real Agency", 2021, 2024)
+
+    def test_award_type_resolves_to_codes(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", 2021, 2024, award_type="cooperative_agreement"
+        )
+        assert filters.award_type_codes == ["05"]
+
+    def test_unknown_award_type_raises(self):
+        with pytest.raises(USASpendingAPIError, match="Unknown award_type"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, award_type="not_a_type")
+
+    def test_recipient_name_becomes_single_item_list(self):
+        # search_filters.md: recipient_search_text is capped at 1 item.
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", 2021, 2024, recipient_name="Leidos"
+        )
+        assert filters.recipient_search_text == ["Leidos"]
+
+    def test_amount_bounds(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", 2021, 2024, min_amount=1_000_000_000
+        )
+        assert filters.award_amounts[0].lower_bound == 1_000_000_000
+        assert filters.award_amounts[0].upper_bound is None
+
+    def test_inverted_amount_bounds_raise(self):
+        with pytest.raises(USASpendingAPIError, match="must not exceed"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, min_amount=100, max_amount=50)
+
+    def test_performed_and_recipient_state_are_independent_fields(self):
+        # Regression for the real finding: these must map to different
+        # AdvancedFilters keys, not collapse into one - a ~$16B live
+        # discrepancy for DoD/VA (verified 2026-09-06) depends on this
+        # staying true.
+        filters = _build_filters(
+            FakeClient(make_agency()),
+            "NSF",
+            2021,
+            2024,
+            performed_in_state="Virginia",
+            recipient_in_state="Texas",
+        )
+        assert filters.place_of_performance_locations[0].state == "VA"
+        assert filters.recipient_locations[0].state == "TX"
+
+    def test_unrecognized_state_raises(self):
+        with pytest.raises(USASpendingAPIError, match="Unrecognized state"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, performed_in_state="Narnia")
+
+
+class TestNormalizeState:
+    def test_full_name_case_and_spacing_insensitive(self):
+        assert _normalize_state("Virginia") == "VA"
+        assert _normalize_state("virginia") == "VA"
+        assert _normalize_state("  Virginia  ") == "VA"
+
+    def test_abbreviation_passthrough_case_insensitive(self):
+        assert _normalize_state("va") == "VA"
+        assert _normalize_state("VA") == "VA"
+
+    def test_dc_and_territories(self):
+        assert _normalize_state("District of Columbia") == "DC"
+        assert _normalize_state("Puerto Rico") == "PR"
+
+    def test_every_abbreviation_round_trips(self):
+        for full_name, code in US_STATE_ABBREVIATIONS.items():
+            assert _normalize_state(full_name) == code
+            assert _normalize_state(code) == code
+
+    def test_garbage_raises_with_clear_message(self):
+        with pytest.raises(USASpendingAPIError, match="Unrecognized state 'Springfield'"):
+            _normalize_state("Springfield")
+
+
+class TestAmountFieldForAwardType:
+    # Regression coverage for the real, not-fully-verified-from-the-doc-
+    # alone assumption: "Award Amount" isn't valid for loan-type
+    # search_awards results per spending_by_award.md's field tables -
+    # loans expose "Loan Value" instead. See
+    # dev_tools/verify_shared_filters.py for the live confirmation of this.
+
+    def test_contracts_and_grants_use_award_amount(self):
+        assert _amount_field_for_award_type("contracts") == "Award Amount"
+        assert _amount_field_for_award_type("grants") == "Award Amount"
+        assert _amount_field_for_award_type("cooperative_agreement") == "Award Amount"
+
+    def test_loans_use_loan_value(self):
+        assert _amount_field_for_award_type("loans") == "Loan Value"
+        assert _amount_field_for_award_type("direct_loan") == "Loan Value"
+        assert _amount_field_for_award_type("guaranteed_loan") == "Loan Value"
+
+    def test_loan_award_type_codes_match_the_award_types_contract(self):
+        # 07 = Direct Loan, 08 = Guaranteed/Insured Loan per award_types.md.
+        assert LOAN_AWARD_TYPE_CODES == {"07", "08"}
+
+    def test_unknown_award_type_falls_back_to_award_amount(self):
+        # _build_filters already validated award_type earlier in the same
+        # call in real usage - this is just the documented fallback
+        # behavior for this function specifically, not a new validation path.
+        assert _amount_field_for_award_type("not_a_real_type") == "Award Amount"

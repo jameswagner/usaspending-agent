@@ -20,19 +20,22 @@ from anthropic import beta_tool
 from langsmith import traceable
 
 from backend.app.usaspending_client import (
-    AdvancedFilters,
-    AgencyFilter,
     SpendingByCategoryResponse,
     SpendingOverTimeResponse,
-    TimePeriod,
     USASpendingAPIError,
 )
 
-from .response_shaping import _format_time_period, fiscal_year_to_date_range
+from .response_shaping import _format_time_period
 from .singletons import (
     RERANK_CONFIDENCE_THRESHOLD,
     _get_retriever,
     _get_usaspending_client,
+)
+from .tool_filters import (
+    SEARCH_AWARDS_FIELDS_BASE,
+    _amount_field_for_award_type,
+    _build_filters,
+    _record_optional_filter_context,
 )
 
 logger = logging.getLogger(__name__)
@@ -163,27 +166,34 @@ def get_spending_by_category_raw(
     start_fiscal_year: int,
     end_fiscal_year: int,
     limit: int = 5,
+    award_type: str | None = None,
+    recipient_name: str | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    performed_in_state: str | None = None,
+    recipient_in_state: str | None = None,
 ) -> SpendingByCategoryResponse:
     """Call the API once, return the structured response. Raises
     USASpendingAPIError on failure — the @beta_tool wrapper decides how to
     present that to the model; this function stays presentation-free so the
     structured result is also available for chart-building later.
 
-    Resolves agency_name through find_agency_by_name first, rather than
-    passing whatever string the caller gave straight into the filter: the
-    live API silently returns zero results for an unrecognized name (e.g.
-    "NSF" instead of "National Science Foundation") instead of erroring, so
-    passing the raw string through would risk a false "no data" answer.
+    Filter resolution (agency, award_type, recipient, amount, location) is
+    delegated to _build_filters - see its docstring for the "no behavior
+    change when the new params are omitted" guarantee and each failure mode.
     """
     client = _get_usaspending_client()
-    agency = client.find_agency_by_name(agency_name)
-    if agency is None:
-        raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
-
-    start_date, end_date = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
-    filters = AdvancedFilters(
-        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)],
-        time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
+    filters = _build_filters(
+        client,
+        agency_name,
+        start_fiscal_year,
+        end_fiscal_year,
+        award_type=award_type,
+        recipient_name=recipient_name,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        performed_in_state=performed_in_state,
+        recipient_in_state=recipient_in_state,
     )
     return client.spending_by_category(category, filters, limit=limit)
 
@@ -195,6 +205,12 @@ def get_spending_by_category(
     start_fiscal_year: int,
     end_fiscal_year: int,
     limit: int = 5,
+    award_type: str | None = None,
+    recipient_name: str | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    performed_in_state: str | None = None,
+    recipient_in_state: str | None = None,
 ) -> str:
     """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for one awarding agency and fiscal year range, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions.
 
@@ -204,23 +220,54 @@ def get_spending_by_category(
         start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
         end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
         limit: Max number of results to return (default 5).
+        award_type: Optional. Restrict to one award type or bucket - contracts, grants,
+            loans, or a specific sub-type like cooperative_agreement (same values and
+            case/spacing-insensitive matching as search_awards's award_type). Omit to
+            include all award types.
+        recipient_name: Optional. Restrict to spending from awards whose recipient name
+            contains this text, e.g. "Leidos".
+        min_amount: Optional. Restrict to spending of at least this dollar amount.
+        max_amount: Optional. Restrict to spending of at most this dollar amount.
+        performed_in_state: Optional. Restrict to spending on work performed in this US
+            state (where the work happened), e.g. "Virginia" or "VA".
+        recipient_in_state: Optional. Restrict to spending on recipients
+            headquartered/located in this US state - different from performed_in_state:
+            a company headquartered in one state can perform work in another, and these
+            can give substantially different totals.
     """
     try:
-        response = get_spending_by_category_raw(category, agency_name, start_fiscal_year, end_fiscal_year, limit)
+        response = get_spending_by_category_raw(
+            category,
+            agency_name,
+            start_fiscal_year,
+            end_fiscal_year,
+            limit,
+            award_type=award_type,
+            recipient_name=recipient_name,
+            min_amount=min_amount,
+            max_amount=max_amount,
+            performed_in_state=performed_in_state,
+            recipient_in_state=recipient_in_state,
+        )
     except USASpendingAPIError as e:
         logger.warning("get_spending_by_category failed for %s/%s: %s", agency_name, category, e)
         return f"This query failed: {e}. Do not substitute a different category and present it as answering the original question — tell the user this specific breakdown isn't available."
 
-    _record_tool_call(
-        "get_spending_by_category",
-        response,
+    context = _record_optional_filter_context(
         {
             "agency_name": agency_name,
             "category": category,
             "start_fiscal_year": start_fiscal_year,
             "end_fiscal_year": end_fiscal_year,
         },
+        award_type=award_type,
+        recipient_name=recipient_name,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        performed_in_state=performed_in_state,
+        recipient_in_state=recipient_in_state,
     )
+    _record_tool_call("get_spending_by_category", response, context)
 
     if not response.results:
         return f"No {category} spending data found for {agency_name} between FY{start_fiscal_year} and FY{end_fiscal_year}."
@@ -235,18 +282,27 @@ def get_spending_over_time_raw(
     start_fiscal_year: int,
     end_fiscal_year: int,
     group: str = "fiscal_year",
+    award_type: str | None = None,
+    recipient_name: str | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    performed_in_state: str | None = None,
+    recipient_in_state: str | None = None,
 ) -> SpendingOverTimeResponse:
-    """Call the API once, return the structured response. Same split
-    rationale, and same agency_name resolution, as get_spending_by_category_raw."""
+    """Call the API once, return the structured response. Same filter
+    resolution (via _build_filters) as get_spending_by_category_raw."""
     client = _get_usaspending_client()
-    agency = client.find_agency_by_name(agency_name)
-    if agency is None:
-        raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
-
-    start_date, end_date = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
-    filters = AdvancedFilters(
-        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)],
-        time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
+    filters = _build_filters(
+        client,
+        agency_name,
+        start_fiscal_year,
+        end_fiscal_year,
+        award_type=award_type,
+        recipient_name=recipient_name,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        performed_in_state=performed_in_state,
+        recipient_in_state=recipient_in_state,
     )
     return client.spending_over_time(filters, group=group)
 
@@ -257,6 +313,12 @@ def get_spending_over_time(
     start_fiscal_year: int,
     end_fiscal_year: int,
     group: str = "fiscal_year",
+    award_type: str | None = None,
+    recipient_name: str | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    performed_in_state: str | None = None,
+    recipient_in_state: str | None = None,
 ) -> str:
     """Get USASpending spending trends over time for one awarding agency, grouped by period. Use this for "how has X's spending changed/trended over time" questions.
 
@@ -265,23 +327,53 @@ def get_spending_over_time(
         start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
         end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
         group: One of: fiscal_year, calendar_year, quarter, month. Default fiscal_year.
+        award_type: Optional. Restrict to one award type or bucket - contracts, grants,
+            loans, or a specific sub-type like cooperative_agreement (same values and
+            case/spacing-insensitive matching as search_awards's award_type). Omit to
+            include all award types.
+        recipient_name: Optional. Restrict to spending from awards whose recipient name
+            contains this text, e.g. "Leidos".
+        min_amount: Optional. Restrict to spending of at least this dollar amount.
+        max_amount: Optional. Restrict to spending of at most this dollar amount.
+        performed_in_state: Optional. Restrict to spending on work performed in this US
+            state (where the work happened), e.g. "Virginia" or "VA".
+        recipient_in_state: Optional. Restrict to spending on recipients
+            headquartered/located in this US state - different from performed_in_state:
+            a company headquartered in one state can perform work in another, and these
+            can give substantially different totals.
     """
     try:
-        response = get_spending_over_time_raw(agency_name, start_fiscal_year, end_fiscal_year, group)
+        response = get_spending_over_time_raw(
+            agency_name,
+            start_fiscal_year,
+            end_fiscal_year,
+            group,
+            award_type=award_type,
+            recipient_name=recipient_name,
+            min_amount=min_amount,
+            max_amount=max_amount,
+            performed_in_state=performed_in_state,
+            recipient_in_state=recipient_in_state,
+        )
     except USASpendingAPIError as e:
         logger.warning("get_spending_over_time failed for %s: %s", agency_name, e)
         return f"This query failed: {e}."
 
-    _record_tool_call(
-        "get_spending_over_time",
-        response,
+    context = _record_optional_filter_context(
         {
             "agency_name": agency_name,
             "start_fiscal_year": start_fiscal_year,
             "end_fiscal_year": end_fiscal_year,
             "group": group,
         },
+        award_type=award_type,
+        recipient_name=recipient_name,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        performed_in_state=performed_in_state,
+        recipient_in_state=recipient_in_state,
     )
+    _record_tool_call("get_spending_over_time", response, context)
 
     if not response.results:
         return f"No spending-over-time data found for {agency_name} between FY{start_fiscal_year} and FY{end_fiscal_year}."
@@ -293,67 +385,6 @@ def get_spending_over_time(
     return _wrap_untrusted("\n".join(lines))
 
 
-# Verified against USASpending's own award_types.md contract (checked
-# 2026-09-06), not guessed. The three broad buckets stay for general
-# "show me X's contracts/grants/loans" questions, but a bare 3-way
-# classification isn't enough: found live that asked for NSF's
-# "cooperative agreements," the model picked award_type="contracts" -
-# not just a broader bucket than asked for, but the flat-out wrong one,
-# since a cooperative agreement isn't a contract at all. The fix isn't a
-# better docstring hint (still trusting the model to classify correctly
-# from a paragraph of prose) - it's exposing the real, specific sub-types
-# as their own values, the same "let code do the exact lookup" pattern as
-# find_agency_by_name, so the model only has to recognize a term close to
-# what it already is, not correctly classify it into a bucket first.
-#
-# IDV-family codes (IDV_A through IDV_E - GWACs, BOAs, BPAs, etc.) are
-# deliberately not included: those are a structurally different kind of
-# award record (a vehicle other awards get issued under, not a
-# transaction itself), and search_awards's field set/behavior for that
-# category hasn't been verified - a real scope limitation, not an
-# oversight, flagged here rather than silently extended to cover it.
-AWARD_TYPE_GROUPS: dict[str, list[str]] = {
-    "contracts": ["A", "B", "C", "D"],
-    "grants": ["02", "03", "04", "05"],
-    "loans": ["07", "08"],
-    "bpa_call": ["A"],
-    "purchase_order": ["B"],
-    "delivery_order": ["C"],
-    "definitive_contract": ["D"],
-    "direct_loan": ["07"],
-    "guaranteed_loan": ["08"],
-    "block_grant": ["02"],
-    "formula_grant": ["03"],
-    "project_grant": ["04"],
-    "cooperative_agreement": ["05"],
-    "insurance": ["09"],
-    "other_financial_assistance": ["11"],
-    "direct_payment_specified": ["06"],
-    "direct_payment_unrestricted": ["10"],
-}
-
-
-def _normalize_award_type(award_type: str) -> str:
-    """"Cooperative Agreement", "cooperative agreement", and
-    "cooperative_agreement" should all resolve the same way - the model
-    isn't reliably going to reproduce the exact key format even when told
-    what it is, the same lesson already learned from agency-name matching
-    needing case-insensitive comparison."""
-    return award_type.strip().lower().replace(" ", "_").replace("-", "_")
-
-# A base field set valid across award types (per spending_by_award.md's
-# "Base fields" list), so one fixed request shape works regardless of
-# award_type - avoids the model needing to know which fields are only
-# valid for contracts vs. loans vs. non-loan assistance.
-SEARCH_AWARDS_FIELDS = [
-    "Award ID",
-    "Recipient Name",
-    "Award Amount",
-    "Awarding Agency",
-    "Description",
-]
-
-
 @traceable(run_type="tool", name="search_awards_raw")
 def search_awards_raw(
     agency_name: str,
@@ -361,29 +392,42 @@ def search_awards_raw(
     end_fiscal_year: int,
     award_type: str = "contracts",
     limit: int = 5,
+    recipient_name: str | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    performed_in_state: str | None = None,
+    recipient_in_state: str | None = None,
 ) -> list[dict]:
-    """Call the API once, return the raw list of award result dicts. Same
-    agency_name resolution as the other spending tools, for the same
-    reason (an abbreviation would otherwise silently return zero results).
+    """Call the API once, return the raw list of award result dicts,
+    sorted largest-amount-first (Award Amount, or Loan Value for loan
+    award types - see _amount_field_for_award_type). This replaces the
+    prior default order, which was verified live to be essentially
+    arbitrary: an unsorted "top 5" NSF FY2023 contracts query returned
+    awards from $7K to $7.2M while the true largest that year was
+    $3.13B and never appeared. Unlike the filter params, which are all
+    optional and behavior-preserving when omitted, this sort change is
+    NOT optional - the old default had no meaningful ordering to
+    preserve, so there's nothing to regress.
+
+    Filter resolution (agency, award_type, recipient, amount, location) is
+    delegated to _build_filters, same as the other two spending tools.
     """
     client = _get_usaspending_client()
-    agency = client.find_agency_by_name(agency_name)
-    if agency is None:
-        raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
-
-    award_type_codes = AWARD_TYPE_GROUPS.get(_normalize_award_type(award_type))
-    if award_type_codes is None:
-        raise USASpendingAPIError(
-            f"Unknown award_type '{award_type}'. Must be one of: {', '.join(AWARD_TYPE_GROUPS)}"
-        )
-
-    start_date, end_date = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
-    filters = AdvancedFilters(
-        agencies=[AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)],
-        time_period=[TimePeriod(start_date=start_date, end_date=end_date)],
-        award_type_codes=award_type_codes,
+    filters = _build_filters(
+        client,
+        agency_name,
+        start_fiscal_year,
+        end_fiscal_year,
+        award_type=award_type,
+        recipient_name=recipient_name,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        performed_in_state=performed_in_state,
+        recipient_in_state=recipient_in_state,
     )
-    return client.search_awards(filters, fields=SEARCH_AWARDS_FIELDS, limit=limit)
+    amount_field = _amount_field_for_award_type(award_type)
+    fields = SEARCH_AWARDS_FIELDS_BASE + [amount_field]
+    return client.search_awards(filters, fields=fields, limit=limit, sort=amount_field, order="desc")
 
 
 @beta_tool
@@ -393,8 +437,13 @@ def search_awards(
     end_fiscal_year: int,
     award_type: str = "contracts",
     limit: int = 5,
+    recipient_name: str | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    performed_in_state: str | None = None,
+    recipient_in_state: str | None = None,
 ) -> str:
-    """Search for individual award records (specific contracts, grants, or loans) for one awarding agency and fiscal year range. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead.
+    """Search for individual award records (specific contracts, grants, or loans) for one awarding agency and fiscal year range. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead. Results are ranked largest-amount-first by default — use this directly for "biggest"/"top N" questions.
 
     Args:
         agency_name: The awarding agency's name, e.g. "National Science Foundation".
@@ -411,32 +460,58 @@ def search_awards(
             direct_payment_unrestricted (other assistance types). Case/spacing/hyphens don't
             matter (e.g. "Cooperative Agreement" also works).
         limit: Max number of results to return (default 5).
+        recipient_name: Optional. Restrict to awards whose recipient name contains this
+            text, e.g. "Leidos".
+        min_amount: Optional. Restrict to awards worth at least this dollar amount.
+        max_amount: Optional. Restrict to awards worth at most this dollar amount.
+        performed_in_state: Optional. Restrict to awards for work performed in this US
+            state (where the work happened), e.g. "Virginia" or "VA".
+        recipient_in_state: Optional. Restrict to awards whose recipient is
+            headquartered/located in this US state - different from performed_in_state:
+            a company headquartered in one state can perform work in another, and these
+            can give substantially different results.
     """
     try:
-        results = search_awards_raw(agency_name, start_fiscal_year, end_fiscal_year, award_type, limit)
+        results = search_awards_raw(
+            agency_name,
+            start_fiscal_year,
+            end_fiscal_year,
+            award_type,
+            limit,
+            recipient_name=recipient_name,
+            min_amount=min_amount,
+            max_amount=max_amount,
+            performed_in_state=performed_in_state,
+            recipient_in_state=recipient_in_state,
+        )
     except USASpendingAPIError as e:
         logger.warning("search_awards failed for %s: %s", agency_name, e)
         return f"This query failed: {e}."
 
-    _record_tool_call(
-        "search_awards",
-        results,
+    context = _record_optional_filter_context(
         {
             "agency_name": agency_name,
             "start_fiscal_year": start_fiscal_year,
             "end_fiscal_year": end_fiscal_year,
             "award_type": award_type,
         },
+        recipient_name=recipient_name,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        performed_in_state=performed_in_state,
+        recipient_in_state=recipient_in_state,
     )
+    _record_tool_call("search_awards", results, context)
 
     if not results:
         return f"No {award_type} awards found for {agency_name} between FY{start_fiscal_year} and FY{end_fiscal_year}."
 
+    amount_field = _amount_field_for_award_type(award_type)
     lines = []
     for r in results:
         award_id = r.get("Award ID", "unknown")
         recipient = r.get("Recipient Name", "unknown")
-        amount = r.get("Award Amount")
+        amount = r.get(amount_field)
         amount_str = f"${amount:,.2f}" if isinstance(amount, (int, float)) else "unknown amount"
         lines.append(f"{award_id} — {recipient}: {amount_str}")
     return _wrap_untrusted("\n".join(lines))

@@ -16,9 +16,9 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 |---|---|
 | `search_guide` | Definitions and concepts from the Analyst's Guide and the USASpending Glossary, with page or term citations |
 | `lookup_agency` | An agency's basic profile (toptier code, mission, website) |
-| `get_spending_by_category` | One agency's spending broken down by NAICS/PSC/sub-agency/etc. for a fiscal year range — charts when 2+ categories come back |
-| `get_spending_over_time` | One agency's spending trend across fiscal years/quarters/months — charts when 2+ periods come back |
-| `search_awards` | Individual contract/grant/loan records for an agency and fiscal year range |
+| `get_spending_by_category` | One agency's spending broken down by NAICS/PSC/sub-agency/etc. for a fiscal year range, optionally filtered by award type, recipient name, amount range, or US state (place of performance or recipient location) — charts when 2+ categories come back |
+| `get_spending_over_time` | One agency's spending trend across fiscal years/quarters/months, with the same optional filters as `get_spending_by_category` — charts when 2+ periods come back |
+| `search_awards` | Individual contract/grant/loan records for an agency and fiscal year range, ranked largest-amount-first by default, with the same optional filters |
 | `sum_values`, `average`, `percentage_of`, `delta`, `ratio`, `rank_values` | Deterministic arithmetic over numbers the tools above already returned — totals, shares, before/after change, cross-entity comparison, ranking |
 | `code_execution` | Anthropic's sandboxed Python/Bash fallback for calculations the six typed tools don't cover (e.g. a statistic like standard deviation) |
 
@@ -70,12 +70,16 @@ uv run ruff check .
 ```
 backend/app/
   main.py                 FastAPI app (POST /ask, GET /health, serves frontend/ at /ui)
-  agent/                  Tool-calling agent (package): singletons, tool definitions, arithmetic
-                            tools, scope gate, chart/citation logic (response_shaping.py),
-                            orchestrator, CLI
-    dev_tools/              Manual, opt-in scripts (real billed LLM calls, not in CI):
-                              red-team (data-injection, jailbreak, prompt-extraction,
-                              resource-abuse) and a code_execution wiring check
+  agent/                  Tool-calling agent (package): singletons, tool definitions
+                            (tools.py) + their shared filter-building layer
+                            (tool_filters.py), arithmetic tools, scope gate,
+                            chart/citation logic (response_shaping.py), orchestrator, CLI
+    dev_tools/              Manual, opt-in scripts (real billed LLM calls unless noted,
+                              not in CI): red-team (data-injection, jailbreak,
+                              prompt-extraction, resource-abuse), a code_execution wiring
+                              check, live verification of the spending-tool filters
+                              (verify_shared_filters.py), and a free/local coverage-diff
+                              check against the live API contract (check_filter_coverage.py)
   retrieval/
     hybrid.py              Dense+sparse retriever with cross-encoder reranking (used at request time)
     pipeline/               One-off scripts: PDF/Glossary API -> chunks -> indexes

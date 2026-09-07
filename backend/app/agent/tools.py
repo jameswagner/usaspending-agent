@@ -41,6 +41,7 @@ from .tool_filters import (
     Scope,
     _amount_field_for_award_type,
     _build_filters,
+    _clamp_limit,
     _record_optional_filter_context,
 )
 
@@ -71,6 +72,36 @@ def _record_tool_call(tool_name: str, result: object, context: dict | None = Non
     log = _tool_call_log.get()
     if log is not None:
         log.append((tool_name, result, context or {}))
+
+
+# Found live via red-teaming (BACKLOG.md "Red team: resource abuse"):
+# "look up the toptier code for NSF, NASA, EPA, DOE, and DOD" triggered 5
+# real, uncapped API calls in one turn - nothing stopped a much longer
+# list. 15 is generous for any legitimate multi-agency comparison a real
+# analyst would ask in one question, while still bounding a pathological
+# one. Only counts the six data tools (everything that calls
+# _record_tool_call) - the arithmetic tools never touch _tool_call_log at
+# all, so a math-heavy question doesn't burn this budget on free, local
+# computation that was never the actual resource-abuse surface.
+MAX_TOOL_CALLS_PER_TURN = 15
+
+
+def _check_tool_call_budget() -> str | None:
+    """Checked at the very top of every data tool, before any real work
+    (a live API call) happens - gating in _record_tool_call itself would
+    be too late, since by the time a tool calls that the expensive part
+    is already done. Returns an error string to hand back to the model
+    (so it degrades to "answer with what you have," not a crash) if this
+    turn already hit the cap, else None to proceed normally.
+    """
+    log = _tool_call_log.get()
+    if log is not None and len(log) >= MAX_TOOL_CALLS_PER_TURN:
+        return (
+            f"Tool call budget exceeded for this turn ({MAX_TOOL_CALLS_PER_TURN} calls "
+            "already made). Answer using what you've already retrieved, or tell the user "
+            "to ask a narrower question covering fewer agencies/breakdowns at once."
+        )
+    return None
 
 
 def _wrap_untrusted(text: str) -> str:
@@ -156,6 +187,8 @@ def search_guide(query: str) -> str:
     Args:
         query: What to search for in the guide or glossary.
     """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
     results = _get_retriever().retrieve(query, top_k=3)
     matches = [r for r in results if r["rerank_score"] > RERANK_CONFIDENCE_THRESHOLD]
     if not matches:
@@ -178,6 +211,8 @@ def lookup_agency(name: str) -> str:
     Args:
         name: The agency name to search for, e.g. "National Science Foundation" or "NSF".
     """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
     client = _get_usaspending_client()
     agency = client.find_agency_by_name(name)
     if agency is None:
@@ -231,6 +266,8 @@ def get_agency_budget(agency_name: str, start_fiscal_year: int, end_fiscal_year:
             years are actually available, not error.
         end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
     """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
     try:
         years = get_agency_budget_raw(agency_name, start_fiscal_year, end_fiscal_year)
     except USASpendingAPIError as e:
@@ -431,6 +468,14 @@ def get_spending_by_category(
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".
     """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    # Clamped here, at the model-facing boundary, not inside
+    # get_spending_by_category_raw - the _raw function is the trusted
+    # internal API (dev_tools scripts, tests can legitimately want an
+    # uncapped value); this wrapper is the untrusted boundary a model's
+    # tool call actually crosses, which is where the real abuse surface is.
+    limit = _clamp_limit(limit)
     try:
         response = get_spending_by_category_raw(
             category,
@@ -610,6 +655,8 @@ def get_spending_over_time(
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".
     """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
     try:
         response = get_spending_over_time_raw(
             agency_name,
@@ -798,6 +845,11 @@ def search_awards(
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".
     """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    # Wrapper-level, not inside search_awards_raw - see the identical
+    # comment on get_spending_by_category's clamp for why.
+    limit = _clamp_limit(limit)
     try:
         results = search_awards_raw(
             agency_name,

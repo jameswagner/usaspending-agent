@@ -427,3 +427,18 @@ def _record_optional_filter_context(
         if value is not None:
             context[key] = value
     return context
+
+
+# The live API's own hard ceiling - verified live (BACKLOG.md "Red team:
+# resource abuse"): limit=1000 got a clean 422 "above max 100". Clamping
+# silently rather than raising is safe now specifically because
+# page_metadata.hasNext + tools.py's _truncation_note already tell the
+# model honestly when a clamped result set isn't exhaustive - clamping
+# doesn't reopen the "confidently incomplete" problem that fix closed,
+# it just avoids a confusing 422 for a value the model was always going
+# to get an incomplete-but-honest answer for anyway.
+MAX_LIMIT = 100
+
+
+def _clamp_limit(limit: int) -> int:
+    return max(1, min(limit, MAX_LIMIT))

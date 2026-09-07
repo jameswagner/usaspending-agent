@@ -12,6 +12,7 @@ from backend.app.agent.response_shaping import (
 from backend.app.agent.tool_filters import (
     AWARD_TYPE_GROUPS,
     LOAN_AWARD_TYPE_CODES,
+    MAX_LIMIT,
     US_STATE_ABBREVIATIONS,
     VALID_DATE_TYPES,
     AwardType,
@@ -19,6 +20,7 @@ from backend.app.agent.tool_filters import (
     Scope,
     _amount_field_for_award_type,
     _build_filters,
+    _clamp_limit,
     _normalize_award_type,
     _normalize_date_type,
     _normalize_scope,
@@ -28,12 +30,15 @@ from backend.app.agent.tool_filters import (
     _validate_psc_code,
 )
 from backend.app.agent.tools import (
+    MAX_TOOL_CALLS_PER_TURN,
     VALID_CATEGORIES,
     VALID_GROUPS,
     Category,
     Group,
+    _check_tool_call_budget,
     _normalize_category,
     _normalize_group,
+    _tool_call_log,
     _truncation_note,
 )
 from backend.app.usaspending_client import (
@@ -689,3 +694,56 @@ class TestLiteralTypesMatchVocabulary:
 
     def test_scope_literal_is_domestic_foreign(self):
         assert set(get_args(Scope)) == {"domestic", "foreign"}
+
+
+class TestClampLimit:
+    # Regression coverage for a real finding (BACKLOG.md "Red team:
+    # resource abuse"): the model passed limit=1000 unprompted and got a
+    # raw 422 from the live API ("above max 100"). Clamping silently is
+    # safe because page_metadata.hasNext + _truncation_note already tell
+    # the model honestly when a clamped set isn't exhaustive.
+
+    def test_within_range_passes_through_unchanged(self):
+        assert _clamp_limit(5) == 5
+        assert _clamp_limit(100) == 100
+
+    def test_above_max_clamps_to_max(self):
+        assert _clamp_limit(1000) == MAX_LIMIT
+        assert _clamp_limit(101) == MAX_LIMIT
+
+    def test_zero_or_negative_floors_to_one(self):
+        assert _clamp_limit(0) == 1
+        assert _clamp_limit(-5) == 1
+
+
+class TestToolCallBudget:
+    # Regression coverage for a real finding (BACKLOG.md "Red team:
+    # resource abuse"): "look up the toptier code for NSF, NASA, EPA, DOE,
+    # and DOD" triggered 5 real, uncapped API calls in one turn, with
+    # nothing stopping a much longer list.
+
+    def test_returns_none_when_no_log_is_active(self):
+        # Mirrors _record_tool_call's own "no-op outside ask()" behavior -
+        # a tool called directly (tests, dev_tools scripts) shouldn't be
+        # budget-gated at all, only real agent turns.
+        token = _tool_call_log.set(None)
+        try:
+            assert _check_tool_call_budget() is None
+        finally:
+            _tool_call_log.reset(token)
+
+    def test_returns_none_when_under_the_cap(self):
+        token = _tool_call_log.set([("lookup_agency", None, {})] * (MAX_TOOL_CALLS_PER_TURN - 1))
+        try:
+            assert _check_tool_call_budget() is None
+        finally:
+            _tool_call_log.reset(token)
+
+    def test_returns_an_error_string_at_the_cap(self):
+        token = _tool_call_log.set([("lookup_agency", None, {})] * MAX_TOOL_CALLS_PER_TURN)
+        try:
+            result = _check_tool_call_budget()
+            assert result is not None
+            assert str(MAX_TOOL_CALLS_PER_TURN) in result
+        finally:
+            _tool_call_log.reset(token)

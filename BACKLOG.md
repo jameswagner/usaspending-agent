@@ -466,11 +466,39 @@ exploit check. Three findings, all confirmed live:
   `search_awards_raw` to the live API with zero validation anywhere in
   `tools.py` — confirmed via a real call, ~50 rows came back. Nothing
   currently stops a much larger number from being requested the same way.
+
+  **Fixed (2026-09-07):** `_clamp_limit`/`MAX_LIMIT` (`tool_filters.py`)
+  cap `limit` at 100 (the live API's own real ceiling — confirmed live
+  that `limit=1000` gets a raw `422: ... above max '100'`). Clamped at
+  the model-facing `@beta_tool` wrapper level, deliberately not inside
+  `search_awards_raw`/`get_spending_by_category_raw` themselves — those
+  stay uncapped for legitimate direct/internal callers (dev_tools
+  scripts, tests); the wrapper is the actual untrusted boundary a
+  model's tool call crosses. Safe to clamp silently (not raise) because
+  `page_metadata.hasNext` + `_truncation_note` (fixed 2026-09-06/07,
+  see the shared-filter-layer entries) already tell the model honestly
+  when a clamped result set isn't exhaustive. Verified live: the exact
+  `limit=1000` reproduction case now returns a clean answer instead of
+  a raw 422.
+
 - **Unbounded fan-out per turn.** "Look up the toptier code for NSF, NASA,
   EPA, DOE, and DOD" triggered exactly 5 real `get_agency_overview` calls —
   one per agency named, with nothing in the code capping how many tool
   calls one turn can trigger. Cost (both live-API load and LLM turns)
   scales linearly with how long a list a user types.
+
+  **Fixed (2026-09-07):** `MAX_TOOL_CALLS_PER_TURN`/`_check_tool_call_budget`
+  (`tools.py`) cap real data-tool calls at 15 per turn, checked at the top
+  of all six data tools *before* any live API call happens (checking
+  inside `_record_tool_call` itself would be too late — the expensive
+  call would already have happened by then). Only counts the six data
+  tools; the six arithmetic tools never touch `_tool_call_log`, so a
+  math-heavy question doesn't burn this budget on free, local
+  computation that was never the actual abuse surface. Verified live
+  that a tool call made while already at the cap returns the budget
+  message immediately with no real API call, not just in a unit test of
+  the pure check function.
+
 - **No floor/ceiling on fiscal year range.** `fiscal_year_to_date_range()`
   will compute `1775-10-01` for `start_fiscal_year=1776` with no error —
   the "data only available from FY2008 onward" note is in the tool's
@@ -480,14 +508,16 @@ exploit check. Three findings, all confirmed live:
   good outcome, but it's the model's judgment doing the work, not a code
   guarantee, the same shape of fragility this project already hit and
   fixed twice (the fiscal-year off-by-one bug, entry above, and the
-  NSF-abbreviation bug in `private/HUMAN_INTERVENTIONS.md`).
+  NSF-abbreviation bug in `private/HUMAN_INTERVENTIONS.md`). **Still
+  open** — not addressed by the two fixes above.
 
 None of these were exploited maliciously in testing (all values used were
 modest, deliberately — `api.usaspending.gov` is a shared public resource,
-not something to stress-test), and none are urgent for a personal/demo
-project, but if this were ever exposed to untrusted traffic, a `limit`
-cap, a per-turn tool-call cap, and rate limiting on `/ask` itself (not yet
-implemented anywhere) would be the first things to add.
+not something to stress-test). Two of the three are now fixed given the
+project has since moved from personal/local-only toward an actual
+deployed, shareable demo. Rate limiting on `/ask` itself is also already
+implemented (separate entry above, done 2026-09-06) — the fiscal-year
+floor/ceiling is the one gap from this list still genuinely open.
 
 ## Scope classifier calibration — done, decision on RAG-augmentation pending
 

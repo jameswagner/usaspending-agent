@@ -48,7 +48,14 @@ def test_ask_returns_agent_response(client, monkeypatch):
     assert data["source_type"] == "agent"
     assert data["charts"] == [fake_result.charts[0].model_dump()]
     assert data["citations"] == [
-        {"chunk_id": "Analyst's_Guide_p8", "source": "Analyst's Guide", "page": 3, "term": None}
+        {
+            "chunk_id": "Analyst's_Guide_p8",
+            "source": "Analyst's Guide",
+            "page": 3,
+            "term": None,
+            "question": None,
+            "url": None,
+        }
     ]
     assert data["tool_citations"] == [
         {"tool_name": "lookup_agency", "parameters": {"name": "NSF"}, "description": "Agency lookup: NSF"}

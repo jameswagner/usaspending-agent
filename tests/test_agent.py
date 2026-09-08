@@ -4,6 +4,10 @@ from typing import get_args
 import pytest
 
 from backend.app.agent.response_shaping import (
+    GUIDE_URL,
+    Citation,
+    _build_guide_citation,
+    _extract_guide_question,
     build_tool_citation,
     current_fiscal_year,
     fiscal_year_to_date_range,
@@ -747,3 +751,108 @@ class TestToolCallBudget:
             assert str(MAX_TOOL_CALLS_PER_TURN) in result
         finally:
             _tool_call_log.reset(token)
+
+
+class TestExtractGuideQuestion:
+    # Regression coverage: replacing page-number citations with the real
+    # question, per real chunk data - verified live against
+    # data/chunks/analysts_guide_chunks.jsonl that only 42/70 (60%) of
+    # Guide chunks are actually Q&A-shaped, not all of them as might be
+    # assumed from the chunking strategy's name.
+
+    def test_extracts_a_real_smart_quoted_question(self):
+        text = "‘What is an obligation?’\nAn obligation is a promise made by the government..."
+        assert _extract_guide_question(text) == "What is an obligation?"
+
+    def test_returns_none_for_a_table_of_contents_chunk(self):
+        text = "Analyst’s Guide to Federal Spending Data\nContents\nAWARD SPENDING ....... 3"
+        assert _extract_guide_question(text) is None
+
+    def test_returns_none_for_a_bare_section_header_chunk(self):
+        assert _extract_guide_question("AWARD AND ACCOUNT SPENDING COMPARISON") is None
+
+    def test_only_checks_the_first_line(self):
+        # A question mark appearing later in the chunk (inside the answer
+        # text, say) shouldn't make an otherwise non-Q&A chunk match.
+        text = "AWARD SPENDING\nIs this a question? No, just a header chunk with a '?' in the body."
+        assert _extract_guide_question(text) is None
+
+
+class TestBuildGuideCitation:
+    def test_glossary_chunk_gets_a_term_citation_no_url(self):
+        chunk = {"id": "glossary_1", "source": "USASpending Glossary", "term": "Obligation", "text": "..."}
+        citation = _build_guide_citation(chunk)
+        assert citation == Citation(chunk_id="glossary_1", source="USASpending Glossary", term="Obligation")
+        assert citation.url is None
+
+    def test_qa_shaped_guide_chunk_gets_a_question_and_the_live_url(self):
+        chunk = {
+            "id": "Analyst's_Guide_p5",
+            "source": "Analyst's Guide",
+            "text": "‘What is an obligation?’\nAn obligation is...",
+            "page_start": 5,
+        }
+        citation = _build_guide_citation(chunk)
+        assert citation.question == "What is an obligation?"
+        assert citation.url == GUIDE_URL
+        assert citation.page is None
+
+    def test_non_qa_guide_chunk_falls_back_to_page_but_still_gets_the_url(self):
+        # The url is unconditional for every Guide citation - it isn't
+        # per-question anchor-addressable (verified live: the real page
+        # is a client-rendered SPA with no server-side anchors at all),
+        # so linking it even for the page-fallback case is still correct,
+        # just less specific.
+        chunk = {
+            "id": "Analyst's_Guide_p1",
+            "source": "Analyst's Guide",
+            "text": "AWARD AND ACCOUNT SPENDING COMPARISON",
+            "page_start": 2,
+        }
+        citation = _build_guide_citation(chunk)
+        assert citation.question is None
+        assert citation.page == 2
+        assert citation.url == GUIDE_URL
+
+
+class TestGuideQuestionDedup:
+    # The user's specific ask: dedup citations by the actual question
+    # text, not just chunk_id - a single logical Q&A entry can span more
+    # than one physical chunk (long answers get split further beyond the
+    # Q&A boundary), which would otherwise show the same question twice
+    # under two different chunk_ids.
+
+    def test_two_different_chunk_ids_same_question_dedups_to_one_citation(self):
+        chunks = [
+            {
+                "id": "Analyst's_Guide_p5",
+                "source": "Analyst's Guide",
+                "text": "‘What is an obligation?’\nFirst half of a long answer...",
+                "page_start": 5,
+            },
+            {
+                "id": "Analyst's_Guide_p6",
+                "source": "Analyst's Guide",
+                "text": "‘What is an obligation?’\nSecond half of the same long answer, chunked separately...",
+                "page_start": 6,
+            },
+        ]
+        # Mirrors ask()'s own dedup loop in orchestrator.py, tested at the
+        # unit level via the same building blocks it uses.
+        seen_chunk_ids: set[str] = set()
+        seen_questions: set[str] = set()
+        citations = []
+        for chunk in chunks:
+            if chunk["id"] in seen_chunk_ids:
+                continue
+            seen_chunk_ids.add(chunk["id"])
+            citation = _build_guide_citation(chunk)
+            if citation.question is not None:
+                normalized = citation.question.strip().lower()
+                if normalized in seen_questions:
+                    continue
+                seen_questions.add(normalized)
+            citations.append(citation)
+
+        assert len(citations) == 1
+        assert citations[0].chunk_id == "Analyst's_Guide_p5"

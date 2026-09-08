@@ -7,6 +7,7 @@ returned from a tool call, not on how that call was made.
 """
 from __future__ import annotations
 
+import re
 from datetime import date, datetime, timezone
 from typing import Literal
 
@@ -82,13 +83,67 @@ class ChartSpec(BaseModel):
 class Citation(BaseModel):
     chunk_id: str
     source: str
-    # Exactly one of these is set - page for the page-based Analyst's
-    # Guide, term for the USASpending Glossary (which has no real page
-    # number to point to). Two optional fields rather than a shared
-    # required "locator" string so the frontend can render each source
-    # type's natural format ("source, page N" vs "source: term").
+    # Exactly one of page/term/question is normally set. term: the
+    # USASpending Glossary (no real page number to point to). question:
+    # the majority of Analyst's Guide chunks, which are Q&A pairs -
+    # carries the real question text (extracted from the chunk itself),
+    # paired with `url` linking to the live guide page. page: the
+    # minority of Guide chunks that aren't Q&A-shaped (section headers,
+    # table of contents - verified live only ~60% of Guide chunks match
+    # the Q&A pattern, not assumed to be all of them) - also paired with
+    # `url`, since the live page is a fixed, non-anchor-addressable
+    # single URL either way (verified live 2026-09-07: it's a client-
+    # rendered SPA with no server-side per-question anchors at all, so
+    # `url` is the same for every Guide citation regardless of which
+    # question - `question`/`page` is what actually distinguishes them).
     page: int | None = None
     term: str | None = None
+    question: str | None = None
+    url: str | None = None
+
+
+# The Analyst's Guide's live counterpart to the local PDF this project
+# ingests. Fixed for every Guide citation - see Citation's docstring for
+# why this can't be a per-question deep link.
+GUIDE_URL = "https://www.usaspending.gov/federal-spending-guide"
+
+# ingest.py's chunker splits the Guide on question boundaries, and each
+# resulting Q&A chunk's text begins with the literal question wrapped in
+# smart single quotes (confirmed from real chunk data, e.g.
+# "‘What is an obligation?’") - not assumed, checked directly
+# against data/chunks/analysts_guide_chunks.jsonl.
+_GUIDE_QUESTION_PATTERN = re.compile(r"^[‘“](.+?)[’”]\s*$")
+
+
+def _extract_guide_question(text: str) -> str | None:
+    """Returns the real question a Guide chunk is answering, or None if
+    this chunk isn't Q&A-shaped (a section header or table-of-contents
+    chunk, not a definitional Q&A pair). Verified live against the real
+    chunk data that this is a real, common case, not an edge case to
+    ignore: 28 of 70 Guide chunks (40%) don't match the Q&A pattern.
+    Returning None for those rather than fabricating a "question" from
+    non-Q&A text is what lets the caller fall back to a page-number
+    citation for exactly the chunks a question doesn't make sense for.
+    """
+    first_line = text.split("\n", 1)[0].strip()
+    match = _GUIDE_QUESTION_PATTERN.match(first_line)
+    return match.group(1).strip() if match else None
+
+
+def _build_guide_citation(chunk: dict) -> Citation:
+    """One retrieved chunk -> one Citation, encapsulating the term
+    (Glossary) / question (Q&A-shaped Guide chunk) / page (non-Q&A Guide
+    chunk) branching so it's unit-testable independent of ask()'s loop.
+    """
+    term = chunk.get("term")
+    if term:
+        return Citation(chunk_id=chunk["id"], source=chunk["source"], term=term)
+
+    question = _extract_guide_question(chunk["text"])
+    if question is not None:
+        return Citation(chunk_id=chunk["id"], source=chunk["source"], question=question, url=GUIDE_URL)
+
+    return Citation(chunk_id=chunk["id"], source=chunk["source"], page=chunk["page_start"], url=GUIDE_URL)
 
 
 class ToolCitation(BaseModel):

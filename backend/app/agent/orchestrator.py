@@ -22,6 +22,7 @@ from .response_shaping import (
     ChartSpec,
     Citation,
     ToolCitation,
+    _build_guide_citation,
     build_tool_citation,
     current_fiscal_year,
     should_chart,
@@ -273,6 +274,13 @@ def ask(question: str) -> AgentResult:
     # actual command that ran, the same way a data lookup cites its query.
     charts: list[ChartSpec] = []
     seen_chunk_ids: set[str] = set()
+    # Separate from seen_chunk_ids: a single logical Q&A entry can span
+    # more than one physical chunk (long-answer chunks get split further
+    # beyond the Q&A boundary), which would otherwise show the same
+    # question twice under two different chunk_ids. Normalized
+    # (stripped/lowercased) so trivial whitespace differences between
+    # chunks don't defeat the dedup.
+    seen_guide_questions: set[str] = set()
     citations: list[Citation] = []
     seen_tool_citation_keys: set[tuple] = set()
     tool_citations: list[ToolCitation] = []
@@ -286,16 +294,13 @@ def ask(question: str) -> AgentResult:
                 if chunk["id"] in seen_chunk_ids:
                     continue
                 seen_chunk_ids.add(chunk["id"])
-                # Glossary chunks carry a term (and no real page number);
-                # Guide chunks carry a page (and no term) - see
-                # ingest_glossary.py and Citation's docstring.
-                term = chunk.get("term")
-                if term:
-                    citations.append(Citation(chunk_id=chunk["id"], source=chunk["source"], term=term))
-                else:
-                    citations.append(
-                        Citation(chunk_id=chunk["id"], source=chunk["source"], page=chunk["page_start"])
-                    )
+                citation = _build_guide_citation(chunk)
+                if citation.question is not None:
+                    normalized_question = citation.question.strip().lower()
+                    if normalized_question in seen_guide_questions:
+                        continue
+                    seen_guide_questions.add(normalized_question)
+                citations.append(citation)
             continue
 
         tool_citation = build_tool_citation(tool_name, context)

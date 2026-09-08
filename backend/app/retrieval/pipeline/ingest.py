@@ -34,9 +34,39 @@ class Chunk:
 # than pairing opening/closing quotes: the source PDF sometimes mis-renders a
 # closing quote using the opening-quote glyph, which breaks quote-pair matching
 # but leaves the start marker intact.
+#
+# Found live (2026-09-07, comparing our indexed chunks against the real
+# usaspending.gov/federal-spending-guide page): not every question in the
+# source PDF is quote-wrapped. "What is a recipient?" (and others,
+# typically the first question right after a new all-caps section header
+# like "RECIPIENT DATA ELEMENTS") has NO leading quote at all in the raw
+# PDF text - confirmed directly against extract_pages() output, not
+# assumed. The quote-only regex silently swallowed these into whatever
+# unit came before them (e.g. "What is a recipient?" and its answer ended
+# up appended to the end of the *previous*, unrelated Q&A's chunk), which
+# meant a citation for that merged chunk showed the wrong question
+# entirely - the first, unrelated one, not the one actually answered.
+#
+# Second alternative below: a line-start position immediately followed by
+# a question word, where that same line ends in "?" (bounded by \n on
+# both sides). No quote required. This still means the resulting "unit"
+# it opens is not itself quote-wrapped - _extract_guide_question
+# (response_shaping.py) accepts either form.
+#
+# A third, related mangling found the same way: a question with a
+# CLOSING quote but no matching opening one (mirror image of the
+# docstring's opening-without-closing case) - e.g. "Where is the full
+# list of agency names and codes?'" with no opening quote anywhere
+# before it. The line-end check below tolerates an optional stray
+# closing quote between the "?" and the newline so this still counts as
+# ending the line, not just a bare "?".
+_QUESTION_WORD = (
+    r"(?:What|How|Which|When|Where|Why|Who|Can|Could|Is|Are|Does|Do|Did|"
+    r"Should|Would|Will|May|Must|I)"
+)
 QUESTION_START_RE = re.compile(
-    r"[‘']\s*(?=(?:What|How|Which|When|Where|Why|Who|Can|Could|Is|Are|Does|Do|Did|"
-    r"Should|Would|Will|May|Must|I)\b)"
+    rf"[‘']\s*(?={_QUESTION_WORD}\b)"
+    rf"|(?<=\n)(?={_QUESTION_WORD}\b[^\n]*\?[’”]?[ \t]*\n)",
 )
 
 

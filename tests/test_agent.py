@@ -777,6 +777,34 @@ class TestExtractGuideQuestion:
         text = "AWARD SPENDING\nIs this a question? No, just a header chunk with a '?' in the body."
         assert _extract_guide_question(text) is None
 
+    def test_extracts_an_unquoted_question(self):
+        # Real bug found live (2026-09-07): some questions have no quote
+        # at all in the source PDF (e.g. "What is a recipient?" right
+        # after a "RECIPIENT DATA ELEMENTS" section header) - confirmed
+        # directly against the raw PDF text. ingest.py's chunker was
+        # fixed to split on these; this is the matching extraction-side
+        # fix so the resulting unquoted chunk is still recognized.
+        text = "What is a recipient?\nA recipient is a company, organization..."
+        assert _extract_guide_question(text) == "What is a recipient?"
+
+    def test_extracts_a_question_with_an_opening_quote_but_no_closing_one(self):
+        # Real bug found live: the source PDF sometimes drops the closing
+        # quote glyph entirely rather than mis-rendering it - confirmed
+        # directly against the raw PDF text for "What are the two major
+        # categories of award spending?" (opening quote present, no
+        # closing quote anywhere on the line). A strict quote-*pair*
+        # regex missed this even though the chunk itself was already
+        # correctly split - fixed by stripping quotes independently.
+        text = "‘What are the two major categories of award spending?\nThe two main categories are..."
+        assert _extract_guide_question(text) == "What are the two major categories of award spending?"
+
+    def test_extracts_a_question_with_a_closing_quote_but_no_opening_one(self):
+        # Mirror image, also found live: a closing quote with no opening
+        # one at all, e.g. "Where is the full list of agency names and
+        # codes?'" - confirmed directly against the raw PDF text.
+        text = "Where is the full list of agency names and codes?’\nThe agency_codes.csv file..."
+        assert _extract_guide_question(text) == "Where is the full list of agency names and codes?"
+
 
 class TestBuildGuideCitation:
     def test_glossary_chunk_gets_a_term_citation_no_url(self):

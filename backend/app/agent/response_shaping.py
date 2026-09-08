@@ -107,23 +107,34 @@ class Citation(BaseModel):
 # why this can't be a per-question deep link.
 GUIDE_URL = "https://www.usaspending.gov/federal-spending-guide"
 
-# ingest.py's chunker splits the Guide on question boundaries, and each
-# resulting Q&A chunk's text begins with the literal question wrapped in
-# smart single quotes (confirmed from real chunk data, e.g.
-# "‘What is an obligation?’") - not assumed, checked directly
-# against data/chunks/analysts_guide_chunks.jsonl.
-_GUIDE_QUESTION_PATTERN = re.compile(r"^[‘“](.+?)[’”]\s*$")
+# ingest.py's chunker splits the Guide on question boundaries. Most
+# resulting Q&A chunks' text begins with the literal question wrapped in
+# a matched pair of smart single quotes (e.g. "‘What is an obligation?’"),
+# but not always - found live (2026-09-07, diffing our indexed chunks
+# against the real usaspending.gov/federal-spending-guide page) two
+# distinct ways a question can fail to have a clean quote pair, both
+# confirmed directly against pymupdf's raw extracted text, not assumed:
+# some questions have no leading quote at all (typically the first
+# question right after a new section header, e.g. "What is a recipient?"
+# under "RECIPIENT DATA ELEMENTS"), and some have an opening quote but no
+# closing one (the source PDF mis-renders or drops the closing glyph -
+# ingest.py's own QUESTION_START_RE comment already documents this same
+# phenomenon for chunk *boundary* detection; it turns out to affect
+# extracting the question text back out of an already-correctly-chunked
+# unit too). Strips a leading and trailing quote independently, rather
+# than requiring a matched pair, so both cases resolve to the same clean
+# question text instead of only one of them working.
+_GUIDE_QUESTION_PATTERN = re.compile(r"^[‘“]?(.+\?)[’”]?\s*$")
 
 
 def _extract_guide_question(text: str) -> str | None:
     """Returns the real question a Guide chunk is answering, or None if
     this chunk isn't Q&A-shaped (a section header or table-of-contents
-    chunk, not a definitional Q&A pair). Verified live against the real
-    chunk data that this is a real, common case, not an edge case to
-    ignore: 28 of 70 Guide chunks (40%) don't match the Q&A pattern.
-    Returning None for those rather than fabricating a "question" from
-    non-Q&A text is what lets the caller fall back to a page-number
-    citation for exactly the chunks a question doesn't make sense for.
+    chunk, not a definitional Q&A pair - such chunks don't end in "?" at
+    all, so they never match). Returning None for those rather than
+    fabricating a "question" from non-Q&A text is what lets the caller
+    fall back to a page-number citation for exactly the chunks a question
+    doesn't make sense for.
     """
     first_line = text.split("\n", 1)[0].strip()
     match = _GUIDE_QUESTION_PATTERN.match(first_line)

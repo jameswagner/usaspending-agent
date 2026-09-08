@@ -119,6 +119,46 @@ class TestQuestionSplit:
         assert question_split("") == []
         assert question_split("   ") == []
 
+    def test_unquoted_question_after_a_section_header_still_splits(self):
+        # Real bug found live (2026-09-07, diffing indexed chunks against
+        # the real usaspending.gov/federal-spending-guide page): confirmed
+        # directly against the raw PDF text that "What is a recipient?"
+        # (the first question under a new "RECIPIENT DATA ELEMENTS"
+        # section) has NO leading quote at all - the old quote-only regex
+        # silently glued it onto whatever unit came before it, so a
+        # citation for that merged chunk showed a completely unrelated
+        # question. Confirmed this is a real, common pattern in the
+        # source PDF, not a one-off.
+        text = (
+            "‘Which fields contain Assistance Listings information?’\n"
+            "The cfda_number field contains this information.\n\n"
+            "RECIPIENT DATA ELEMENTS\n"
+            "What is a recipient?\n"
+            "A recipient is a company, organization, individual..."
+        )
+        units = question_split(text)
+        assert len(units) == 2
+        assert units[1].startswith("What is a recipient?")
+        assert "cfda_number" not in units[1]
+
+    def test_question_with_only_a_closing_quote_still_splits(self):
+        # Mirror image of the mis-rendered-closing-quote case above: some
+        # questions have a CLOSING quote but no opening one at all -
+        # confirmed directly against the raw PDF text for "Where is the
+        # full list of agency names and codes?’". The line-end check has
+        # to tolerate a stray closing quote between "?" and the newline,
+        # not just a bare "?", or this still fails to split.
+        text = (
+            "‘What are sub-tier agencies?’\n"
+            "Sub-tier agencies are divisions of top-tier agencies.\n\n"
+            "Where is the full list of agency names and codes?’\n"
+            "The agency_codes.csv file includes this data."
+        )
+        units = question_split(text)
+        assert len(units) == 2
+        assert units[1].startswith("Where is the full list")
+        assert "sub-tier agencies" not in units[1]
+
 
 class TestChunkUnit:
     def test_short_unit_passes_through_unchanged(self):

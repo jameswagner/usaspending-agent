@@ -2,6 +2,60 @@
 
 Deferred ideas and known minor issues — not urgent, not forgotten.
 
+## Fixed: chunker silently merged some Q&A pairs, producing wrong citations
+
+Found live (2026-09-07) by comparing every question in the newly-added
+question-based citations (see the "Cite the Analyst's Guide by its real
+question" work) against the real content on
+`usaspending.gov/federal-spending-guide`, pasted in directly by hand
+rather than assumed to match: 57 real questions on the live page vs. 42
+extractable from our indexed chunks. 13 of those 15 "missing" questions
+turned out to actually be present in our chunk data, just merged into the
+*wrong* chunk - e.g. "What is a recipient?" (no answer of its own) got
+glued onto the end of the preceding, unrelated "Assistance Listings" Q&A.
+That meant a citation for content correctly answering "What is a
+recipient?" would show a completely different, wrong question as its
+source.
+
+**Root cause, confirmed against the raw PDF text (`ingest.py`'s
+`extract_pages()`), not guessed:** `QUESTION_START_RE`, the chunker's
+question-boundary regex, required a leading curly quote before every
+question. Three distinct ways the source PDF breaks that assumption, all
+confirmed directly against real page text: some questions (typically the
+first one under a new section header) have no quote at all; some have an
+opening quote but the closing one is missing entirely (not just
+mis-rendered, which the regex's comment already documented and handled);
+and some have the mirror image - a closing quote with no opening one.
+
+**Fixed:** `QUESTION_START_RE` now also matches a bare line that starts
+with a question word and ends in "?" (with an optional stray closing
+quote tolerated before the newline), not just quote-prefixed questions.
+`_extract_guide_question` (`response_shaping.py`) was also strengthened
+to strip a leading/trailing quote independently rather than requiring a
+matched pair, since a chunk can now correctly start at an unquoted or
+quote-mismatched question and still needs its text recognized. Verified
+with a whole-corpus scan (not just the cases found by hand): zero of the
+76 re-chunked Guide chunks still contain a second, unsplit question
+buried in their body - the dangerous "shows a different question" failure
+mode is closed, not just patched for the specific examples found.
+
+Real chunks/indexes regenerated (`ingest.py` → `vector_index.py` →
+`bm25_index.py`), not just the code - 70 → 76 Guide chunks, 227 total
+with Glossary. 6 new regression tests (3 chunker-level, 3 extraction-level)
+using the exact real strings that exposed each variant.
+
+**Remaining, real, and deliberately not chased further:** ~8 questions on
+the live page still aren't cleanly extracted - confirmed each one falls
+back safely to the honest page-number citation (never a wrong question,
+just a less specific one), typically because the question and the start
+of its answer share one PDF line with no line break between them at all
+(a different, narrower formatting quirk than the three fixed above). And
+2 questions ("What is the Federal Spending Guide?", "How do I cite
+USAspending.gov data?") are genuinely absent from the local PDF -
+web-only content, not in the printable document. Neither is worth
+chasing given the dangerous case is already closed; noted here rather
+than silently left unmentioned.
+
 ## Fixed: schema-level enum constraints for every fixed-vocabulary parameter
 
 Every fixed-vocabulary tool parameter (`award_type`, `category`, `date_type`,

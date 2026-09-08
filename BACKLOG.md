@@ -2,6 +2,56 @@
 
 Deferred ideas and known minor issues — not urgent, not forgotten.
 
+## Added: per-term live links for Glossary citations
+
+Following the same treatment already given to Analyst's Guide citations
+(link to the real live page instead of a bare page number/term), Glossary
+citations now link to the live glossary sidebar for the *specific term
+cited*, not just a generic glossary page.
+
+There's no dedicated HTML page for the glossary — it's a sidebar popup on
+the main site, backed by a raw JSON API
+(`https://api.usaspending.gov/api/v2/references/glossary/`) with no
+per-term anchors of its own. Investigated whether a per-term deep link was
+possible anyway, rather than assuming a single fixed URL (the Guide's
+approach) was the only option:
+
+- Checked `data/chunks/glossary_chunks.jsonl` and confirmed each entry
+  already carries a `slug` field (`ingest_glossary.py` parses this from the
+  live API's own `slug` field, added when the Glossary was first ingested
+  as a `search_guide` source).
+- Fetched the live glossary API and searched its 151 real entries for one
+  with a `resources` field containing a `?glossary=` cross-reference, to
+  see the actual link pattern USASpending uses internally. Found it live in
+  the `treasury-account-symbol-tas` entry: `resources` contains a literal
+  `[Federal Account](?glossary=federal-account)` markdown link — i.e.
+  USASpending's own glossary content uses `?glossary=<slug>` to cross-link
+  terms to each other, so it's a real, live, intentional mechanism, not a
+  guess.
+- Verified live (2026-09-07) that
+  `https://www.usaspending.gov/?glossary=treasury-account-symbol-tas`
+  actually opens the site with the glossary sidebar pre-opened to that
+  exact term — confirmed by the user opening it in a real browser (the SPA
+  is client-rendered with a generic `<title>` and no server-side markup
+  differences for the query param, so this couldn't be confirmed via
+  `curl`/`WebFetch` alone, unlike the flatter "is this URL live" checks
+  used elsewhere this session).
+
+Implementation, mirroring the Guide citation pattern:
+`response_shaping.py`'s `_build_guide_citation` now reads `chunk.get("slug")`
+for Glossary chunks and sets `Citation.url` to
+`f"{GLOSSARY_URL_BASE}{slug}"` (falls back to no `url` if a chunk is ever
+missing a slug, rather than fabricating a broken link). `slug` required no
+new plumbing — it was already carried through `vector_index.py`/
+`bm25_index.py`/`hybrid.py` as stored metadata from the original Glossary
+ingestion, just never read at the citation layer. `frontend/index.html`'s
+citation rendering updated so `term` citations link out the same way
+`question`/`page` citations already did. Tests added to
+`TestBuildGuideCitation` for both the with-slug and defensive no-slug
+cases. Verified end-to-end against the live server (`POST /ask`, "What is
+an obligation?") — citations came back with real, distinct per-term URLs
+(`?glossary=obligation`, `?glossary=funding-obligated`).
+
 ## Fixed: chunker silently merged some Q&A pairs, producing wrong citations
 
 Found live (2026-09-07) by comparing every question in the newly-added

@@ -84,18 +84,23 @@ class Citation(BaseModel):
     chunk_id: str
     source: str
     # Exactly one of page/term/question is normally set. term: the
-    # USASpending Glossary (no real page number to point to). question:
-    # the majority of Analyst's Guide chunks, which are Q&A pairs -
-    # carries the real question text (extracted from the chunk itself),
-    # paired with `url` linking to the live guide page. page: the
-    # minority of Guide chunks that aren't Q&A-shaped (section headers,
-    # table of contents - verified live only ~60% of Guide chunks match
-    # the Q&A pattern, not assumed to be all of them) - also paired with
-    # `url`, since the live page is a fixed, non-anchor-addressable
-    # single URL either way (verified live 2026-09-07: it's a client-
-    # rendered SPA with no server-side per-question anchors at all, so
-    # `url` is the same for every Guide citation regardless of which
-    # question - `question`/`page` is what actually distinguishes them).
+    # USASpending Glossary, paired with a real per-term `url` (see
+    # GLOSSARY_URL_BASE below) since unlike the Guide, the live glossary
+    # sidebar honors a per-term deep link. question: the majority of
+    # Analyst's Guide chunks, which are Q&A pairs - carries the real
+    # question text (extracted from the chunk itself), paired with `url`
+    # linking to the live guide page. page: the minority of Guide chunks
+    # that aren't Q&A-shaped (section headers, table of contents -
+    # verified live only ~60% of Guide chunks match the Q&A pattern, not
+    # assumed to be all of them) - also paired with `url`, since the live
+    # Guide page is a fixed, non-anchor-addressable single URL either way
+    # (verified live 2026-09-07: it's a client-rendered SPA with no
+    # server-side per-question anchors at all, so `url` is the same for
+    # every Guide citation regardless of which question - `question`/
+    # `page` is what actually distinguishes them). Glossary citations
+    # differ: the live glossary sidebar IS addressable per-term via a
+    # query param, so `url` varies per citation there instead of being
+    # fixed.
     page: int | None = None
     term: str | None = None
     question: str | None = None
@@ -106,6 +111,19 @@ class Citation(BaseModel):
 # ingests. Fixed for every Guide citation - see Citation's docstring for
 # why this can't be a per-question deep link.
 GUIDE_URL = "https://www.usaspending.gov/federal-spending-guide"
+
+# The live glossary is a sidebar popup on the main site, not a dedicated
+# HTML page - but it opens pre-scrolled to a specific term via this query
+# param, and this isn't a guess: it's the exact mechanism USASpending's own
+# glossary entries use to cross-link each other internally (found live,
+# 2026-09-07, in the real API response for the "treasury-account-symbol-tas"
+# entry: its `resources` field contains a literal
+# "[Federal Account](?glossary=federal-account)" link). Root path chosen
+# over /federal-spending-guide as the base since the sidebar is a site-wide
+# component, not Guide-specific - confirmed live that
+# https://www.usaspending.gov/?glossary=treasury-account-symbol-tas opens
+# the sidebar to that exact term.
+GLOSSARY_URL_BASE = "https://www.usaspending.gov/?glossary="
 
 # ingest.py's chunker splits the Guide on question boundaries. Most
 # resulting Q&A chunks' text begins with the literal question wrapped in
@@ -148,7 +166,9 @@ def _build_guide_citation(chunk: dict) -> Citation:
     """
     term = chunk.get("term")
     if term:
-        return Citation(chunk_id=chunk["id"], source=chunk["source"], term=term)
+        slug = chunk.get("slug")
+        url = f"{GLOSSARY_URL_BASE}{slug}" if slug else None
+        return Citation(chunk_id=chunk["id"], source=chunk["source"], term=term, url=url)
 
     question = _extract_guide_question(chunk["text"])
     if question is not None:

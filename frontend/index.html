@@ -137,21 +137,21 @@
       sourceTypeEl.textContent = data.source_type;
       sourceTypeEl.style.display = 'inline-block';
 
-      // Glossary citations carry a term and no real page number. Guide
-      // citations carry either a question (the common case - Q&A-shaped
-      // chunks, linked to the live guide page since a page number told a
-      // reader nothing they could act on) or a page (the minority of
-      // Guide chunks that aren't Q&A-shaped) - both paired with a url,
-      // since the live page is one fixed URL regardless of which
-      // question (it isn't per-question anchor-addressable). See
-      // Citation in response_shaping.py.
+      // Glossary citations carry a term, linked to the live glossary
+      // sidebar's per-term deep link (?glossary=<slug>). Guide citations
+      // carry either a question (the common case - Q&A-shaped chunks,
+      // linked to the live guide page since a page number told a reader
+      // nothing they could act on) or a page (the minority of Guide
+      // chunks that aren't Q&A-shaped) - both paired with a url, but
+      // unlike the Glossary's per-term url, the Guide's is one fixed URL
+      // regardless of which question (it isn't per-question anchor-
+      // addressable). See Citation in response_shaping.py.
       const guideItems = (data.citations || []).map(c => {
-        if (c.term) {
-          return `<li>${escapeHtml(c.source)}: ${escapeHtml(c.term)}</li>`;
-        }
-        const label = c.question
-          ? `${escapeHtml(c.source)}: "${escapeHtml(c.question)}"`
-          : `${escapeHtml(c.source)}, page ${escapeHtml(c.page)}`;
+        const label = c.term
+          ? `${escapeHtml(c.source)}: ${escapeHtml(c.term)}`
+          : c.question
+            ? `${escapeHtml(c.source)}: "${escapeHtml(c.question)}"`
+            : `${escapeHtml(c.source)}, page ${escapeHtml(c.page)}`;
         if (c.url) {
           return `<li><a href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer">${label}</a></li>`;
         }

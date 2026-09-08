@@ -4,6 +4,7 @@ from typing import get_args
 import pytest
 
 from backend.app.agent.response_shaping import (
+    GLOSSARY_URL_BASE,
     GUIDE_URL,
     Citation,
     _build_guide_citation,
@@ -807,7 +808,30 @@ class TestExtractGuideQuestion:
 
 
 class TestBuildGuideCitation:
-    def test_glossary_chunk_gets_a_term_citation_no_url(self):
+    def test_glossary_chunk_with_a_slug_gets_a_per_term_url(self):
+        # Verified live (2026-09-07): https://www.usaspending.gov/?glossary=
+        # <slug> opens the site with the glossary sidebar pre-opened to that
+        # exact term - a genuine per-term deep link, unlike the Guide's one
+        # fixed URL for every citation.
+        chunk = {
+            "id": "Glossary_obligation",
+            "source": "USASpending Glossary",
+            "term": "Obligation",
+            "slug": "obligation",
+            "text": "...",
+        }
+        citation = _build_guide_citation(chunk)
+        assert citation == Citation(
+            chunk_id="Glossary_obligation",
+            source="USASpending Glossary",
+            term="Obligation",
+            url=f"{GLOSSARY_URL_BASE}obligation",
+        )
+
+    def test_glossary_chunk_with_no_slug_gets_a_term_citation_no_url(self):
+        # Defensive fallback - every real Glossary chunk carries a slug
+        # (ingest_glossary.py always sets it), but don't fabricate a broken
+        # link if one is ever missing.
         chunk = {"id": "glossary_1", "source": "USASpending Glossary", "term": "Obligation", "text": "..."}
         citation = _build_guide_citation(chunk)
         assert citation == Citation(chunk_id="glossary_1", source="USASpending Glossary", term="Obligation")

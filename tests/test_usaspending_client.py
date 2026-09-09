@@ -1,10 +1,12 @@
 import json
+from typing import Any, ClassVar
 
 import pytest
 import requests
 
 from backend.app.usaspending_client import (
     AdvancedFilters,
+    AgencySubAgencyResponse,
     RecipientOverview,
     ToptierAgency,
     USASpendingAPIError,
@@ -221,6 +223,77 @@ class TestRecipientClientMethods:
         assert isinstance(overview, RecipientOverview)
         assert overview.name == "REDACTED DUE TO PII"
         assert overview.total_transactions == 2243854
+
+
+class TestGetAgencySubAgencyBreakdown:
+    # Real response shape from the live API contract's own example
+    # (usaspending-api's sub_agency.md, SBA FY2018), not a hand-guessed
+    # fixture - nested Office children have no abbreviation field, only
+    # the top-level SubAgency does.
+    CONTRACT_EXAMPLE_BODY: ClassVar[dict[str, Any]] = {
+        "toptier_code": "073",
+        "fiscal_year": 2018,
+        "page_metadata": {
+            "page": 1, "total": 1, "limit": 2, "next": 2, "previous": None,
+            "hasNext": True, "hasPrevious": False,
+        },
+        "results": [
+            {
+                "name": "Small Business Administration",
+                "abbreviation": "SBA",
+                "total_obligations": 553748221.72,
+                "transaction_count": 14358,
+                "new_award_count": 13266,
+                "children": [
+                    {
+                        "name": "OFC OF CAPITAL ACCESS", "code": "737010",
+                        "total_obligations": 549195419.92, "transaction_count": 13410, "new_award_count": 12417,
+                    },
+                    {
+                        "name": "OFC OF DISASTER ASSISTANCE", "code": "732990",
+                        "total_obligations": 4577429.17, "transaction_count": 943, "new_award_count": 576,
+                    },
+                ],
+            },
+        ],
+        "messages": [],
+    }
+
+    def test_parses_real_response_shape(self, monkeypatch):
+        client = USASpendingClient()
+        monkeypatch.setattr(client, "_get", lambda path, params=None: self.CONTRACT_EXAMPLE_BODY)
+        response = client.get_agency_sub_agency_breakdown("073", fiscal_year=2018)
+        assert isinstance(response, AgencySubAgencyResponse)
+        assert response.results[0].abbreviation == "SBA"
+        assert response.results[0].transaction_count == 14358
+        assert response.results[0].children[0].code == "737010"
+        assert response.page_metadata.hasNext is True
+
+    def test_none_params_omitted_from_request(self, monkeypatch):
+        client = USASpendingClient()
+        captured: dict = {}
+
+        def fake_get(path, params=None):
+            captured.update(params or {})
+            return self.CONTRACT_EXAMPLE_BODY
+
+        monkeypatch.setattr(client, "_get", fake_get)
+        client.get_agency_sub_agency_breakdown("073")
+        assert "fiscal_year" not in captured
+        assert "award_type_codes" not in captured
+        assert captured["agency_type"] == "awarding"
+
+    def test_award_type_codes_passed_through(self, monkeypatch):
+        client = USASpendingClient()
+        captured: dict = {}
+
+        def fake_get(path, params=None):
+            captured.update(params or {})
+            return self.CONTRACT_EXAMPLE_BODY
+
+        monkeypatch.setattr(client, "_get", fake_get)
+        client.get_agency_sub_agency_breakdown("073", award_type_codes=["02", "03", "04", "05"])
+        assert captured["award_type_codes"] == ["02", "03", "04", "05"]
 
 
 class TestAdvancedFilters:

@@ -32,6 +32,7 @@ from .singletons import MODEL, _get_client
 from .tools import (
     _record_code_execution_calls,
     _tool_call_log,
+    get_agency_award_breakdown,
     get_agency_budget,
     get_award_details,
     get_recipient_details,
@@ -101,7 +102,7 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have eighteen tools. Eleven retrieve data: search_guide "
+        "have nineteen tools. Twelve retrieve data: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
         "toptier code), resolve_naics_code (find the NAICS code matching a "
@@ -117,6 +118,12 @@ def _build_system_prompt() -> str:
         "budget/appropriations question: budgetary resources and award "
         "spending are different numbers for the same agency, not "
         "interchangeable, even though both are dollar figures), "
+        "get_agency_award_breakdown (one agency's award obligations AND "
+        "transaction/new-award counts, broken down by sub-agency, for a "
+        "single fiscal year — use this when the question asks about counts, "
+        "not just dollar amounts; get_spending_by_category has no count "
+        "fields at all, and get_agency_budget's counts are periods, not "
+        "transactions), "
         "get_spending_by_category (award spending broken down by "
         "NAICS/PSC/sub-agency/etc. for a fiscal year range, scoped by an "
         "awarding agency and/or a recipient — at least one of the two is "
@@ -148,7 +155,7 @@ def _build_system_prompt() -> str:
         "a recipient_id). Six do arithmetic: "
         "sum_values, average, percentage_of, delta, ratio, and rank_values. "
         "One more, code_execution, is a general-purpose Python/Bash sandbox. "
-        "You must call at least one of the ten data tools before writing any "
+        "You must call at least one of the twelve data tools before writing any "
         "answer, every question, with no exceptions — including questions "
         "that seem "
         "unrelated to federal spending, general-knowledge questions, "
@@ -254,6 +261,7 @@ def ask(question: str) -> AgentResult:
             lookup_agency,
             resolve_naics_code,
             get_agency_budget,
+            get_agency_award_breakdown,
             get_spending_by_category,
             get_spending_over_time,
             get_spending_by_geography,

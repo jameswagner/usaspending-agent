@@ -247,6 +247,19 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
 
     agency_name = (context or {}).get("agency_name")
 
+    if tool_name == "get_agency_award_breakdown":
+        if len(structured_result.results) < 2:
+            return None
+        title = "Award obligations by sub-agency"
+        if agency_name:
+            title += f" — {agency_name}"
+        return ChartSpec(
+            chart_type="bar",
+            title=title,
+            labels=[r.abbreviation or r.name for r in structured_result.results],
+            values=[r.total_obligations for r in structured_result.results],
+        )
+
     if tool_name == "get_spending_by_category":
         if len(structured_result.results) < 2:
             return None
@@ -356,6 +369,13 @@ def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
             f"Budgetary resources, {params['agency_name']}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
         )
+        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+
+    if tool_name == "get_agency_award_breakdown":
+        params = {"agency_name": context["agency_name"], "fiscal_year": context["fiscal_year"]}
+        if context.get("award_type"):
+            params["award_type"] = context["award_type"]
+        description = f"Award breakdown by sub-agency, {params['agency_name']}, FY{params['fiscal_year']}"
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
 
     if tool_name == "get_spending_by_category":

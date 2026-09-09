@@ -1,7 +1,7 @@
 """Infra shared by every tool submodule (call recording, the per-turn
 budget, untrusted-data wrapping, API-message surfacing, scope labeling)
 plus the tools that don't funnel through _build_filters: search_guide,
-lookup_agency, get_agency_budget.
+lookup_agency, get_agency_budget, get_agency_award_breakdown.
 """
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from anthropic import beta_tool
 from langsmith import traceable
 
 from backend.app.usaspending_client import (
+    AgencySubAgencyResponse,
     AgencyYearBudget,
     ObligationByPeriod,
     USASpendingAPIError,
@@ -22,6 +23,7 @@ from ..singletons import (
     _get_retriever,
     _get_usaspending_client,
 )
+from ..tool_filters import AWARD_TYPE_GROUPS, AwardType, _normalize_award_type
 
 logger = logging.getLogger(__name__)
 
@@ -327,3 +329,69 @@ def get_agency_budget(
     # total_budgetary_resources (government-wide, not this agency's figure -
     # see AgencyYearBudget's docstring) is deliberately never included here.
     return _wrap_untrusted("\n".join(lines))
+
+
+@traceable(run_type="tool", name="get_agency_award_breakdown_raw")
+def get_agency_award_breakdown_raw(
+    agency_name: str,
+    fiscal_year: int,
+    award_type: AwardType | None = None,
+) -> AgencySubAgencyResponse:
+    """Call the API once, return the structured response. Raises
+    USASpendingAPIError if agency_name doesn't resolve."""
+    client = _get_usaspending_client()
+    agency = client.find_agency_by_name(agency_name)
+    if agency is None:
+        raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
+    award_type_codes = AWARD_TYPE_GROUPS[_normalize_award_type(award_type)] if award_type else None
+    return client.get_agency_sub_agency_breakdown(
+        agency.toptier_code, fiscal_year=fiscal_year, award_type_codes=award_type_codes, limit=50,
+    )
+
+
+def _format_agency_award_breakdown(response: AgencySubAgencyResponse) -> str:
+    return "\n".join(
+        f"{r.name}{f' ({r.abbreviation})' if r.abbreviation else ''}: "
+        f"${r.total_obligations:,.2f} across {r.transaction_count:,} transactions, "
+        f"{r.new_award_count:,} new awards"
+        for r in response.results
+    )
+
+
+@beta_tool
+def get_agency_award_breakdown(
+    agency_name: str,
+    fiscal_year: int,
+    award_type: AwardType | None = None,
+) -> str:
+    """Get one agency's award spending broken down by sub-agency for a single fiscal year, including transaction counts and new-award counts alongside the dollar totals — not just the amount get_spending_by_category(category="awarding_subagency") gives. Use this specifically when the question asks about counts (how many transactions, how many new awards), not just dollar amounts.
+
+    This is a genuinely different endpoint from get_spending_by_category and get_agency_budget, not a formatting variant of either: use get_spending_by_category instead for a dollar-only breakdown or a breakdown by anything other than sub-agency (NAICS, PSC, recipient, etc. — it has no count fields at all), and get_agency_budget instead for the agency's appropriated budget authority (a different number from award obligations). This tool is always scoped to exactly one agency and one fiscal year — never a recipient, never a range.
+
+    Args:
+        agency_name: The agency's name, e.g. "Department of Health and Human Services".
+        fiscal_year: A single fiscal year, e.g. 2024 for FY2024 — this endpoint does not accept a
+            range; call again for each year if a multi-year breakdown is needed.
+        award_type: Optional. Restrict to one award type or bucket — same vocabulary as
+            search_awards's award_type. Omit to include all award types.
+    """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    try:
+        response = get_agency_award_breakdown_raw(agency_name, fiscal_year, award_type)
+    except USASpendingAPIError as e:
+        logger.warning("get_agency_award_breakdown failed for %s: %s", agency_name, e)
+        return f"This query failed: {e}."
+
+    _record_tool_call(
+        "get_agency_award_breakdown",
+        response,
+        {"agency_name": agency_name, "fiscal_year": fiscal_year, "award_type": award_type},
+    )
+
+    if not response.results:
+        return f"No award data found for {agency_name} in FY{fiscal_year}."
+
+    has_next = response.page_metadata.hasNext if response.page_metadata else False
+    note = _truncation_note(has_next, len(response.results)) + _format_api_messages(response.messages)
+    return _wrap_untrusted(_format_agency_award_breakdown(response) + note)

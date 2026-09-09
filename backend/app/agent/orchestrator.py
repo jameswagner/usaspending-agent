@@ -40,7 +40,9 @@ from .tools import (
     get_spending_by_geography,
     get_spending_over_time,
     lookup_agency,
+    resolve_cfda_program,
     resolve_naics_code,
+    resolve_psc_code,
     search_awards,
     search_guide,
     search_recipients,
@@ -102,7 +104,7 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have nineteen tools. Twelve retrieve data: search_guide "
+        "have twenty-one tools. Fourteen retrieve data: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
         "toptier code), resolve_naics_code (find the NAICS code matching a "
@@ -110,7 +112,14 @@ def _build_system_prompt() -> str:
         "using naics_code on get_spending_by_category/get_spending_over_time/"
         "search_awards whenever the question describes an industry rather "
         "than naming a code already; results are semantic matches, not "
-        "confirmed exact ones — say so if you present one), get_agency_budget "
+        "confirmed exact ones — say so if you present one), resolve_psc_code "
+        "(same idea for a product/service description — call before psc_code "
+        "whenever the question describes what's being bought rather than "
+        "naming a PSC code already; same semantic-match caveat), "
+        "resolve_cfda_program (same idea for a federal grant/loan/assistance "
+        "program description — call before cfda_program whenever the "
+        "question describes a program rather than naming its number "
+        "already; same semantic-match caveat), get_agency_budget "
         "(an agency's appropriated budgetary "
         "resources, obligations, and outlays for a fiscal year range — use "
         "this for 'what is X's budget' or 'how much money does X have', "
@@ -260,6 +269,8 @@ def ask(question: str) -> AgentResult:
             search_guide,
             lookup_agency,
             resolve_naics_code,
+            resolve_psc_code,
+            resolve_cfda_program,
             get_agency_budget,
             get_agency_award_breakdown,
             get_spending_by_category,

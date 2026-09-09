@@ -54,6 +54,13 @@ def make_agency(name: str, abbreviation: str, code: str = "000") -> ToptierAgenc
         toptier_code=code,
         abbreviation=abbreviation,
         agency_slug=name.lower().replace(" ", "-"),
+        active_fy="2026",
+        active_fq="4",
+        budget_authority_amount=0.0,
+        obligated_amount=0.0,
+        outlay_amount=0.0,
+        percentage_of_total_budget_authority=0.0,
+        current_total_budget_authority_amount=0.0,
     )
 
 
@@ -128,6 +135,13 @@ class TestListToptierAgenciesCaching:
                         "toptier_code": "049",
                         "abbreviation": "NSF",
                         "agency_slug": "nsf",
+                        "active_fy": "2026",
+                        "active_fq": "4",
+                        "budget_authority_amount": 0.0,
+                        "obligated_amount": 0.0,
+                        "outlay_amount": 0.0,
+                        "percentage_of_total_budget_authority": 0.0,
+                        "current_total_budget_authority_amount": 0.0,
                     }
                 ]
             }
@@ -163,6 +177,31 @@ class TestListToptierAgenciesCaching:
 
         assert len(result) == 1
         assert result[0].agency_name == "National Science Foundation"
+
+    def test_parses_real_response_shape(self, client, monkeypatch):
+        # Real live values (HHS, 2026-09-09) - confirmed current_total_budget_authority_amount
+        # is identical across every agency (a government-wide total, not HHS's own figure),
+        # unlike budget_authority_amount/percentage_of_total_budget_authority which are real
+        # per-agency figures matching the live Agency Profile page's own displayed numbers.
+        body = {
+            "results": [
+                {
+                    "agency_id": 168, "agency_name": "Department of Health and Human Services (HHS)",
+                    "toptier_code": "075", "abbreviation": "HHS", "agency_slug": "health-and-human-services",
+                    "active_fy": "2026", "active_fq": "4",
+                    "budget_authority_amount": 3650342489549.92,
+                    "obligated_amount": 0.0, "outlay_amount": 0.0,
+                    "percentage_of_total_budget_authority": 0.2355772266133647,
+                    "congressional_justification_url": "https://www.hhs.gov/cj",
+                    "current_total_budget_authority_amount": 15495311418794.12,
+                },
+            ]
+        }
+        monkeypatch.setattr(client, "_get", lambda path, params=None: body)
+        result = client.list_toptier_agencies()
+        assert result[0].budget_authority_amount == 3650342489549.92
+        assert result[0].percentage_of_total_budget_authority == pytest.approx(0.2355772266133647)
+        assert result[0].congressional_justification_url == "https://www.hhs.gov/cj"
 
 
 class TestSearchAwardsValidation:

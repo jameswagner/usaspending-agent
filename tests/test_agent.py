@@ -59,6 +59,7 @@ from backend.app.agent.tools import (
     _format_recipient_listing,
     _format_recipient_overview,
     _format_recipient_state_only,
+    _format_top_agencies_by_budget,
     _location_label,
     _normalize_category,
     _normalize_group,
@@ -653,7 +654,10 @@ class TestAwardTypeNormalization:
 
 def make_agency(name: str = "National Science Foundation") -> ToptierAgency:
     return ToptierAgency(
-        agency_id=1, agency_name=name, toptier_code="049", abbreviation="NSF", agency_slug="nsf"
+        agency_id=1, agency_name=name, toptier_code="049", abbreviation="NSF", agency_slug="nsf",
+        active_fy="2026", active_fq="4", budget_authority_amount=0.0, obligated_amount=0.0,
+        outlay_amount=0.0, percentage_of_total_budget_authority=0.0,
+        current_total_budget_authority_amount=0.0,
     )
 
 
@@ -667,6 +671,40 @@ class FakeClient:
 
     def find_agency_by_name(self, name):
         return self._agency
+
+
+class TestFormatTopAgenciesByBudget:
+    def _agency(self, name, abbreviation, budget_authority_amount, percentage, fy="2026", fq="4"):
+        return ToptierAgency(
+            agency_id=1, agency_name=name, toptier_code="000", abbreviation=abbreviation,
+            agency_slug=name.lower(), active_fy=fy, active_fq=fq,
+            budget_authority_amount=budget_authority_amount, obligated_amount=0.0, outlay_amount=0.0,
+            percentage_of_total_budget_authority=percentage, current_total_budget_authority_amount=0.0,
+        )
+
+    def test_ranked_lines_include_amount_and_percentage(self):
+        agencies = [
+            self._agency("Department of Health and Human Services", "HHS", 3650342489549.92, 0.2355772266133647),
+            self._agency("Department of the Treasury", "TREAS", 3525650703580.85, 0.22753016111083907),
+        ]
+        result = _format_top_agencies_by_budget(agencies)
+        assert "1. Department of Health and Human Services (HHS): $3,650,342,489,549.92 (23.56% of total federal budget authority)" in result
+        assert "2. Department of the Treasury (TREAS): $3,525,650,703,580.85 (22.75% of total federal budget authority)" in result
+
+    def test_period_label_reflects_current_fy_fq(self):
+        result = _format_top_agencies_by_budget([self._agency("HHS", "HHS", 1.0, 0.1, fy="2026", fq="4")])
+        assert result.startswith("As of FY2026 Q4:")
+
+    def test_empty_list(self):
+        result = _format_top_agencies_by_budget([])
+        assert result == "As of current period:\n"
+
+    def test_never_surfaces_current_total_budget_authority_amount(self):
+        # That field is a government-wide total repeated on every agency, not
+        # this agency's own figure - must never appear in the formatted output.
+        agency = self._agency("HHS", "HHS", 3650342489549.92, 0.2355772266133647)
+        result = _format_top_agencies_by_budget([agency])
+        assert "15,495,311,418,794" not in result
 
 
 class TestBuildFilters:

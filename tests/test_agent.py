@@ -47,6 +47,7 @@ from backend.app.agent.tools import (
     _check_tool_call_budget,
     _format_api_messages,
     _format_award_details,
+    _format_business_type,
     _format_contract_or_idv,
     _format_financial_assistance,
     _format_geography_result,
@@ -156,6 +157,25 @@ class TestFiscalYearToDateRange:
     def test_start_is_not_the_bug_off_by_one_value(self):
         start, _ = fiscal_year_to_date_range(2021, 2024)
         assert start != "2021-10-01"
+
+    def test_year_below_2008_rejected(self):
+        with pytest.raises(USASpendingAPIError, match="out of range"):
+            fiscal_year_to_date_range(1776, 2024)
+
+    def test_year_far_beyond_current_rejected(self):
+        with pytest.raises(USASpendingAPIError, match="out of range"):
+            fiscal_year_to_date_range(2021, 9999)
+
+    def test_next_fiscal_year_is_allowed(self):
+        next_fy = current_fiscal_year() + 1
+        fiscal_year_to_date_range(next_fy, next_fy)
+
+    def test_start_after_end_rejected(self):
+        with pytest.raises(USASpendingAPIError, match="after end_fiscal_year"):
+            fiscal_year_to_date_range(2025, 2021)
+
+    def test_floor_year_itself_is_allowed(self):
+        fiscal_year_to_date_range(2008, 2008)
 
 
 class TestSpendingOverTime:
@@ -1231,6 +1251,14 @@ class TestRecipientFormatting:
         assert _format_recipient_level("C") == "child"
         assert _format_recipient_level("R") == "standalone"
 
+    def test_format_business_type_known_codes(self):
+        assert _format_business_type("category_business") == "Business"
+        assert _format_business_type("us_owned_business") == "U.S. Owned Business"
+        assert _format_business_type("sba_certified_8a_joint_venture") == "SBA Certified 8(a) Joint Venture"
+
+    def test_format_business_type_unknown_code_falls_back_to_title_case(self):
+        assert _format_business_type("some_new_flag") == "Some New Flag"
+
     def test_format_recipient_listing_includes_amount_labeled_as_last_12_months(self):
         result = _format_recipient_listing(self.BOEING_LISTING)
         assert "$30,309,729,588.71" in result
@@ -1267,7 +1295,9 @@ class TestRecipientFormatting:
     def test_format_recipient_overview_business_types_reformatted(self):
         result = _format_recipient_overview(self.BOEING_OVERVIEW)
         assert "Corporate Entity Not Tax Exempt" in result
+        assert "U.S. Owned Business" in result
         assert "corporate_entity_not_tax_exempt" not in result
+        assert "Us Owned Business" not in result
 
     def test_format_recipient_overview_loan_fields_shown_even_at_zero(self):
         # Deliberate: unlike get_award_details's loan case, the live

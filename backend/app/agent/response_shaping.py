@@ -13,6 +13,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from backend.app.usaspending_client import USASpendingAPIError
+
 
 def current_fiscal_year(today: date | None = None) -> int:
     """The federal fiscal year in progress on `today` (defaults to the real
@@ -38,6 +40,9 @@ def current_fiscal_year(today: date | None = None) -> int:
     return today.year + 1 if today.month >= 10 else today.year
 
 
+EARLIEST_SUPPORTED_FISCAL_YEAR = 2008
+
+
 def fiscal_year_to_date_range(start_fiscal_year: int, end_fiscal_year: int) -> tuple[str, str]:
     """Convert a fiscal year range to the API's YYYY-MM-DD date bounds.
 
@@ -49,7 +54,21 @@ def fiscal_year_to_date_range(start_fiscal_year: int, end_fiscal_year: int) -> t
     one-fiscal-year error in date arithmetic the model has no reliable way
     to get right consistently. The model only has to identify which years
     are being asked about now, not compute a date boundary.
+
+    Raises USASpendingAPIError for a year outside [EARLIEST_SUPPORTED_FISCAL_YEAR, current+1].
     """
+    ceiling = current_fiscal_year() + 1
+    for label, year in (("start_fiscal_year", start_fiscal_year), ("end_fiscal_year", end_fiscal_year)):
+        if not (EARLIEST_SUPPORTED_FISCAL_YEAR <= year <= ceiling):
+            raise USASpendingAPIError(
+                f"{label}={year} is out of range - USASpending data only covers "
+                f"FY{EARLIEST_SUPPORTED_FISCAL_YEAR} through FY{ceiling}."
+            )
+    if start_fiscal_year > end_fiscal_year:
+        raise USASpendingAPIError(
+            f"start_fiscal_year={start_fiscal_year} is after end_fiscal_year={end_fiscal_year}."
+        )
+
     start_date = f"{start_fiscal_year - 1}-10-01"
     end_date = f"{end_fiscal_year}-09-30"
     return start_date, end_date

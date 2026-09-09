@@ -193,6 +193,18 @@ class TestRecipientClientMethods:
         assert response.results[0].name == "THE BOEING COMPANY"
         assert response.results[0].recipient_level == "P"
 
+    def test_search_recipients_omits_keyword_when_none(self, monkeypatch):
+        client = USASpendingClient()
+        captured: dict = {}
+
+        def fake_post(path, body):
+            captured.update(body)
+            return {"page_metadata": {"page": 1, "total": 0, "limit": 10, "hasNext": False, "hasPrevious": False}, "results": []}
+
+        monkeypatch.setattr(client, "_post", fake_post)
+        client.search_recipients()
+        assert "keyword" not in captured
+
     def test_get_recipient_parses_real_response_shape(self, monkeypatch):
         client = USASpendingClient()
         body = {

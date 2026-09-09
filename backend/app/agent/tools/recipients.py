@@ -35,6 +35,40 @@ def _format_recipient_level(level: str) -> str:
     return {"P": "parent", "C": "child", "R": "standalone"}.get(level, level)
 
 
+# Live-verified business_types codes (not the SAM.gov/Data Dictionary contractor-flag
+# vocabulary - a different, smaller set this endpoint actually returns). Falls back to
+# mechanical title-casing below for anything not in here.
+BUSINESS_TYPE_LABELS: dict[str, str] = {
+    "category_business": "Business",
+    "corporate_entity_not_tax_exempt": "Corporate Entity Not Tax Exempt",
+    "corporate_entity_tax_exempt": "Corporate Entity Tax Exempt",
+    "manufacturer_of_goods": "Manufacturer of Goods",
+    "other_than_small_business": "Other Than Small Business",
+    "special_designations": "Special Designations",
+    "us_owned_business": "U.S. Owned Business",
+    "government": "Government",
+    "national_government": "National Government",
+    "regional_and_state_government": "Regional and State Government",
+    "council_of_governments": "Council of Governments",
+    "alaskan_native_corporation_owned_firm": "Alaskan Native Corporation Owned Firm",
+    "limited_liability_corporation": "Limited Liability Corporation (LLC)",
+    "minority_owned_business": "Minority Owned Business",
+    "native_american_owned_business": "Native American Owned Business",
+    "sba_certified_8a_joint_venture": "SBA Certified 8(a) Joint Venture",
+    "self_certified_small_disadvanted_business": "Self-Certified Small Disadvantaged Business",
+    "small_business": "Small Business",
+    "service_disabled_veteran_owned_business": "Service-Disabled Veteran-Owned Business",
+    "subchapter_s_corporation": "Subchapter S Corporation",
+    "veteran_owned_business": "Veteran-Owned Business",
+    "hospital": "Hospital",
+    "nonprofit": "Nonprofit",
+}
+
+
+def _format_business_type(code: str) -> str:
+    return BUSINESS_TYPE_LABELS.get(code, code.replace("_", " ").title())
+
+
 def _format_recipient_listing(listing: RecipientListing) -> str:
     """One line per search_recipients candidate. amount is always
     trailing-12-months (RecipientListing.amount's own docstring) - labeled
@@ -106,7 +140,7 @@ def _format_recipient_overview(overview: RecipientOverview) -> str:
     lines.append(f"Location: {location_label}")
 
     if overview.business_types:
-        readable = ", ".join(bt.replace("_", " ").title() for bt in overview.business_types)
+        readable = ", ".join(_format_business_type(bt) for bt in overview.business_types)
         lines.append(f"Business types: {readable}")
 
     lines.append(
@@ -126,7 +160,7 @@ def _format_recipient_overview(overview: RecipientOverview) -> str:
 
 
 @beta_tool
-def search_recipients(keyword: str, award_type: RecipientAwardType = "all", limit: int = 10) -> str:
+def search_recipients(keyword: str | None = None, award_type: RecipientAwardType = "all", limit: int = 10) -> str:
     """Search for a recipient (company, organization, or individual) by name, UEI, or DUNS number, to find its exact recipient_id for a precise follow-up query (get_recipient_details, or the recipient_id parameter on get_spending_by_category/get_spending_over_time). Use this whenever a question names a specific real recipient — do not guess a recipient_id, and prefer this over a bare recipient_name text filter whenever precision matters.
 
     A plain company name is genuinely ambiguous at this scale — confirmed live that "Leidos" and "Boeing" each resolve to 6+ distinct recipient_ids sharing the exact same display name (parent companies, subsidiaries, and historical registrations from mergers/acquisitions). This tool shows every real candidate rather than silently picking one. If several results share a name, prefer the one with recipient level "parent" for a "how much has this company received in total" question — confirmed live to be a true, complete rollup across all of that company's own child registrations, to the penny. Ask the user to disambiguate if it's still unclear which candidate they mean.
@@ -134,7 +168,8 @@ def search_recipients(keyword: str, award_type: RecipientAwardType = "all", limi
     An exact UEI or DUNS as the keyword returns a single, precise match (confirmed live) — use one directly if you already have it.
 
     Args:
-        keyword: A recipient's name, UEI, or DUNS number, e.g. "Boeing" or "NU2UC8MX6NK1".
+        keyword: Optional. A recipient's name, UEI, or DUNS number, e.g. "Boeing" or
+            "NU2UC8MX6NK1". Omit for an unscoped, globally-ranked top-recipients list.
         award_type: Optional. Restrict to one broad award-type bucket — all (default),
             contracts, grants, loans, direct_payments, or other_financial_assistance. A
             different, coarser vocabulary than every other tool's award_type parameter here —
@@ -155,7 +190,7 @@ def search_recipients(keyword: str, award_type: RecipientAwardType = "all", limi
     _record_tool_call("search_recipients", response, {"keyword": keyword})
 
     if not response.results:
-        return f"No recipients found matching '{keyword}'."
+        return f"No recipients found matching '{keyword}'." if keyword else "No recipients found."
 
     lines = [_format_recipient_listing(r) for r in response.results]
     has_next = response.page_metadata.hasNext if response.page_metadata else False

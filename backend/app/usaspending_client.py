@@ -785,7 +785,7 @@ class USASpendingClient:
     @traceable(run_type="tool", name="search_recipients")
     def search_recipients(
         self,
-        keyword: str,
+        keyword: str | None = None,
         award_type: str = "all",
         limit: int = 10,
         sort: str = "amount",
@@ -804,8 +804,13 @@ class USASpendingClient:
         AWARD_TYPE_GROUPS (6 values: all/contracts/grants/loans/
         direct_payments/other_financial_assistance - no sub-type
         granularity) - see RecipientAwardType in tool_filters.py.
+
+        keyword=None omits the field (the API rejects "" but accepts it being absent,
+        returning an unscoped, globally-ranked list).
         """
-        body = {"keyword": keyword, "award_type": award_type, "limit": limit, "sort": sort, "order": order, "page": page}
+        body: dict[str, Any] = {"award_type": award_type, "limit": limit, "sort": sort, "order": order, "page": page}
+        if keyword is not None:
+            body["keyword"] = keyword
         data = self._post("/api/v2/recipient/", body)
         return SearchRecipientsResponse(**data)
 

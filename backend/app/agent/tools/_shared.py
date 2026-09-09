@@ -1,7 +1,8 @@
 """Infra shared by every tool submodule (call recording, the per-turn
 budget, untrusted-data wrapping, API-message surfacing, scope labeling)
 plus the tools that don't funnel through _build_filters: search_guide,
-lookup_agency, get_agency_budget, get_agency_award_breakdown.
+lookup_agency, get_agency_budget, get_agency_award_breakdown,
+list_top_agencies_by_budget.
 """
 from __future__ import annotations
 
@@ -15,6 +16,7 @@ from backend.app.usaspending_client import (
     AgencySubAgencyResponse,
     AgencyYearBudget,
     ObligationByPeriod,
+    ToptierAgency,
     USASpendingAPIError,
 )
 
@@ -23,7 +25,12 @@ from ..singletons import (
     _get_retriever,
     _get_usaspending_client,
 )
-from ..tool_filters import AWARD_TYPE_GROUPS, AwardType, _normalize_award_type
+from ..tool_filters import (
+    AWARD_TYPE_GROUPS,
+    AwardType,
+    _clamp_limit,
+    _normalize_award_type,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +209,7 @@ def search_guide(query: str) -> str:
 
 @beta_tool
 def lookup_agency(name: str) -> str:
-    """Look up a federal agency by name to get its basic profile: toptier code, abbreviation, mission, website, and subtier agency count. Use this for questions about what a specific agency is or does, or as a first step before any spending-data question that needs an agency's toptier code.
+    """Look up a federal agency by name to get its basic profile: toptier code, abbreviation, mission, website, Congressional Justification of Budget link, and subtier agency count. Use this for questions about what a specific agency is or does, or as a first step before any spending-data question that needs an agency's toptier code.
 
     Args:
         name: The agency name to search for, e.g. "National Science Foundation" or "NSF".
@@ -223,7 +230,8 @@ def lookup_agency(name: str) -> str:
         f"Fiscal year: {overview.fiscal_year}\n"
         f"Subtier agency count: {overview.subtier_agency_count}\n"
         f"Mission: {overview.mission or 'N/A'}\n"
-        f"Website: {overview.website or 'N/A'}"
+        f"Website: {overview.website or 'N/A'}\n"
+        f"Congressional Justification of Budget: {overview.congressional_justification_url or 'N/A'}"
     )
 
 
@@ -329,6 +337,38 @@ def get_agency_budget(
     # total_budgetary_resources (government-wide, not this agency's figure -
     # see AgencyYearBudget's docstring) is deliberately never included here.
     return _wrap_untrusted("\n".join(lines))
+
+
+@beta_tool
+def _format_top_agencies_by_budget(ranked: list[ToptierAgency]) -> str:
+    period_label = f"FY{ranked[0].active_fy} Q{ranked[0].active_fq}" if ranked else "current period"
+    lines = [
+        f"{i}. {a.agency_name} ({a.abbreviation}): ${a.budget_authority_amount:,.2f} "
+        f"({a.percentage_of_total_budget_authority:.2%} of total federal budget authority)"
+        for i, a in enumerate(ranked, start=1)
+    ]
+    return f"As of {period_label}:\n" + "\n".join(lines)
+
+
+@beta_tool
+def list_top_agencies_by_budget(limit: int = 10) -> str:
+    """List federal agencies ranked by budgetary resources (budget authority), largest first, each with its share of the total federal budget. Use this for "which agency has the biggest budget" or "what percent of the federal budget does X account for" questions.
+
+    Always reflects the current fiscal year/quarter (the live data this is sourced from has no historical fiscal-year parameter) - the output states which period the figures are for. Use get_agency_budget instead for a specific agency's budget history across past fiscal years.
+
+    Args:
+        limit: Max number of agencies to return (default 10).
+    """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    limit = _clamp_limit(limit)
+    client = _get_usaspending_client()
+    agencies = client.list_toptier_agencies()
+    ranked = sorted(agencies, key=lambda a: a.budget_authority_amount, reverse=True)[:limit]
+
+    _record_tool_call("list_top_agencies_by_budget", ranked, {"limit": limit})
+
+    return _wrap_untrusted(_format_top_agencies_by_budget(ranked))
 
 
 @traceable(run_type="tool", name="get_agency_award_breakdown_raw")

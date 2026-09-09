@@ -254,6 +254,14 @@ class ToptierAgency(BaseModel):
     toptier_code: str
     abbreviation: str
     agency_slug: str
+    active_fy: str
+    active_fq: str
+    budget_authority_amount: float
+    obligated_amount: float
+    outlay_amount: float
+    percentage_of_total_budget_authority: float  # decimal (0.2356), not a percent (23.56)
+    congressional_justification_url: str | None = None
+    current_total_budget_authority_amount: float  # government-wide total, NOT per-agency - see AgencyYearBudget.total_budgetary_resources
 
 
 class AgencyOverview(BaseModel):
@@ -266,6 +274,7 @@ class AgencyOverview(BaseModel):
     agency_id: int
     mission: str | None = None
     website: str | None = None
+    congressional_justification_url: str | None = None
     subtier_agency_count: int
 
 

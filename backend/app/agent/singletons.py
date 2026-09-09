@@ -29,11 +29,14 @@ NAICS_CHROMA_DB_DIR = os.environ.get("NAICS_CHROMA_DB_DIR", "./data/chroma_naics
 NAICS_WHOOSH_INDEX_DIR = os.environ.get("NAICS_WHOOSH_INDEX_DIR", "./data/whoosh_naics")
 PSC_CHROMA_DB_DIR = os.environ.get("PSC_CHROMA_DB_DIR", "./data/chroma_psc")
 PSC_WHOOSH_INDEX_DIR = os.environ.get("PSC_WHOOSH_INDEX_DIR", "./data/whoosh_psc")
+CFDA_CHROMA_DB_DIR = os.environ.get("CFDA_CHROMA_DB_DIR", "./data/chroma_cfda")
+CFDA_WHOOSH_INDEX_DIR = os.environ.get("CFDA_WHOOSH_INDEX_DIR", "./data/whoosh_cfda")
 
 _client: anthropic.Anthropic | None = None
 _retriever: HybridRetriever | None = None
 _naics_retriever: HybridRetriever | None = None
 _psc_retriever: HybridRetriever | None = None
+_cfda_retriever: HybridRetriever | None = None
 _usaspending_client: USASpendingClient | None = None
 
 
@@ -91,6 +94,13 @@ def _get_psc_retriever() -> HybridRetriever:
     return _psc_retriever
 
 
+def _get_cfda_retriever() -> HybridRetriever:
+    global _cfda_retriever
+    if _cfda_retriever is None:
+        _cfda_retriever = HybridRetriever(chroma_db_dir=CFDA_CHROMA_DB_DIR, whoosh_index_dir=CFDA_WHOOSH_INDEX_DIR)
+    return _cfda_retriever
+
+
 def _get_usaspending_client() -> USASpendingClient:
     global _usaspending_client
     if _usaspending_client is None:
@@ -106,5 +116,6 @@ def warm_up() -> None:
     _get_retriever()
     _get_naics_retriever()
     _get_psc_retriever()
+    _get_cfda_retriever()
     _get_usaspending_client()
     _get_client()

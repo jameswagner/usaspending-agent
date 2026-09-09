@@ -27,7 +27,7 @@ def resolve_cfda_program(description: str) -> str:
     if not matches:
         return "No CFDA program found matching this description."
 
-    _record_tool_call("resolve_cfda_program", matches)
+    _record_tool_call("resolve_cfda_program", matches, {"description": description})
 
     lines = [f"{m['slug']} - {m['term']}" for m in matches]
     return _wrap_untrusted(

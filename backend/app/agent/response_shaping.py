@@ -226,6 +226,8 @@ NEVER_CHART_TOOLS = {
     # (2026-09-08). get_recipient_details is a single profile, no
     # cardinality to chart, same as get_award_details.
     "search_recipients", "get_recipient_details",
+    # Same disambiguation-not-analysis reasoning as search_recipients above.
+    "resolve_naics_code", "resolve_psc_code", "resolve_cfda_program",
 }
 
 
@@ -357,6 +359,15 @@ def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
             tool_name=tool_name,
             parameters={"name": name},
             description=f"Agency lookup: {name}",
+        )
+
+    if tool_name in ("resolve_naics_code", "resolve_psc_code", "resolve_cfda_program"):
+        description = context["description"]
+        label = {"resolve_naics_code": "NAICS", "resolve_psc_code": "PSC", "resolve_cfda_program": "CFDA"}[tool_name]
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"description": description},
+            description=f"{label} code lookup: {description}",
         )
 
     if tool_name == "get_agency_budget":

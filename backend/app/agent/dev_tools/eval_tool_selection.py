@@ -56,6 +56,7 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
         )
     dataset = client.read_dataset(dataset_name=DATASET_NAME)
     existing_ids = {e.id for e in client.list_examples(dataset_id=dataset.id)}
+    current_ids = {_example_id(entry["question"]) for entry in entries}
 
     to_create, to_update = [], []
     for entry in entries:
@@ -71,6 +72,14 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
         client.create_examples(dataset_id=dataset.id, examples=to_create)
     if to_update:
         client.update_examples(dataset_id=dataset.id, updates=to_update)
+
+    # A question's id is derived from its text (_example_id), so editing a
+    # question's wording orphans its old example under the old id - delete
+    # whatever's left in the dataset that isn't in the current JSON.
+    orphaned = existing_ids - current_ids
+    if orphaned:
+        client.delete_examples(list(orphaned))
+
     return dataset.id
 
 

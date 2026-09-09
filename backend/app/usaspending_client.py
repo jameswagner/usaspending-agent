@@ -534,6 +534,35 @@ class RecipientOverview(BaseModel):
     total_face_value_loan_transactions: int
 
 
+class GeographyTypeResult(BaseModel):
+    """search/spending_by_geography.md. population/per_capita are computed
+    by the live API itself, but reflect current-day figures regardless of
+    the queried period - confirmed live 2026-09-08 (same CA population
+    across FY2009/FY2016/FY2023 queries). Both are null for entries with
+    no demographic data (e.g. Antarctica). display_name/shape_code are
+    documented as required but confirmed live to be null for an
+    "unmapped location" bucket - contract says required, reality disagrees."""
+
+    model_config = ConfigDict(extra="allow")
+
+    shape_code: str | None = None
+    display_name: str | None = None
+    aggregated_amount: float
+    population: int | None = None
+    per_capita: float | None = None
+    total_outlays: float | None = None
+
+
+class SpendingByGeographyResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    scope: str
+    geo_layer: str
+    spending_level: str
+    results: list[GeographyTypeResult]
+    messages: list[str] | None = None
+
+
 class USASpendingAPIError(Exception):
     """Raised on a non-2xx response, with the API's own error detail (if any)
     as the message instead of a raw requests traceback — callers (e.g. an
@@ -797,3 +826,28 @@ class USASpendingClient:
         params = {"year": year} if year else None
         data = self._get(f"/api/v2/recipient/{recipient_id}/", params=params)
         return RecipientOverview(**data)
+
+    @traceable(run_type="tool", name="spending_by_geography")
+    def spending_by_geography(
+        self,
+        filters: AdvancedFilters,
+        scope: str,
+        geo_layer: str,
+        geo_layer_filters: list[str] | None = None,
+    ) -> SpendingByGeographyResponse:
+        """POST /api/v2/search/spending_by_geography/. spending_level is
+        deliberately not a parameter here - hardcoded to "transactions",
+        the only variant confirmed live to be additive across separate
+        period-scoped calls ("awards" mode overcounted by 60%+ in testing
+        unless paired with date_type="new_awards_only", which isn't worth
+        the complexity of exposing)."""
+        body: dict[str, Any] = {
+            "filters": filters.model_dump(exclude_none=True),
+            "scope": scope,
+            "geo_layer": geo_layer,
+            "spending_level": "transactions",
+        }
+        if geo_layer_filters:
+            body["geo_layer_filters"] = geo_layer_filters
+        data = self._post("/api/v2/search/spending_by_geography/", body)
+        return SpendingByGeographyResponse(**data)

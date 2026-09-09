@@ -213,6 +213,13 @@ def _normalize_scope(scope: str, param_name: str) -> str:
     return normalized
 
 
+# spending_by_geography's own scope/geo_layer enums - unrelated to Scope
+# above (domestic/foreign); this is "which location field to aggregate on"
+# and "what granularity to group by".
+GeoScope = Literal["place_of_performance", "recipient_location"]
+GeoLayer = Literal["state", "county", "district", "country"]
+
+
 # Format-only validation for the three code passthroughs below - these are
 # large government classification systems (thousands of NAICS/PSC codes,
 # hundreds of CFDA programs) with no small closed vocabulary to validate

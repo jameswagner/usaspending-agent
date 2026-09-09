@@ -5,6 +5,7 @@ description = "RAG assistant for USASpending.gov"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [ { name = "" } ]
+license = "MIT"
 dependencies = [
     "anthropic>=1.3.0",
     "chromadb>=1.5.9",

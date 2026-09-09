@@ -7,7 +7,7 @@
   "category_breakdown": [
     {"question": "How is NSF's FY2023 contract spending broken down by NAICS code?", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]},
     {"question": "What are the top product/service codes NASA spent on in FY2024?", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]},
-    {"question": "Break down the Department of Defense's FY2023 contract spending by sub-agency.", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]},
+    {"question": "Break down the Department of Defense's FY2023 contract spending by sub-agency, in dollars only.", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography", "get_agency_award_breakdown"]},
     {"question": "Which CFDA programs did HHS fund the most in FY2022?", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]},
     {"question": "Show me Leidos' federal awards broken down by awarding agency.", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]}
   ],
@@ -15,7 +15,7 @@
     {"question": "How has NSF's contract spending trended from FY2019 through FY2023?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]},
     {"question": "Show me NASA's spending by quarter for FY2023.", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]},
     {"question": "Has Leidos' federal revenue grown or shrunk since FY2020?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]},
-    {"question": "What was the Department of Energy's month-by-month obligation pattern in FY2024?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]},
+    {"question": "What was the Department of Energy's month-by-month obligation pattern in FY2024?", "acceptable_tools": ["get_spending_over_time", "get_agency_budget"]},
     {"question": "How did the Department of Defense's grant spending change year over year between FY2018 and FY2023?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]}
   ],
   "geography_breakdown": [
@@ -26,11 +26,17 @@
     {"question": "Rank US states by how much EPA grant money they received in FY2022.", "expected_tool": "get_spending_by_geography", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]}
   ],
   "budget_vs_spending": [
-    {"question": "What is NSF's total budget for FY2024?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
-    {"question": "How much money does NASA actually have available to spend this fiscal year?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
-    {"question": "What were the Department of Energy's total outlays in FY2023?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
-    {"question": "How much budgetary authority did EPA have in FY2022 compared to what it obligated?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
-    {"question": "Did NSF's obligations exceed its appropriated budget in FY2023?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]}
+    {"question": "What is NSF's total budget for FY2024?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_agency_award_breakdown"]},
+    {"question": "How much money does NASA actually have available to spend this fiscal year?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_agency_award_breakdown"]},
+    {"question": "What were the Department of Energy's total outlays in FY2023?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_agency_award_breakdown"]},
+    {"question": "How much budgetary authority did EPA have in FY2022 compared to what it obligated?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_agency_award_breakdown"]},
+    {"question": "Did NSF's obligations exceed its appropriated budget in FY2023?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_agency_award_breakdown"]}
+  ],
+  "agency_award_breakdown": [
+    {"question": "How many new grant awards did NIH issue in FY2024, and what did they total?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_budget"]},
+    {"question": "How many transactions did the Department of Energy have in FY2023?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_budget"]},
+    {"question": "Break down NSF's FY2023 contract obligations by sub-agency, and tell me how many new contracts each one signed.", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category"]},
+    {"question": "How many new awards has EPA issued per sub-agency in FY2022?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_budget"]}
   ],
   "search_vs_breakdown": [
     {"question": "Show me NSF's five biggest contracts in FY2023.", "expected_tool": "search_awards", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_spending_by_geography"]},

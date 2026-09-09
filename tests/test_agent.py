@@ -45,6 +45,7 @@ from backend.app.agent.tools import (
     Group,
     _agency_label,
     _check_tool_call_budget,
+    _format_agency_award_breakdown,
     _format_api_messages,
     _format_award_details,
     _format_business_type,
@@ -66,6 +67,7 @@ from backend.app.agent.tools import (
     _truncation_note,
 )
 from backend.app.usaspending_client import (
+    AgencySubAgencyResponse,
     CategoryResult,
     GeographyTypeResult,
     IDVAmountsResponse,
@@ -76,6 +78,8 @@ from backend.app.usaspending_client import (
     SpendingByCategoryResponse,
     SpendingByGeographyResponse,
     SpendingOverTimeResponse,
+    SubAgencyBreakdown,
+    SubAgencyOffice,
     TimePeriodGroup,
     TimeResult,
     ToptierAgency,
@@ -208,6 +212,80 @@ class TestSpendingByCategory:
         assert should_chart("get_spending_by_category", make_category_response(0)) is None
 
 
+def make_sub_agency_response(n: int) -> AgencySubAgencyResponse:
+    return AgencySubAgencyResponse(
+        toptier_code="075",
+        fiscal_year=2024,
+        results=[
+            SubAgencyBreakdown(
+                name=f"Sub-Agency {i}",
+                abbreviation=f"SA{i}",
+                total_obligations=float(i * 100),
+                transaction_count=i * 10,
+                new_award_count=i,
+            )
+            for i in range(n)
+        ],
+    )
+
+
+class TestGetAgencyAwardBreakdownChart:
+    def test_multi_sub_agency_produces_bar_spec(self):
+        spec = should_chart("get_agency_award_breakdown", make_sub_agency_response(3))
+        assert spec is not None
+        assert spec.chart_type == "bar"
+        assert spec.labels == ["SA0", "SA1", "SA2"]
+        assert spec.values == [0.0, 100.0, 200.0]
+
+    def test_single_sub_agency_returns_none(self):
+        assert should_chart("get_agency_award_breakdown", make_sub_agency_response(1)) is None
+
+    def test_missing_abbreviation_falls_back_to_name(self):
+        response = AgencySubAgencyResponse(
+            toptier_code="075",
+            fiscal_year=2024,
+            results=[
+                SubAgencyBreakdown(name="No Abbreviation Office", abbreviation=None, total_obligations=1.0, transaction_count=1, new_award_count=1),
+                SubAgencyBreakdown(name="Other Office", abbreviation="OO", total_obligations=2.0, transaction_count=2, new_award_count=2),
+            ],
+        )
+        spec = should_chart("get_agency_award_breakdown", response)
+        assert "No Abbreviation Office" in spec.labels
+
+
+class TestFormatAgencyAwardBreakdown:
+    def test_formats_amount_and_counts(self):
+        result = _format_agency_award_breakdown(make_sub_agency_response(1))
+        assert "SA0" in result
+        assert "$0.00" in result
+        assert "0 transactions" in result
+        assert "0 new awards" in result
+
+    def test_omits_parens_when_no_abbreviation(self):
+        response = AgencySubAgencyResponse(
+            toptier_code="075",
+            fiscal_year=2024,
+            results=[SubAgencyBreakdown(name="Solo Office", abbreviation=None, total_obligations=5.0, transaction_count=2, new_award_count=1)],
+        )
+        result = _format_agency_award_breakdown(response)
+        assert "Solo Office:" in result
+        assert "()" not in result
+
+    def test_children_are_not_shown(self):
+        response = AgencySubAgencyResponse(
+            toptier_code="075",
+            fiscal_year=2024,
+            results=[
+                SubAgencyBreakdown(
+                    name="Parent Office", abbreviation="PO", total_obligations=5.0, transaction_count=2, new_award_count=1,
+                    children=[SubAgencyOffice(name="Child Office", code="123", total_obligations=5.0, transaction_count=2, new_award_count=1)],
+                ),
+            ],
+        )
+        result = _format_agency_award_breakdown(response)
+        assert "Child Office" not in result
+
+
 class TestSpendingByGeographyChart:
     def test_multi_region_produces_bar_spec(self):
         spec = should_chart("get_spending_by_geography", make_geography_response(3))
@@ -306,6 +384,27 @@ class TestBuildToolCitation:
         assert citation.description == (
             "Budgetary resources, National Science Foundation, FY2021-FY2024"
         )
+
+    def test_get_agency_award_breakdown(self):
+        citation = build_tool_citation(
+            "get_agency_award_breakdown",
+            {"agency_name": "National Science Foundation", "fiscal_year": 2024, "award_type": "grants"},
+        )
+        assert citation is not None
+        assert citation.tool_name == "get_agency_award_breakdown"
+        assert citation.parameters == {
+            "agency_name": "National Science Foundation",
+            "fiscal_year": 2024,
+            "award_type": "grants",
+        }
+        assert citation.description == "Award breakdown by sub-agency, National Science Foundation, FY2024"
+
+    def test_get_agency_award_breakdown_omits_award_type_when_not_set(self):
+        citation = build_tool_citation(
+            "get_agency_award_breakdown",
+            {"agency_name": "National Science Foundation", "fiscal_year": 2024, "award_type": None},
+        )
+        assert "award_type" not in citation.parameters
 
     def test_lookup_agency(self):
         citation = build_tool_citation("lookup_agency", {"name": "National Science Foundation"})

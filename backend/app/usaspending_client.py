@@ -304,6 +304,40 @@ class AgencyBudgetaryResourcesResponse(BaseModel):
     messages: list[str] | None = None
 
 
+class SubAgencyOffice(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    # Contract says "required, string" but real EPA offices (e.g. code
+    # 68HERH) return name=null - loosened to match reality, same pattern
+    # as CategoryResult.id/GeographyTypeResult.display_name.
+    name: str | None = None
+    code: str
+    total_obligations: float
+    transaction_count: int
+    new_award_count: int
+
+
+class SubAgencyBreakdown(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    name: str
+    abbreviation: str | None = None
+    total_obligations: float
+    transaction_count: int
+    new_award_count: int
+    children: list[SubAgencyOffice] = []
+
+
+class AgencySubAgencyResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    toptier_code: str
+    fiscal_year: int
+    page_metadata: PageMetadata | None = None
+    results: list[SubAgencyBreakdown]
+    messages: list[str] | None = None
+
+
 class CategoryResult(BaseModel):
     model_config = ConfigDict(extra="allow")
 
@@ -688,6 +722,33 @@ class USASpendingClient:
         isn't one."""
         data = self._get(f"/api/v2/agency/{toptier_code}/budgetary_resources/")
         return AgencyBudgetaryResourcesResponse(**data)
+
+    @traceable(run_type="tool", name="get_agency_sub_agency_breakdown")
+    def get_agency_sub_agency_breakdown(
+        self,
+        toptier_code: str,
+        fiscal_year: int | None = None,
+        award_type_codes: list[str] | None = None,
+        agency_type: str = "awarding",
+        limit: int = 10,
+        page: int = 1,
+    ) -> AgencySubAgencyResponse:
+        """Single fiscal_year, not a range - confirmed live 2026-09-09 the
+        API ignores start_fiscal_year/end_fiscal_year and silently defaults
+        to the current FY, unlike get_agency_budgetary_resources's own
+        every-year-in-one-call shape."""
+        params = {
+            "fiscal_year": fiscal_year,
+            "award_type_codes": award_type_codes,
+            "agency_type": agency_type,
+            "limit": limit,
+            "page": page,
+        }
+        data = self._get(
+            f"/api/v2/agency/{toptier_code}/sub_agency/",
+            params={k: v for k, v in params.items() if v is not None},
+        )
+        return AgencySubAgencyResponse(**data)
 
     @traceable(run_type="tool", name="spending_by_category")
     def spending_by_category(

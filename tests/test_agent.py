@@ -1,5 +1,5 @@
 from datetime import date, datetime, timezone
-from typing import get_args
+from typing import Any, ClassVar, get_args
 
 import pytest
 
@@ -808,7 +808,7 @@ class TestFormatPeriodOfPerformance:
 class TestFormatContractOrIdv:
     # Trimmed real fixtures from live records pulled 2026-09-08 (LEIDOS
     # NSF contract, IDA NSF IDV) - not synthetic shapes.
-    CONTRACT = {
+    CONTRACT: ClassVar[dict[str, Any]] = {
         "category": "contract",
         "type_description": "DEFINITIVE CONTRACT",
         "piid": "NSFDACS1219442",
@@ -936,7 +936,7 @@ class TestFormatContractOrIdv:
 
 
 class TestFormatFinancialAssistance:
-    GRANT = {
+    GRANT: ClassVar[dict[str, Any]] = {
         "category": "grant",
         "type_description": "COOPERATIVE AGREEMENT (B)",
         "fain": "1755088",

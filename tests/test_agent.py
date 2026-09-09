@@ -630,9 +630,49 @@ class TestBuildFilters:
         assert filters.agencies is None
         assert filters.recipient_id == "abc-P"
 
-    def test_all_three_scoping_params_none_raises(self):
+    def test_all_scoping_params_none_raises(self):
         with pytest.raises(USASpendingAPIError, match="At least one of"):
             _build_filters(FakeClient(make_agency()), None, 2021, 2024)
+
+    # Issue #16: the original guard only recognized agency/recipient as
+    # "real scope" and rejected legitimate queries like "how much Medicaid
+    # money went to Louisiana this year" - place/code/keyword filters are
+    # equally legitimate scoping on their own, with no agency or recipient.
+
+    def test_performed_in_state_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, performed_in_state="Louisiana")
+        assert filters.agencies is None
+        assert filters.place_of_performance_locations[0].state == "LA"
+
+    def test_recipient_in_state_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, recipient_in_state="Texas")
+        assert filters.recipient_locations[0].state == "TX"
+
+    def test_naics_code_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, naics_code="541511")
+        assert filters.naics_codes.require == ["541511"]
+
+    def test_psc_code_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, psc_code="7030")
+        assert filters.psc_codes == ["7030"]
+
+    def test_cfda_program_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, cfda_program="93.778")
+        assert filters.program_numbers == ["93.778"]
+
+    def test_keywords_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, keywords="climate research")
+        assert filters.keywords == ["climate research"]
+
+    def test_award_type_alone_is_not_sufficient_scope(self):
+        # Deliberately NOT a valid scoping filter on its own - "all grants,
+        # from every agency, ever" is still unbounded.
+        with pytest.raises(USASpendingAPIError, match="At least one of"):
+            _build_filters(FakeClient(make_agency()), None, 2021, 2024, award_type="grants")
+
+    def test_min_amount_alone_is_not_sufficient_scope(self):
+        with pytest.raises(USASpendingAPIError, match="At least one of"):
+            _build_filters(FakeClient(make_agency()), None, 2021, 2024, min_amount=1_000_000)
 
     def test_agency_name_given_still_resolves_normally(self):
         # Regression: the common case (agency_name alone) must be
@@ -1058,6 +1098,19 @@ class TestScopeLabel:
         # Shouldn't happen in practice - _build_filters guarantees at
         # least one is set - but must not crash if it somehow does.
         assert _scope_label(None, None, None) == "unknown scope"
+
+    # Issue #16: with no agency/recipient at all, the label must still show
+    # whichever place/code/keyword filter actually scoped the query, not
+    # fall through to "unknown scope" for a perfectly well-scoped call.
+
+    def test_falls_back_to_performed_in_state_with_no_agency_or_recipient(self):
+        assert _scope_label(None, None, None, performed_in_state="LA") == "LA"
+
+    def test_falls_back_to_cfda_program_with_no_agency_or_recipient(self):
+        assert _scope_label(None, None, None, cfda_program="93.778") == "93.778"
+
+    def test_agency_name_still_preferred_over_place_filters(self):
+        assert _scope_label("NSF", None, None, performed_in_state="LA") == "NSF"
 
 
 class TestRecipientFormatting:

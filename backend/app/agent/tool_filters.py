@@ -320,12 +320,21 @@ def _build_filters(
 
     agency_name is optional (2026-09-08) - a cross-agency, recipient-only
     question ("how much has Boeing received from any agency") has no
-    answer at all if an agency must always be named first. At least one of
-    agency_name/recipient_name/recipient_id must be given, or this raises:
-    a query scoped by none of them is "all federal spending, ever," not a
-    real, answerable question, and letting it through silently would be
-    the same "confidently wrong/unbounded" shape this project has already
-    guarded against elsewhere (the tool-call budget, the limit clamp).
+    answer at all if an agency must always be named first. At least one
+    real scoping filter must be given - agency_name, recipient_name,
+    recipient_id, performed_in_state, recipient_in_state, naics_code,
+    psc_code, cfda_program, or keywords - or this raises (2026-09-09,
+    issue #16: the original, narrower version of this check only
+    recognized agency/recipient as "real scope" and rejected legitimate
+    place/code-only queries like "how much Medicaid money went to
+    Louisiana this year"). A query scoped by *none* of these really is
+    "all federal spending, ever," not a real, answerable question, and
+    letting it through silently would be the same "confidently
+    wrong/unbounded" shape this project has already guarded against
+    elsewhere (the tool-call budget, the limit clamp). award_type/
+    min_amount/max_amount/date_type/the two *_scope params are
+    deliberately not counted as scoping on their own - each is a modifier
+    or a broad category, not something that bounds the question by itself.
 
     recipient_id is a real, precise filter - confirmed live 2026-09-08 to
     reproduce a recipient's true all-time total to the penny, unlike
@@ -340,9 +349,25 @@ def _build_filters(
     own `messages` field says so explicitly), so it's never passed through
     on that tool's path.
     """
-    if agency_name is None and recipient_name is None and recipient_id is None:
+    # Real, narrowing scoping filters - not just agency/recipient. Found live
+    # 2026-09-09 (issue #16): a completely legitimate, common query shape -
+    # "how much Medicaid money went to Louisiana this year" - has neither an
+    # agency nor a recipient set, only a place and an assistance listing, and
+    # the original narrower guard rejected it outright. award_type/
+    # min_amount/max_amount/date_type/*_scope are deliberately NOT included
+    # here - each is a modifier or a broad category, not something that
+    # meaningfully narrows toward one bounded question on its own (e.g.
+    # award_type="grants" alone is still "every grant, from every agency,
+    # ever").
+    real_scoping_filters = (
+        agency_name, recipient_name, recipient_id,
+        performed_in_state, recipient_in_state,
+        naics_code, psc_code, cfda_program, keywords,
+    )
+    if all(f is None for f in real_scoping_filters):
         raise USASpendingAPIError(
-            "At least one of agency_name, recipient_name, or recipient_id must be given - "
+            "At least one of agency_name, recipient_name, recipient_id, performed_in_state, "
+            "recipient_in_state, naics_code, psc_code, cfda_program, or keywords must be given - "
             "a question scoped by none of them would mean all federal spending, ever."
         )
 

@@ -172,12 +172,30 @@ def _format_api_messages(messages: list[str] | None) -> str:
     return "\n\n(API notice: " + " ".join(messages) + ")"
 
 
-def _scope_label(agency_name: str | None, recipient_name: str | None, recipient_id: str | None) -> str:
+def _scope_label(
+    agency_name: str | None,
+    recipient_name: str | None,
+    recipient_id: str | None,
+    *,
+    performed_in_state: str | None = None,
+    recipient_in_state: str | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
+    keywords: str | None = None,
+) -> str:
     """What to call the query's scope in a human-facing message (a failure
-    string, a "no results" message) when agency_name may now be absent -
-    _build_filters (tool_filters.py) guarantees at least one of these
-    three is set, so this always has something real to show."""
-    return agency_name or recipient_name or recipient_id or "unknown scope"
+    string, a "no results" message). _build_filters (tool_filters.py)
+    guarantees at least one real scoping filter is set - agency/recipient
+    plus the place/code/keyword filters added for issue #16 - so this
+    always has something real to show; "unknown scope" would mean that
+    guarantee was violated, not a real expected case."""
+    return (
+        agency_name or recipient_name or recipient_id
+        or performed_in_state or recipient_in_state
+        or naics_code or psc_code or cfda_program or keywords
+        or "unknown scope"
+    )
 
 
 def _record_code_execution_calls(message) -> None:
@@ -573,7 +591,11 @@ def get_spending_by_category(
     # uncapped value); this wrapper is the untrusted boundary a model's
     # tool call actually crosses, which is where the real abuse surface is.
     limit = _clamp_limit(limit)
-    scope = _scope_label(agency_name, recipient_name, recipient_id)
+    scope = _scope_label(
+        agency_name, recipient_name, recipient_id,
+        performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+        naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
+    )
     try:
         response = get_spending_by_category_raw(
             category,
@@ -776,7 +798,11 @@ def get_spending_over_time(
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
-    scope = _scope_label(agency_name, recipient_name, recipient_id)
+    scope = _scope_label(
+        agency_name, recipient_name, recipient_id,
+        performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+        naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
+    )
     try:
         response = get_spending_over_time_raw(
             agency_name,
@@ -993,7 +1019,11 @@ def search_awards(
     # Wrapper-level, not inside search_awards_raw - see the identical
     # comment on get_spending_by_category's clamp for why.
     limit = _clamp_limit(limit)
-    scope = _scope_label(agency_name, recipient_name, None)
+    scope = _scope_label(
+        agency_name, recipient_name, None,
+        performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+        naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
+    )
     try:
         results = search_awards_raw(
             agency_name,

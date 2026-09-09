@@ -53,16 +53,23 @@ def merge_candidates(dense: dict[str, dict], sparse: dict[str, dict]) -> list[di
 
 
 class HybridRetriever:
-    def __init__(self, dense_k: int = 10, sparse_k: int = 10):
+    def __init__(
+        self,
+        dense_k: int = 10,
+        sparse_k: int = 10,
+        chroma_db_dir: str = CHROMA_DB_DIR,
+        whoosh_index_dir: str = WHOOSH_INDEX_DIR,
+        collection_name: str = COLLECTION_NAME,
+    ):
         self.dense_k = dense_k
         self.sparse_k = sparse_k
 
         self.embedding_model = SentenceTransformer(EMBEDDING_MODEL)
         self.cross_encoder = CrossEncoder(CROSS_ENCODER_MODEL)
 
-        chroma_client = chromadb.PersistentClient(path=CHROMA_DB_DIR)
-        self.collection = chroma_client.get_collection(COLLECTION_NAME)
-        self.whoosh_ix = open_dir(WHOOSH_INDEX_DIR)
+        chroma_client = chromadb.PersistentClient(path=chroma_db_dir)
+        self.collection = chroma_client.get_collection(collection_name)
+        self.whoosh_ix = open_dir(whoosh_index_dir)
 
     @traceable(run_type="retriever", name="dense_search_chroma")
     def _dense_search(self, query: str) -> dict[str, dict]:

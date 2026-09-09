@@ -25,8 +25,12 @@ MODEL = os.environ.get("AGENT_MODEL", "claude-haiku-4-5")
 # (data-driven optimum -1.89, using -2.0 for a small safety margin).
 RERANK_CONFIDENCE_THRESHOLD = -2.0
 
+NAICS_CHROMA_DB_DIR = os.environ.get("NAICS_CHROMA_DB_DIR", "./data/chroma_naics")
+NAICS_WHOOSH_INDEX_DIR = os.environ.get("NAICS_WHOOSH_INDEX_DIR", "./data/whoosh_naics")
+
 _client: anthropic.Anthropic | None = None
 _retriever: HybridRetriever | None = None
+_naics_retriever: HybridRetriever | None = None
 _usaspending_client: USASpendingClient | None = None
 
 
@@ -68,6 +72,15 @@ def _get_retriever() -> HybridRetriever:
     return _retriever
 
 
+def _get_naics_retriever() -> HybridRetriever:
+    global _naics_retriever
+    if _naics_retriever is None:
+        _naics_retriever = HybridRetriever(
+            chroma_db_dir=NAICS_CHROMA_DB_DIR, whoosh_index_dir=NAICS_WHOOSH_INDEX_DIR
+        )
+    return _naics_retriever
+
+
 def _get_usaspending_client() -> USASpendingClient:
     global _usaspending_client
     if _usaspending_client is None:
@@ -81,5 +94,6 @@ def warm_up() -> None:
     be first.
     """
     _get_retriever()
+    _get_naics_retriever()
     _get_usaspending_client()
     _get_client()

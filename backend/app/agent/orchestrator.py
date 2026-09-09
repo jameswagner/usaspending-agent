@@ -39,6 +39,7 @@ from .tools import (
     get_spending_by_geography,
     get_spending_over_time,
     lookup_agency,
+    resolve_naics_code,
     search_awards,
     search_guide,
     search_recipients,
@@ -100,10 +101,16 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have seventeen tools. Ten retrieve data: search_guide "
+        "have eighteen tools. Eleven retrieve data: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
-        "toptier code), get_agency_budget (an agency's appropriated budgetary "
+        "toptier code), resolve_naics_code (find the NAICS code matching a "
+        "plain-English industry/business description — call this before "
+        "using naics_code on get_spending_by_category/get_spending_over_time/"
+        "search_awards whenever the question describes an industry rather "
+        "than naming a code already; results are semantic matches, not "
+        "confirmed exact ones — say so if you present one), get_agency_budget "
+        "(an agency's appropriated budgetary "
         "resources, obligations, and outlays for a fiscal year range — use "
         "this for 'what is X's budget' or 'how much money does X have', "
         "NEVER get_spending_over_time or get_spending_by_category for a "
@@ -245,6 +252,7 @@ def ask(question: str) -> AgentResult:
         tools=[
             search_guide,
             lookup_agency,
+            resolve_naics_code,
             get_agency_budget,
             get_spending_by_category,
             get_spending_over_time,

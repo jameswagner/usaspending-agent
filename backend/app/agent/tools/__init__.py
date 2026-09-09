@@ -42,6 +42,7 @@ from .awards import (
     get_idv_amounts_raw,
 )
 from .business_type_labels import _format_business_type
+from .naics import resolve_naics_code
 from .recipients import (
     _format_recipient_address,
     _format_recipient_level,
@@ -113,6 +114,7 @@ __all__ = [
     "get_spending_over_time_raw",
     "logger",
     "lookup_agency",
+    "resolve_naics_code",
     "search_awards",
     "search_awards_raw",
     "search_guide",

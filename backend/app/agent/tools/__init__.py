@@ -41,8 +41,8 @@ from .awards import (
     get_award_details_raw,
     get_idv_amounts_raw,
 )
+from .business_type_labels import _format_business_type
 from .recipients import (
-    _format_business_type,
     _format_recipient_address,
     _format_recipient_level,
     _format_recipient_listing,

@@ -1254,7 +1254,7 @@ class TestRecipientFormatting:
     def test_format_business_type_known_codes(self):
         assert _format_business_type("category_business") == "Business"
         assert _format_business_type("us_owned_business") == "U.S. Owned Business"
-        assert _format_business_type("sba_certified_8a_joint_venture") == "SBA Certified 8(a) Joint Venture"
+        assert _format_business_type("sba_certified_8a_joint_venture") == "SBA Certified 8a Joint Venture"
 
     def test_format_business_type_unknown_code_falls_back_to_title_case(self):
         assert _format_business_type("some_new_flag") == "Some New Flag"

@@ -5,6 +5,7 @@ import requests
 
 from backend.app.usaspending_client import (
     AdvancedFilters,
+    RecipientOverview,
     ToptierAgency,
     USASpendingAPIError,
     USASpendingClient,
@@ -169,6 +170,47 @@ class TestSearchAwardsValidation:
             client.search_awards(AdvancedFilters(keywords=["test"]), fields=["Award ID"])
 
 
+class TestRecipientClientMethods:
+    # Real live response shapes (Boeing, 2026-09-08), not synthetic -
+    # confirms the client parses the actual wire format, not just
+    # whatever a hand-written fixture happens to match.
+
+    def test_search_recipients_parses_real_response_shape(self, monkeypatch):
+        client = USASpendingClient()
+        body = {
+            "page_metadata": {"page": 1, "total": 546, "limit": 10, "hasNext": True, "hasPrevious": False},
+            "results": [
+                {
+                    "id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P",
+                    "duns": "009256819", "uei": "NU2UC8MX6NK1",
+                    "name": "THE BOEING COMPANY", "recipient_level": "P", "amount": 30309729588.71,
+                },
+            ],
+        }
+        monkeypatch.setattr(client, "_post", lambda path, b: body)
+        response = client.search_recipients("Boeing")
+        assert response.page_metadata.hasNext is True
+        assert response.results[0].name == "THE BOEING COMPANY"
+        assert response.results[0].recipient_level == "P"
+
+    def test_get_recipient_parses_real_response_shape(self, monkeypatch):
+        client = USASpendingClient()
+        body = {
+            "name": "REDACTED DUE TO PII", "alternate_names": [], "duns": None, "uei": None,
+            "recipient_id": "6e4362a8-7dd7-8d86-d2ff-8faa5eefe0aa-R", "recipient_level": "R",
+            "parent_name": None, "parent_duns": None, "parent_id": None, "parent_uei": None, "parents": [],
+            "location": {"city_name": "PLANT CITY", "state_code": "FL", "country_name": "UNITED STATES"},
+            "business_types": [],
+            "total_transaction_amount": 14894373724.28, "total_transactions": 2243854,
+            "total_face_value_loan_amount": 12841356171.82, "total_face_value_loan_transactions": 76040,
+        }
+        monkeypatch.setattr(client, "_get", lambda path, params=None: body)
+        overview = client.get_recipient("6e4362a8-7dd7-8d86-d2ff-8faa5eefe0aa-R")
+        assert isinstance(overview, RecipientOverview)
+        assert overview.name == "REDACTED DUE TO PII"
+        assert overview.total_transactions == 2243854
+
+
 class TestAdvancedFilters:
     def test_none_fields_excluded_from_dump(self):
         filters = AdvancedFilters(keywords=["prime award"])
@@ -176,6 +218,15 @@ class TestAdvancedFilters:
         assert dumped == {"keywords": ["prime award"]}
         assert "time_period" not in dumped
         assert "agencies" not in dumped
+
+    def test_recipient_id_included_when_set(self):
+        # Confirmed live 2026-09-08: precise, reproduces a recipient's
+        # true all-time total exactly - only on get_spending_by_category/
+        # get_spending_over_time, silently ignored on search_awards (see
+        # this field's own docstring on AdvancedFilters).
+        filters = AdvancedFilters(recipient_id="419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P")
+        dumped = filters.model_dump(exclude_none=True)
+        assert dumped == {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P"}
 
     def test_extra_fields_are_allowed_and_preserved(self):
         # AdvancedFilters deliberately doesn't model every API filter field

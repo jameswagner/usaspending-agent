@@ -196,7 +196,18 @@ class ToolCitation(BaseModel):
 # metrics (budgetary resources vs. obligated vs. outlayed) to chart is a
 # real design question deferred for now - excluded here rather than
 # guessing which one the model would want.
-NEVER_CHART_TOOLS = {"search_guide", "lookup_agency", "search_awards", "get_agency_budget", "code_execution"}
+NEVER_CHART_TOOLS = {
+    "search_guide", "lookup_agency", "search_awards", "get_agency_budget",
+    "code_execution", "get_award_details",
+    # search_recipients returns a ranked candidate list, plausibly
+    # chart-worthy on its own merits (like get_spending_by_category) - but
+    # its real purpose is disambiguation/resolution, not analysis, and
+    # deciding whether that's ever worth charting is a separate, real
+    # design question deferred rather than resolved as a side effect here
+    # (2026-09-08). get_recipient_details is a single profile, no
+    # cardinality to chart, same as get_award_details.
+    "search_recipients", "get_recipient_details",
+}
 
 
 def should_chart(tool_name: str, structured_result, context: dict | None = None) -> ChartSpec | None:
@@ -252,13 +263,26 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
 # when actually set for that call, so a citation reflects exactly which
 # filters were used, not every filter the tool supports in the abstract.
 _ALL_OPTIONAL_FILTER_KEYS = {
+    "agency_name",
     "award_type",
     "recipient_name",
+    "recipient_id",
     "min_amount",
     "max_amount",
     "performed_in_state",
     "recipient_in_state",
 }
+
+
+def _citation_scope_label(context: dict) -> str:
+    """What a citation's description names as what the query was scoped
+    to. agency_name if given (existing behavior, preserved) - else
+    recipient_name (human-readable) or recipient_id (a resolved but
+    nameless identifier) if that's what scoped the call instead.
+    _build_filters (tool_filters.py) guarantees at least one of the three
+    is always present - "unknown scope" here would mean that guarantee
+    was violated, not a real expected case."""
+    return context.get("agency_name") or context.get("recipient_name") or context.get("recipient_id") or "unknown scope"
 
 
 def _merge_optional_filter_params(params: dict, context: dict, keys: set[str]) -> None:
@@ -304,47 +328,84 @@ def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
     if tool_name == "get_spending_by_category":
         params = {
             "category": context["category"],
-            "agency_name": context["agency_name"],
             "start_fiscal_year": context["start_fiscal_year"],
             "end_fiscal_year": context["end_fiscal_year"],
         }
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
+        scope = _citation_scope_label(context)
         description = (
-            f"{params['category']} breakdown, {params['agency_name']}, "
+            f"{params['category']} breakdown, {scope}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
         )
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
 
     if tool_name == "get_spending_over_time":
         params = {
-            "agency_name": context["agency_name"],
             "start_fiscal_year": context["start_fiscal_year"],
             "end_fiscal_year": context["end_fiscal_year"],
             "group": context["group"],
         }
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
+        scope = _citation_scope_label(context)
         description = (
-            f"Spending over time ({params['group']}), {params['agency_name']}, "
+            f"Spending over time ({params['group']}), {scope}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
         )
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
 
     if tool_name == "search_awards":
         params = {
-            "agency_name": context["agency_name"],
             "start_fiscal_year": context["start_fiscal_year"],
             "end_fiscal_year": context["end_fiscal_year"],
             "award_type": context["award_type"],
         }
-        # award_type is already set above (unconditionally, unlike the
-        # other two tools where it's one of the optional filters) - merge
-        # only the remaining five.
+        # award_type is already set above (unconditionally, unlike every
+        # other key here including agency_name, which is now optional
+        # too - see tool_filters.py's _build_filters) - merge everything
+        # else.
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
+        scope = _citation_scope_label(context)
         description = (
-            f"{params['award_type']} awards search, {params['agency_name']}, "
+            f"{params['award_type']} awards search, {scope}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
         )
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+
+    if tool_name == "get_award_details":
+        award_id = context["award_id"]
+        # piid falls back to the raw internal_id (context["award_id"])
+        # only if the response somehow carried neither piid/fain/uri -
+        # shouldn't happen per the live award_id.md contract, but keeps
+        # the citation from showing "None" instead of something real.
+        label = context.get("piid") or award_id
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"award_id": award_id},
+            description=f"Award details: {label}",
+        )
+
+    if tool_name == "search_recipients":
+        keyword = context["keyword"]
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"keyword": keyword},
+            description=f"Recipient search: {keyword}",
+        )
+
+    if tool_name == "get_recipient_details":
+        recipient_id = context["recipient_id"]
+        # name falls back to the raw recipient_id only if the response
+        # somehow carried no name at all - shouldn't happen per the live
+        # recipient_id.md contract (name is nullable but real-world
+        # recipients always have one, even the redacted/aggregate bucket
+        # case, which has its own real sentinel string), but keeps the
+        # citation from showing "None" instead of something real.
+        label = context.get("name") or recipient_id
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"recipient_id": recipient_id},
+            description=f"Recipient details: {label}",
+        )
 
     if tool_name == "code_execution":
         # Cite the actual command that ran, not just "code was run" - a

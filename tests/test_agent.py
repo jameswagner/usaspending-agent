@@ -18,16 +18,19 @@ from backend.app.agent.tool_filters import (
     AWARD_TYPE_GROUPS,
     LOAN_AWARD_TYPE_CODES,
     MAX_LIMIT,
+    RECIPIENT_AWARD_TYPES,
     US_STATE_ABBREVIATIONS,
     VALID_DATE_TYPES,
     AwardType,
     DateType,
+    RecipientAwardType,
     Scope,
     _amount_field_for_award_type,
     _build_filters,
     _clamp_limit,
     _normalize_award_type,
     _normalize_date_type,
+    _normalize_recipient_award_type,
     _normalize_scope,
     _normalize_state,
     _validate_cfda_program,
@@ -40,14 +43,33 @@ from backend.app.agent.tools import (
     VALID_GROUPS,
     Category,
     Group,
+    _agency_label,
     _check_tool_call_budget,
+    _format_api_messages,
+    _format_award_details,
+    _format_contract_or_idv,
+    _format_financial_assistance,
+    _format_period_breakdown,
+    _format_period_of_performance,
+    _format_recipient_address,
+    _format_recipient_level,
+    _format_recipient_listing,
+    _format_recipient_overview,
+    _format_recipient_state_only,
+    _location_label,
     _normalize_category,
     _normalize_group,
+    _scope_label,
     _tool_call_log,
     _truncation_note,
 )
 from backend.app.usaspending_client import (
     CategoryResult,
+    IDVAmountsResponse,
+    ObligationByPeriod,
+    RecipientListing,
+    RecipientLocation,
+    RecipientOverview,
     SpendingByCategoryResponse,
     SpendingOverTimeResponse,
     TimePeriodGroup,
@@ -164,8 +186,50 @@ class TestNeverChartTools:
     def test_get_agency_budget_never_charts(self):
         assert should_chart("get_agency_budget", make_category_response(5)) is None
 
+    def test_get_award_details_never_charts(self):
+        # A single award record, not a list - no cardinality to chart.
+        assert should_chart("get_award_details", make_category_response(5)) is None
+
+    def test_search_recipients_never_charts(self):
+        # Charting a candidate list is plausible in principle but a real,
+        # deliberately deferred design question, not resolved here.
+        assert should_chart("search_recipients", make_category_response(5)) is None
+
+    def test_get_recipient_details_never_charts(self):
+        assert should_chart("get_recipient_details", make_category_response(5)) is None
+
     def test_unknown_tool_name_returns_none(self):
         assert should_chart("some_future_tool", make_category_response(5)) is None
+
+
+class TestFormatPeriodBreakdown:
+    # Real gap found live (2026-09-07): agency_obligation_by_period was
+    # already parsed by the client but never surfaced in get_agency_budget's
+    # output at all. Verified live against NSF that each period's amount is
+    # CUMULATIVE from the start of the fiscal year (period 12's value
+    # exactly equals the year's agency_total_obligated) - these tests pin
+    # both the month mapping and the cumulative framing so neither
+    # regresses silently.
+
+    def test_periods_map_to_the_right_fiscal_months(self):
+        # P01 = October (verified against the local Glossary's "Submission
+        # Period" entry), not calendar January.
+        periods = [ObligationByPeriod(period=1, obligated=100.0), ObligationByPeriod(period=12, obligated=900.0)]
+        result = _format_period_breakdown(periods)
+        assert "Oct $100.00" in result
+        assert "Sep $900.00" in result
+
+    def test_out_of_order_periods_are_sorted(self):
+        periods = [ObligationByPeriod(period=3, obligated=300.0), ObligationByPeriod(period=2, obligated=200.0)]
+        result = _format_period_breakdown(periods)
+        assert result.index("Nov") < result.index("Dec")
+
+    def test_label_states_cumulative_explicitly(self):
+        # The framing that matters: without this, "period 6: $X" reads like
+        # a monthly figure, not a running total - the same misleading shape
+        # as the Award Amount cumulative bug found earlier in this project.
+        result = _format_period_breakdown([ObligationByPeriod(period=1, obligated=100.0)])
+        assert "cumulative" in result.lower()
 
 
 class TestBuildToolCitation:
@@ -277,6 +341,79 @@ class TestBuildToolCitation:
         )
         assert citation.parameters["award_type"] == "grants"
         assert citation.parameters["recipient_name"] == "Leidos"
+
+    def test_get_award_details(self):
+        citation = build_tool_citation(
+            "get_award_details",
+            {"award_id": "CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-", "piid": "NSFDACS1219442"},
+        )
+        assert citation is not None
+        assert citation.tool_name == "get_award_details"
+        assert citation.parameters == {"award_id": "CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-"}
+        # The human-readable piid, not the raw internal_id hash, drives the
+        # shown description - a citation showing the ugly hash string would
+        # look broken next to every other tool's readable description.
+        assert citation.description == "Award details: NSFDACS1219442"
+
+    def test_get_award_details_falls_back_to_award_id_without_piid(self):
+        citation = build_tool_citation("get_award_details", {"award_id": "CONT_AWD_X"})
+        assert citation.description == "Award details: CONT_AWD_X"
+
+    def test_search_recipients(self):
+        citation = build_tool_citation("search_recipients", {"keyword": "Boeing"})
+        assert citation is not None
+        assert citation.tool_name == "search_recipients"
+        assert citation.parameters == {"keyword": "Boeing"}
+        assert citation.description == "Recipient search: Boeing"
+
+    def test_get_recipient_details(self):
+        citation = build_tool_citation(
+            "get_recipient_details",
+            {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P", "name": "THE BOEING COMPANY"},
+        )
+        assert citation is not None
+        assert citation.tool_name == "get_recipient_details"
+        assert citation.parameters == {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P"}
+        assert citation.description == "Recipient details: THE BOEING COMPANY"
+
+    def test_get_recipient_details_falls_back_to_recipient_id_without_name(self):
+        citation = build_tool_citation("get_recipient_details", {"recipient_id": "abc-P"})
+        assert citation.description == "Recipient details: abc-P"
+
+    # agency_name is now optional on all three spending tools (2026-09-08) -
+    # these three regression tests pin that the citation builder doesn't
+    # KeyError when it's absent, and that the description falls back to
+    # whatever scope (recipient_name/recipient_id) was actually given.
+
+    def test_get_spending_by_category_with_recipient_id_no_agency_name(self):
+        citation = build_tool_citation(
+            "get_spending_by_category",
+            {
+                "category": "awarding_agency",
+                "start_fiscal_year": 2008,
+                "end_fiscal_year": 2025,
+                "recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P",
+            },
+        )
+        assert citation is not None
+        assert "agency_name" not in citation.parameters
+        assert citation.description == (
+            "awarding_agency breakdown, 419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P, FY2008-FY2025"
+        )
+
+    def test_get_spending_over_time_with_recipient_name_no_agency_name(self):
+        citation = build_tool_citation(
+            "get_spending_over_time",
+            {"start_fiscal_year": 2020, "end_fiscal_year": 2024, "group": "fiscal_year", "recipient_name": "Boeing"},
+        )
+        assert citation.description == "Spending over time (fiscal_year), Boeing, FY2020-FY2024"
+
+    def test_search_awards_with_recipient_name_no_agency_name(self):
+        citation = build_tool_citation(
+            "search_awards",
+            {"start_fiscal_year": 2023, "end_fiscal_year": 2023, "award_type": "contracts", "recipient_name": "Boeing"},
+        )
+        assert citation.description == "contracts awards search, Boeing, FY2023-FY2023"
 
     def test_search_guide_returns_none(self):
         # search_guide is cited separately, by chunk id/page - not via
@@ -477,6 +614,42 @@ class TestBuildFilters:
         with pytest.raises(USASpendingAPIError, match="doesn't look like a CFDA"):
             _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, cfda_program="research grants")
 
+    # agency_name optional / recipient_id (2026-09-08) - real, live-verified
+    # findings: recipient_id reproduces a recipient's true all-time total
+    # to the penny on get_spending_by_category/get_spending_over_time, but
+    # is silently ignored on search_awards - see BACKLOG.md's
+    # recipient-profile entry and private/HUMAN_INTERVENTIONS.md #26.
+
+    def test_agency_name_none_with_recipient_name_omits_agencies_filter(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, recipient_name="Boeing")
+        assert filters.agencies is None
+        assert filters.recipient_search_text == ["Boeing"]
+
+    def test_agency_name_none_with_recipient_id_omits_agencies_filter(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, recipient_id="abc-P")
+        assert filters.agencies is None
+        assert filters.recipient_id == "abc-P"
+
+    def test_all_three_scoping_params_none_raises(self):
+        with pytest.raises(USASpendingAPIError, match="At least one of"):
+            _build_filters(FakeClient(make_agency()), None, 2021, 2024)
+
+    def test_agency_name_given_still_resolves_normally(self):
+        # Regression: the common case (agency_name alone) must be
+        # unaffected by making it optional.
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024)
+        assert filters.agencies[0].name == "National Science Foundation"
+
+    def test_recipient_id_passthrough(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", 2021, 2024, recipient_id="419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P"
+        )
+        assert filters.recipient_id == "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P"
+
+    def test_omitting_recipient_id_leaves_it_unset(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024)
+        assert filters.recipient_id is None
+
 
 class TestNormalizeState:
     def test_full_name_case_and_spacing_insensitive(self):
@@ -552,6 +725,457 @@ class TestTruncationNote:
         # skip past; this asserts the instruction is explicit.
         note = _truncation_note(True, shown=5)
         assert "complete" in note.lower() or "exhaustive" in note.lower()
+
+
+class TestFormatApiMessages:
+    # Found live 2026-09-08 via a raw curl to spending_by_award while
+    # investigating whether recipient_id silently no-ops there: the API
+    # isn't silent, it says exactly what happened ("The following filters
+    # from the request were not used: {'recipient_id'}...") in its own
+    # `messages` field - which two of three response models already
+    # captured and nothing ever read.
+
+    def test_none_messages_produces_empty_string(self):
+        assert _format_api_messages(None) == ""
+
+    def test_empty_list_produces_empty_string(self):
+        assert _format_api_messages([]) == ""
+
+    def test_single_message_surfaced(self):
+        result = _format_api_messages(["The following filters from the request were not used: {'recipient_id'}"])
+        assert "recipient_id" in result
+        assert "API notice" in result
+
+    def test_multiple_messages_all_surfaced(self):
+        result = _format_api_messages(["message one", "message two"])
+        assert "message one" in result
+        assert "message two" in result
+
+
+class TestAgencyLabel:
+    def test_name_and_abbreviation(self):
+        agency = {"toptier_agency": {"name": "National Science Foundation", "abbreviation": "NSF"}}
+        assert _agency_label(agency) == "National Science Foundation (NSF)"
+
+    def test_none_agency(self):
+        assert _agency_label(None) == "N/A"
+
+    def test_missing_toptier_agency(self):
+        assert _agency_label({"toptier_agency": None}) == "N/A"
+
+
+class TestLocationLabel:
+    def test_full_shows_city_and_state(self):
+        location = {"city_name": "BOULDER", "state_name": "COLORADO"}
+        assert _location_label(location) == "BOULDER, COLORADO"
+
+    def test_full_falls_back_to_state_only(self):
+        assert _location_label({"state_name": "VIRGINIA"}) == "VIRGINIA"
+
+    def test_not_full_shows_state_only_even_with_city(self):
+        # Used for record_type 1/3 (aggregate/PII-redacted) recipients -
+        # found live 2026-09-08 that the API still returns city/county/zip
+        # for a redacted individual, which would undercut the redaction if
+        # forwarded as-is.
+        location = {"city_name": "ZUNI", "state_name": "VIRGINIA", "county_name": "SOUTHAMPTON"}
+        assert _location_label(location, full=False) == "VIRGINIA"
+
+    def test_none_location(self):
+        assert _location_label(None) == "N/A"
+
+
+class TestFormatPeriodOfPerformance:
+    def test_start_and_end(self):
+        pop = {"start_date": "2018-10-01", "end_date": "2028-09-30"}
+        assert _format_period_of_performance(pop) == "2018-10-01 to 2028-09-30"
+
+    def test_potential_end_date_shown_when_different(self):
+        pop = {"start_date": "2011-12-23", "end_date": "2026-09-30", "potential_end_date": "2026-09-30 00:00:00"}
+        result = _format_period_of_performance(pop)
+        assert "potential end date" in result
+
+    def test_none_when_both_dates_missing(self):
+        # Found live 2026-09-08 on a real SBA guaranteed-loan record: both
+        # start_date/end_date were null, and the prior "? to ?" fallback
+        # rendered as noise. None (not a placeholder) lets callers skip
+        # the line entirely.
+        assert _format_period_of_performance({"start_date": None, "end_date": None}) is None
+
+    def test_none_when_pop_missing(self):
+        assert _format_period_of_performance(None) is None
+
+
+class TestFormatContractOrIdv:
+    # Trimmed real fixtures from live records pulled 2026-09-08 (LEIDOS
+    # NSF contract, IDA NSF IDV) - not synthetic shapes.
+    CONTRACT = {
+        "category": "contract",
+        "type_description": "DEFINITIVE CONTRACT",
+        "piid": "NSFDACS1219442",
+        "description": "SCIENCE OPERATION AND MAINTENANCE SUPPORT",
+        "total_obligation": 3129062649.79,
+        "base_and_all_options": 3174807441.79,
+        "date_signed": "2011-12-23",
+        "period_of_performance": {"start_date": "2011-12-23", "end_date": "2026-09-30"},
+        "awarding_agency": {"toptier_agency": {"name": "National Science Foundation", "abbreviation": "NSF"}},
+        "funding_agency": None,
+        "recipient": {"recipient_name": "LEIDOS, INC.", "location": {"city_name": "GAITHERSBURG", "state_name": "MARYLAND"}},
+        "place_of_performance": {"country_name": "ANTARCTICA"},
+        "subaward_count": 1219,
+        "total_subaward_amount": 581011041.48,
+        "latest_transaction_contract_data": {
+            "extent_competed_description": "FULL AND OPEN COMPETITION",
+            "number_of_offers_received": "7",
+            "type_of_contract_pricing_description": "COST PLUS AWARD FEE",
+            "naics_description": "FACILITIES SUPPORT SERVICES",
+            "product_or_service_description": "OPERATION OF GOCO R&D FACILITIES",
+        },
+        "parent_award": None,
+    }
+
+    def test_headline_and_money(self):
+        result = _format_contract_or_idv(self.CONTRACT)
+        assert "DEFINITIVE CONTRACT (NSFDACS1219442)" in result
+        assert "$3,129,062,649.79" in result
+        assert "$3,174,807,441.79" in result
+
+    def test_recipient_and_place_of_performance(self):
+        result = _format_contract_or_idv(self.CONTRACT)
+        assert "LEIDOS, INC. (GAITHERSBURG, MARYLAND)" in result
+        assert "ANTARCTICA" in result
+
+    def test_competition_detail_fields_included(self):
+        result = _format_contract_or_idv(self.CONTRACT)
+        assert "FULL AND OPEN COMPETITION" in result
+        assert "7 offers received" in result
+        assert "FACILITIES SUPPORT SERVICES" in result
+
+    def test_no_parent_award_line_when_none(self):
+        assert "parent" not in _format_contract_or_idv(self.CONTRACT).lower()
+
+    def test_parent_award_shown_when_present(self):
+        data = {**self.CONTRACT, "parent_award": {
+            "piid": "SPE2DX16D1500", "agency_name": "Department of Defense",
+            "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
+            "generated_unique_award_id": "CONT_IDV_SPE2DX16D1500_9700",
+        }}
+        result = _format_contract_or_idv(data)
+        assert "parent IDV SPE2DX16D1500" in result
+
+    def test_parent_award_internal_id_shown_for_followup_calls(self):
+        # Real gap found live 2026-09-08: a child contract's parent-award
+        # line didn't surface the parent IDV's own internal_id, so the
+        # model had no way to call get_award_details again on the vehicle
+        # itself - it could only ever reach the child contract.
+        data = {**self.CONTRACT, "parent_award": {
+            "piid": "NSFOIA0408601", "agency_name": "National Science Foundation",
+            "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
+            "generated_unique_award_id": "CONT_IDV_NSFOIA0408601_4900",
+        }}
+        result = _format_contract_or_idv(data)
+        assert "internal_id: CONT_IDV_NSFOIA0408601_4900" in result
+
+    def test_no_idv_caveat_for_a_plain_contract(self):
+        assert "not itself a spending transaction" not in _format_contract_or_idv(self.CONTRACT)
+
+    def test_idv_caveat_present_for_idv_category(self):
+        # Real live finding (2026-09-08): a real NSF IDIQ came back
+        # total_obligation=0.0 - the caveat must show for every idv
+        # record, not just ones that happen to be zero.
+        data = {**self.CONTRACT, "category": "idv", "total_obligation": 0.0}
+        result = _format_contract_or_idv(data)
+        assert "not itself a spending transaction" in result
+
+    def test_no_period_of_performance_line_when_both_dates_missing(self):
+        data = {**self.CONTRACT, "period_of_performance": {"start_date": None, "end_date": None}}
+        assert "Period of performance" not in _format_contract_or_idv(data)
+
+    def test_child_order_rollup_replaces_caveat_with_real_numbers(self):
+        # Real live finding (2026-09-08): this exact IDV's own
+        # total_obligation is $0.00, but it has 237 real child awards
+        # totaling $175M - the rollup must show that instead of the
+        # generic "doesn't include child-order spending" caveat.
+        data = {**self.CONTRACT, "category": "idv", "total_obligation": 0.0}
+        rollup = IDVAmountsResponse(
+            generated_unique_award_id="CONT_IDV_NSFOIA0408601_4900",
+            child_idv_count=0, child_award_count=237,
+            child_award_total_obligation=175053251.83,
+            child_award_base_and_all_options_value=179258219.93,
+            child_award_base_exercised_options_val=176435506.0,
+            grandchild_award_count=0, grandchild_award_total_obligation=0.0,
+            grandchild_award_base_and_all_options_value=0.0,
+            grandchild_award_base_exercised_options_val=0.0,
+        )
+        result = _format_contract_or_idv(data, child_order_rollup=rollup)
+        assert "not itself a spending transaction" not in result
+        assert "237 child awards totaling $175,053,251.83" in result
+
+    def test_grandchild_line_suppressed_when_zero(self):
+        rollup = IDVAmountsResponse(
+            generated_unique_award_id="x", child_idv_count=0, child_award_count=1,
+            child_award_total_obligation=1.0, child_award_base_and_all_options_value=1.0,
+            child_award_base_exercised_options_val=1.0, grandchild_award_count=0,
+            grandchild_award_total_obligation=0.0, grandchild_award_base_and_all_options_value=0.0,
+            grandchild_award_base_exercised_options_val=0.0,
+        )
+        data = {**self.CONTRACT, "category": "idv"}
+        assert "grandchild" not in _format_contract_or_idv(data, child_order_rollup=rollup).lower()
+
+    def test_grandchild_line_shown_when_nonzero(self):
+        rollup = IDVAmountsResponse(
+            generated_unique_award_id="x", child_idv_count=2, child_award_count=25,
+            child_award_total_obligation=363410.59, child_award_base_and_all_options_value=297285.59,
+            child_award_base_exercised_options_val=297285.59, grandchild_award_count=54,
+            grandchild_award_total_obligation=377145.57, grandchild_award_base_and_all_options_value=306964.49,
+            grandchild_award_base_exercised_options_val=311020.57,
+        )
+        data = {**self.CONTRACT, "category": "idv"}
+        result = _format_contract_or_idv(data, child_order_rollup=rollup)
+        assert "54 grandchild orders" in result
+        assert "$377,145.57" in result
+
+
+class TestFormatFinancialAssistance:
+    GRANT = {
+        "category": "grant",
+        "type_description": "COOPERATIVE AGREEMENT (B)",
+        "fain": "1755088",
+        "description": "MANAGEMENT AND OPERATION OF NCAR",
+        "total_obligation": 1012398088.0,
+        "total_funding": 1012398088.0,
+        "non_federal_funding": None,
+        "record_type": 2,
+        "date_signed": "2018-09-19",
+        "period_of_performance": {"start_date": "2018-10-01", "end_date": "2028-09-30"},
+        "awarding_agency": {"toptier_agency": {"name": "National Science Foundation", "abbreviation": "NSF"}},
+        "funding_agency": None,
+        "recipient": {
+            "recipient_name": "UNIVERSITY CORPORATION FOR ATMOSPHERIC RESEARCH",
+            "location": {"city_name": "BOULDER", "state_name": "COLORADO"},
+        },
+        "place_of_performance": {"city_name": "BOULDER", "state_name": "COLORADO"},
+        "subaward_count": 55,
+        "total_subaward_amount": 10205739.29,
+        "cfda_info": [{"cfda_number": "47.050", "cfda_title": "Geosciences"}],
+    }
+
+    def test_grant_shows_total_funding(self):
+        result = _format_financial_assistance(self.GRANT)
+        assert "Total obligated: $1,012,398,088.00" in result
+        assert "Total funding: $1,012,398,088.00" in result
+
+    def test_grant_recipient_shown_normally(self):
+        result = _format_financial_assistance(self.GRANT)
+        assert "UNIVERSITY CORPORATION FOR ATMOSPHERIC RESEARCH (BOULDER, COLORADO)" in result
+
+    def test_cfda_info_listed(self):
+        assert "47.050 Geosciences" in _format_financial_assistance(self.GRANT)
+
+    def test_transaction_obligated_amount_never_shown(self):
+        # Deliberately excluded - resolved live (2026-09-08) that this is a
+        # File C sum, a separately-timed DATA Act submission from
+        # total_obligation's File D2 source, not guaranteed to reconcile.
+        data = {**self.GRANT, "transaction_obligated_amount": 975888088.0}
+        assert "975,888,088" not in _format_financial_assistance(data)
+
+    def test_account_level_totals_never_shown(self):
+        data = {**self.GRANT, "total_account_obligation": 42.0, "total_account_outlay": 42.0}
+        assert "42.0" not in _format_financial_assistance(data)
+
+    def test_loan_shows_loan_value_not_total_funding(self):
+        loan = {**self.GRANT, "category": "loans", "total_loan_value": 98400000.0, "total_subsidy_cost": 0.0,
+                "total_funding": 0.0, "total_obligation": 0.0}
+        result = _format_financial_assistance(loan)
+        assert "Loan value: $98,400,000.00" in result
+        assert "Total funding" not in result
+
+    def test_loan_with_zero_obligation_suppresses_the_line(self):
+        # Real live finding (2026-09-08): a $98.4M SBA loan came back
+        # total_obligation=0.0 - showing "$0.00" right above the real
+        # $98.4M loan value read as contradictory/broken.
+        loan = {**self.GRANT, "category": "loans", "total_loan_value": 98400000.0, "total_obligation": 0.0}
+        assert "Total obligated" not in _format_financial_assistance(loan)
+
+    def test_loan_with_nonzero_obligation_is_still_shown(self):
+        loan = {**self.GRANT, "category": "loans", "total_loan_value": 98400000.0, "total_obligation": 500.0}
+        assert "Total obligated: $500.00" in _format_financial_assistance(loan)
+
+    def test_record_type_1_hides_name_and_narrows_location(self):
+        # "MULTIPLE RECIPIENTS" (the live sentinel string) must never reach
+        # the model verbatim as if it were a real recipient name.
+        data = {**self.GRANT, "record_type": 1, "recipient": {
+            "recipient_name": "MULTIPLE RECIPIENTS",
+            "location": {"city_name": "ZUNI", "state_name": "VIRGINIA"},
+        }}
+        result = _format_financial_assistance(data)
+        assert "MULTIPLE RECIPIENTS" not in result
+        assert "Multiple recipients" in result
+        assert "aggregate award" in result
+        assert "ZUNI" not in result  # narrowed to state-only
+        assert "VIRGINIA" in result
+
+    def test_record_type_3_hides_name_and_narrows_location(self):
+        data = {**self.GRANT, "record_type": 3, "recipient": {
+            "recipient_name": "REDACTED DUE TO PII",
+            "location": {"city_name": "ZUNI", "state_name": "VIRGINIA"},
+        }}
+        result = _format_financial_assistance(data)
+        assert "REDACTED DUE TO PII" not in result
+        assert "redacted" in result.lower()
+        assert "ZUNI" not in result
+
+    def test_record_type_2_shows_real_name_and_full_location(self):
+        result = _format_financial_assistance(self.GRANT)
+        assert "UNIVERSITY CORPORATION FOR ATMOSPHERIC RESEARCH" in result
+        assert "BOULDER" in result
+
+
+class TestFormatAwardDetailsDispatch:
+    def test_contract_category_dispatches_to_contract_formatter(self):
+        data = {**TestFormatContractOrIdv.CONTRACT}
+        assert "not itself a spending transaction" not in _format_award_details(data)
+
+    def test_idv_category_dispatches_to_contract_formatter_with_caveat(self):
+        data = {**TestFormatContractOrIdv.CONTRACT, "category": "idv"}
+        assert "not itself a spending transaction" in _format_award_details(data)
+
+    def test_grant_category_dispatches_to_financial_assistance_formatter(self):
+        data = {**TestFormatFinancialAssistance.GRANT}
+        assert "Assistance Listing" in _format_award_details(data)
+
+
+class TestScopeLabel:
+    def test_agency_name_preferred(self):
+        assert _scope_label("NSF", "Leidos", "abc-P") == "NSF"
+
+    def test_falls_back_to_recipient_name(self):
+        assert _scope_label(None, "Leidos", None) == "Leidos"
+
+    def test_falls_back_to_recipient_id(self):
+        assert _scope_label(None, None, "abc-P") == "abc-P"
+
+    def test_all_none_falls_back_to_placeholder(self):
+        # Shouldn't happen in practice - _build_filters guarantees at
+        # least one is set - but must not crash if it somehow does.
+        assert _scope_label(None, None, None) == "unknown scope"
+
+
+class TestRecipientFormatting:
+    # Fixtures pulled from real live data (Boeing, 2026-09-08) - not
+    # synthetic shapes. Real live values confirmed: 546 total matches for
+    # "Leidos" alone resolve to 6+ distinct recipient_ids sharing the
+    # identical name "LEIDOS, INC.", and the parent-level rollup
+    # reproduces a recipient's true all-time total to the penny.
+
+    BOEING_LISTING = RecipientListing(
+        name="THE BOEING COMPANY", duns="009256819", uei="NU2UC8MX6NK1",
+        id="419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P", amount=30309729588.71, recipient_level="P",
+    )
+
+    BOEING_LOCATION = RecipientLocation(
+        address_line1="929 LONG BRIDGE DR", city_name="ARLINGTON", state_code="VA",
+        zip="22202", country_name="UNITED STATES",
+    )
+
+    BOEING_OVERVIEW = RecipientOverview(
+        name="THE BOEING COMPANY", alternate_names=["BOEING CO"], duns="009256819", uei="NU2UC8MX6NK1",
+        recipient_id="419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P", recipient_level="P",
+        parent_id="419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P",  # self - real live shape, not a real parent
+        location=BOEING_LOCATION,
+        business_types=["corporate_entity_not_tax_exempt", "us_owned_business"],
+        total_transaction_amount=439084269687.36, total_transactions=346764,
+        total_face_value_loan_amount=0.0, total_face_value_loan_transactions=0,
+    )
+
+    REDACTED_OVERVIEW = RecipientOverview(
+        name="REDACTED DUE TO PII", alternate_names=[], duns=None, uei=None,
+        recipient_id="6e4362a8-7dd7-8d86-d2ff-8faa5eefe0aa-R", recipient_level="R",
+        parent_id=None, location=RecipientLocation(city_name="PLANT CITY", state_code="FL"),
+        business_types=[],
+        total_transaction_amount=161426671098.53, total_transactions=29994629,
+        total_face_value_loan_amount=168657558594.56, total_face_value_loan_transactions=2188551,
+    )
+
+    def test_format_recipient_level(self):
+        assert _format_recipient_level("P") == "parent"
+        assert _format_recipient_level("C") == "child"
+        assert _format_recipient_level("R") == "standalone"
+
+    def test_format_recipient_listing_includes_amount_labeled_as_last_12_months(self):
+        result = _format_recipient_listing(self.BOEING_LISTING)
+        assert "$30,309,729,588.71" in result
+        assert "last 12 months" in result
+
+    def test_format_recipient_listing_includes_recipient_id_for_followup(self):
+        result = _format_recipient_listing(self.BOEING_LISTING)
+        assert "recipient_id: 419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P" in result
+
+    def test_format_recipient_listing_shows_level(self):
+        assert "[parent]" in _format_recipient_listing(self.BOEING_LISTING)
+
+    def test_format_recipient_address_full_for_a_normal_business(self):
+        # Confirmed against the real live usaspending.gov Boeing page,
+        # pasted in by hand: full street address is shown for a business.
+        result = _format_recipient_address(self.BOEING_LOCATION)
+        assert "929 LONG BRIDGE DR" in result
+        assert "ARLINGTON" in result
+        assert "VA" in result
+
+    def test_format_recipient_state_only_hides_street_address(self):
+        # Used for the redacted/aggregate bucket case - narrower than
+        # _format_recipient_address deliberately, not an omission.
+        result = _format_recipient_state_only(self.BOEING_LOCATION)
+        assert "929 LONG BRIDGE DR" not in result
+        assert result == "VA"
+
+    def test_format_recipient_overview_normal_shows_real_name_and_full_address(self):
+        result = _format_recipient_overview(self.BOEING_OVERVIEW)
+        assert "THE BOEING COMPANY" in result
+        assert "929 LONG BRIDGE DR" in result
+        assert "$439,084,269,687.36" in result
+
+    def test_format_recipient_overview_business_types_reformatted(self):
+        result = _format_recipient_overview(self.BOEING_OVERVIEW)
+        assert "Corporate Entity Not Tax Exempt" in result
+        assert "corporate_entity_not_tax_exempt" not in result
+
+    def test_format_recipient_overview_loan_fields_shown_even_at_zero(self):
+        # Deliberate: unlike get_award_details's loan case, the live
+        # usaspending.gov page itself always shows this line ("$0 from 0
+        # transactions") - confirmed by pasting the real page in - so it's
+        # never suppressed here.
+        result = _format_recipient_overview(self.BOEING_OVERVIEW)
+        assert "Face value of loans: $0.00" in result
+
+    def test_format_recipient_overview_self_referential_parent_not_shown_as_a_separate_entity(self):
+        # Real live shape: a P-level recipient's own parent_id can equal
+        # its own recipient_id (not a real distinct parent) - must not
+        # print "Parent: THE BOEING COMPANY [recipient_id: <itself>]".
+        result = _format_recipient_overview(self.BOEING_OVERVIEW)
+        assert "Parent:" not in result
+
+    def test_format_recipient_overview_real_parent_shown_with_id(self):
+        data = self.BOEING_OVERVIEW.model_copy(
+            update={"parent_id": "different-id-P", "parent_name": "SOME PARENT CORP"}
+        )
+        result = _format_recipient_overview(data)
+        assert "Parent: SOME PARENT CORP [recipient_id: different-id-P]" in result
+
+    def test_format_recipient_overview_redacted_bucket_hides_sentinel_name(self):
+        result = _format_recipient_overview(self.REDACTED_OVERVIEW)
+        assert "REDACTED DUE TO PII" not in result.split("\n")[0]  # not presented as a real name
+        assert "pooled aggregate" in result
+
+    def test_format_recipient_overview_redacted_bucket_narrows_location(self):
+        result = _format_recipient_overview(self.REDACTED_OVERVIEW)
+        assert "PLANT CITY" not in result
+        assert "FL" in result
+
+    def test_format_recipient_overview_redacted_bucket_still_shows_totals(self):
+        # The totals are real (they're just not one entity's totals) - not
+        # hidden, just caveated. Formatting must not crash or omit them.
+        result = _format_recipient_overview(self.REDACTED_OVERVIEW)
+        assert "$161,426,671,098.53" in result
 
 
 class TestNormalizeDateType:
@@ -673,6 +1297,27 @@ class TestNormalizeGroup:
             _normalize_group("week")
 
 
+class TestNormalizeRecipientAwardType:
+    # POST /api/v2/recipient/'s own award_type enum (recipient.md) - a
+    # real, different, coarser vocabulary from AWARD_TYPE_GROUPS: 6 broad
+    # buckets, no sub-type granularity (no cooperative_agreement, no
+    # bpa_call), confirmed from the live contract.
+
+    def test_all_six_real_values_accepted(self):
+        assert RECIPIENT_AWARD_TYPES == {
+            "all", "contracts", "grants", "loans", "direct_payments", "other_financial_assistance",
+        }
+        for award_type in RECIPIENT_AWARD_TYPES:
+            assert _normalize_recipient_award_type(award_type) == award_type
+
+    def test_case_and_spacing_insensitive(self):
+        assert _normalize_recipient_award_type("Direct Payments") == "direct_payments"
+
+    def test_garbage_raises(self):
+        with pytest.raises(USASpendingAPIError, match="Unknown award_type"):
+            _normalize_recipient_award_type("cooperative_agreement")
+
+
 class TestLiteralTypesMatchVocabulary:
     # The whole point of adding typing.Literal types (so beta_tool's schema
     # generation emits a real JSON-schema enum, constraining what the model
@@ -699,6 +1344,9 @@ class TestLiteralTypesMatchVocabulary:
 
     def test_scope_literal_is_domestic_foreign(self):
         assert set(get_args(Scope)) == {"domestic", "foreign"}
+
+    def test_recipient_award_type_literal_matches_recipient_award_types(self):
+        assert set(get_args(RecipientAwardType)) == RECIPIENT_AWARD_TYPES
 
 
 class TestClampLimit:

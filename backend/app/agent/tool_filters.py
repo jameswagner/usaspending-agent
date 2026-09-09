@@ -100,6 +100,31 @@ def _normalize_award_type(award_type: str) -> str:
     return award_type.strip().lower().replace(" ", "_").replace("-", "_")
 
 
+# POST /api/v2/recipient/'s own award_type enum (recipient.md) - a real,
+# different, coarser vocabulary from AWARD_TYPE_GROUPS/AwardType above, not
+# reusable: only 6 broad buckets, no sub-type granularity (no
+# cooperative_agreement, no bpa_call), and "direct_payments" here is
+# singular where AwardType splits it into direct_payment_specified/
+# direct_payment_unrestricted. Confirmed from the live contract, not
+# assumed to line up just because both are "award type" filters.
+RECIPIENT_AWARD_TYPES = {
+    "all", "contracts", "grants", "loans", "direct_payments", "other_financial_assistance",
+}
+
+RecipientAwardType = Literal[
+    "all", "contracts", "grants", "loans", "direct_payments", "other_financial_assistance",
+]
+
+
+def _normalize_recipient_award_type(award_type: str) -> str:
+    normalized = award_type.strip().lower().replace(" ", "_").replace("-", "_")
+    if normalized not in RECIPIENT_AWARD_TYPES:
+        raise USASpendingAPIError(
+            f"Unknown award_type '{award_type}'. Must be one of: {', '.join(sorted(RECIPIENT_AWARD_TYPES))}"
+        )
+    return normalized
+
+
 # USPS 2-letter codes for the 50 states + DC + the territories the live
 # API's LocationObject.state field accepts (confirmed format from
 # search_filters.md's examples, e.g. "state": "VA"). Code-owned because no
@@ -229,12 +254,13 @@ def _validate_cfda_program(cfda_program: str) -> str:
 
 def _build_filters(
     client: USASpendingClient,
-    agency_name: str,
+    agency_name: str | None,
     start_fiscal_year: int,
     end_fiscal_year: int,
     *,
     award_type: str | None = None,
     recipient_name: str | None = None,
+    recipient_id: str | None = None,
     min_amount: float | None = None,
     max_amount: float | None = None,
     performed_in_state: str | None = None,
@@ -291,16 +317,45 @@ def _build_filters(
     each thousands of entries. A keyword->code lookup (the live
     autocomplete/naics/psc/cfda endpoints) was considered and deliberately
     not built - see ADVANCED_FILTER_FIELD_COVERAGE's naics_codes entry.
+
+    agency_name is optional (2026-09-08) - a cross-agency, recipient-only
+    question ("how much has Boeing received from any agency") has no
+    answer at all if an agency must always be named first. At least one of
+    agency_name/recipient_name/recipient_id must be given, or this raises:
+    a query scoped by none of them is "all federal spending, ever," not a
+    real, answerable question, and letting it through silently would be
+    the same "confidently wrong/unbounded" shape this project has already
+    guarded against elsewhere (the tool-call budget, the limit clamp).
+
+    recipient_id is a real, precise filter - confirmed live 2026-09-08 to
+    reproduce a recipient's true all-time total to the penny, unlike
+    recipient_name (a text match, confirmed wrong in both directions: it
+    can sweep in unrelated similarly-named entities, e.g. a joint venture,
+    AND miss real subsidiaries whose legal name doesn't contain the
+    parent's name at all - see BACKLOG.md's recipient-profile entry).
+    Prefer recipient_id whenever one has already been resolved (e.g. via
+    search_recipients). Only wired through here for
+    get_spending_by_category/get_spending_over_time - confirmed live that
+    search_awards silently ignores this filter entirely (the live API's
+    own `messages` field says so explicitly), so it's never passed through
+    on that tool's path.
     """
-    agency = client.find_agency_by_name(agency_name)
-    if agency is None:
-        raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
+    if agency_name is None and recipient_name is None and recipient_id is None:
+        raise USASpendingAPIError(
+            "At least one of agency_name, recipient_name, or recipient_id must be given - "
+            "a question scoped by none of them would mean all federal spending, ever."
+        )
 
     start_date, end_date = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
     kwargs: dict = {
-        "agencies": [AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)],
         "time_period": [TimePeriod(start_date=start_date, end_date=end_date)],
     }
+
+    if agency_name is not None:
+        agency = client.find_agency_by_name(agency_name)
+        if agency is None:
+            raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
+        kwargs["agencies"] = [AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)]
 
     if award_type is not None:
         award_type_codes = AWARD_TYPE_GROUPS.get(_normalize_award_type(award_type))
@@ -313,6 +368,9 @@ def _build_filters(
     if recipient_name is not None:
         # API caps recipient_search_text at 1 item (search_filters.md).
         kwargs["recipient_search_text"] = [recipient_name]
+
+    if recipient_id is not None:
+        kwargs["recipient_id"] = recipient_id
 
     if min_amount is not None or max_amount is not None:
         if min_amount is not None and max_amount is not None and min_amount > max_amount:
@@ -362,7 +420,16 @@ def _build_filters(
 # fields" list) - the amount field is NOT base, it's resolved per-award_type
 # below and appended separately, since "Award Amount" is only valid for
 # Contracts/IDVs/Non-Loan-Assistance - Loans expose "Loan Value" instead.
-SEARCH_AWARDS_FIELDS_BASE = ["Award ID", "Recipient Name", "Awarding Agency", "Description"]
+#
+# generated_internal_id is the hash-style id (e.g.
+# "CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-") that GET /api/v2/awards/
+# {award_id}/ actually requires - confirmed live (2026-09-08) that the
+# plain "Award ID" (PIID/FAIN) 404s there. Live-verified present and
+# non-empty across 993 real awards spanning every award_type family
+# (contracts A/B/C/D, all 8 IDV sub-types, grants, loans, direct
+# payments, insurance/other) across 12 agencies - safe to rely on
+# unconditionally, not just for the common cases.
+SEARCH_AWARDS_FIELDS_BASE = ["Award ID", "generated_internal_id", "Recipient Name", "Awarding Agency", "Description"]
 
 LOAN_AWARD_TYPE_CODES = {"07", "08"}
 
@@ -391,8 +458,10 @@ def _amount_field_for_award_type(award_type: str) -> str:
 def _record_optional_filter_context(
     context: dict,
     *,
+    agency_name: str | None = None,
     award_type: str | None = None,
     recipient_name: str | None = None,
+    recipient_id: str | None = None,
     min_amount: float | None = None,
     max_amount: float | None = None,
     performed_in_state: str | None = None,
@@ -410,8 +479,10 @@ def _record_optional_filter_context(
     filters were used for that call, not every filter this tool supports
     in the abstract."""
     for key, value in (
+        ("agency_name", agency_name),
         ("award_type", award_type),
         ("recipient_name", recipient_name),
+        ("recipient_id", recipient_id),
         ("min_amount", min_amount),
         ("max_amount", max_amount),
         ("performed_in_state", performed_in_state),

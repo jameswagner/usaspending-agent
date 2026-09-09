@@ -33,11 +33,14 @@ from .tools import (
     _record_code_execution_calls,
     _tool_call_log,
     get_agency_budget,
+    get_award_details,
+    get_recipient_details,
     get_spending_by_category,
     get_spending_over_time,
     lookup_agency,
     search_awards,
     search_guide,
+    search_recipients,
 )
 
 # code_execution_20260521 is the latest tool version - on Haiku 4.5 (the
@@ -96,7 +99,7 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have thirteen tools. Six retrieve data: search_guide "
+        "have sixteen tools. Nine retrieve data: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
         "toptier code), get_agency_budget (an agency's appropriated budgetary "
@@ -106,16 +109,32 @@ def _build_system_prompt() -> str:
         "budget/appropriations question: budgetary resources and award "
         "spending are different numbers for the same agency, not "
         "interchangeable, even though both are dollar figures), "
-        "get_spending_by_category (an agency's award spending broken "
-        "down by NAICS/PSC/sub-agency/etc. for a fiscal year range), "
-        "get_spending_over_time (an agency's award spending trend across "
-        "fiscal years/quarters/months), and search_awards (individual "
-        "contract/grant/loan records for an agency and fiscal year range — "
-        "use this for 'show me awards from X' or 'who received money from "
-        "X', not for aggregate breakdowns or trends). Six do arithmetic: "
+        "get_spending_by_category (award spending broken down by "
+        "NAICS/PSC/sub-agency/etc. for a fiscal year range, scoped by an "
+        "awarding agency and/or a recipient — at least one of the two is "
+        "required), get_spending_over_time (an award spending trend across "
+        "fiscal years/quarters/months, same agency-and/or-recipient "
+        "scoping), search_awards (individual contract/grant/loan records "
+        "for a fiscal year range, scoped by an awarding agency and/or a "
+        "recipient — use this for 'show me awards from X' or 'who received "
+        "money from X', not for aggregate breakdowns or trends), "
+        "get_award_details (full details — description, dates, competition "
+        "data, recipient, funding — for ONE specific award, given the "
+        "internal_id shown alongside a search_awards result; use this only "
+        "for a follow-up question about a specific award already found via "
+        "search_awards, never to browse or list awards), search_recipients "
+        "(find a company/organization/individual's exact recipient_id by "
+        "name, UEI, or DUNS — a name alone is often genuinely ambiguous, so "
+        "always resolve one here before scoping a spending question by "
+        "recipient_id, rather than guessing an ID or relying on a bare "
+        "recipient_name text filter when precision matters), and "
+        "get_recipient_details (full profile — identity, parent company, "
+        "address, business types, total federal transactions — for ONE "
+        "already-resolved recipient_id from search_recipients; never guess "
+        "a recipient_id). Six do arithmetic: "
         "sum_values, average, percentage_of, delta, ratio, and rank_values. "
         "One more, code_execution, is a general-purpose Python/Bash sandbox. "
-        "You must call at least one of the six data tools before writing any "
+        "You must call at least one of the nine data tools before writing any "
         "answer, every question, with no exceptions — including questions "
         "that seem "
         "unrelated to federal spending, general-knowledge questions, "
@@ -223,6 +242,9 @@ def ask(question: str) -> AgentResult:
             get_spending_by_category,
             get_spending_over_time,
             search_awards,
+            get_award_details,
+            search_recipients,
+            get_recipient_details,
             sum_values,
             average,
             percentage_of,

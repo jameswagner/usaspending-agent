@@ -2,6 +2,73 @@
 
 Deferred ideas and known minor issues — not urgent, not forgotten.
 
+## Added: per-period obligation breakdown on get_agency_budget, and a real arithmetic-in-prose regression found along the way
+
+A functional deep dive on `get_agency_budget` (params in vs. the real contract's
+fields out, not a bug hunt) found the live endpoint
+(`/api/v2/agency/{toptier_code}/budgetary_resources/`) returns an
+`agency_obligation_by_period` array per fiscal year — already parsed into
+`AgencyYearBudget.agency_obligation_by_period` by the client, but never
+surfaced anywhere in the tool's formatted output. A real, cheap gap: a
+question like "how did NSF's obligations build up over FY2024" had no way
+to be answered even though the data was already sitting in memory.
+
+Verified live before writing any format code, not assumed:
+- Period numbering maps to fiscal months starting at P01 = October
+  (confirmed against the local Glossary's "Submission Period" entry, not
+  guessed).
+- Each period's `obligated` value is **cumulative from the start of the
+  fiscal year**, not a per-period incremental amount — confirmed live
+  against NSF FY2024 (period 12's value, $9,746,030,086.42, exactly equals
+  that year's `agency_total_obligated`). Same trap shape as the
+  `search_awards`/cumulative-`Award Amount` bug found earlier in this
+  project.
+
+Fixed as an opt-in parameter, `include_period_breakdown: bool = False` —
+off by default (most budget questions just want yearly totals; the
+breakdown adds ~11 extra numbers per fiscal year), with the docstring
+telling the model when to actually set it. Extracted the pure formatting
+logic into `_format_period_breakdown` (module-level, no client dependency)
+so it's directly unit-testable, matching this project's existing pattern
+of unit-testing pure helpers rather than the `@beta_tool` wrappers
+themselves.
+
+**Real regression found by using the fix, not by reading the diff:**
+verified live via a real `/ask` call and its LangSmith trace
+(`trace4.json`) that asking "was NSF's FY2024 spending front-loaded or
+back-loaded" makes the model call `get_agency_budget` with
+`include_period_breakdown=true` correctly, then compute six-plus
+percentages and a subtraction **entirely in prose** in its final answer —
+zero `percentage_of`/`delta` tool calls, a direct violation of the system
+prompt's existing, explicit, already-tested "never compute arithmetic
+yourself" rule. The new period-breakdown data apparently creates a fresh
+*occasion* for an old, general enforcement gap: a monotonic sequence
+building toward an already-visible final total reads to the model as
+"obviously safe to eyeball," even though the system prompt's own rule
+already names "a value's share of a total" as exactly the case
+`percentage_of` exists for.
+
+Tried one fix — an explicit sentence in `get_agency_budget`'s own
+docstring telling the model to call `percentage_of`/`delta` rather than
+compute derived figures from this specific data itself — and re-verified
+live with the identical question after restarting the server. **Did not
+work**: same prose percentages, same missing tool call. A single tool's
+docstring note isn't competing effectively against the model's own
+judgment here. Independently checked the actual arithmetic the model did
+in prose and it was numerically correct both times (43.19%→"43%",
+56.8%→"57%", delta exact) — this is a process/auditability violation, not
+a correctness bug in this instance, but it's still the exact failure mode
+the arithmetic-tool rule exists to prevent, and it will not always
+happen to get the number right.
+
+**Left open, not chased further this pass:** a real fix likely needs the
+system prompt's general arithmetic-tools rule itself to gain a concrete
+example matching this shape (a list of cumulative values building toward a
+known total), not another single tool's docstring. Deferred as a known,
+documented limitation rather than open-ended prompt tuning during a
+deploy-focused week — revisit if it shows up on other tools too, which
+would confirm it's systemic rather than specific to this one data shape.
+
 ## Added: per-term live links for Glossary citations
 
 Following the same treatment already given to Analyst's Guide citations
@@ -762,6 +829,321 @@ infrastructure, and the five actual tool definitions. Split the former into
   no foreign-country granularity beyond the existing domestic/foreign scope.
 - The already-known-stale `category` list (4 of 18 documented categories 404
   live) is unchanged by this work — see the "Daily health check" entry above.
+
+## Idea: four endpoint gaps found via a full API-contract audit, ranked
+
+Audited every tool in `tools.py` against the live contract tree
+(`fedspendingtransparency/usaspending-api`, `master`,
+`usaspending_api/api_contracts/contracts/v2/`, fetched fresh via `gh api`
+— ~150 documented endpoint files, not assumed from training data). Six
+endpoint groups are currently covered (`references/toptier_agencies`,
+`agency/{toptier_code}/` + `.../budgetary_resources`,
+`search/spending_by_category/{category}`, `search/spending_over_time`,
+`search/spending_by_award`); everything else was triaged into "genuinely
+relevant," "real but niche" (IDV detail, DATA Act submission-quality
+reporting, disaster/COVID reporting, Treasury-account-level budget
+execution), and "not worth it for a chat agent" (`bulk_download`/`download`
+- return files/zips; `llm/filter-search` - contract itself marks it
+`[UNDER DEVELOPMENT | NOT AVAILABLE]`; most other `autocomplete`/`references`
+- UI-typeahead helpers this app already covers with hardcoded vocabularies
+like `US_STATE_ABBREVIATIONS`/`AWARD_TYPE_GROUPS`).
+
+Four gaps landed in "genuinely relevant" - not yet scoped into an
+implementation plan, just captured here so the audit doesn't evaporate.
+Recommended order:
+
+1. **`GET /api/v2/awards/{award_id}/`** - full award-detail/profile
+   (description, PIID, period of performance, competition data,
+   parent-award/IDV linkage, subaward count/amount). `search_awards`
+   already returns an Award ID in every result row (`SEARCH_AWARDS_FIELDS_BASE`),
+   but there's currently no way to drill into any of them - "tell me more
+   about that first contract" is a dead end today. Recommended first: the
+   ID is already in hand from a prior tool call (no fuzzy name-resolution
+   step needed, unlike agency/recipient lookups), it's a single GET-by-ID
+   with no `_build_filters` involvement, and it slots directly into the
+   existing `_raw` + `@beta_tool` + citation + budget-check pattern every
+   other tool already follows - lowest lift of the four, and closes a gap
+   that exists in the product right now.
+2. **Recipient profile** (`recipient/*` + an `autocomplete/recipient`-style
+   name resolution step). The more structurally important gap - every
+   existing tool requires `agency_name` as a mandatory parameter
+   (`_build_filters`, `tool_filters.py`), so "how much has Lockheed Martin
+   received in total" (not scoped to one agency) can't be answered at all
+   today. Real API constraint discovered during the audit: `recipient_id`
+   is an opaque hash-like string, not a name, so this needs a
+   `find_agency_by_name`-style resolution step first, except messier
+   (non-unique namespace - individual vs. parent/child corporate entities)
+   - roughly double the lift of the award-detail tool. Do this second, not
+   first, for that reason.
+
+   **Design deep dive (2026-09-08), not yet implemented:** walked the real
+   contracts (`recipient.md` - `POST /api/v2/recipient/`, keyword/UEI/DUNS
+   search; `recipient/recipient_id.md` - `GET /api/v2/recipient/{recipient_id}/
+   {?year}`, the profile) and live-verified several things rather than
+   assuming from the docs alone:
+   - Name search is genuinely ambiguous, not a data-quality fluke - "Leidos"
+     (546 total matches) and "Boeing" (162) each resolve to 6+ distinct
+     `recipient_id`s sharing the identical display name, spanning billions of
+     dollars apart. Silently auto-picking one (the `find_agency_by_name`
+     pattern) would be unsafe here; this needs to be a model-visible
+     `search_recipients` tool, not a hidden resolution helper, so the model
+     sees every candidate and can disambiguate or ask the user.
+   - `recipient_level == "P"` (parent) profiles are true rollups, confirmed
+     to the penny: Boeing's `P`-level `total_transaction_amount` ($439.08B,
+     `year=all`) exactly matched the sum of all 123 real children fetched via
+     `recipient/children/{uei}/`. Prefer the `P`-level candidate when one
+     exists; its own profile call already is the complete answer.
+   - The search endpoint's `amount` field is **always trailing-12-months**
+     (no `year` param exists there) while the profile endpoint's
+     `total_transaction_amount` respects `year` (a fiscal year, `"all"`, or
+     `"latest"`) - two different time windows on what looks like the same
+     kind of number, a real docstring-worthy distinction.
+   - A `recipient_id` can resolve to a shared `"REDACTED DUE TO PII"`
+     aggregate bucket (one real example: $14.9B, 2.24M transactions across
+     what is clearly not one person) rather than a real individual - unlike
+     the award side's `record_type`, there's no typed flag here, only a
+     sentinel string in `name` to match on.
+   - **The precise mechanism for cross-agency recipient questions
+     ("which agencies has Boeing received money from") is `AdvancedFilters`'
+     `recipient_id` field** (`search/spending_by_category/awarding_agency.md` -
+     "A unique identifier for the recipient which includes the recipient hash
+     and level. This filter is not supported by subawards.") - not currently
+     modeled on this codebase's `AdvancedFilters` at all. Verified live: with
+     `agency_name` unset and `recipient_id` set to Boeing's exact parent ID,
+     `spending_by_category(category="awarding_agency")` reproduces the
+     complete, correct all-time total ($439,079,427,444.52) with the right
+     agencies in the right order (DOD dominant, then NASA). Two tempting
+     alternatives were tried first and both really are worse: exact parent
+     DUNS under-matches by ~50% (misses child-subsidiary DUNS entirely,
+     $221.99B vs the true $439.08B), and a loose name keyword via
+     `recipient_search_text` over-matches by ~10% (sweeps in unrelated
+     same-named entities like "BELL BOEING JOINT PROJECT OFFICE"). This
+     field isn't in the shared `api_contracts/search_filters.md` reference
+     doc at all - only in the per-category endpoint contracts - the same
+     doc-drift risk `AdvancedFilters`' own docstring already warns about for
+     `object_class`/`psc_codes` (see `private/HUMAN_INTERVENTIONS.md` #26).
+   - **`recipient_id` is not universally supported - confirmed per-endpoint,
+     live, not assumed from one working case.** `spending_by_category` and
+     `spending_over_time` both honor it correctly (the latter: $24.04B for
+     Boeing in FY2021 vs. $5.31 trillion unfiltered government-wide, clearly
+     real filtering). `search_awards`/`spending_by_award` does **not** -
+     `spending_by_award.md`'s own `AdvancedFilterObject` section doesn't list
+     it at all, and live-verified it: passing `recipient_id` there returns
+     completely unfiltered top-government-wide contracts (Humana, Lockheed
+     Martin, Sandia, UT-Battelle - no Boeing anywhere in the results) with
+     **no error, no warning** - a silent-wrong failure, not a clean decline,
+     the exact risk category this project's own filter-coverage discussion
+     (`ADVANCED_FILTER_FIELD_COVERAGE`) worried about in the abstract for a
+     future unmodeled field. Implementation implication: `recipient_id` can
+     only be wired into `get_spending_by_category`/`get_spending_over_time`'s
+     `_build_filters` path - `search_awards` needs to keep using
+     `recipient_search_text` (imprecise, but at least it does something) or
+     decline the parameter outright, not silently accept and ignore it.
+   - **Net implication:** answering "which agencies has X received money
+     from" needs *two* pieces of work together, not either alone: (1) this
+     entry's `search_recipients`/`get_recipient_details` pair, to resolve a
+     name to its exact parent-level `recipient_id`, and (2) making
+     `agency_name` optional on `_build_filters`/the three spending tools
+     plus modeling `recipient_id` on `AdvancedFilters`, so that ID can
+     actually be used as a filter without also naming one agency. Neither
+     change alone closes the gap - confirmed live in both directions before
+     writing this down, not assumed.
+
+   **Fixed (2026-09-08):** both pieces shipped together, exactly as scoped
+   above. `search_recipients`/`get_recipient_details` (`tools.py`) - model-
+   visible, not a hidden resolution helper like `find_agency_by_name` (the
+   Leidos/Boeing ambiguity makes silent auto-pick unsafe at this scale).
+   `agency_name` made optional (`str | None = None`) on
+   `get_spending_by_category`/`get_spending_over_time`/`search_awards` and
+   on `_build_filters` itself, which now raises a clean error if
+   `agency_name`, `recipient_name`, and `recipient_id` are *all* omitted
+   (`tool_filters.py`) - refusing an unscoped "all federal spending, ever"
+   query rather than silently running it. `recipient_id` added to
+   `AdvancedFilters` and wired through `get_spending_by_category`/
+   `get_spending_over_time` only, never `search_awards` (confirmed
+   silently ignored there). `build_tool_citation`'s three existing
+   branches (`response_shaping.py`) - previously assumed `agency_name`
+   always present via `context["agency_name"]` - fixed to fall back to
+   `recipient_name`/`recipient_id` via a new `_citation_scope_label`
+   helper, so an agency-less call doesn't `KeyError`.
+
+   Live-verified end-to-end via the real agent loop, not just unit tests:
+   "Which federal agencies has Boeing received money from, and how much
+   from each?" correctly chains `search_recipients` (resolves to the
+   parent-level `recipient_id`) → `get_spending_by_category` (no
+   `agency_name`, `recipient_id` only) and returns the real 19-agency
+   breakdown, DOD/NASA dominant, matching the direct-API verification
+   from the design pass exactly. A second live check ("tell me about
+   Leidos as a federal recipient") correctly resolved to the parent
+   entity (`LEIDOS HOLDINGS, INC.`, not one of the 6+ child registrations
+   sharing a similar name) and reported both the all-time total ($134.2B)
+   and the trailing-12-month figure ($9.5B) without conflating the two.
+
+   `RecipientOverview`/`RecipientListing`/`RecipientLocation`/
+   `ParentRecipient` modeled in `usaspending_client.py`. Formatting
+   (`tools.py`) implements every design decision from the deep dive:
+   `recipient_level` translated to words not a bare letter; UEI labeled
+   primary, DUNS labeled "Legacy DUNS" (the live platform's own language);
+   full street address for a normal business, narrowed to state-only only
+   for the `"REDACTED DUE TO PII"` pooled-aggregate case (detected by
+   sentinel string - `RecipientOverview` has no typed flag for this,
+   unlike the award side's `record_type`); loan fields always shown, not
+   suppressed at zero (unlike `get_award_details`'s loan case - confirmed
+   live the real usaspending.gov page itself always shows this line, so
+   there's no adjacent nonzero figure to make a zero read as contradictory
+   here); a self-referential `parent_id == recipient_id` (a real live
+   shape, confirmed on Boeing's own parent record) is not shown as a
+   separate "Parent:" entity. `search_recipients`'s own `award_type` uses
+   a new `RecipientAwardType` Literal (6 broad buckets) - a real, different,
+   coarser vocabulary from the existing 17-value `AwardType`, confirmed
+   from the live contract, not assumed to line up.
+
+   Deliberately deferred, not forgotten: whether `search_recipients`'s
+   candidate list is ever chart-worthy (both new tools sit in
+   `NEVER_CHART_TOOLS` for now); `recipient/children/{duns_or_uei}/` as a
+   third, model-visible capability for listing a company's subsidiaries
+   directly (used only for our own verification during the design pass,
+   never exposed as a tool).
+3. **NAICS/PSC/CFDA code lookup** (`autocomplete/naics`, `autocomplete/psc`,
+   `autocomplete/cfda`) - resolve a description to the exact code these
+   tools require. Not hypothetical: `get_spending_by_category`'s and
+   `get_spending_over_time`'s own docstrings already document the current
+   workaround verbatim ("if you only have a description, use category=...
+   to browse instead of guessing a code") - this closes friction this
+   project has already had to write words around, rather than a gap found
+   only by reading the contracts.
+4. **`search/spending_by_geography`** - full per-state/map breakdown in one
+   call. Currently only reachable indirectly, one state at a time, via the
+   existing `performed_in_state`/`recipient_in_state` filters on the other
+   three tools - a "which states got the most X funding" question has to
+   be answered by repeated single-state guesses today rather than one
+   query.
+
+Not independently verified live yet (unlike this project's usual practice
+of confirming a gap against the real API before writing code for it) -
+this is a contract-reading audit, not a live-traffic one. Verify each
+endpoint's actual current behavior (the category endpoint's own
+documented-vs-live 404 mismatch, see the "Daily health check" entry above,
+is a reminder these contracts can drift from what's actually live) before
+implementing.
+
+## Fixed: idvs/amounts/{award_id}/ rollup wired into get_award_details
+
+Split off from the award-detail tool design walkthrough (see the "four
+endpoint gaps" entry above - that entry's #1 item is now being scoped in
+detail, not yet implemented). `GET /api/v2/awards/{award_id}/`'s own
+`total_obligation` for an IDV (a BPA/GWAC/multi-award IDC) can be
+genuinely near-zero even for a real, active vehicle - confirmed live
+2026-09-08: a real NSF IDIQ (`CONT_IDV_NSFOIA0408601_4900`, Institute for
+Defense Analyses) came back `total_obligation: 0.0`, `subaward_count: 0`.
+An IDV is a contracting *vehicle*, not itself a spending transaction - the
+real obligated dollars sit on the child orders placed against it.
+
+`GET /api/v2/idvs/amounts/{award_id}/` returns the actual rollup:
+`child_award_count`/`child_award_total_obligation` (orders placed
+directly against this IDV) plus a second tier,
+`grandchild_award_count`/`grandchild_award_total_obligation` (orders
+against child IDVs nested under this one - IDVs can nest). `POST
+/api/v2/idvs/awards/` lists the actual child/grandchild award records
+(paginated, sortable).
+
+**Decision for the award-detail tool's first version:** ship against
+`/awards/{award_id}/` alone, with an explicit caveat in the tool's output
+when `category == "idv"` (the vehicle's own total doesn't include
+child-order spending) rather than bundling a second live API call into
+day one. This entry tracks doing the rollup properly afterward - a second
+tool (or an `include_child_orders` opt-in flag on the award-detail tool,
+same pattern as `get_agency_budget`'s `include_period_breakdown`) that
+calls `idvs/amounts` and surfaces the real child/grandchild totals instead
+of (or alongside) the vehicle's own near-meaningless figure.
+
+**Fixed (2026-09-08):** `include_child_orders: bool = False` added to
+`get_award_details`, exactly the deferred flag design above. New
+`IDVAmountsResponse` model + `USASpendingClient.get_idv_amounts`
+(`usaspending_client.py`) and `get_idv_amounts_raw` (`tools.py`) call
+`GET /api/v2/idvs/amounts/{award_id}/`; `_format_contract_or_idv` replaces
+the generic "$0 doesn't mean nothing happened" caveat with the real
+numbers when the rollup is present, and suppresses the grandchild line
+when `grandchild_award_count == 0` (the common case - most IDVs have no
+nested child-IDVs). The account-level/`*_by_defc` fields on this response
+are modeled but never surfaced, same File C/File D reasoning as everywhere
+else in this tool. A failed rollup fetch degrades gracefully (falls back
+to the existing caveat) rather than failing the whole `get_award_details`
+call over an enhancement fetch. Live-verified: the exact
+`CONT_IDV_NSFOIA0408601_4900` IDV used throughout this design discussion
+- $0.00 on the base endpoint - actually has 237 child awards totaling
+$175,053,251.83, confirmed directly against the live API.
+
+**Real, unanticipated bug found and fixed via live end-to-end testing, not
+just the unit tests:** asked the real agent loop "how much has been
+ordered under this vehicle" for this exact IDV. The model found a *child*
+delivery order via `search_awards`, called `get_award_details` on it, and
+reported the *child's own* $57.6M obligated as if it answered the
+vehicle-wide question - it never reached the parent IDV at all. Root
+cause: `_format_contract_or_idv`'s "Issued under parent IDV ..." line
+showed the parent's `piid`/`agency_name`/vehicle type, but never its
+`generated_unique_award_id` (internal_id) - the one value a follow-up
+`get_award_details` call on the vehicle itself actually needs, and it was
+sitting right there in the live response the whole time (`parent_award`
+already includes it per `award_id.md`'s `ParentDetails` schema). Fixed by
+adding `[internal_id: ...]` to that line (mirroring `search_awards`'s own
+`internal_id` labeling) and updating `get_award_details`'s docstring to
+tell the model to use a parent's internal_id for vehicle-wide follow-ups
+rather than answering from the child contract's own total. Re-verified
+live with the identical question: the model now correctly chains
+`search_awards` -> `get_award_details` (child) -> `get_award_details`
+(parent, `include_child_orders=True`) and reports the real rollup number.
+
+## Fixed: surface the live API's own `messages` field - a general fix, not a per-filter patch
+
+Found while verifying `recipient_id`'s silent-ignore behavior on `search_awards`
+via a raw `curl` to `POST /api/v2/search/spending_by_award/` (bypassing this
+app's client entirely, to see the real wire response): the live API doesn't
+actually fail silently at all - it says exactly what happened, in the
+response body itself:
+
+```json
+"messages": ["The following filters from the request were not used: {'recipient_id'}. See https://api.usaspending.gov/docs/endpoints for a list of appropriate filters"]
+```
+
+Checked what this codebase does with that field, expecting to find it
+simply unread - found something more surprising: `SpendingByCategoryResponse`
+and `SpendingOverTimeResponse` (`usaspending_client.py`) **already model**
+`messages: list[str] | None = None` and have since they were first written.
+Nothing in `tools.py`'s three `@beta_tool` wrappers ever reads `.messages`
+off any of them. `SearchAwardsResponse` doesn't model the field at all - a
+smaller, second gap on top of the first.
+
+**Why this matters beyond `recipient_id`:** the live API's own
+"filters not used" self-report isn't specific to that one field - it fires
+for *any* filter combination the current endpoint doesn't support (a
+misspelled key, a field valid on one endpoint but not another, a future
+field this app models on `AdvancedFilters` for one endpoint that turns out
+not to apply to a different one). Writing a hand-maintained docstring
+caveat for each individually-discovered unsupported combination (the
+`recipient_id`-on-`search_awards` case, found only because someone
+happened to test it) doesn't scale and can't cover combinations nobody's
+tried yet. Reading and surfacing `.messages` generically - appended to the
+tool's output the same way `_truncation_note` already appends a
+`hasNext`-driven caveat - catches all of them, including ones not
+discovered yet, for free.
+
+**Fixed (2026-09-08):** `messages` added to `SearchAwardsResponse`
+(`usaspending_client.py`); a new `_format_api_messages` helper (`tools.py`,
+same "pure, unit-testable formatting function" pattern as
+`_truncation_note`) appends any non-empty `.messages` to all three tools'
+output, wrapped as `(API notice: ...)`. Verified live, twice: the exact
+`recipient_id`-on-`search_awards` reproduction case now surfaces
+`"The following filters from the request were not used: {'recipient_id'}..."`
+directly in the tool's own returned text; and, unprompted, a completely
+different real NSF query picked up an unrelated live message (a
+time-period floor notice) with zero code written specifically for that
+case - confirming this actually generalizes rather than only covering the
+one combination that motivated it. The open question about whether
+`messages` might ever be noisy/non-actionable enough to need filtering
+didn't come up in either live case - both were substantive and worth
+relaying verbatim - so no filtering was added; revisit if a noisy example
+ever turns up.
 
 ## Tied rerank scores in sanity_check.py
 

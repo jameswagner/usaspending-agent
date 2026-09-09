@@ -151,6 +151,25 @@ class AdvancedFilters(BaseModel):
     place_of_performance_locations: list[LocationObject] | None = None
     agencies: list[AgencyFilter] | None = None
     recipient_search_text: list[str] | None = None
+    # Not in the shared api_contracts/search_filters.md reference doc at all -
+    # only in individual endpoint contracts (e.g.
+    # search/spending_by_category/awarding_agency.md: "A unique identifier
+    # for the recipient which includes the recipient hash and level. This
+    # filter is not supported by subawards.") - found live 2026-09-08, not
+    # from that shared doc (see private/HUMAN_INTERVENTIONS.md #26).
+    # Confirmed live per-endpoint, not assumed universal:
+    # spending_by_category and spending_over_time both honor it correctly
+    # (spending_by_category: exact match to the penny against a real
+    # recipient's true all-time total). search_awards/spending_by_award
+    # does NOT - its own AdvancedFilterObject section doesn't list this
+    # field, and live-verified it's silently ignored there (a raw curl
+    # with this filter set returned completely unfiltered top-government-
+    # wide contracts, with the live API's own `messages` field explicitly
+    # saying so: "The following filters from the request were not used:
+    # {'recipient_id'}"). Only wired into get_spending_by_category/
+    # get_spending_over_time's _build_filters path - never exposed as a
+    # search_awards parameter.
+    recipient_id: str | None = None
     recipient_scope: Literal["domestic", "foreign"] | None = None
     recipient_locations: list[LocationObject] | None = None
     recipient_type_names: list[str] | None = None
@@ -193,6 +212,8 @@ ADVANCED_FILTER_FIELD_COVERAGE: dict[str, str] = {
     "place_of_performance_locations": "exposed (performed_in_state)",
     "agencies": "exposed (agency_name)",
     "recipient_search_text": "exposed (recipient_name)",
+    "recipient_id": "exposed (recipient_id) - get_spending_by_category/get_spending_over_time only, not "
+                    "search_awards (confirmed live: silently ignored there, see this field's own comment above)",
     "recipient_scope": "exposed (recipient_scope)",
     "recipient_locations": "exposed (recipient_in_state)",
     "recipient_type_names": "modeled, not exposed - vocabulary not yet verified against a real reference list, unlike award_type/state",
@@ -361,6 +382,156 @@ class SearchAwardsResponse(BaseModel):
 
     results: list[dict[str, Any]]
     page_metadata: PageMetadata | None = None
+    messages: list[str] | None = None
+
+
+class DEFCAmount(BaseModel):
+    """A COVID/disaster-relief Disaster Emergency Fund Code breakout,
+    per idvs/amounts/award_id.md. Modeled for completeness (cheap, and
+    matches this codebase's convention of typing a field's shape even
+    when not yet surfaced - see AdvancedFilters/ADVANCED_FILTER_FIELD_COVERAGE)
+    but not read anywhere yet - same Treasury-account-level reporting
+    pipeline (File C) already excluded from get_award_details's output
+    elsewhere for the File C/File D reconciliation-gap reason."""
+
+    code: str
+    amount: float
+
+
+class IDVAmountsResponse(BaseModel):
+    """GET /api/v2/idvs/amounts/{award_id}/ - the actual "how much has
+    been ordered under this vehicle" rollup for an IDV. An IDV's own
+    total_obligation (on GET /api/v2/awards/{award_id}/) reflects only the
+    vehicle's own direct activity - confirmed live 2026-09-08 that a real,
+    active NSF IDIQ came back $0.00 there. The real spending sits on the
+    child orders (and, for a nested vehicle, grandchild orders) placed
+    against it, which is what this endpoint actually reports.
+
+    One fixed shape (unlike GET /awards/{award_id}/, which returns one of
+    three different shapes depending on award category) - modeled as a
+    typed response, matching AgencyBudgetaryResourcesResponse's style,
+    rather than the raw-dict pattern client.get_award uses for the
+    polymorphic endpoint.
+
+    The four *_total_account_* /*_by_defc fields are modeled for
+    completeness but deliberately never surfaced in get_award_details's
+    output, same reasoning as DEFCAmount above."""
+
+    model_config = ConfigDict(extra="allow")
+
+    generated_unique_award_id: str
+    child_idv_count: int
+    child_award_count: int
+    child_award_total_obligation: float
+    child_award_base_and_all_options_value: float
+    child_award_base_exercised_options_val: float
+    child_total_account_outlay: float | None = None
+    child_total_account_obligation: float | None = None
+    child_award_total_outlay: float | None = None
+    child_account_outlays_by_defc: list[DEFCAmount] = []
+    child_account_obligations_by_defc: list[DEFCAmount] = []
+    grandchild_award_count: int
+    grandchild_award_total_obligation: float
+    grandchild_award_base_and_all_options_value: float
+    grandchild_award_base_exercised_options_val: float
+    grandchild_total_account_outlay: float | None = None
+    grandchild_total_account_obligation: float | None = None
+    grandchild_award_total_outlay: float | None = None
+    grandchild_account_outlays_by_defc: list[DEFCAmount] = []
+    grandchild_account_obligations_by_defc: list[DEFCAmount] = []
+
+
+class RecipientListing(BaseModel):
+    """One row of POST /api/v2/recipient/'s search results (recipient.md).
+
+    amount is ALWAYS trailing-12-months - the search endpoint takes no
+    `year` param at all, unlike RecipientOverview's own total_transaction_amount
+    below (which respects `year`). Confirmed live 2026-09-08: Boeing's
+    parent-level search-result amount ($30.3B) is dramatically smaller than
+    its real all-time profile total ($439.08B) - two different time
+    windows on what looks like the same kind of number, not the same
+    figure at different precision. Never conflate the two when formatting.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str | None = None
+    duns: str | None = None
+    uei: str | None = None
+    id: str
+    amount: float
+    recipient_level: Literal["R", "P", "C"]
+
+
+class SearchRecipientsResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    results: list[RecipientListing]
+    page_metadata: PageMetadata | None = None
+
+
+class RecipientLocation(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    address_line1: str | None = None
+    address_line2: str | None = None
+    address_line3: str | None = None
+    foreign_province: str | None = None
+    city_name: str | None = None
+    county_name: str | None = None
+    state_code: str | None = None
+    zip: str | None = None
+    zip4: str | None = None
+    foreign_postal_code: str | None = None
+    country_name: str | None = None
+    country_code: str | None = None
+    congressional_code: str | None = None
+
+
+class ParentRecipient(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    parent_name: str | None = None
+    parent_duns: str | None = None
+    parent_id: str | None = None
+    parent_uei: str | None = None
+
+
+class RecipientOverview(BaseModel):
+    """GET /api/v2/recipient/{recipient_id}/{?year} (recipient/recipient_id.md).
+
+    total_transaction_amount/total_transactions and the two
+    total_face_value_loan_* fields DO respect `year` (a fiscal year,
+    "all", or "latest" - the trailing 12 months) - the opposite of
+    RecipientListing.amount above, which never does. `name` can be the
+    literal sentinel string "REDACTED DUE TO PII" - confirmed live
+    2026-09-08 that this represents a shared, pooled bucket of many
+    PII-redacted individual recipients, not one person (one real example:
+    $14.9B, 2.24M transactions) - unlike the award side's `record_type`,
+    there's no typed flag here to detect this, only the sentinel string
+    itself. tools.py's formatting layer is what handles that case, not
+    this model.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str | None = None
+    alternate_names: list[str] = []
+    duns: str | None = None
+    uei: str | None = None
+    recipient_id: str
+    recipient_level: Literal["R", "P", "C"]
+    parent_name: str | None = None
+    parent_duns: str | None = None
+    parent_id: str | None = None
+    parent_uei: str | None = None
+    parents: list[ParentRecipient] = []
+    location: RecipientLocation | None = None
+    business_types: list[str] = []
+    total_transaction_amount: float
+    total_transactions: int
+    total_face_value_loan_amount: float
+    total_face_value_loan_transactions: int
 
 
 class USASpendingAPIError(Exception):
@@ -554,3 +725,75 @@ class USASpendingClient:
             body["sort"] = sort
         data = self._post("/api/v2/search/spending_by_award/", body)
         return SearchAwardsResponse(**data)
+
+    @traceable(run_type="tool", name="get_award")
+    def get_award(self, award_id: str) -> dict[str, Any]:
+        """Raw passthrough of GET /api/v2/awards/{award_id}/ - not modeled
+        as a single Pydantic type like the other _raw functions' responses,
+        since the actual shape returned (ContractResponse, IDVResponse, or
+        FinancialAssistanceResponse per award_id.md) varies by the award's
+        category and this app only surfaces a curated subset of each; the
+        formatting layer (tools.py's _format_award_details) picks out and
+        interprets the fields it needs directly from this dict.
+
+        award_id must be the hash-style generated_unique_award_id (e.g.
+        "CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-"), not the plain PIID/
+        FAIN search_awards's own "Award ID" field shows - confirmed live
+        2026-09-08 that the plain PIID/FAIN 404s here.
+        """
+        return self._get(f"/api/v2/awards/{award_id}/")
+
+    @traceable(run_type="tool", name="get_idv_amounts")
+    def get_idv_amounts(self, award_id: str) -> IDVAmountsResponse:
+        """The child/grandchild-order rollup for one IDV - see
+        IDVAmountsResponse's docstring for why this is a separate call
+        from get_award rather than something get_award itself returns.
+        Same award_id format as get_award (hash-style
+        generated_unique_award_id, not the plain PIID)."""
+        data = self._get(f"/api/v2/idvs/amounts/{award_id}/")
+        return IDVAmountsResponse(**data)
+
+    @traceable(run_type="tool", name="search_recipients")
+    def search_recipients(
+        self,
+        keyword: str,
+        award_type: str = "all",
+        limit: int = 10,
+        sort: str = "amount",
+        order: str = "desc",
+        page: int = 1,
+    ) -> SearchRecipientsResponse:
+        """POST /api/v2/recipient/ - keyword search over recipient name/UEI/
+        DUNS (recipient.md). Deliberately not a hidden resolution helper
+        like find_agency_by_name - live-verified 2026-09-08 that a plain
+        company name is genuinely ambiguous at this scale (546 total
+        matches for "Leidos", 6+ distinct recipient_ids sharing the
+        identical display name "LEIDOS, INC." alone), so the caller needs
+        to see every candidate, not have one silently picked.
+
+        award_type here is a real, different, coarser vocabulary than
+        AWARD_TYPE_GROUPS (6 values: all/contracts/grants/loans/
+        direct_payments/other_financial_assistance - no sub-type
+        granularity) - see RecipientAwardType in tool_filters.py.
+        """
+        body = {"keyword": keyword, "award_type": award_type, "limit": limit, "sort": sort, "order": order, "page": page}
+        data = self._post("/api/v2/recipient/", body)
+        return SearchRecipientsResponse(**data)
+
+    @traceable(run_type="tool", name="get_recipient")
+    def get_recipient(self, recipient_id: str, year: str | None = None) -> RecipientOverview:
+        """GET /api/v2/recipient/{recipient_id}/{?year} (recipient/recipient_id.md).
+        year is a fiscal year, "all", or "latest" (trailing 12 months).
+        Confirmed live 2026-09-08: omitting year entirely gives a total
+        matching year="latest" (within a fraction of a percent - the small
+        remaining gap is just the trailing-12-months window itself moving
+        between two separate real-time calls, not a different scope) - NOT
+        year="all", which is dramatically larger ($30.3B vs $439.08B for
+        the same Boeing recipient_id). Since that default duplicates what
+        RecipientListing.amount from search_recipients already shows,
+        get_recipient_details in tools.py defaults its own year param to
+        "all" rather than leaving it unset, so the profile call gives a
+        genuinely different, additive answer."""
+        params = {"year": year} if year else None
+        data = self._get(f"/api/v2/recipient/{recipient_id}/", params=params)
+        return RecipientOverview(**data)

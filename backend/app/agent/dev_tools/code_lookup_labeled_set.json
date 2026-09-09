@@ -1,0 +1,32 @@
+{
+  "_notes": [
+    "Labeled set for eval_code_lookup.py (issue #51). Each entry has a 'query' plus 'expected_codes': a non-empty list means at least one of these codes must appear in the top-5 retrieved results (top-5 recall) - the list has more than one entry only when multiple codes are genuinely, defensibly correct for that query (e.g. 'guns' matches every caliber-specific PSC code), not as a hedge. An empty list is a regression guard for a genuine no-match case: no candidate should clear RERANK_CONFIDENCE_THRESHOLD (singletons.py), matching what the real resolve_*_code tool would say.",
+    "'system' (naics/psc/cfda) is filled in by eval_code_lookup.py from the top-level key, not stored per-entry - it selects which of the three retrievers (_get_naics_retriever/_get_psc_retriever/_get_cfda_retriever) runs the query.",
+    "Every entry here was verified against the real, live-built local indices before being added (not guessed) - see the query results quoted in issue #51 and this eval's own PR description."
+  ],
+  "naics": [
+    {"query": "custom software development", "expected_codes": ["541511"]},
+    {"query": "software", "expected_codes": ["513210", "541511"]},
+    {"query": "ship building", "expected_codes": ["336611", "33661", "3366"]},
+    {"query": "restaurant", "expected_codes": ["722511"]},
+    {"query": "hospital", "expected_codes": ["622", "622110", "622310", "622210"]},
+    {"query": "commercial banking", "expected_codes": ["522110"]}
+  ],
+  "psc": [
+    {"query": "research and development", "expected_codes": ["A"]},
+    {"query": "guns", "expected_codes": ["1005", "1010", "1015", "1030", "1035"]},
+    {"query": "aircraft parts", "expected_codes": ["1560"]},
+    {"query": "medical equipment", "expected_codes": ["6515"]},
+    {"query": "janitorial services", "expected_codes": ["S201"]},
+    {"query": "office furniture", "expected_codes": ["7110"]},
+    {"query": "computer hardware", "expected_codes": ["5340"]}
+  ],
+  "cfda": [
+    {"query": "medicaid", "expected_codes": ["93.778"]},
+    {"query": "custom software development", "expected_codes": []},
+    {"query": "rural broadband grants", "expected_codes": ["10.863", "10.886", "11.033", "10.752"]},
+    {"query": "school lunch program", "expected_codes": ["10.555"]},
+    {"query": "highway construction", "expected_codes": ["20.205", "23.003", "20.279"]},
+    {"query": "small business loans", "expected_codes": ["59.041"]}
+  ]
+}

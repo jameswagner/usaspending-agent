@@ -27,10 +27,13 @@ RERANK_CONFIDENCE_THRESHOLD = -2.0
 
 NAICS_CHROMA_DB_DIR = os.environ.get("NAICS_CHROMA_DB_DIR", "./data/chroma_naics")
 NAICS_WHOOSH_INDEX_DIR = os.environ.get("NAICS_WHOOSH_INDEX_DIR", "./data/whoosh_naics")
+PSC_CHROMA_DB_DIR = os.environ.get("PSC_CHROMA_DB_DIR", "./data/chroma_psc")
+PSC_WHOOSH_INDEX_DIR = os.environ.get("PSC_WHOOSH_INDEX_DIR", "./data/whoosh_psc")
 
 _client: anthropic.Anthropic | None = None
 _retriever: HybridRetriever | None = None
 _naics_retriever: HybridRetriever | None = None
+_psc_retriever: HybridRetriever | None = None
 _usaspending_client: USASpendingClient | None = None
 
 
@@ -81,6 +84,13 @@ def _get_naics_retriever() -> HybridRetriever:
     return _naics_retriever
 
 
+def _get_psc_retriever() -> HybridRetriever:
+    global _psc_retriever
+    if _psc_retriever is None:
+        _psc_retriever = HybridRetriever(chroma_db_dir=PSC_CHROMA_DB_DIR, whoosh_index_dir=PSC_WHOOSH_INDEX_DIR)
+    return _psc_retriever
+
+
 def _get_usaspending_client() -> USASpendingClient:
     global _usaspending_client
     if _usaspending_client is None:
@@ -95,5 +105,6 @@ def warm_up() -> None:
     """
     _get_retriever()
     _get_naics_retriever()
+    _get_psc_retriever()
     _get_usaspending_client()
     _get_client()

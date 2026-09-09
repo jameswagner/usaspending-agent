@@ -23,3 +23,11 @@ When asked to commit changes:
 
 If a task requires multiple related commits, they can go on the same
 branch/PR — no need for one PR per commit.
+
+## Comments: default to none
+
+One line, max, and only when the *why* isn't obvious from the code itself.
+No narration ("found live on...", "confirmed that...", "verified against...",
+"real-world example: ...") — that belongs in the commit message or PR
+description, not the file. If a comment needs more than one line to make
+its point, it's doing the commit message's job — cut it or move it there.

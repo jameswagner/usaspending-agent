@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import openpyxl
-import pytest
 
 from backend.app.retrieval.pipeline.ingest_naics import (
     _code_str,

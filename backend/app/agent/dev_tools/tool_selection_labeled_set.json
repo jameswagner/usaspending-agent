@@ -1,0 +1,54 @@
+{
+  "_notes": [
+    "Labeled set for eval_tool_selection.py (issue #20). Each entry has a 'question' plus exactly one of: 'expected_tool' (single required tool), 'expected_tools' (ordered list - all must appear, for legitimate multi-step chains like search_awards -> get_award_details), or 'acceptable_tools' (any one of these counts as a pass - for the 'ambiguous_intentional' category, where more than one tool is a defensible choice).",
+    "'confusable_with' (optional) lists the specific alternative tool(s) this question is structurally similar to - if the agent calls one of these instead of/alongside the expected tool, it's tallied in the confusion report even on entries that otherwise pass.",
+    "category is filled in by eval_tool_selection.py from the top-level key, not stored per-entry."
+  ],
+  "category_breakdown": [
+    {"question": "How is NSF's FY2023 contract spending broken down by NAICS code?", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]},
+    {"question": "What are the top product/service codes NASA spent on in FY2024?", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]},
+    {"question": "Break down the Department of Defense's FY2023 contract spending by sub-agency.", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]},
+    {"question": "Which CFDA programs did HHS fund the most in FY2022?", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]},
+    {"question": "Show me Leidos' federal awards broken down by awarding agency.", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]}
+  ],
+  "time_breakdown": [
+    {"question": "How has NSF's contract spending trended from FY2019 through FY2023?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]},
+    {"question": "Show me NASA's spending by quarter for FY2023.", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]},
+    {"question": "Has Leidos' federal revenue grown or shrunk since FY2020?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]},
+    {"question": "What was the Department of Energy's month-by-month obligation pattern in FY2024?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]},
+    {"question": "How did the Department of Defense's grant spending change year over year between FY2018 and FY2023?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]}
+  ],
+  "geography_breakdown": [
+    {"question": "Which states received the most NSF funding in FY2023?", "expected_tool": "get_spending_by_geography", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
+    {"question": "Break down Department of Defense contract spending by county within Virginia for FY2023.", "expected_tool": "get_spending_by_geography", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
+    {"question": "What congressional districts got the most NASA funding in FY2024?", "expected_tool": "get_spending_by_geography", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
+    {"question": "Which countries receive USAID financial assistance payments?", "expected_tool": "get_spending_by_geography", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
+    {"question": "Rank US states by how much EPA grant money they received in FY2022.", "expected_tool": "get_spending_by_geography", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]}
+  ],
+  "budget_vs_spending": [
+    {"question": "What is NSF's total budget for FY2024?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
+    {"question": "How much money does NASA actually have available to spend this fiscal year?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
+    {"question": "What were the Department of Energy's total outlays in FY2023?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
+    {"question": "How much budgetary authority did EPA have in FY2022 compared to what it obligated?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
+    {"question": "Did NSF's obligations exceed its appropriated budget in FY2023?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]}
+  ],
+  "search_vs_breakdown": [
+    {"question": "Show me NSF's five biggest contracts in FY2023.", "expected_tool": "search_awards", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_spending_by_geography"]},
+    {"question": "Who received the largest grants from the Department of Education in FY2022?", "expected_tool": "search_awards", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_spending_by_geography"]},
+    {"question": "List the top contracts Leidos was awarded by the Department of Defense in FY2023.", "expected_tool": "search_awards", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_spending_by_geography"]},
+    {"question": "What are the biggest loans the Small Business Administration issued in FY2023?", "expected_tool": "search_awards", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_spending_by_geography"]},
+    {"question": "Show me NASA's top cooperative agreements in FY2024.", "expected_tool": "search_awards", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_spending_by_geography"]}
+  ],
+  "followup_chains": [
+    {"question": "Tell me the competition details and period of performance for NSF's single largest FY2023 contract.", "expected_tools": ["search_awards", "get_award_details"]},
+    {"question": "What's Boeing's exact recipient_id, and what's their all-time total federal funding?", "expected_tools": ["search_recipients", "get_recipient_details"]},
+    {"question": "Find NASA's biggest FY2024 grant and tell me who the recipient is and where they're located.", "expected_tools": ["search_awards", "get_award_details"]},
+    {"question": "Look up Leidos and tell me its parent company and total transactions all-time.", "expected_tools": ["search_recipients", "get_recipient_details"]}
+  ],
+  "ambiguous_intentional": [
+    {"question": "How did NSF spend its money in FY2023?", "acceptable_tools": ["get_spending_by_category", "get_spending_over_time", "search_awards"]},
+    {"question": "Where did the Department of Defense's FY2023 spending go?", "acceptable_tools": ["get_spending_by_category", "get_spending_by_geography"]},
+    {"question": "Give me a breakdown of NASA's FY2023 spending.", "acceptable_tools": ["get_spending_by_category", "get_spending_by_geography", "get_spending_over_time"]},
+    {"question": "How has federal spending on Leidos evolved geographically over the last five years?", "acceptable_tools": ["get_spending_by_geography", "get_spending_over_time"]}
+  ]
+}

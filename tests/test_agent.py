@@ -634,10 +634,8 @@ class TestBuildFilters:
         with pytest.raises(USASpendingAPIError, match="At least one of"):
             _build_filters(FakeClient(make_agency()), None, 2021, 2024)
 
-    # Issue #16: the original guard only recognized agency/recipient as
-    # "real scope" and rejected legitimate queries like "how much Medicaid
-    # money went to Louisiana this year" - place/code/keyword filters are
-    # equally legitimate scoping on their own, with no agency or recipient.
+    # Place/code/keyword filters are equally legitimate scoping on their
+    # own, with no agency or recipient set (#16).
 
     def test_performed_in_state_alone_is_sufficient_scope(self):
         filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, performed_in_state="Louisiana")
@@ -665,8 +663,6 @@ class TestBuildFilters:
         assert filters.keywords == ["climate research"]
 
     def test_award_type_alone_is_not_sufficient_scope(self):
-        # Deliberately NOT a valid scoping filter on its own - "all grants,
-        # from every agency, ever" is still unbounded.
         with pytest.raises(USASpendingAPIError, match="At least one of"):
             _build_filters(FakeClient(make_agency()), None, 2021, 2024, award_type="grants")
 
@@ -1098,10 +1094,6 @@ class TestScopeLabel:
         # Shouldn't happen in practice - _build_filters guarantees at
         # least one is set - but must not crash if it somehow does.
         assert _scope_label(None, None, None) == "unknown scope"
-
-    # Issue #16: with no agency/recipient at all, the label must still show
-    # whichever place/code/keyword filter actually scoped the query, not
-    # fall through to "unknown scope" for a perfectly well-scoped call.
 
     def test_falls_back_to_performed_in_state_with_no_agency_or_recipient(self):
         assert _scope_label(None, None, None, performed_in_state="LA") == "LA"

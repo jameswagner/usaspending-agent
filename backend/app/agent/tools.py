@@ -184,12 +184,8 @@ def _scope_label(
     cfda_program: str | None = None,
     keywords: str | None = None,
 ) -> str:
-    """What to call the query's scope in a human-facing message (a failure
-    string, a "no results" message). _build_filters (tool_filters.py)
-    guarantees at least one real scoping filter is set - agency/recipient
-    plus the place/code/keyword filters added for issue #16 - so this
-    always has something real to show; "unknown scope" would mean that
-    guarantee was violated, not a real expected case."""
+    """Label for a failure/no-results message. _build_filters guarantees
+    at least one of these is set."""
     return (
         agency_name or recipient_name or recipient_id
         or performed_in_state or recipient_in_state

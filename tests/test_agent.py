@@ -49,6 +49,7 @@ from backend.app.agent.tools import (
     _format_award_details,
     _format_contract_or_idv,
     _format_financial_assistance,
+    _format_geography_result,
     _format_period_breakdown,
     _format_period_of_performance,
     _format_recipient_address,
@@ -65,12 +66,14 @@ from backend.app.agent.tools import (
 )
 from backend.app.usaspending_client import (
     CategoryResult,
+    GeographyTypeResult,
     IDVAmountsResponse,
     ObligationByPeriod,
     RecipientListing,
     RecipientLocation,
     RecipientOverview,
     SpendingByCategoryResponse,
+    SpendingByGeographyResponse,
     SpendingOverTimeResponse,
     TimePeriodGroup,
     TimeResult,
@@ -98,6 +101,18 @@ def make_time_response(n: int) -> SpendingOverTimeResponse:
                 time_period=TimePeriodGroup(fiscal_year=str(2020 + i)),
                 aggregated_amount=float(i) * 1000,
             )
+            for i in range(n)
+        ],
+    )
+
+
+def make_geography_response(n: int, geo_layer: str = "state") -> SpendingByGeographyResponse:
+    return SpendingByGeographyResponse(
+        scope="place_of_performance",
+        geo_layer=geo_layer,
+        spending_level="transactions",
+        results=[
+            GeographyTypeResult(shape_code=f"S{i}", display_name=f"State {i}", aggregated_amount=float(i) * 1000)
             for i in range(n)
         ],
     )
@@ -171,6 +186,34 @@ class TestSpendingByCategory:
 
     def test_zero_categories_returns_none(self):
         assert should_chart("get_spending_by_category", make_category_response(0)) is None
+
+
+class TestSpendingByGeographyChart:
+    def test_multi_region_produces_bar_spec(self):
+        spec = should_chart("get_spending_by_geography", make_geography_response(3))
+        assert spec is not None
+        assert spec.chart_type == "bar"
+        assert spec.labels == ["State 2", "State 1", "State 0"]
+        assert spec.values == [2000.0, 1000.0, 0.0]
+
+    def test_single_region_returns_none(self):
+        assert should_chart("get_spending_by_geography", make_geography_response(1)) is None
+
+    def test_caps_at_20_regions_sorted_by_amount(self):
+        spec = should_chart("get_spending_by_geography", make_geography_response(30))
+        assert len(spec.labels) == 20
+        assert spec.labels[0] == "State 29"  # highest amount first
+
+    def test_null_display_name_falls_back_to_shape_code(self):
+        response = SpendingByGeographyResponse(
+            scope="place_of_performance", geo_layer="state", spending_level="transactions",
+            results=[
+                GeographyTypeResult(shape_code="CA", display_name="California", aggregated_amount=200.0),
+                GeographyTypeResult(shape_code=None, display_name=None, aggregated_amount=100.0),
+            ],
+        )
+        spec = should_chart("get_spending_by_geography", response)
+        assert "Unknown" in spec.labels
 
 
 class TestNeverChartTools:
@@ -414,6 +457,26 @@ class TestBuildToolCitation:
             {"start_fiscal_year": 2023, "end_fiscal_year": 2023, "award_type": "contracts", "recipient_name": "Boeing"},
         )
         assert citation.description == "contracts awards search, Boeing, FY2023-FY2023"
+
+    def test_get_spending_by_geography(self):
+        citation = build_tool_citation(
+            "get_spending_by_geography",
+            {
+                "scope": "place_of_performance", "geo_layer": "state",
+                "start_fiscal_year": 2023, "end_fiscal_year": 2023,
+                "agency_name": "National Science Foundation",
+            },
+        )
+        assert citation is not None
+        assert citation.description == "Spending by state (place_of_performance), National Science Foundation, FY2023-FY2023"
+
+    def test_get_spending_by_geography_with_recipient_no_agency(self):
+        citation = build_tool_citation(
+            "get_spending_by_geography",
+            {"scope": "place_of_performance", "geo_layer": "county", "start_fiscal_year": 2023, "end_fiscal_year": 2023, "recipient_name": "Boeing"},
+        )
+        assert "agency_name" not in citation.parameters
+        assert citation.description == "Spending by county (place_of_performance), Boeing, FY2023-FY2023"
 
     def test_search_guide_returns_none(self):
         # search_guide is cited separately, by chunk id/page - not via
@@ -969,6 +1032,28 @@ class TestFormatContractOrIdv:
         result = _format_contract_or_idv(data, child_order_rollup=rollup)
         assert "54 grandchild orders" in result
         assert "$377,145.57" in result
+
+
+class TestFormatGeographyResult:
+    def test_includes_per_capita_when_present(self):
+        result = GeographyTypeResult(shape_code="CA", display_name="California", aggregated_amount=1024859924.64, population=39538223, per_capita=25.92)
+        formatted = _format_geography_result(result)
+        assert "California: $1,024,859,924.64" in formatted
+        assert "$25.92 per capita" in formatted
+        assert "39,538,223" in formatted
+
+    def test_omits_per_capita_when_null(self):
+        result = GeographyTypeResult(shape_code="ATA", display_name="Antarctica", aggregated_amount=217092822.46, population=None, per_capita=None)
+        formatted = _format_geography_result(result)
+        assert formatted == "Antarctica: $217,092,822.46"
+
+    def test_falls_back_to_shape_code_when_display_name_null(self):
+        result = GeographyTypeResult(shape_code="1198", display_name=None, aggregated_amount=100.0)
+        assert _format_geography_result(result) == "1198: $100.00"
+
+    def test_falls_back_to_placeholder_when_both_null(self):
+        result = GeographyTypeResult(shape_code=None, display_name=None, aggregated_amount=100.0)
+        assert "Unmapped/unknown location" in _format_geography_result(result)
 
 
 class TestFormatFinancialAssistance:

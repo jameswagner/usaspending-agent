@@ -36,6 +36,7 @@ from .tools import (
     get_award_details,
     get_recipient_details,
     get_spending_by_category,
+    get_spending_by_geography,
     get_spending_over_time,
     lookup_agency,
     search_awards,
@@ -99,7 +100,7 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have sixteen tools. Nine retrieve data: search_guide "
+        "have seventeen tools. Ten retrieve data: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
         "toptier code), get_agency_budget (an agency's appropriated budgetary "
@@ -118,6 +119,12 @@ def _build_system_prompt() -> str:
         "for a fiscal year range, scoped by an awarding agency and/or a "
         "recipient — use this for 'show me awards from X' or 'who received "
         "money from X', not for aggregate breakdowns or trends), "
+        "get_spending_by_geography (spending ranked by state, county, "
+        "congressional district, or country in one call — use this for "
+        "'which states/counties/districts/countries got the most X "
+        "funding' instead of checking one place at a time; population and "
+        "per-capita figures it returns reflect current data, not the "
+        "period queried), "
         "get_award_details (full details — description, dates, competition "
         "data, recipient, funding — for ONE specific award, given the "
         "internal_id shown alongside a search_awards result; use this only "
@@ -134,7 +141,7 @@ def _build_system_prompt() -> str:
         "a recipient_id). Six do arithmetic: "
         "sum_values, average, percentage_of, delta, ratio, and rank_values. "
         "One more, code_execution, is a general-purpose Python/Bash sandbox. "
-        "You must call at least one of the nine data tools before writing any "
+        "You must call at least one of the ten data tools before writing any "
         "answer, every question, with no exceptions — including questions "
         "that seem "
         "unrelated to federal spending, general-knowledge questions, "
@@ -241,6 +248,7 @@ def ask(question: str) -> AgentResult:
             get_agency_budget,
             get_spending_by_category,
             get_spending_over_time,
+            get_spending_by_geography,
             search_awards,
             get_award_details,
             search_recipients,

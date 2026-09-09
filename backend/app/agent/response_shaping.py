@@ -254,6 +254,20 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
             values=[r.aggregated_amount for r in structured_result.results],
         )
 
+    if tool_name == "get_spending_by_geography":
+        if len(structured_result.results) < 2:
+            return None
+        top = sorted(structured_result.results, key=lambda r: -r.aggregated_amount)[:20]
+        title = f"Spending by {structured_result.geo_layer}"
+        if agency_name:
+            title += f" — {agency_name}"
+        return ChartSpec(
+            chart_type="bar",
+            title=title,
+            labels=[r.display_name or r.shape_code or "Unknown" for r in top],
+            values=[r.aggregated_amount for r in top],
+        )
+
     return None
 
 
@@ -349,6 +363,19 @@ def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
         scope = _citation_scope_label(context)
         description = (
             f"Spending over time ({params['group']}), {scope}, "
+            f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
+        )
+        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+
+    if tool_name == "get_spending_by_geography":
+        params = {
+            "scope": context["scope"], "geo_layer": context["geo_layer"],
+            "start_fiscal_year": context["start_fiscal_year"], "end_fiscal_year": context["end_fiscal_year"],
+        }
+        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
+        scope = _citation_scope_label(context)
+        description = (
+            f"Spending by {params['geo_layer']} ({params['scope']}), {scope}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
         )
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)

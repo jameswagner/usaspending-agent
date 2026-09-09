@@ -41,6 +41,7 @@ from .awards import (
     get_award_details_raw,
     get_idv_amounts_raw,
 )
+from .business_type_labels import _format_business_type
 from .recipients import (
     _format_recipient_address,
     _format_recipient_level,
@@ -78,6 +79,7 @@ __all__ = [
     "_check_tool_call_budget",
     "_format_api_messages",
     "_format_award_details",
+    "_format_business_type",
     "_format_contract_or_idv",
     "_format_financial_assistance",
     "_format_geography_result",

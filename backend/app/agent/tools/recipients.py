@@ -27,6 +27,7 @@ from ._shared import (
     _truncation_note,
     _wrap_untrusted,
 )
+from .business_type_labels import _format_business_type
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,7 @@ def _format_recipient_overview(overview: RecipientOverview) -> str:
     lines.append(f"Location: {location_label}")
 
     if overview.business_types:
-        readable = ", ".join(bt.replace("_", " ").title() for bt in overview.business_types)
+        readable = ", ".join(_format_business_type(bt) for bt in overview.business_types)
         lines.append(f"Business types: {readable}")
 
     lines.append(
@@ -126,7 +127,7 @@ def _format_recipient_overview(overview: RecipientOverview) -> str:
 
 
 @beta_tool
-def search_recipients(keyword: str, award_type: RecipientAwardType = "all", limit: int = 10) -> str:
+def search_recipients(keyword: str | None = None, award_type: RecipientAwardType = "all", limit: int = 10) -> str:
     """Search for a recipient (company, organization, or individual) by name, UEI, or DUNS number, to find its exact recipient_id for a precise follow-up query (get_recipient_details, or the recipient_id parameter on get_spending_by_category/get_spending_over_time). Use this whenever a question names a specific real recipient — do not guess a recipient_id, and prefer this over a bare recipient_name text filter whenever precision matters.
 
     A plain company name is genuinely ambiguous at this scale — confirmed live that "Leidos" and "Boeing" each resolve to 6+ distinct recipient_ids sharing the exact same display name (parent companies, subsidiaries, and historical registrations from mergers/acquisitions). This tool shows every real candidate rather than silently picking one. If several results share a name, prefer the one with recipient level "parent" for a "how much has this company received in total" question — confirmed live to be a true, complete rollup across all of that company's own child registrations, to the penny. Ask the user to disambiguate if it's still unclear which candidate they mean.
@@ -134,7 +135,8 @@ def search_recipients(keyword: str, award_type: RecipientAwardType = "all", limi
     An exact UEI or DUNS as the keyword returns a single, precise match (confirmed live) — use one directly if you already have it.
 
     Args:
-        keyword: A recipient's name, UEI, or DUNS number, e.g. "Boeing" or "NU2UC8MX6NK1".
+        keyword: Optional. A recipient's name, UEI, or DUNS number, e.g. "Boeing" or
+            "NU2UC8MX6NK1". Omit for an unscoped, globally-ranked top-recipients list.
         award_type: Optional. Restrict to one broad award-type bucket — all (default),
             contracts, grants, loans, direct_payments, or other_financial_assistance. A
             different, coarser vocabulary than every other tool's award_type parameter here —
@@ -155,7 +157,7 @@ def search_recipients(keyword: str, award_type: RecipientAwardType = "all", limi
     _record_tool_call("search_recipients", response, {"keyword": keyword})
 
     if not response.results:
-        return f"No recipients found matching '{keyword}'."
+        return f"No recipients found matching '{keyword}'." if keyword else "No recipients found."
 
     lines = [_format_recipient_listing(r) for r in response.results]
     has_next = response.page_metadata.hasNext if response.page_metadata else False

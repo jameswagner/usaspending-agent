@@ -318,14 +318,11 @@ def _build_filters(
     autocomplete/naics/psc/cfda endpoints) was considered and deliberately
     not built - see ADVANCED_FILTER_FIELD_COVERAGE's naics_codes entry.
 
-    agency_name is optional (2026-09-08) - a cross-agency, recipient-only
-    question ("how much has Boeing received from any agency") has no
-    answer at all if an agency must always be named first. At least one of
-    agency_name/recipient_name/recipient_id must be given, or this raises:
-    a query scoped by none of them is "all federal spending, ever," not a
-    real, answerable question, and letting it through silently would be
-    the same "confidently wrong/unbounded" shape this project has already
-    guarded against elsewhere (the tool-call budget, the limit clamp).
+    agency_name is optional - a recipient-only, cross-agency question needs
+    to work too. At least one of agency_name/recipient_name/recipient_id/
+    performed_in_state/recipient_in_state/naics_code/psc_code/cfda_program/
+    keywords must be given, or this raises; award_type/min_amount/
+    max_amount/date_type/*_scope don't count on their own (see #16).
 
     recipient_id is a real, precise filter - confirmed live 2026-09-08 to
     reproduce a recipient's true all-time total to the penny, unlike
@@ -340,9 +337,15 @@ def _build_filters(
     own `messages` field says so explicitly), so it's never passed through
     on that tool's path.
     """
-    if agency_name is None and recipient_name is None and recipient_id is None:
+    real_scoping_filters = (
+        agency_name, recipient_name, recipient_id,
+        performed_in_state, recipient_in_state,
+        naics_code, psc_code, cfda_program, keywords,
+    )
+    if all(f is None for f in real_scoping_filters):
         raise USASpendingAPIError(
-            "At least one of agency_name, recipient_name, or recipient_id must be given - "
+            "At least one of agency_name, recipient_name, recipient_id, performed_in_state, "
+            "recipient_in_state, naics_code, psc_code, cfda_program, or keywords must be given - "
             "a question scoped by none of them would mean all federal spending, ever."
         )
 

@@ -119,7 +119,10 @@ BUSINESS_TYPE_LABELS: dict[str, str] = {
 
 
 def _format_business_type(code: str) -> str:
-    return BUSINESS_TYPE_LABELS.get(code, code.replace("_", " ").title())
+    if code in BUSINESS_TYPE_LABELS:
+        return BUSINESS_TYPE_LABELS[code]
+    logger.warning("business_types code %r not in BUSINESS_TYPE_LABELS - falling back to title-case", code)
+    return code.replace("_", " ").title()
 
 
 def _format_recipient_listing(listing: RecipientListing) -> str:

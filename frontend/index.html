@@ -25,8 +25,8 @@
     border: 1px solid #ccc;
     border-radius: 6px;
   }
+  .controls { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
   #ask-btn {
-    margin-top: 10px;
     padding: 8px 20px;
     font-size: 0.95rem;
     cursor: pointer;
@@ -36,13 +36,25 @@
     color: white;
   }
   #ask-btn:disabled { background: #999; cursor: default; }
+  #new-conversation-btn {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
+    color: #444;
+  }
   #status { margin-top: 14px; color: #888; font-size: 0.9rem; }
   #status.error { color: #b00020; }
-  #answer { margin-top: 22px; }
-  #answer table { border-collapse: collapse; margin: 10px 0; }
-  #answer th, #answer td { border: 1px solid #ddd; padding: 5px 10px; text-align: left; }
-  #answer th { background: #f5f5f5; }
-  #source-type {
+  #transcript { margin-top: 22px; }
+  .turn { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #eee; }
+  .turn:last-child { border-bottom: none; }
+  .turn-question { font-weight: 600; margin-bottom: 10px; }
+  .turn-answer table { border-collapse: collapse; margin: 10px 0; }
+  .turn-answer th, .turn-answer td { border: 1px solid #ddd; padding: 5px 10px; text-align: left; }
+  .turn-answer th { background: #f5f5f5; }
+  .turn-source-type {
     display: inline-block;
     margin-top: 10px;
     font-size: 0.75rem;
@@ -51,17 +63,17 @@
     padding: 2px 8px;
     border-radius: 10px;
   }
-  #charts-container { margin-top: 24px; }
+  .turn-charts { margin-top: 20px; }
   .chart-box { max-width: 640px; margin-bottom: 28px; }
-  #citations {
-    margin-top: 20px;
-    padding-top: 14px;
+  .turn-citations {
+    margin-top: 16px;
+    padding-top: 12px;
     border-top: 1px solid #eee;
     font-size: 0.85rem;
     color: #555;
   }
-  #citations h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: #888; margin-bottom: 6px; }
-  #citations li { margin-bottom: 3px; }
+  .turn-citations h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: #888; margin-bottom: 6px; }
+  .turn-citations li { margin-bottom: 3px; }
 </style>
 </head>
 <body>
@@ -69,29 +81,21 @@
   <div class="subtitle">Ask about federal spending — definitions from the Analyst's Guide, or live numbers from USASpending.gov.</div>
 
   <input type="text" id="question" placeholder="e.g. What is a sub-award? / How is NSF spending broken down by NAICS code for FY2024?" autofocus>
-  <br>
-  <button id="ask-btn">Ask</button>
+  <div class="controls">
+    <button id="ask-btn">Ask</button>
+    <button id="new-conversation-btn">New conversation</button>
+  </div>
 
   <div id="status"></div>
-  <div id="answer"></div>
-  <span id="source-type" style="display:none;"></span>
-
-  <div id="charts-container"></div>
-
-  <div id="citations" style="display:none;">
-    <h3>Sources</h3>
-    <ul id="citations-list"></ul>
-  </div>
+  <div id="transcript"></div>
 
 <script>
   const questionInput = document.getElementById('question');
   const askBtn = document.getElementById('ask-btn');
+  const newConversationBtn = document.getElementById('new-conversation-btn');
   const statusEl = document.getElementById('status');
-  const answerEl = document.getElementById('answer');
-  const sourceTypeEl = document.getElementById('source-type');
-  const chartsContainer = document.getElementById('charts-container');
-  const citationsBlock = document.getElementById('citations');
-  const citationsList = document.getElementById('citations-list');
+  const transcriptEl = document.getElementById('transcript');
+  let conversationId = null;
   let chartInstances = [];
 
   // Tool-citation text (agency names, categories, etc.) traces back to
@@ -107,64 +111,64 @@
       .replace(/'/g, '&#39;');
   }
 
-  async function ask() {
-    const question = questionInput.value.trim();
-    if (!question) return;
-
-    askBtn.disabled = true;
-    statusEl.className = '';
-    statusEl.textContent = 'Thinking...';
-    answerEl.innerHTML = '';
-    sourceTypeEl.style.display = 'none';
-    citationsBlock.style.display = 'none';
-    citationsList.innerHTML = '';
-    chartInstances.forEach(c => c.destroy());
+  function newConversation() {
+    conversationId = null;
+    transcriptEl.innerHTML = '';
     chartInstances = [];
-    chartsContainer.innerHTML = '';
+  }
 
-    try {
-      const resp = await fetch('/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
-      });
-      if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
-      const data = await resp.json();
+  function renderTurn(question, data) {
+    const turn = document.createElement('div');
+    turn.className = 'turn';
 
-      statusEl.textContent = '';
-      answerEl.innerHTML = marked.parse(data.answer_text);
+    const questionEl = document.createElement('div');
+    questionEl.className = 'turn-question';
+    questionEl.textContent = question;
+    turn.appendChild(questionEl);
 
-      sourceTypeEl.textContent = data.source_type;
-      sourceTypeEl.style.display = 'inline-block';
+    const answerEl = document.createElement('div');
+    answerEl.className = 'turn-answer';
+    answerEl.innerHTML = marked.parse(data.answer_text);
+    turn.appendChild(answerEl);
 
-      // Glossary citations carry a term, linked to the live glossary
-      // sidebar's per-term deep link (?glossary=<slug>). Guide citations
-      // carry either a question (the common case - Q&A-shaped chunks,
-      // linked to the live guide page since a page number told a reader
-      // nothing they could act on) or a page (the minority of Guide
-      // chunks that aren't Q&A-shaped) - both paired with a url, but
-      // unlike the Glossary's per-term url, the Guide's is one fixed URL
-      // regardless of which question (it isn't per-question anchor-
-      // addressable). See Citation in response_shaping.py.
-      const guideItems = (data.citations || []).map(c => {
-        const label = c.term
-          ? `${escapeHtml(c.source)}: ${escapeHtml(c.term)}`
-          : c.question
-            ? `${escapeHtml(c.source)}: "${escapeHtml(c.question)}"`
-            : `${escapeHtml(c.source)}, page ${escapeHtml(c.page)}`;
-        if (c.url) {
-          return `<li><a href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer">${label}</a></li>`;
-        }
-        return `<li>${label}</li>`;
-      });
-      const toolItems = (data.tool_citations || []).map(c => `<li>${escapeHtml(c.description)}</li>`);
-      const sourceItems = guideItems.concat(toolItems);
-      if (sourceItems.length) {
-        citationsList.innerHTML = sourceItems.join('');
-        citationsBlock.style.display = 'block';
+    const sourceTypeEl = document.createElement('span');
+    sourceTypeEl.className = 'turn-source-type';
+    sourceTypeEl.textContent = data.source_type;
+    turn.appendChild(sourceTypeEl);
+
+    // Glossary citations carry a term, linked to the live glossary
+    // sidebar's per-term deep link (?glossary=<slug>). Guide citations
+    // carry either a question (the common case - Q&A-shaped chunks,
+    // linked to the live guide page since a page number told a reader
+    // nothing they could act on) or a page (the minority of Guide
+    // chunks that aren't Q&A-shaped) - both paired with a url, but
+    // unlike the Glossary's per-term url, the Guide's is one fixed URL
+    // regardless of which question (it isn't per-question anchor-
+    // addressable). See Citation in response_shaping.py.
+    const guideItems = (data.citations || []).map(c => {
+      const label = c.term
+        ? `${escapeHtml(c.source)}: ${escapeHtml(c.term)}`
+        : c.question
+          ? `${escapeHtml(c.source)}: "${escapeHtml(c.question)}"`
+          : `${escapeHtml(c.source)}, page ${escapeHtml(c.page)}`;
+      if (c.url) {
+        return `<li><a href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer">${label}</a></li>`;
       }
+      return `<li>${label}</li>`;
+    });
+    const toolItems = (data.tool_citations || []).map(c => `<li>${escapeHtml(c.description)}</li>`);
+    const sourceItems = guideItems.concat(toolItems);
+    if (sourceItems.length) {
+      const citationsBlock = document.createElement('div');
+      citationsBlock.className = 'turn-citations';
+      citationsBlock.innerHTML = '<h3>Sources</h3><ul>' + sourceItems.join('') + '</ul>';
+      turn.appendChild(citationsBlock);
+    }
 
-      (data.charts || []).forEach(chart => {
+    if ((data.charts || []).length) {
+      const chartsContainer = document.createElement('div');
+      chartsContainer.className = 'turn-charts';
+      data.charts.forEach(chart => {
         const box = document.createElement('div');
         box.className = 'chart-box';
         const canvas = document.createElement('canvas');
@@ -183,6 +187,33 @@
           },
         }));
       });
+      turn.appendChild(chartsContainer);
+    }
+
+    transcriptEl.appendChild(turn);
+  }
+
+  async function ask() {
+    const question = questionInput.value.trim();
+    if (!question) return;
+
+    askBtn.disabled = true;
+    statusEl.className = '';
+    statusEl.textContent = 'Thinking...';
+
+    try {
+      const resp = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, conversation_id: conversationId }),
+      });
+      if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+      const data = await resp.json();
+
+      statusEl.textContent = '';
+      conversationId = data.conversation_id;
+      renderTurn(question, data);
+      questionInput.value = '';
     } catch (err) {
       statusEl.className = 'error';
       statusEl.textContent = err.message;
@@ -192,6 +223,7 @@
   }
 
   askBtn.addEventListener('click', ask);
+  newConversationBtn.addEventListener('click', newConversation);
   questionInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') ask(); });
 </script>
 </body>

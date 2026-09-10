@@ -1,20 +1,13 @@
 """LangChain-compatible equivalents of the @beta_tool-decorated functions,
-for create_react_agent (#61). @beta_tool's BetaFunctionTool exposes the
-original callable via .func - re-wrapping that with langchain_core's
-tool(parse_docstring=True) reuses the exact same docstring/type hints,
-verified against all 24 tools in use (including typing.Literal params,
-which both beta_tool and LangChain translate into a JSON-schema enum via
-Pydantic). The original @beta_tool-wrapped functions in tools/*.py are
-untouched - still needed for tests, dev_tools scripts, and the legacy
-ask() path during the migration window (see issue #61's series).
+for create_react_agent. @beta_tool's BetaFunctionTool exposes the
+original callable via .func - re-wrapping that with
+tool(parse_docstring=True) reuses the same docstring/type hints.
 
-code_execution is deliberately not included. Confirmed live (#65) that
-ChatAnthropic.bind_tools() does pass the dict spec through unmodified and
-the tool executes correctly - but its server_tool_use/tool_result blocks
-land in AIMessage.content as plain dicts, not the attribute-access
-objects _record_code_execution_calls (tools/_shared.py) expects, so
-citations for it wouldn't work without adapting that function. Left out
-for v1; see the follow-up issue for wiring it in with citations.
+code_execution is deliberately not included: ChatAnthropic.bind_tools()
+passes its dict spec through fine, but the resulting result blocks land
+in AIMessage.content as plain dicts, not the attribute-access objects
+_record_code_execution_calls (tools/_shared.py) expects, so citations for
+it wouldn't work without adapting that function first.
 """
 from __future__ import annotations
 

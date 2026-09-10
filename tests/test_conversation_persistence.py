@@ -1,6 +1,6 @@
 """Fast, CI-gated coverage for the LangGraph conversation persistence
-layer (issue #64) - no real model/API calls: a tmp_path SqliteSaver and
-a scripted FakeMessagesListChatModel instead.
+layer - no real model/API calls: a tmp_path SqliteSaver and a scripted
+FakeMessagesListChatModel instead.
 """
 from __future__ import annotations
 

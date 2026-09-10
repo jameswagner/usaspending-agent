@@ -26,7 +26,7 @@ def resolve_psc_code(description: str) -> str:
     if not matches:
         return "No PSC code found matching this description."
 
-    _record_tool_call("resolve_psc_code", matches)
+    _record_tool_call("resolve_psc_code", matches, {"description": description})
 
     lines = [f"{m['slug']} - {m['term']}" for m in matches]
     return _wrap_untrusted(

@@ -28,7 +28,7 @@ def resolve_naics_code(description: str) -> str:
     if not matches:
         return "No NAICS code found matching this description."
 
-    _record_tool_call("resolve_naics_code", matches)
+    _record_tool_call("resolve_naics_code", matches, {"description": description})
 
     lines = [f"{m['slug']} - {m['term']}" for m in matches]
     return _wrap_untrusted(

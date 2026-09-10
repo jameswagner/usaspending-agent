@@ -340,6 +340,15 @@ class TestNeverChartTools:
     def test_get_recipient_details_never_charts(self):
         assert should_chart("get_recipient_details", make_category_response(5)) is None
 
+    def test_resolve_naics_code_never_charts(self):
+        assert should_chart("resolve_naics_code", make_category_response(5)) is None
+
+    def test_resolve_psc_code_never_charts(self):
+        assert should_chart("resolve_psc_code", make_category_response(5)) is None
+
+    def test_resolve_cfda_program_never_charts(self):
+        assert should_chart("resolve_cfda_program", make_category_response(5)) is None
+
     def test_unknown_tool_name_returns_none(self):
         assert should_chart("some_future_tool", make_category_response(5)) is None
 
@@ -413,6 +422,23 @@ class TestBuildToolCitation:
         assert citation.tool_name == "lookup_agency"
         assert citation.parameters == {"name": "National Science Foundation"}
         assert citation.description == "Agency lookup: National Science Foundation"
+
+    def test_resolve_naics_code(self):
+        citation = build_tool_citation("resolve_naics_code", {"description": "custom software development"})
+        assert citation is not None
+        assert citation.tool_name == "resolve_naics_code"
+        assert citation.parameters == {"description": "custom software development"}
+        assert citation.description == "NAICS code lookup: custom software development"
+
+    def test_resolve_psc_code(self):
+        citation = build_tool_citation("resolve_psc_code", {"description": "office furniture"})
+        assert citation is not None
+        assert citation.description == "PSC code lookup: office furniture"
+
+    def test_resolve_cfda_program(self):
+        citation = build_tool_citation("resolve_cfda_program", {"description": "Medicaid grants to states"})
+        assert citation is not None
+        assert citation.description == "CFDA code lookup: Medicaid grants to states"
 
     def test_get_spending_by_category(self):
         citation = build_tool_citation(

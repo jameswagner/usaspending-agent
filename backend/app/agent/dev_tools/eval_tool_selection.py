@@ -93,7 +93,10 @@ def predict(inputs: dict) -> dict:
 
 def _expected_description(expected: dict) -> str:
     if "expected_tools" in expected:
-        return " -> ".join(expected["expected_tools"])
+        desc = " -> ".join(expected["expected_tools"])
+        if expected.get("then_one_of"):
+            desc += " -> (one of) " + " or ".join(expected["then_one_of"])
+        return desc
     if "acceptable_tools" in expected:
         return " or ".join(expected["acceptable_tools"])
     return expected["expected_tool"]
@@ -105,6 +108,14 @@ def tool_selection_correct(run: Run, example: Example) -> dict[str, Any]:
 
     if "expected_tools" in expected:
         passed = all(t in tools_called for t in expected["expected_tools"])
+        # then_one_of: a second step where more than one tool is a
+        # legitimate choice (e.g. resolve_naics_code -> either
+        # search_awards or get_spending_by_category both correctly use
+        # the resolved code) - pinning one specific tool here mislabels
+        # the other as a failure. AND'd onto expected_tools, not a
+        # replacement for it.
+        if passed and expected.get("then_one_of"):
+            passed = any(t in tools_called for t in expected["then_one_of"])
     elif "acceptable_tools" in expected:
         passed = any(t in tools_called for t in expected["acceptable_tools"])
     else:
@@ -128,6 +139,26 @@ def confusable_alternative_called(run: Run, example: Example) -> dict[str, Any]:
         "score": float(bool(wrong)),
         "comment": f"also called: {wrong}" if wrong else "none",
     }
+
+
+_HEDGE_PHRASES = (
+    "semantic match", "closest match", "not confirmed", "not a confirmed",
+    "verify", "confirming", "approximate", "may not be exact",
+)
+
+
+def hedge_language_present(run: Run, example: Example) -> dict[str, Any]:
+    """Diagnostic only (issue #52's 4th ask) - not gated into tool_selection_correct,
+    same reasoning as red_team_jailbreak.py's own note on keyword checks: a
+    hedge-phrase match is suggestive, not proof of genuine hedging, so this
+    is reported for a human to read, not treated as a strict pass/fail."""
+    expected = example.outputs or {}
+    if not expected.get("check_hedge_language"):
+        return {"key": "hedge_language_present", "score": None, "comment": "not applicable"}
+
+    answer = ((run.outputs or {}).get("answer") or "").lower()
+    passed = any(phrase in answer for phrase in _HEDGE_PHRASES)
+    return {"key": "hedge_language_present", "score": float(passed), "comment": answer[:200]}
 
 
 def _feedback_score(row: dict, key: str) -> float:
@@ -165,6 +196,13 @@ def print_report(rows: list[dict]) -> None:
         tools_called = (row["run"].outputs or {}).get("tools_called", [])
         print(f"  [{category}] {question!r} - tools called: {tools_called}")
 
+    hedge_checked = [r for r in rows if _feedback_score(r, "hedge_language_present") is not None]
+    print(f"\nHedge-language check (diagnostic only, {len(hedge_checked)} entries flagged for it):")
+    for row in hedge_checked:
+        question = row["example"].inputs["question"]
+        hedged = _feedback_score(row, "hedge_language_present") > 0
+        print(f"  {'[hedged]' if hedged else '[NOT hedged]'} {question!r}")
+
 
 def main() -> None:
     # Without this, evaluate()'s concurrency races the unlocked lazy singletons in singletons.py.
@@ -178,7 +216,7 @@ def main() -> None:
     results = evaluate(
         predict,
         data=DATASET_NAME,
-        evaluators=[tool_selection_correct, confusable_alternative_called],
+        evaluators=[tool_selection_correct, confusable_alternative_called, hedge_language_present],
         experiment_prefix="tool-selection",
         client=client,
         # >1 hangs/spins CPU here even after warm_up() - a real, separate bug, not yet root-caused.

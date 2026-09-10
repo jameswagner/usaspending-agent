@@ -8,10 +8,13 @@ Pydantic). The original @beta_tool-wrapped functions in tools/*.py are
 untouched - still needed for tests, dev_tools scripts, and the legacy
 ask() path during the migration window (see issue #61's series).
 
-code_execution is deliberately not included - it's an Anthropic
-server-side tool (a dict spec), not a Python callable, so there's
-nothing to unwrap. Whether ChatAnthropic's tool-binding passes such a
-dict through unmodified is a separate spike (issue #65).
+code_execution is deliberately not included. Confirmed live (#65) that
+ChatAnthropic.bind_tools() does pass the dict spec through unmodified and
+the tool executes correctly - but its server_tool_use/tool_result blocks
+land in AIMessage.content as plain dicts, not the attribute-access
+objects _record_code_execution_calls (tools/_shared.py) expects, so
+citations for it wouldn't work without adapting that function. Left out
+for v1; see the follow-up issue for wiring it in with citations.
 """
 from __future__ import annotations
 

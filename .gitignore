@@ -9,3 +9,4 @@ data/*
 .ruff_cache/
 *.egg-info/
 private/
+.claude/settings.local.json

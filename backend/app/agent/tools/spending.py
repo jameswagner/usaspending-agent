@@ -103,6 +103,14 @@ def get_spending_by_category_raw(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: DateType | None = None,
     place_of_performance_scope: Scope | None = None,
@@ -145,6 +153,14 @@ def get_spending_by_category_raw(
         max_amount=max_amount,
         performed_in_state=performed_in_state,
         recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county,
+        recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city,
+        recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip,
+        recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district,
+        recipient_in_district=recipient_in_district,
         keywords=keywords,
         date_type=date_type,
         place_of_performance_scope=place_of_performance_scope,
@@ -170,6 +186,14 @@ def get_spending_by_category(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: DateType | None = None,
     place_of_performance_scope: Scope | None = None,
@@ -215,6 +239,24 @@ def get_spending_by_category(
             headquartered/located in this US state - different from performed_in_state:
             a company headquartered in one state can perform work in another, and these
             can give substantially different totals.
+        performed_in_county: Optional. A specific county where work was performed - a 3-digit
+            FIPS code (e.g. "025" for Yavapai County, AZ), not a name. Requires
+            performed_in_state also be set. Use resolve_county_fips to find the code from a
+            county name - do not guess or construct one.
+        recipient_in_county: Optional. Same as performed_in_county, but for the recipient's
+            location. Requires recipient_in_state also be set.
+        performed_in_city: Optional. Restrict to work performed in this city, e.g. "Livermore".
+            A plain name, not a code - can match the same city name across every state if
+            performed_in_state isn't also set.
+        recipient_in_city: Optional. Same as performed_in_city, but for the recipient's location.
+        performed_in_zip: Optional. Restrict to work performed in this 5-digit zip code.
+        recipient_in_zip: Optional. Restrict to a recipient located in this 5-digit zip code.
+        performed_in_district: Optional. A specific congressional district where work was
+            performed - a 2-digit number (e.g. "01"), paired with performed_in_state. Reflects
+            today's district boundaries, not necessarily the boundaries in effect during a
+            historical fiscal year.
+        recipient_in_district: Optional. Same as performed_in_district, but for the recipient's
+            location, paired with recipient_in_state.
         keywords: Optional. Free-text search over award descriptions, e.g. "climate research".
         date_type: Optional. Which award date the fiscal-year range is matched against - one of
             action_date (default: any transaction/modification in the window - note this means
@@ -245,6 +287,10 @@ def get_spending_by_category(
     scope = _scope_label(
         agency_name, recipient_name, recipient_id,
         performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county, recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city, recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
     )
     try:
@@ -261,6 +307,14 @@ def get_spending_by_category(
             max_amount=max_amount,
             performed_in_state=performed_in_state,
             recipient_in_state=recipient_in_state,
+            performed_in_county=performed_in_county,
+            recipient_in_county=recipient_in_county,
+            performed_in_city=performed_in_city,
+            recipient_in_city=recipient_in_city,
+            performed_in_zip=performed_in_zip,
+            recipient_in_zip=recipient_in_zip,
+            performed_in_district=performed_in_district,
+            recipient_in_district=recipient_in_district,
             keywords=keywords,
             date_type=date_type,
             place_of_performance_scope=place_of_performance_scope,
@@ -287,6 +341,14 @@ def get_spending_by_category(
         max_amount=max_amount,
         performed_in_state=performed_in_state,
         recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county,
+        recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city,
+        recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip,
+        recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district,
+        recipient_in_district=recipient_in_district,
         keywords=keywords,
         date_type=date_type,
         place_of_performance_scope=place_of_performance_scope,
@@ -340,6 +402,14 @@ def get_spending_over_time_raw(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: DateType | None = None,
     place_of_performance_scope: Scope | None = None,
@@ -365,6 +435,14 @@ def get_spending_over_time_raw(
         max_amount=max_amount,
         performed_in_state=performed_in_state,
         recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county,
+        recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city,
+        recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip,
+        recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district,
+        recipient_in_district=recipient_in_district,
         keywords=keywords,
         date_type=date_type,
         place_of_performance_scope=place_of_performance_scope,
@@ -389,6 +467,14 @@ def get_spending_over_time(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: DateType | None = None,
     place_of_performance_scope: Scope | None = None,
@@ -432,6 +518,24 @@ def get_spending_over_time(
             headquartered/located in this US state - different from performed_in_state:
             a company headquartered in one state can perform work in another, and these
             can give substantially different totals.
+        performed_in_county: Optional. A specific county where work was performed - a 3-digit
+            FIPS code (e.g. "025" for Yavapai County, AZ), not a name. Requires
+            performed_in_state also be set. Use resolve_county_fips to find the code from a
+            county name - do not guess or construct one.
+        recipient_in_county: Optional. Same as performed_in_county, but for the recipient's
+            location. Requires recipient_in_state also be set.
+        performed_in_city: Optional. Restrict to work performed in this city, e.g. "Livermore".
+            A plain name, not a code - can match the same city name across every state if
+            performed_in_state isn't also set.
+        recipient_in_city: Optional. Same as performed_in_city, but for the recipient's location.
+        performed_in_zip: Optional. Restrict to work performed in this 5-digit zip code.
+        recipient_in_zip: Optional. Restrict to a recipient located in this 5-digit zip code.
+        performed_in_district: Optional. A specific congressional district where work was
+            performed - a 2-digit number (e.g. "01"), paired with performed_in_state. Reflects
+            today's district boundaries, not necessarily the boundaries in effect during a
+            historical fiscal year.
+        recipient_in_district: Optional. Same as performed_in_district, but for the recipient's
+            location, paired with recipient_in_state.
         keywords: Optional. Free-text search over award descriptions, e.g. "climate research".
         date_type: Optional. Which award date the fiscal-year range is matched against - one of
             action_date (default: any transaction/modification in the window - note this means
@@ -452,6 +556,10 @@ def get_spending_over_time(
     scope = _scope_label(
         agency_name, recipient_name, recipient_id,
         performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county, recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city, recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
     )
     try:
@@ -467,6 +575,14 @@ def get_spending_over_time(
             max_amount=max_amount,
             performed_in_state=performed_in_state,
             recipient_in_state=recipient_in_state,
+            performed_in_county=performed_in_county,
+            recipient_in_county=recipient_in_county,
+            performed_in_city=performed_in_city,
+            recipient_in_city=recipient_in_city,
+            performed_in_zip=performed_in_zip,
+            recipient_in_zip=recipient_in_zip,
+            performed_in_district=performed_in_district,
+            recipient_in_district=recipient_in_district,
             keywords=keywords,
             date_type=date_type,
             place_of_performance_scope=place_of_performance_scope,
@@ -493,6 +609,14 @@ def get_spending_over_time(
         max_amount=max_amount,
         performed_in_state=performed_in_state,
         recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county,
+        recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city,
+        recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip,
+        recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district,
+        recipient_in_district=recipient_in_district,
         keywords=keywords,
         date_type=date_type,
         place_of_performance_scope=place_of_performance_scope,
@@ -525,6 +649,14 @@ def search_awards_raw(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: DateType | None = None,
     place_of_performance_scope: Scope | None = None,
@@ -562,6 +694,14 @@ def search_awards_raw(
         max_amount=max_amount,
         performed_in_state=performed_in_state,
         recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county,
+        recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city,
+        recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip,
+        recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district,
+        recipient_in_district=recipient_in_district,
         keywords=keywords,
         date_type=date_type,
         place_of_performance_scope=place_of_performance_scope,
@@ -587,6 +727,14 @@ def search_awards(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: DateType | None = None,
     place_of_performance_scope: Scope | None = None,
@@ -651,6 +799,24 @@ def search_awards(
             headquartered/located in this US state - different from performed_in_state:
             a company headquartered in one state can perform work in another, and these
             can give substantially different results.
+        performed_in_county: Optional. A specific county where work was performed - a 3-digit
+            FIPS code (e.g. "025" for Yavapai County, AZ), not a name. Requires
+            performed_in_state also be set. Use resolve_county_fips to find the code from a
+            county name - do not guess or construct one.
+        recipient_in_county: Optional. Same as performed_in_county, but for the recipient's
+            location. Requires recipient_in_state also be set.
+        performed_in_city: Optional. Restrict to work performed in this city, e.g. "Livermore".
+            A plain name, not a code - can match the same city name across every state if
+            performed_in_state isn't also set.
+        recipient_in_city: Optional. Same as performed_in_city, but for the recipient's location.
+        performed_in_zip: Optional. Restrict to work performed in this 5-digit zip code.
+        recipient_in_zip: Optional. Restrict to a recipient located in this 5-digit zip code.
+        performed_in_district: Optional. A specific congressional district where work was
+            performed - a 2-digit number (e.g. "01"), paired with performed_in_state. Reflects
+            today's district boundaries, not necessarily the boundaries in effect during a
+            historical fiscal year.
+        recipient_in_district: Optional. Same as performed_in_district, but for the recipient's
+            location, paired with recipient_in_state.
         keywords: Optional. Free-text search over award descriptions, e.g. "climate research".
         date_type: Optional. See the IMPORTANT note above - one of action_date (default),
             date_signed, last_modified_date, or new_awards_only.
@@ -671,6 +837,10 @@ def search_awards(
     scope = _scope_label(
         agency_name, recipient_name, None,
         performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county, recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city, recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
     )
     try:
@@ -685,6 +855,14 @@ def search_awards(
             max_amount=max_amount,
             performed_in_state=performed_in_state,
             recipient_in_state=recipient_in_state,
+            performed_in_county=performed_in_county,
+            recipient_in_county=recipient_in_county,
+            performed_in_city=performed_in_city,
+            recipient_in_city=recipient_in_city,
+            performed_in_zip=performed_in_zip,
+            recipient_in_zip=recipient_in_zip,
+            performed_in_district=performed_in_district,
+            recipient_in_district=recipient_in_district,
             keywords=keywords,
             date_type=date_type,
             place_of_performance_scope=place_of_performance_scope,
@@ -708,6 +886,15 @@ def search_awards(
         min_amount=min_amount,
         max_amount=max_amount,
         performed_in_state=performed_in_state,
+        recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county,
+        recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city,
+        recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip,
+        recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district,
+        recipient_in_district=recipient_in_district,
         keywords=keywords,
         date_type=date_type,
         place_of_performance_scope=place_of_performance_scope,
@@ -715,7 +902,6 @@ def search_awards(
         naics_code=naics_code,
         psc_code=psc_code,
         cfda_program=cfda_program,
-        recipient_in_state=recipient_in_state,
     )
     _record_tool_call("search_awards", results, context)
 
@@ -757,6 +943,14 @@ def get_spending_by_geography_raw(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: DateType | None = None,
     place_of_performance_scope: Scope | None = None,
@@ -771,6 +965,10 @@ def get_spending_by_geography_raw(
         award_type=award_type, recipient_name=recipient_name, recipient_id=recipient_id,
         min_amount=min_amount, max_amount=max_amount,
         performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county, recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city, recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         keywords=keywords, date_type=date_type,
         place_of_performance_scope=place_of_performance_scope, recipient_scope=recipient_scope,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program,
@@ -801,6 +999,14 @@ def get_spending_by_geography(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: DateType | None = None,
     place_of_performance_scope: Scope | None = None,
@@ -843,6 +1049,20 @@ def get_spending_by_geography(
             combining this with geo_layer="county" gives a breakdown of counties within one state.
         recipient_in_state: Optional. Restrict to spending on recipients headquartered in this
             US state.
+        performed_in_county: Optional. A specific county where work was performed - a 3-digit
+            FIPS code (e.g. "025" for Yavapai County, AZ), not a name. Requires
+            performed_in_state also be set. Use resolve_county_fips to find the code from a
+            county name - do not guess or construct one.
+        recipient_in_county: Optional. Same as performed_in_county, but for the recipient's
+            location. Requires recipient_in_state also be set.
+        performed_in_city: Optional. Restrict to work performed in this city, e.g. "Livermore".
+        recipient_in_city: Optional. Same as performed_in_city, but for the recipient's location.
+        performed_in_zip: Optional. Restrict to work performed in this 5-digit zip code.
+        recipient_in_zip: Optional. Restrict to a recipient located in this 5-digit zip code.
+        performed_in_district: Optional. A specific congressional district where work was
+            performed - a 2-digit number (e.g. "01"), paired with performed_in_state.
+        recipient_in_district: Optional. Same as performed_in_district, but for the recipient's
+            location, paired with recipient_in_state.
         keywords: Optional. Free-text search over award descriptions, e.g. "climate research".
         date_type: Optional. Which award date the fiscal-year range is matched against - one of
             action_date (default), date_signed, last_modified_date, or new_awards_only.
@@ -857,6 +1077,10 @@ def get_spending_by_geography(
     scope_label_str = _scope_label(
         agency_name, recipient_name, recipient_id,
         performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county, recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city, recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
     )
     try:
@@ -866,6 +1090,10 @@ def get_spending_by_geography(
             award_type=award_type, recipient_name=recipient_name, recipient_id=recipient_id,
             min_amount=min_amount, max_amount=max_amount,
             performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+            performed_in_county=performed_in_county, recipient_in_county=recipient_in_county,
+            performed_in_city=performed_in_city, recipient_in_city=recipient_in_city,
+            performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
+            performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
             keywords=keywords, date_type=date_type,
             place_of_performance_scope=place_of_performance_scope, recipient_scope=recipient_scope,
             naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program,
@@ -882,6 +1110,10 @@ def get_spending_by_geography(
         agency_name=agency_name, award_type=award_type, recipient_name=recipient_name,
         recipient_id=recipient_id, min_amount=min_amount, max_amount=max_amount,
         performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county, recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city, recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         keywords=keywords, date_type=date_type,
         place_of_performance_scope=place_of_performance_scope, recipient_scope=recipient_scope,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program,

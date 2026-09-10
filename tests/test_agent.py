@@ -27,9 +27,12 @@ from backend.app.agent.tool_filters import (
     Scope,
     _amount_field_for_award_type,
     _build_filters,
+    _build_location,
     _clamp_limit,
     _normalize_award_type,
+    _normalize_county_fips,
     _normalize_date_type,
+    _normalize_district,
     _normalize_recipient_award_type,
     _normalize_scope,
     _normalize_state,
@@ -63,6 +66,7 @@ from backend.app.agent.tools import (
     _location_label,
     _normalize_category,
     _normalize_group,
+    _query_candidates,
     _scope_label,
     _tool_call_log,
     _truncation_note,
@@ -892,6 +896,24 @@ class TestBuildFilters:
         filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, recipient_in_state="Texas")
         assert filters.recipient_locations[0].state == "TX"
 
+    def test_performed_in_county_alone_is_sufficient_scope(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), None, 2021, 2024, performed_in_state="AZ", performed_in_county="025"
+        )
+        assert filters.place_of_performance_locations[0].county == "025"
+
+    def test_performed_in_zip_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, performed_in_zip="94550")
+        assert filters.place_of_performance_locations[0].zip == "94550"
+
+    def test_performed_in_city_and_county_are_independent_locations(self):
+        performed = _build_filters(
+            FakeClient(make_agency()), None, 2021, 2024,
+            performed_in_state="AZ", performed_in_county="025", recipient_in_city="Livermore",
+        )
+        assert performed.place_of_performance_locations[0].county == "025"
+        assert performed.recipient_locations[0].city == "Livermore"
+
     def test_naics_code_alone_is_sufficient_scope(self):
         filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, naics_code="541511")
         assert filters.naics_codes.require == ["541511"]
@@ -955,6 +977,112 @@ class TestNormalizeState:
     def test_garbage_raises_with_clear_message(self):
         with pytest.raises(USASpendingAPIError, match="Unrecognized state 'Springfield'"):
             _normalize_state("Springfield")
+
+
+class TestNormalizeCountyFips:
+    def test_already_3_digits(self):
+        assert _normalize_county_fips("025") == "025"
+
+    def test_unpadded_gets_zero_padded(self):
+        # Confirmed live: an unpadded county code silently returns zero
+        # results rather than erroring - must never reach the API unpadded.
+        assert _normalize_county_fips("25") == "025"
+        assert _normalize_county_fips("1") == "001"
+
+    def test_5_digit_state_county_fips_strips_state_prefix(self):
+        # resolve_county_fips's own county_fips field is 5-digit
+        # (state+county) - confirmed live the filter wants county-only.
+        assert _normalize_county_fips("04025") == "025"
+
+    def test_non_digit_characters_stripped(self):
+        assert _normalize_county_fips(" 025 ") == "025"
+
+    def test_garbage_raises(self):
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a county FIPS code"):
+            _normalize_county_fips("not-a-code")
+
+    def test_too_many_digits_raises(self):
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a county FIPS code"):
+            _normalize_county_fips("123456")
+
+
+class TestNormalizeDistrict:
+    def test_already_2_digits(self):
+        assert _normalize_district("01") == "01"
+
+    def test_unpadded_gets_zero_padded(self):
+        # Confirmed live: an unpadded district number is rejected outright
+        # by the API with a 400 - normalized here so the model never hits it.
+        assert _normalize_district("1") == "01"
+
+    def test_st_nn_form_keeps_only_digits(self):
+        # Confirmed live: "AZ-01" is rejected outright by the filter itself
+        # (only the bare number works) - autocomplete/location's own
+        # current_cd/original_cd fields return this exact "AZ-01" shape.
+        assert _normalize_district("AZ-01") == "01"
+
+    def test_garbage_raises(self):
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a congressional district"):
+            _normalize_district("not-a-district")
+
+
+class TestBuildLocation:
+    def test_all_none_returns_none(self):
+        assert _build_location(None, None, None, None, None) is None
+
+    def test_state_only(self):
+        loc = _build_location("AZ", None, None, None, None)
+        assert loc.state == "AZ"
+        assert loc.county is None
+
+    def test_state_and_county_combine_into_one_location(self):
+        loc = _build_location("AZ", "25", None, None, None)
+        assert loc.state == "AZ"
+        assert loc.county == "025"
+
+    def test_county_without_state_raises(self):
+        with pytest.raises(USASpendingAPIError, match="county filter also requires a state"):
+            _build_location(None, "25", None, None, None)
+
+    def test_county_and_district_together_raises(self):
+        # The live API forbids combining these on one location entry.
+        with pytest.raises(USASpendingAPIError, match="can't both be set"):
+            _build_location("AZ", "25", None, None, "01")
+
+    def test_city_and_zip_pass_through_unmodified(self):
+        loc = _build_location(None, None, "Livermore", "94550", None)
+        assert loc.city == "Livermore"
+        assert loc.zip == "94550"
+
+    def test_district_maps_to_district_current(self):
+        loc = _build_location("AZ", None, None, None, "1")
+        assert loc.district_current == "01"
+        assert loc.district_original is None
+
+
+class TestQueryCandidates:
+    def test_plain_name_has_no_extra_candidates(self):
+        assert _query_candidates("Orleans") == ["Orleans"]
+
+    def test_comma_state_suffix_generates_stripped_candidate(self):
+        # Confirmed live: "Yavapai County, AZ" returns zero results outright -
+        # the comma+state form must never be the only query tried.
+        assert _query_candidates("Yavapai County, AZ") == ["Yavapai County, AZ", "Yavapai County"]
+
+    def test_parish_suffix_generates_stripped_candidate(self):
+        # Confirmed live: "Jefferson Parish" returns zero county matches -
+        # only the bare name does.
+        assert _query_candidates("Jefferson Parish") == ["Jefferson Parish", "Jefferson"]
+
+    def test_comma_and_parish_both_generate_candidates(self):
+        # Confirmed live: "Orleans Parish, LA" also returns zero results -
+        # both transforms are needed, comma-stripping first.
+        candidates = _query_candidates("Orleans Parish, LA")
+        assert candidates == ["Orleans Parish, LA", "Orleans Parish", "Orleans"]
+
+    def test_borough_and_census_area_also_stripped(self):
+        assert _query_candidates("Anchorage Borough")[-1] == "Anchorage"
+        assert _query_candidates("Bethel Census Area")[-1] == "Bethel"
 
 
 class TestAmountFieldForAwardType:

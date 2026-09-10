@@ -176,6 +176,81 @@ def _normalize_state(state: str) -> str:
     return code
 
 
+def _normalize_county_fips(county: str) -> str:
+    """3-digit zero-padded county FIPS code, e.g. "025" for Yavapai County,
+    AZ - confirmed live an unpadded "25" silently returns zero results
+    (no error), so this is enforced here rather than left to the model.
+    Also accepts a 5-digit state+county FIPS (resolve_county_fips's own
+    county_fips field) by taking the last 3 digits - confirmed live the
+    filter wants county-only, not the state-prefixed form.
+    """
+    digits = re.sub(r"\D", "", county)
+    if len(digits) == 5:
+        digits = digits[-3:]
+    if not digits or len(digits) > 3:
+        raise USASpendingAPIError(
+            f"'{county}' doesn't look like a county FIPS code (expected 3 digits, e.g. '025' for "
+            "Yavapai County, AZ - use resolve_county_fips to find one from a county name)."
+        )
+    return digits.zfill(3)
+
+
+def _normalize_district(district: str) -> str:
+    """2-digit zero-padded congressional district number, e.g. "01" - also
+    accepts the "AZ-01" shape (autocomplete/location's own current_cd/
+    original_cd field) by keeping only the digits. Confirmed live the
+    filter rejects both the unpadded ("1") and "ST-NN" forms outright with
+    a 400, unlike county's silent failure - still normalized here rather
+    than relying on the model to hit and recover from that error.
+    """
+    digits = re.sub(r"\D", "", district)
+    if not digits or len(digits) > 2:
+        raise USASpendingAPIError(
+            f"'{district}' doesn't look like a congressional district number (expected e.g. '01', "
+            "or 'AZ-01')."
+        )
+    return digits.zfill(2)
+
+
+def _build_location(
+    state: str | None,
+    county: str | None,
+    city: str | None,
+    zip_code: str | None,
+    district: str | None,
+) -> LocationObject | None:
+    """Combines one place's state/county/city/zip/district into a single
+    LocationObject, enforcing the two real constraints search_filters.md's
+    StandardLocationObject spec states outright: county requires state,
+    and county/district can't both be set on one location entry.
+    """
+    if all(v is None for v in (state, county, city, zip_code, district)):
+        return None
+
+    if county is not None and state is None:
+        raise USASpendingAPIError(
+            "A county filter also requires a state - county names/FIPS codes repeat across states."
+        )
+    if county is not None and district is not None:
+        raise USASpendingAPIError(
+            "county and district can't both be set on the same location - the live API forbids "
+            "combining them."
+        )
+
+    kwargs: dict = {}
+    if state is not None:
+        kwargs["state"] = _normalize_state(state)
+    if county is not None:
+        kwargs["county"] = _normalize_county_fips(county)
+    if city is not None:
+        kwargs["city"] = city.strip()
+    if zip_code is not None:
+        kwargs["zip"] = zip_code.strip()
+    if district is not None:
+        kwargs["district_current"] = _normalize_district(district)
+    return LocationObject(**kwargs)
+
+
 # The API's own real values (search_filters.md's Award/Transaction Search
 # Time Period Objects), not guessed. action_date is the API's own default
 # when omitted - kept in this set so an explicit "action_date" passed by
@@ -272,6 +347,14 @@ def _build_filters(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: str | None = None,
     place_of_performance_scope: str | None = None,
@@ -347,12 +430,18 @@ def _build_filters(
     real_scoping_filters = (
         agency_name, recipient_name, recipient_id,
         performed_in_state, recipient_in_state,
+        performed_in_county, recipient_in_county,
+        performed_in_city, recipient_in_city,
+        performed_in_zip, recipient_in_zip,
+        performed_in_district, recipient_in_district,
         naics_code, psc_code, cfda_program, keywords,
     )
     if all(f is None for f in real_scoping_filters):
         raise USASpendingAPIError(
             "At least one of agency_name, recipient_name, recipient_id, performed_in_state, "
-            "recipient_in_state, naics_code, psc_code, cfda_program, or keywords must be given - "
+            "recipient_in_state, performed_in_county, recipient_in_county, performed_in_city, "
+            "recipient_in_city, performed_in_zip, recipient_in_zip, performed_in_district, "
+            "recipient_in_district, naics_code, psc_code, cfda_program, or keywords must be given - "
             "a question scoped by none of them would mean all federal spending, ever."
         )
 
@@ -389,13 +478,17 @@ def _build_filters(
             )
         kwargs["award_amounts"] = [AwardAmount(lower_bound=min_amount, upper_bound=max_amount)]
 
-    if performed_in_state is not None:
-        kwargs["place_of_performance_locations"] = [
-            LocationObject(state=_normalize_state(performed_in_state))
-        ]
+    performed_location = _build_location(
+        performed_in_state, performed_in_county, performed_in_city, performed_in_zip, performed_in_district
+    )
+    if performed_location is not None:
+        kwargs["place_of_performance_locations"] = [performed_location]
 
-    if recipient_in_state is not None:
-        kwargs["recipient_locations"] = [LocationObject(state=_normalize_state(recipient_in_state))]
+    recipient_location = _build_location(
+        recipient_in_state, recipient_in_county, recipient_in_city, recipient_in_zip, recipient_in_district
+    )
+    if recipient_location is not None:
+        kwargs["recipient_locations"] = [recipient_location]
 
     if keywords is not None:
         kwargs["keywords"] = [keywords]
@@ -476,6 +569,14 @@ def _record_optional_filter_context(
     max_amount: float | None = None,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: str | None = None,
     place_of_performance_scope: str | None = None,
@@ -497,6 +598,14 @@ def _record_optional_filter_context(
         ("max_amount", max_amount),
         ("performed_in_state", performed_in_state),
         ("recipient_in_state", recipient_in_state),
+        ("performed_in_county", performed_in_county),
+        ("recipient_in_county", recipient_in_county),
+        ("performed_in_city", performed_in_city),
+        ("recipient_in_city", recipient_in_city),
+        ("performed_in_zip", performed_in_zip),
+        ("recipient_in_zip", recipient_in_zip),
+        ("performed_in_district", performed_in_district),
+        ("recipient_in_district", recipient_in_district),
         ("keywords", keywords),
         ("date_type", date_type),
         ("place_of_performance_scope", place_of_performance_scope),

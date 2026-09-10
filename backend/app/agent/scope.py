@@ -18,7 +18,13 @@ SCOPE_CLASSIFIER_PROMPT = (
     "in-scope questions (e.g. live spending-data lookups) have no good "
     "match in this retrieval corpus at all. Use the passage only as "
     "supporting evidence when it looks genuinely on-topic; ignore it if it "
-    "looks irrelevant. Respond with only YES or NO, nothing else."
+    "looks irrelevant. You may also be given the immediately preceding "
+    "conversation turn(s) - use them only to understand what a follow-up "
+    "question that doesn't restate its subject is actually asking about "
+    "(e.g. 'what about NASA?' after a budget question is a budget "
+    "question about NASA); still classify based on the CURRENT question's "
+    "own topic, not the prior turns' topic alone. Respond with only YES "
+    "or NO, nothing else."
 )
 
 
@@ -31,8 +37,34 @@ def _get_top_passage(question: str) -> str:
     return f"Most relevant passage found (rerank score {top['rerank_score']:.2f}):\n{top['text']}"
 
 
+def _render_recent_exchanges(recent_messages: list, max_exchanges: int = 2) -> str:
+    """Render up to the last few human-question/final-answer exchanges
+    from a LangGraph conversation's message list, for folding into the
+    scope classifier's context. A single human turn can produce more than
+    one AIMessage (an intermediate tool-calling one, content a list of
+    content blocks, then a final plain-text one) plus ToolMessages in
+    between - only the question and the final plain-text answer per turn
+    are useful context here, so everything else is skipped."""
+    exchanges: list[tuple[str, str]] = []
+    pending_question: str | None = None
+    pending_answer: str | None = None
+    for message in recent_messages:
+        message_type = getattr(message, "type", None)
+        if message_type == "human":
+            if pending_question is not None:
+                exchanges.append((pending_question, pending_answer or ""))
+            pending_question = str(message.content)
+            pending_answer = None
+        elif message_type == "ai" and isinstance(message.content, str) and message.content:
+            pending_answer = message.content
+    if pending_question is not None:
+        exchanges.append((pending_question, pending_answer or ""))
+
+    return "\n".join(f"Prior turn: Q: {q}\nA: {a}" for q, a in exchanges[-max_exchanges:])
+
+
 @traceable(run_type="llm", name="scope_classifier")
-def _is_in_scope(question: str) -> bool:
+def _is_in_scope(question: str, recent_messages: list | None = None) -> bool:
     """Cheap pre-filter gate: only start the (much more expensive) tool-
     calling loop if the question is plausibly in-scope for this app's whole
     domain, instead of relying on the system prompt alone to stop the model
@@ -57,13 +89,35 @@ def _is_in_scope(question: str) -> bool:
     parameters are deprecated/rejected outright by the current API, with
     no direct replacement - so this call is inherently non-deterministic
     regardless of the above.
+
+    recent_messages (issue #62) is an optional LangGraph conversation
+    message list (see _ask_langgraph) - when given, the last couple of
+    question/answer exchanges are rendered and folded into this same
+    call's context. Confirmed live this correctly resolves a follow-up
+    that keeps a topical token ("What about FY2023?" after a budget
+    question - still classifies YES, still calls the right tool for the
+    right year). Confirmed live it does NOT reliably resolve a fully
+    generic follow-up with no topical token at all (e.g. "Was that a
+    lot?" after the same budget question classified NO, 3/3 repeats,
+    even with the prior exchange correctly rendered into its context) -
+    a real, demonstrated limit of folding raw history into one classifier
+    call, not a wiring bug. Ships without calibration data, unlike the
+    bare-question figure above; a future calibrate_scope_classifier.py-
+    style pass extending its labeled set with real multi-turn follow-ups
+    - or a query-rewriting step, deliberately not built here - would be
+    the next move if this limit matters in practice.
     """
     context = _get_top_passage(question)
+    user_content = f"Question: {question}\n\n{context}"
+    if recent_messages:
+        history_block = _render_recent_exchanges(recent_messages)
+        if history_block:
+            user_content = f"{history_block}\n\n{user_content}"
     response = _get_client().messages.create(
         model=MODEL,
         max_tokens=5,
         system=SCOPE_CLASSIFIER_PROMPT,
-        messages=[{"role": "user", "content": f"Question: {question}\n\n{context}"}],
+        messages=[{"role": "user", "content": user_content}],
     )
     text = next((b.text for b in response.content if b.type == "text"), "")
     return text.strip().upper().startswith("YES")

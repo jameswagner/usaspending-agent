@@ -414,13 +414,16 @@ def _ask_legacy(question: str, conversation_id: str) -> AgentResult:
 def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
     """LangGraph-backed path (issue #61 series) - conversation_id is a
     real LangGraph thread_id, giving persisted, resumable history via the
-    checkpointer built in singletons.warm_up(). Scope-classifier
-    history-awareness (#62) and context-growth bounding (#63) land as
-    later parts of the same series; this part alone behaves like
-    _ask_legacy for a single turn, just through the graph instead of
-    tool_runner, with history persisted for a next turn to use.
+    checkpointer built in singletons.warm_up(). Context-growth bounding
+    (#63) lands as a later part of the same series.
     """
-    if not _is_in_scope(question):
+    graph = _get_conversation_graph()
+    config = {"configurable": {"thread_id": conversation_id}}
+    # A cheap, already-in-memory-or-sqlite lookup (no extra LLM call) - on
+    # a brand new thread_id this is just {} (confirmed live), not an error.
+    recent_messages = graph.get_state(config).values.get("messages", [])
+
+    if not _is_in_scope(question, recent_messages):
         logger.info("Scope gate rejected question: %r", question)
         # Deliberately not persisted into checkpointer state - an
         # out-of-scope question shouldn't poison what the next in-scope
@@ -429,8 +432,6 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
 
     _tool_call_log.set([])
 
-    graph = _get_conversation_graph()
-    config = {"configurable": {"thread_id": conversation_id}}
     final_state = graph.invoke({"messages": [{"role": "user", "content": question}]}, config=config)
 
     final_messages = final_state["messages"]

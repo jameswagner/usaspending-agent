@@ -1,5 +1,5 @@
-"""Schema-sanity coverage for langgraph_tools.py (issue #64) - catches
-a tool(parse_docstring=True) mismatch between a docstring's Args: block
+"""Schema-sanity coverage for langgraph_tools.py - catches a
+tool(parse_docstring=True) mismatch between a docstring's Args: block
 and its function's real signature, across all wrapped tools at once.
 """
 from __future__ import annotations

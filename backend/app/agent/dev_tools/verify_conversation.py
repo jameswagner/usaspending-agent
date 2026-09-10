@@ -1,7 +1,6 @@
-"""Live, 3-turn verification of the LangGraph conversation path (issue
-#65), gating the parts 1-3 series (#61-#63) before parity/cutover work.
-Checks: turn 2's bare follow-up still scopes to the prior turn's subject,
-and turn 3's comparison calls the `delta` tool using both prior figures
+"""Live, 3-turn verification of the LangGraph conversation path. Checks:
+turn 2's bare follow-up still scopes to the prior turn's subject, and
+turn 3's comparison calls the `delta` tool using both prior figures
 rather than restating them in prose.
 
 Real, billed API calls, run under AGENT_ENGINE=langgraph. Not part of
@@ -45,7 +44,7 @@ def main() -> None:
 
     if turn2.answer_text == NOT_FOUND_MESSAGE:
         print("\nFAIL: turn 2 was rejected by the scope gate - the follow-up scope "
-              "classifier (#62) should have recognized this as a continuation.")
+              "classifier should have recognized this as a continuation.")
     else:
         print("\nOK: turn 2 was not rejected by the scope gate.")
 
@@ -53,9 +52,7 @@ def main() -> None:
     if "delta" in turn3_tools:
         print("OK: turn 3 called delta using the prior turns' figures.")
     else:
-        print(f"FAIL: turn 3 did not call delta - tool_citations were {turn3_tools}. "
-              "This may be the pre-existing comparison-figure gap tracked in #75, not "
-              "something introduced by this series.")
+        print(f"FAIL: turn 3 did not call delta - tool_citations were {turn3_tools}.")
 
 
 if __name__ == "__main__":

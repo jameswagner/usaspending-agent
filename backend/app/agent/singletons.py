@@ -186,15 +186,9 @@ def warm_up() -> None:
     _chat_model = ChatAnthropic(model=MODEL, max_tokens=2048, default_headers=headers)
 
     def _prompt(state: dict) -> list:
-        # Recomputed fresh per call (not baked in at graph-compile time)
-        # so the fiscal-year/date grounding _build_system_prompt() does
-        # internally stays correct across a long-lived process, exactly
-        # like the legacy tool_runner path already does.
-        #
-        # cache_control must be a block-level field (content as a list of
-        # dicts), not a bare string - confirmed live (#65) that a plain
-        # SystemMessage(content=str) produces zero cache_creation/cache_read
-        # tokens on either engine's turns, silently disabling caching.
+        # Recomputed fresh per call so date grounding stays correct.
+        # cache_control must be a block-level field, not a bare string -
+        # a plain SystemMessage(content=str) silently disables caching.
         return [
             SystemMessage(
                 content=[

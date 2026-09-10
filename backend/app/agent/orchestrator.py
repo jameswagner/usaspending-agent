@@ -42,6 +42,7 @@ from .tools import (
     list_top_agencies_by_budget,
     lookup_agency,
     resolve_cfda_program,
+    resolve_county_fips,
     resolve_naics_code,
     resolve_psc_code,
     search_awards,
@@ -105,7 +106,7 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have twenty-two tools. Fifteen retrieve data: search_guide "
+        "have twenty-three tools. Sixteen retrieve data: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
         "toptier code), resolve_naics_code (find the NAICS code matching a "
@@ -120,7 +121,12 @@ def _build_system_prompt() -> str:
         "resolve_cfda_program (same idea for a federal grant/loan/assistance "
         "program description — call before cfda_program whenever the "
         "question describes a program rather than naming its number "
-        "already; same semantic-match caveat), list_top_agencies_by_budget "
+        "already; same semantic-match caveat), resolve_county_fips (find a "
+        "county's FIPS code from its name — call before "
+        "performed_in_county/recipient_in_county on the spending tools "
+        "whenever a county is named; always pair the result with its "
+        "state, since a county name/code alone repeats across states), "
+        "list_top_agencies_by_budget "
         "(rank agencies by budget authority, largest first — use this for "
         "'which agency has the biggest budget' or 'what percent of the "
         "federal budget does X account for'; always reflects the current "
@@ -277,6 +283,7 @@ def ask(question: str) -> AgentResult:
             resolve_naics_code,
             resolve_psc_code,
             resolve_cfda_program,
+            resolve_county_fips,
             list_top_agencies_by_budget,
             get_agency_budget,
             get_agency_award_breakdown,

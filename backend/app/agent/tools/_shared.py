@@ -140,6 +140,14 @@ def _scope_label(
     *,
     performed_in_state: str | None = None,
     recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
@@ -150,6 +158,10 @@ def _scope_label(
     return (
         agency_name or recipient_name or recipient_id
         or performed_in_state or recipient_in_state
+        or performed_in_county or recipient_in_county
+        or performed_in_city or recipient_in_city
+        or performed_in_zip or recipient_in_zip
+        or performed_in_district or recipient_in_district
         or naics_code or psc_code or cfda_program or keywords
         or "unknown scope"
     )

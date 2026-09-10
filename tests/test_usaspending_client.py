@@ -204,6 +204,37 @@ class TestListToptierAgenciesCaching:
         assert result[0].congressional_justification_url == "https://www.hhs.gov/cj"
 
 
+class TestAutocompleteLocation:
+    def test_parses_real_response_shape(self, monkeypatch):
+        # Real live values (Yavapai County, AZ, 2026-09-10).
+        client = USASpendingClient()
+        body = {
+            "count": 1,
+            "results": {
+                "cities": [
+                    {"city_name": "YAVAPAI HILLS", "state_name": "ARIZONA", "country_name": "UNITED STATES"},
+                ],
+                "counties": [
+                    {"county_name": "YAVAPAI", "county_fips": "04025", "state_name": "ARIZONA", "country_name": "UNITED STATES"},
+                ],
+            },
+            "messages": [""],
+        }
+        monkeypatch.setattr(client, "_post", lambda path, b: body)
+        response = client.autocomplete_location("Yavapai")
+        assert response.results.counties[0].county_name == "YAVAPAI"
+        assert response.results.counties[0].county_fips == "04025"
+        assert response.results.counties[0].state_name == "ARIZONA"
+
+    def test_no_county_matches_parses_to_empty_list(self, monkeypatch):
+        # Real live shape for a query with only city matches, e.g. "Portland".
+        client = USASpendingClient()
+        body = {"count": 1, "results": {"cities": [{"city_name": "PORTLAND", "country_name": "CANADA"}]}, "messages": [""]}
+        monkeypatch.setattr(client, "_post", lambda path, b: body)
+        response = client.autocomplete_location("Portland")
+        assert response.results.counties == []
+
+
 class TestSearchAwardsValidation:
     def test_raises_without_award_type_codes(self):
         client = USASpendingClient()

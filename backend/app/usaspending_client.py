@@ -264,6 +264,26 @@ class ToptierAgency(BaseModel):
     current_total_budget_authority_amount: float  # government-wide total, NOT per-agency - see AgencyYearBudget.total_budgetary_resources
 
 
+class CountyMatch(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    county_name: str
+    county_fips: str  # 5-digit state+county FIPS - _normalize_county_fips strips the state prefix
+    state_name: str
+
+
+class LocationAutocompleteResults(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    counties: list[CountyMatch] = []
+
+
+class LocationAutocompleteResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    results: LocationAutocompleteResults
+
+
 class AgencyOverview(BaseModel):
     model_config = ConfigDict(extra="allow")
 
@@ -694,6 +714,16 @@ class USASpendingClient:
         self._toptier_agencies_cache = agencies
         self._toptier_agencies_cached_at = now
         return agencies
+
+    @traceable(run_type="tool", name="autocomplete_location")
+    def autocomplete_location(self, search_text: str) -> LocationAutocompleteResponse:
+        """POST /api/v2/autocomplete/location/. Only counties are modeled -
+        cities carry no unique code (a CityMatch is just name/state/country,
+        the same shape the city filter parameter already wants directly),
+        so this app has no use for the other result keys.
+        """
+        data = self._post("/api/v2/autocomplete/location/", {"search_text": search_text})
+        return LocationAutocompleteResponse(**data)
 
     @traceable(run_type="tool", name="find_agency_by_name")
     def find_agency_by_name(self, name: str) -> ToptierAgency | None:

@@ -48,6 +48,7 @@ from .awards import (
 )
 from .business_type_labels import _format_business_type
 from .cfda import resolve_cfda_program
+from .location import _query_candidates, resolve_county_fips
 from .naics import resolve_naics_code
 from .psc import resolve_psc_code
 from .recipients import (
@@ -103,6 +104,7 @@ __all__ = [
     "_location_label",
     "_normalize_category",
     "_normalize_group",
+    "_query_candidates",
     "_record_code_execution_calls",
     "_record_tool_call",
     "_scope_label",
@@ -127,6 +129,7 @@ __all__ = [
     "logger",
     "lookup_agency",
     "resolve_cfda_program",
+    "resolve_county_fips",
     "resolve_naics_code",
     "resolve_psc_code",
     "search_awards",

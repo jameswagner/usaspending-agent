@@ -10,7 +10,7 @@ export default function Home() {
   const { conversationId, turns, loading, error, sendMessage, newConversation } = useConversation();
   const [question, setQuestion] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     if (!question.trim()) return;
     await sendMessage(question);

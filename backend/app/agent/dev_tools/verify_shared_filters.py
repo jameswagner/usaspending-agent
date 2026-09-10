@@ -13,6 +13,7 @@ CI - run manually:
 from __future__ import annotations
 
 from backend.app.agent.orchestrator import ask
+from backend.app.agent.singletons import warm_up
 from backend.app.agent.tools import search_awards_raw
 
 
@@ -177,6 +178,9 @@ def case_new_awards_only_eliminates_cross_fiscal_year_duplication() -> None:
 
 
 def main() -> None:
+    # Required for AGENT_ENGINE=langgraph (_get_conversation_graph() asserts
+    # warm_up() already ran); harmless no-op cost for the legacy path.
+    warm_up()
     case_search_awards_sorted_by_amount()
     case_award_amount_filter()
     case_truncation_note_when_more_results_exist()

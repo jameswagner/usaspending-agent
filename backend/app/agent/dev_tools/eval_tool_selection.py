@@ -9,10 +9,16 @@ propagates back out; tool_citations is read inside ask() before return.
 
 Real, billed API calls. Not part of CI:
     uv run python -m backend.app.agent.dev_tools.eval_tool_selection
+
+Reads AGENT_ENGINE (default "legacy") so this can run once per engine
+against the same dataset for #65's parity check - run once with
+AGENT_ENGINE=legacy and once with AGENT_ENGINE=langgraph, then diff each
+question's tools_called between the two experiments.
 """
 from __future__ import annotations
 
 import json
+import os
 import uuid
 from pathlib import Path
 from typing import Any
@@ -204,9 +210,20 @@ def print_report(rows: list[dict]) -> None:
         print(f"  {'[hedged]' if hedged else '[NOT hedged]'} {question!r}")
 
 
+def dump_tools_called(rows: list[dict], path: Path) -> None:
+    """Per-question tools_called, keyed by question - for #65's parity
+    check, diffing one run's dump against the other engine's."""
+    data = {row["example"].inputs["question"]: (row["run"].outputs or {}).get("tools_called", []) for row in rows}
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    print(f"\nDumped per-question tools_called to {path}")
+
+
 def main() -> None:
     # Without this, evaluate()'s concurrency races the unlocked lazy singletons in singletons.py.
     warm_up()
+
+    engine = os.environ.get("AGENT_ENGINE", "legacy")
+    print(f"Running under AGENT_ENGINE={engine!r}")
 
     client = Client()
     entries = load_labeled_set()
@@ -217,7 +234,7 @@ def main() -> None:
         predict,
         data=DATASET_NAME,
         evaluators=[tool_selection_correct, confusable_alternative_called, hedge_language_present],
-        experiment_prefix="tool-selection",
+        experiment_prefix=f"tool-selection-{engine}",
         client=client,
         # >1 hangs/spins CPU here even after warm_up() - a real, separate bug, not yet root-caused.
         max_concurrency=1,
@@ -226,7 +243,9 @@ def main() -> None:
     print(f"\nExperiment: {results.experiment_name}")
     print(f"View results: {results.url}")
 
-    print_report(list(results))
+    rows = list(results)
+    print_report(rows)
+    dump_tools_called(rows, Path(f"/tmp/tool_selection_{engine}.json"))
 
 
 if __name__ == "__main__":

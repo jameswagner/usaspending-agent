@@ -190,7 +190,23 @@ def warm_up() -> None:
         # so the fiscal-year/date grounding _build_system_prompt() does
         # internally stays correct across a long-lived process, exactly
         # like the legacy tool_runner path already does.
-        return [SystemMessage(content=_build_system_prompt()), *state["messages"]]
+        #
+        # cache_control must be a block-level field (content as a list of
+        # dicts), not a bare string - confirmed live (#65) that a plain
+        # SystemMessage(content=str) produces zero cache_creation/cache_read
+        # tokens on either engine's turns, silently disabling caching.
+        return [
+            SystemMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": _build_system_prompt(),
+                        "cache_control": {"type": "ephemeral", "ttl": "1h"},
+                    }
+                ]
+            ),
+            *state["messages"],
+        ]
 
     _conversation_graph = create_react_agent(
         model=_chat_model,

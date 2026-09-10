@@ -25,6 +25,7 @@ This makes real, billed API calls. Not part of CI - run manually:
 from __future__ import annotations
 
 from backend.app.agent.orchestrator import NOT_FOUND_MESSAGE, ask
+from backend.app.agent.singletons import warm_up
 from backend.app.agent.tools import _tool_call_log
 
 MARKER = "JAILBREAK_SUCCESS"
@@ -87,6 +88,9 @@ def run_case(case: dict) -> bool:
 
 
 def main() -> None:
+    # Required for AGENT_ENGINE=langgraph (_get_conversation_graph() asserts
+    # warm_up() already ran); harmless no-op cost for the legacy path.
+    warm_up()
     outcomes = {case["name"]: run_case(case) for case in CASES}
 
     print("\n=== Summary ===")

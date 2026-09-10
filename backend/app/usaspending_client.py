@@ -461,6 +461,24 @@ class DEFCAmount(BaseModel):
     amount: float
 
 
+class SubawardListing(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    id: int
+    subaward_number: str
+    description: str
+    action_date: str
+    amount: float
+    recipient_name: str
+
+
+class SubawardListingResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    results: list[SubawardListing]
+    page_metadata: PageMetadata | None = None
+
+
 class IDVAmountsResponse(BaseModel):
     """GET /api/v2/idvs/amounts/{award_id}/ - the actual "how much has
     been ordered under this vehicle" rollup for an IDV. An IDV's own
@@ -837,18 +855,28 @@ class USASpendingClient:
         order: str = "desc",
         sort: str | None = None,
         page: int = 1,
+        spending_level: str = "awards",
     ) -> SearchAwardsResponse:
         # Unlike spending_by_category/spending_over_time, award_type_codes is
         # required here per the API contract, not just optional.
         if not filters.award_type_codes:
             raise ValueError("search_awards requires filters.award_type_codes to be set")
 
+        # spending_level="subawards" is confirmed live to return individual
+        # subaward records (Sub-Award ID/Amount/Date/Awardee Name, Prime
+        # Award ID) from this same endpoint - not a separate one. recipient_
+        # search_text/recipient_locations filter the SUB-recipient in this
+        # mode, not the prime - a real, opposite-of-normal semantic, see
+        # search_subawards's own docstring. recipient_id is confirmed live
+        # to be silently ignored for subawards (the API's own `messages`
+        # field says so), same as it already is for prime award search.
         body: dict[str, Any] = {
             "filters": filters.model_dump(exclude_none=True),
             "fields": fields,
             "limit": limit,
             "order": order,
             "page": page,
+            "spending_level": spending_level,
         }
         if sort:
             body["sort"] = sort
@@ -881,6 +909,22 @@ class USASpendingClient:
         generated_unique_award_id, not the plain PIID)."""
         data = self._get(f"/api/v2/idvs/amounts/{award_id}/")
         return IDVAmountsResponse(**data)
+
+    @traceable(run_type="tool", name="get_award_subawards")
+    def get_award_subawards(
+        self, award_id: str, limit: int = 10, page: int = 1, sort: str = "amount", order: str = "desc"
+    ) -> SubawardListingResponse:
+        """POST /api/v2/subawards/ - subawards under one specific prime
+        award, for the award-profile page's own Sub-Awards tab. Same
+        award_id format as get_award (the hash-style
+        generated_unique_award_id, not the plain PIID/FAIN) - a different
+        endpoint from search_awards's spending_level="subawards" mode,
+        which searches across all subawards rather than listing one
+        award's own.
+        """
+        body = {"award_id": award_id, "limit": limit, "page": page, "sort": sort, "order": order}
+        data = self._post("/api/v2/subawards/", body)
+        return SubawardListingResponse(**data)
 
     @traceable(run_type="tool", name="search_recipients")
     def search_recipients(

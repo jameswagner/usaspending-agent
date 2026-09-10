@@ -1,6 +1,7 @@
 """get_award_details and its IDV child-order rollup - full detail on one
 specific award (contract, IDV, grant, loan, or other financial
-assistance), as opposed to spending.py's aggregate/list tools.
+assistance), as opposed to spending.py's aggregate/list tools. Also
+get_award_subawards, listing one award's own subawards - see #22.
 """
 from __future__ import annotations
 
@@ -13,7 +14,12 @@ from langsmith import traceable
 from backend.app.usaspending_client import IDVAmountsResponse, USASpendingAPIError
 
 from ..singletons import _get_usaspending_client
-from ._shared import _check_tool_call_budget, _record_tool_call, _wrap_untrusted
+from ._shared import (
+    _check_tool_call_budget,
+    _record_tool_call,
+    _truncation_note,
+    _wrap_untrusted,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -334,3 +340,36 @@ def get_award_details(award_id: str, include_child_orders: bool = False) -> str:
         {"award_id": award_id, "piid": data.get("piid") or data.get("fain") or data.get("uri")},
     )
     return _wrap_untrusted(_format_award_details(data, child_order_rollup))
+
+
+@beta_tool
+def get_award_subawards(award_id: str, limit: int = 10) -> str:
+    """List the subawards issued under one specific prime award - the award-profile page's own Sub-Awards tab. Use this for "who did X subcontract this work to" or "what subawards has this award issued" about a SPECIFIC award already found via search_awards. For subawards across many awards (e.g. "subawards to Leidos" or "subawards issued by NSF"), use search_subawards instead - this tool only lists one award's own.
+
+    Args:
+        award_id: The internal_id shown alongside a search_awards result (or get_award_details' own
+            award_id parameter) - the hash-style generated_unique_award_id, not the plain PIID/FAIN.
+            Do not guess or construct one.
+        limit: Max number of subawards to return, ranked by amount descending (default 10).
+    """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    client = _get_usaspending_client()
+    try:
+        response = client.get_award_subawards(award_id, limit=limit)
+    except USASpendingAPIError as e:
+        logger.warning("get_award_subawards failed for %s: %s", award_id, e)
+        return f"This query failed: {e}."
+
+    _record_tool_call("get_award_subawards", response, {"award_id": award_id})
+
+    if not response.results:
+        return f"No subawards found for award {award_id}."
+
+    lines = [
+        f"{s.subaward_number} — {s.recipient_name}: ${s.amount:,.2f} ({s.action_date}) - {s.description}"
+        for s in response.results
+    ]
+    has_next = response.page_metadata.hasNext if response.page_metadata else False
+    note = _truncation_note(has_next, len(response.results))
+    return _wrap_untrusted("\n".join(lines) + note)

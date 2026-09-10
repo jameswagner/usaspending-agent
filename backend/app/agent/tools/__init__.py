@@ -44,6 +44,7 @@ from .awards import (
     _location_label,
     get_award_details,
     get_award_details_raw,
+    get_award_subawards,
     get_idv_amounts_raw,
 )
 from .business_type_labels import _format_business_type
@@ -76,6 +77,8 @@ from .spending import (
     get_spending_over_time_raw,
     search_awards,
     search_awards_raw,
+    search_subawards,
+    search_subawards_raw,
 )
 
 __all__ = [
@@ -117,6 +120,7 @@ __all__ = [
     "get_agency_budget_raw",
     "get_award_details",
     "get_award_details_raw",
+    "get_award_subawards",
     "get_idv_amounts_raw",
     "get_recipient_details",
     "get_spending_by_category",
@@ -136,4 +140,6 @@ __all__ = [
     "search_awards_raw",
     "search_guide",
     "search_recipients",
+    "search_subawards",
+    "search_subawards_raw",
 ]

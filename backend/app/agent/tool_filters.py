@@ -534,6 +534,22 @@ def _build_filters(
 # unconditionally, not just for the common cases.
 SEARCH_AWARDS_FIELDS_BASE = ["Award ID", "generated_internal_id", "Recipient Name", "Awarding Agency", "Description"]
 
+# Common to both Contract Subawards and Grant Subawards field lists
+# (spending_by_award.md) - skips the type-specific extras (NAICS/PSC for
+# contracts, Assistance Listing for grants) rather than branching per
+# award_type, matching SEARCH_AWARDS_FIELDS_BASE's own base-fields approach.
+SUBAWARD_FIELDS = [
+    "Sub-Award ID",
+    "Sub-Awardee Name",
+    "Sub-Award Amount",
+    "Sub-Award Date",
+    "Sub-Award Description",
+    "Prime Award ID",
+    "Prime Recipient Name",
+    "Awarding Agency",
+    "prime_award_generated_internal_id",
+]
+
 LOAN_AWARD_TYPE_CODES = {"07", "08"}
 
 

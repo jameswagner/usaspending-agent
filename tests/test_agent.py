@@ -1,4 +1,5 @@
 from datetime import date, datetime, timezone
+from types import SimpleNamespace
 from typing import Any, ClassVar, get_args
 
 import pytest
@@ -397,13 +398,20 @@ class TestBuildToolCitation:
     def test_get_agency_budget(self):
         citation = build_tool_citation(
             "get_agency_budget",
-            {"agency_name": "National Science Foundation", "start_fiscal_year": 2021, "end_fiscal_year": 2024},
+            {
+                "agency_name": "National Science Foundation",
+                "start_fiscal_year": 2021,
+                "end_fiscal_year": 2024,
+                "toptier_code": "4900",
+            },
         )
         assert citation is not None
         assert citation.tool_name == "get_agency_budget"
         assert citation.description == (
             "Budgetary resources, National Science Foundation, FY2021-FY2024"
         )
+        assert citation.url == "https://api.usaspending.gov/api/v2/agency/4900/budgetary_resources/"
+        assert "toptier_code" not in citation.parameters
 
     def test_get_agency_award_breakdown(self):
         citation = build_tool_citation(
@@ -432,6 +440,12 @@ class TestBuildToolCitation:
         assert citation.tool_name == "lookup_agency"
         assert citation.parameters == {"name": "National Science Foundation"}
         assert citation.description == "Agency lookup: National Science Foundation"
+        assert citation.url is None
+
+    def test_lookup_agency_url_from_result(self):
+        result = SimpleNamespace(toptier_code="4900")
+        citation = build_tool_citation("lookup_agency", {"name": "National Science Foundation"}, result)
+        assert citation.url == "https://api.usaspending.gov/api/v2/agency/4900/"
 
     def test_resolve_naics_code(self):
         citation = build_tool_citation("resolve_naics_code", {"description": "custom software development"})
@@ -573,10 +587,19 @@ class TestBuildToolCitation:
         # shown description - a citation showing the ugly hash string would
         # look broken next to every other tool's readable description.
         assert citation.description == "Award details: NSFDACS1219442"
+        assert citation.url == "https://api.usaspending.gov/api/v2/awards/CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-/"
 
     def test_get_award_details_falls_back_to_award_id_without_piid(self):
         citation = build_tool_citation("get_award_details", {"award_id": "CONT_AWD_X"})
         assert citation.description == "Award details: CONT_AWD_X"
+
+    def test_list_top_agencies_by_budget(self):
+        citation = build_tool_citation("list_top_agencies_by_budget", {"limit": 10})
+        assert citation is not None
+        assert citation.tool_name == "list_top_agencies_by_budget"
+        assert citation.parameters == {"limit": 10}
+        assert citation.description == "Top 10 agencies by budget"
+        assert citation.url == "https://api.usaspending.gov/api/v2/references/toptier_agencies/"
 
     def test_search_recipients(self):
         citation = build_tool_citation("search_recipients", {"keyword": "Boeing"})

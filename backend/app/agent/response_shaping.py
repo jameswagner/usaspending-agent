@@ -13,7 +13,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from backend.app.usaspending_client import USASpendingAPIError
+from backend.app.usaspending_client import BASE_URL, USASpendingAPIError
 
 
 def current_fiscal_year(today: date | None = None) -> int:
@@ -369,10 +369,12 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
 
     if tool_name == "lookup_agency":
         name = context["name"]
+        url = f"{BASE_URL}/api/v2/agency/{result.toptier_code}/" if result else None
         return ToolCitation(
             tool_name=tool_name,
             parameters={"name": name},
             description=f"Agency lookup: {name}",
+            url=url,
         )
 
     if tool_name in ("resolve_naics_code", "resolve_psc_code", "resolve_cfda_program"):
@@ -401,7 +403,8 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             f"Budgetary resources, {params['agency_name']}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
         )
-        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+        url = f"{BASE_URL}/api/v2/agency/{context['toptier_code']}/budgetary_resources/"
+        return ToolCitation(tool_name=tool_name, parameters=params, description=description, url=url)
 
     if tool_name == "get_agency_award_breakdown":
         params = {"agency_name": context["agency_name"], "fiscal_year": context["fiscal_year"]}
@@ -480,6 +483,16 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             tool_name=tool_name,
             parameters={"award_id": award_id},
             description=f"Award details: {label}",
+            url=f"{BASE_URL}/api/v2/awards/{award_id}/",
+        )
+
+    if tool_name == "list_top_agencies_by_budget":
+        limit = context["limit"]
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"limit": limit},
+            description=f"Top {limit} agencies by budget",
+            url=f"{BASE_URL}/api/v2/references/toptier_agencies/",
         )
 
     if tool_name == "search_recipients":

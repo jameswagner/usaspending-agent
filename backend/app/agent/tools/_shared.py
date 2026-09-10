@@ -250,11 +250,12 @@ def lookup_agency(name: str) -> str:
 @traceable(run_type="tool", name="get_agency_budget_raw")
 def get_agency_budget_raw(
     agency_name: str, start_fiscal_year: int, end_fiscal_year: int
-) -> list[AgencyYearBudget]:
+) -> tuple[str, list[AgencyYearBudget]]:
     """Call the API once (it always returns every fiscal year it has - no
     range param exists), return only the years actually asked for. Raises
     USASpendingAPIError if agency_name doesn't resolve, same pattern as
-    the other tools' _raw functions.
+    the other tools' _raw functions. Also returns the resolved toptier_code
+    (not on AgencyYearBudget itself) for the caller's citation.
     """
     client = _get_usaspending_client()
     agency = client.find_agency_by_name(agency_name)
@@ -262,10 +263,11 @@ def get_agency_budget_raw(
         raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
 
     response = client.get_agency_budgetary_resources(agency.toptier_code)
-    return [
+    years = [
         y for y in response.agency_data_by_year
         if start_fiscal_year <= y.fiscal_year <= end_fiscal_year
     ]
+    return agency.toptier_code, years
 
 
 # P01 = October, the first month of the federal fiscal year - period N
@@ -320,7 +322,7 @@ def get_agency_budget(
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
     try:
-        years = get_agency_budget_raw(agency_name, start_fiscal_year, end_fiscal_year)
+        toptier_code, years = get_agency_budget_raw(agency_name, start_fiscal_year, end_fiscal_year)
     except USASpendingAPIError as e:
         logger.warning("get_agency_budget failed for %s: %s", agency_name, e)
         return f"This query failed: {e}."
@@ -328,7 +330,12 @@ def get_agency_budget(
     _record_tool_call(
         "get_agency_budget",
         years,
-        {"agency_name": agency_name, "start_fiscal_year": start_fiscal_year, "end_fiscal_year": end_fiscal_year},
+        {
+            "agency_name": agency_name,
+            "start_fiscal_year": start_fiscal_year,
+            "end_fiscal_year": end_fiscal_year,
+            "toptier_code": toptier_code,
+        },
     )
 
     if not years:

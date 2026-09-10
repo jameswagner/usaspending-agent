@@ -60,7 +60,12 @@ def test_ask_returns_agent_response(client, monkeypatch):
         }
     ]
     assert data["tool_citations"] == [
-        {"tool_name": "lookup_agency", "parameters": {"name": "NSF"}, "description": "Agency lookup: NSF"}
+        {
+            "tool_name": "lookup_agency",
+            "parameters": {"name": "NSF"},
+            "description": "Agency lookup: NSF",
+            "url": None,
+        }
     ]
 
 

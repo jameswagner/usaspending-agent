@@ -412,10 +412,9 @@ def _ask_legacy(question: str, conversation_id: str) -> AgentResult:
 
 
 def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
-    """LangGraph-backed path (issue #61 series) - conversation_id is a
-    real LangGraph thread_id, giving persisted, resumable history via the
-    checkpointer built in singletons.warm_up(). Context-growth bounding
-    (#63) lands as a later part of the same series.
+    """LangGraph-backed path - conversation_id is a real LangGraph
+    thread_id, giving persisted, resumable history via the checkpointer
+    built in singletons.warm_up().
     """
     graph = _get_conversation_graph()
     config = {"configurable": {"thread_id": conversation_id}}
@@ -482,13 +481,11 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
 
 @traceable(run_type="chain", name="agent_ask")
 def ask(question: str, conversation_id: str | None = None) -> AgentResult:
-    """conversation_id ties repeated calls into one LangGraph thread when
-    AGENT_ENGINE=langgraph (default "legacy" - zero behavior change for
-    every existing caller until the series in #61-#67 cuts over). None
-    generates a fresh id, so a caller that never passes one still gets a
-    valid (if unused) conversation_id back.
+    """conversation_id ties repeated calls into one LangGraph thread.
+    AGENT_ENGINE=legacy is an escape hatch back to the stateless
+    tool_runner path. None generates a fresh id.
     """
     conversation_id = conversation_id or str(uuid.uuid4())
-    if os.environ.get("AGENT_ENGINE", "legacy") == "langgraph":
-        return _ask_langgraph(question, conversation_id)
-    return _ask_legacy(question, conversation_id)
+    if os.environ.get("AGENT_ENGINE", "langgraph") == "legacy":
+        return _ask_legacy(question, conversation_id)
+    return _ask_langgraph(question, conversation_id)

@@ -10,8 +10,8 @@ propagates back out; tool_citations is read inside ask() before return.
 Real, billed API calls. Not part of CI:
     uv run python -m backend.app.agent.dev_tools.eval_tool_selection
 
-Reads AGENT_ENGINE (default "legacy") so this can run once per engine
-against the same dataset for #65's parity check - run once with
+Reads AGENT_ENGINE (default "langgraph", matching ask()'s own default) so
+this can run once per engine against the same dataset - run once with
 AGENT_ENGINE=legacy and once with AGENT_ENGINE=langgraph, then diff each
 question's tools_called between the two experiments.
 """
@@ -211,8 +211,8 @@ def print_report(rows: list[dict]) -> None:
 
 
 def dump_tools_called(rows: list[dict], path: Path) -> None:
-    """Per-question tools_called, keyed by question - for #65's parity
-    check, diffing one run's dump against the other engine's."""
+    """Per-question tools_called, keyed by question - for diffing one
+    engine's run against the other's."""
     data = {row["example"].inputs["question"]: (row["run"].outputs or {}).get("tools_called", []) for row in rows}
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     print(f"\nDumped per-question tools_called to {path}")
@@ -222,7 +222,7 @@ def main() -> None:
     # Without this, evaluate()'s concurrency races the unlocked lazy singletons in singletons.py.
     warm_up()
 
-    engine = os.environ.get("AGENT_ENGINE", "legacy")
+    engine = os.environ.get("AGENT_ENGINE", "langgraph")
     print(f"Running under AGENT_ENGINE={engine!r}")
 
     client = Client()

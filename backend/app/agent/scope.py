@@ -18,13 +18,30 @@ SCOPE_CLASSIFIER_PROMPT = (
     "in-scope questions (e.g. live spending-data lookups) have no good "
     "match in this retrieval corpus at all. Use the passage only as "
     "supporting evidence when it looks genuinely on-topic; ignore it if it "
-    "looks irrelevant. You may also be given the immediately preceding "
-    "conversation turn(s) - use them only to understand what a follow-up "
-    "question that doesn't restate its subject is actually asking about "
-    "(e.g. 'what about NASA?' after a budget question is a budget "
-    "question about NASA); still classify based on the CURRENT question's "
-    "own topic, not the prior turns' topic alone. Respond with only YES "
-    "or NO, nothing else."
+    "looks irrelevant. Respond with only YES or NO, nothing else."
+)
+
+# Genuinely different task from SCOPE_CLASSIFIER_PROMPT above, not a
+# variant of it - the prior turn was ALREADY confirmed in scope, so this
+# defaults to YES (continuation) and only says NO for a clear topic
+# pivot, rather than re-litigating scope from a blank slate on every
+# follow-up. No retrieved passage here - "does this match the corpus"
+# isn't the question for a follow-up; "did the conversation change
+# subject" is.
+FOLLOWUP_SCOPE_CLASSIFIER_PROMPT = (
+    "You are given the most recent turn(s) of a conversation that was "
+    "ALREADY confirmed in scope for a USASpending.gov federal spending "
+    "assistant, plus a new follow-up question. Classify whether the "
+    "follow-up continues that conversation or is a complete pivot to an "
+    "unrelated topic. Default to YES (still in scope): a terse reaction, "
+    "clarification, or comparison that only makes sense in light of what "
+    "was just discussed (e.g. 'was that a lot?', 'why?', 'is that "
+    "normal?', 'what about last year?') is a continuation even though it "
+    "doesn't restate the subject itself. Answer NO only if the follow-up "
+    "is clearly, entirely unrelated to the ongoing conversation - a real "
+    "subject change (e.g. asking about the weather, a recipe, or the "
+    "capital of a country), not just a short or vague phrasing of a "
+    "continuation. Respond with only YES or NO, nothing else."
 )
 
 
@@ -91,33 +108,44 @@ def _is_in_scope(question: str, recent_messages: list | None = None) -> bool:
     regardless of the above.
 
     recent_messages (issue #62) is an optional LangGraph conversation
-    message list (see _ask_langgraph) - when given, the last couple of
-    question/answer exchanges are rendered and folded into this same
-    call's context. Confirmed live this correctly resolves a follow-up
-    that keeps a topical token ("What about FY2023?" after a budget
-    question - still classifies YES, still calls the right tool for the
-    right year). Confirmed live it does NOT reliably resolve a fully
-    generic follow-up with no topical token at all (e.g. "Was that a
-    lot?" after the same budget question classified NO, 3/3 repeats,
-    even with the prior exchange correctly rendered into its context) -
-    a real, demonstrated limit of folding raw history into one classifier
-    call, not a wiring bug. Ships without calibration data, unlike the
-    bare-question figure above; a future calibrate_scope_classifier.py-
-    style pass extending its labeled set with real multi-turn follow-ups
-    - or a query-rewriting step, deliberately not built here - would be
-    the next move if this limit matters in practice.
+    message list (see _ask_langgraph). When there's a renderable prior
+    exchange, this switches entirely to FOLLOWUP_SCOPE_CLASSIFIER_PROMPT:
+    the prior turn already passed this same gate, so the question isn't
+    "does this match the corpus" (no retrieval happens for this branch at
+    all) but "did the conversation pivot away" - defaulting to YES and
+    only rejecting a clear subject change. This is a real, deliberate
+    fix, not a tweak: an earlier version tried folding history into the
+    *original* from-scratch prompt (still asking "is this in scope" cold)
+    and confirmed live it failed a fully generic follow-up with no
+    topical token ("Was that a lot?" after a budget question classified
+    NO, 3/3 repeats, even with the correct prior exchange present) - the
+    problem was the framing, not the missing context. With the
+    continuation-by-default framing, the same case classifies YES, and a
+    genuine pivot ("what's the capital of France?" as a follow-up) still
+    correctly classifies NO - both confirmed live, not assumed. Ships
+    without calibration data either way; a future
+    calibrate_scope_classifier.py-style pass extending its labeled set
+    with real multi-turn examples would give this a measured accuracy
+    figure the way the bare-question path already has.
     """
-    context = _get_top_passage(question)
-    user_content = f"Question: {question}\n\n{context}"
     if recent_messages:
         history_block = _render_recent_exchanges(recent_messages)
         if history_block:
-            user_content = f"{history_block}\n\n{user_content}"
+            response = _get_client().messages.create(
+                model=MODEL,
+                max_tokens=5,
+                system=FOLLOWUP_SCOPE_CLASSIFIER_PROMPT,
+                messages=[{"role": "user", "content": f"{history_block}\n\nNew question: {question}"}],
+            )
+            text = next((b.text for b in response.content if b.type == "text"), "")
+            return text.strip().upper().startswith("YES")
+
+    context = _get_top_passage(question)
     response = _get_client().messages.create(
         model=MODEL,
         max_tokens=5,
         system=SCOPE_CLASSIFIER_PROMPT,
-        messages=[{"role": "user", "content": user_content}],
+        messages=[{"role": "user", "content": f"Question: {question}\n\n{context}"}],
     )
     text = next((b.text for b in response.content if b.type == "text"), "")
     return text.strip().upper().startswith("YES")

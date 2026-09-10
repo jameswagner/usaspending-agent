@@ -10,6 +10,7 @@ import types
 import anthropic
 from dotenv import load_dotenv
 from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import SystemMessage
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.prebuilt import create_react_agent
 from langsmith.wrappers import wrap_anthropic
@@ -145,20 +146,30 @@ def warm_up() -> None:
     _get_usaspending_client()
     _get_client()
 
-    # Deferred import: langgraph_tools -> tools/* -> this module (for
-    # _get_usaspending_client etc.) would be a circular import at module
-    # load time; by call time (warm_up() only runs from main.py's
-    # lifespan(), after every module has finished importing) the cycle
-    # doesn't exist.
+    # Deferred imports: both orchestrator and langgraph_tools (via
+    # tools/*) import from this module, so importing either at module
+    # load time would be circular. By call time (warm_up() only runs
+    # from main.py's lifespan(), after every module has finished
+    # importing) the cycle doesn't exist.
     from .langgraph_tools import LANGGRAPH_TOOLS
+    from .orchestrator import _build_system_prompt
 
     global _checkpointer, _chat_model, _conversation_graph
     conn = sqlite3.connect(CONVERSATIONS_DB_PATH, check_same_thread=False)
     _checkpointer = SqliteSaver(conn)
     headers = {"anthropic-workspace-id": ANTHROPIC_WORKSPACE_ID} if ANTHROPIC_WORKSPACE_ID else None
     _chat_model = ChatAnthropic(model=MODEL, max_tokens=2048, default_headers=headers)
+
+    def _prompt(state: dict) -> list:
+        # Recomputed fresh per call (not baked in at graph-compile time)
+        # so the fiscal-year/date grounding _build_system_prompt() does
+        # internally stays correct across a long-lived process, exactly
+        # like the legacy tool_runner path already does.
+        return [SystemMessage(content=_build_system_prompt()), *state["messages"]]
+
     _conversation_graph = create_react_agent(
         model=_chat_model,
         tools=LANGGRAPH_TOOLS,
         checkpointer=_checkpointer,
+        prompt=_prompt,
     )

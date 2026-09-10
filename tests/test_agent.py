@@ -74,6 +74,7 @@ from backend.app.agent.tools import (
     _normalize_category,
     _normalize_group,
     _query_candidates,
+    _record_tool_call,
     _scope_label,
     _tool_call_log,
     _truncation_note,
@@ -96,6 +97,8 @@ from backend.app.usaspending_client import (
     TimeResult,
     ToptierAgency,
     USASpendingAPIError,
+    _record_request,
+    drain_request_capture,
 )
 
 
@@ -676,6 +679,104 @@ class TestBuildToolCitation:
         )
         assert "agency_name" not in citation.parameters
         assert citation.description == "Spending by county (place_of_performance), Boeing, FY2023-FY2023"
+
+    def test_get_spending_by_category_naics_only_scope_is_not_unknown(self):
+        # The real bug this closes: a naics_code-only call (no agency_name/
+        # recipient_name/recipient_id) used to show "unknown scope" here,
+        # because the scope-label lookup never kept up with every filter
+        # _build_filters actually accepts.
+        citation = build_tool_citation(
+            "get_spending_by_category",
+            {
+                "category": "naics",
+                "start_fiscal_year": 2024,
+                "end_fiscal_year": 2024,
+                "naics_code": "541511",
+            },
+        )
+        assert "unknown scope" not in citation.description
+        assert citation.description == "naics breakdown, NAICS 541511, FY2024-FY2024"
+
+    def test_citation_scope_combines_multiple_real_filters(self):
+        citation = build_tool_citation(
+            "get_spending_by_category",
+            {
+                "category": "naics",
+                "start_fiscal_year": 2024,
+                "end_fiscal_year": 2024,
+                "agency_name": "National Science Foundation",
+                "naics_code": "541511",
+            },
+        )
+        assert citation.description == (
+            "naics breakdown, National Science Foundation, NAICS 541511, FY2024-FY2024"
+        )
+
+    def test_get_spending_by_category_curl_from_captured_requests(self):
+        citation = build_tool_citation(
+            "get_spending_by_category",
+            {
+                "agency_name": "National Science Foundation",
+                "category": "naics",
+                "start_fiscal_year": 2023,
+                "end_fiscal_year": 2024,
+                "_requests": [("POST", "https://api.usaspending.gov/api/v2/search/spending_by_category/naics/", {"a": 1})],
+            },
+        )
+        assert citation.curl == (
+            "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_category/naics/' "
+            "-H 'Content-Type: application/json' -d '{\"a\": 1}'"
+        )
+        assert "_requests" not in citation.parameters
+
+    def test_curl_is_none_without_captured_requests(self):
+        citation = build_tool_citation(
+            "get_spending_by_category",
+            {"agency_name": "NSF", "category": "naics", "start_fiscal_year": 2024, "end_fiscal_year": 2024},
+        )
+        assert citation.curl is None
+
+    def test_curl_joins_multiple_requests_one_per_line(self):
+        citation = build_tool_citation(
+            "get_award_subawards",
+            {
+                "award_id": "CONT_AWD_X",
+                "_requests": [
+                    ("POST", "https://api.usaspending.gov/api/v2/subawards/", {"award_id": "CONT_AWD_X"}),
+                    ("GET", "https://api.usaspending.gov/api/v2/awards/CONT_AWD_X/", None),
+                ],
+            },
+        )
+        assert citation.curl.count("\n") == 1
+        assert "curl -X POST" in citation.curl
+        assert "curl 'https://api.usaspending.gov/api/v2/awards/CONT_AWD_X/'" in citation.curl
+
+    def test_search_subawards(self):
+        citation = build_tool_citation(
+            "search_subawards",
+            {
+                "agency_name": "National Science Foundation",
+                "start_fiscal_year": 2023,
+                "end_fiscal_year": 2023,
+                "award_type": "grants",
+            },
+        )
+        assert citation is not None
+        assert citation.tool_name == "search_subawards"
+        assert citation.description == "grants subawards search, National Science Foundation, FY2023-FY2023"
+
+    def test_get_award_subawards(self):
+        citation = build_tool_citation("get_award_subawards", {"award_id": "CONT_AWD_X"})
+        assert citation is not None
+        assert citation.tool_name == "get_award_subawards"
+        assert citation.parameters == {"award_id": "CONT_AWD_X"}
+        assert citation.description == "Subawards for award: CONT_AWD_X"
+
+    def test_resolve_county_fips(self):
+        citation = build_tool_citation("resolve_county_fips", {"description": "Yavapai County"})
+        assert citation is not None
+        assert citation.tool_name == "resolve_county_fips"
+        assert citation.description == "County FIPS lookup: Yavapai County"
 
     def test_search_guide_returns_none(self):
         # search_guide is cited separately, by chunk id/page - not via
@@ -1900,6 +2001,52 @@ class TestToolCallBudget:
             assert str(MAX_TOOL_CALLS_PER_TURN) in result
         finally:
             _tool_call_log.reset(token)
+
+    def test_discards_a_leftover_request_from_a_prior_failed_call(self):
+        # A tool whose live call failed before reaching _record_tool_call
+        # leaves its request sitting in the capture buffer - the NEXT
+        # tool's own _check_tool_call_budget() call must clear that out
+        # before it starts making its own requests, or the next tool's
+        # citation would wrongly include the previous, unrelated failure.
+        _record_request("GET", "https://api.usaspending.gov/leftover", None)
+        _check_tool_call_budget()
+        assert drain_request_capture() == []
+
+
+class TestRecordToolCallAttachesRequests:
+    def test_attaches_captured_requests_into_context(self):
+        _record_request("POST", "https://api.usaspending.gov/api/v2/search/spending_by_category/naics/", {"a": 1})
+        token = _tool_call_log.set([])
+        try:
+            _record_tool_call("get_spending_by_category", None, {"agency_name": "NSF"})
+            _, _, context = _tool_call_log.get()[0]
+            assert context["_requests"] == [
+                ("POST", "https://api.usaspending.gov/api/v2/search/spending_by_category/naics/", {"a": 1})
+            ]
+            assert context["agency_name"] == "NSF"
+        finally:
+            _tool_call_log.reset(token)
+
+    def test_no_requests_key_when_nothing_was_captured(self):
+        drain_request_capture()
+        token = _tool_call_log.set([])
+        try:
+            _record_tool_call("resolve_naics_code", None, {"description": "software"})
+            _, _, context = _tool_call_log.get()[0]
+            assert "_requests" not in context
+        finally:
+            _tool_call_log.reset(token)
+
+    def test_drains_even_with_no_active_log(self):
+        # A direct call outside ask() (tests, dev_tools scripts) must not
+        # leak captured requests into whatever runs next.
+        _record_request("GET", "https://api.usaspending.gov/x", None)
+        token = _tool_call_log.set(None)
+        try:
+            _record_tool_call("lookup_agency", None, {"name": "NSF"})
+        finally:
+            _tool_call_log.reset(token)
+        assert drain_request_capture() == []
 
 
 class TestExtractGuideQuestion:

@@ -74,6 +74,15 @@
   }
   .turn-citations h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: #888; margin-bottom: 6px; }
   .turn-citations li { margin-bottom: 3px; }
+  .citation-curl {
+    margin: 4px 0 2px;
+    padding: 6px 8px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
 </style>
 </head>
 <body>
@@ -157,10 +166,13 @@
       return `<li>${label}</li>`;
     });
     const toolItems = (data.tool_citations || []).map(c => {
-      if (c.url) {
-        return `<li><a href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(c.description)}</a></li>`;
-      }
-      return `<li>${escapeHtml(c.description)}</li>`;
+      const label = c.url
+        ? `<a href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(c.description)}</a>`
+        : escapeHtml(c.description);
+      // curl is a reproducible command, not a clickable link - shown as a
+      // copyable code snippet under the description instead of an <a href>.
+      const curl = c.curl ? `<pre class="citation-curl">${escapeHtml(c.curl)}</pre>` : '';
+      return `<li>${label}${curl}</li>`;
     });
     const sourceItems = guideItems.concat(toolItems);
     if (sourceItems.length) {

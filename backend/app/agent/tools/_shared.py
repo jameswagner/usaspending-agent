@@ -18,6 +18,7 @@ from backend.app.usaspending_client import (
     ObligationByPeriod,
     ToptierAgency,
     USASpendingAPIError,
+    drain_request_capture,
 )
 
 from ..singletons import (
@@ -55,10 +56,20 @@ def _record_tool_call(tool_name: str, result: object, context: dict | None = Non
     include (e.g. agency_name, since the API response doesn't echo back the
     filters it was queried with) - used for things like chart titles that
     need to distinguish multiple calls to the same tool in one turn.
+
+    Also drains the live-HTTP-request capture buffer (usaspending_client.py)
+    into context["_requests"] - whatever this tool call actually sent over
+    the wire, for building a reproducible citation. A tool with no live
+    requests (e.g. an arithmetic tool, though those never reach here) just
+    drains an empty list.
     """
+    requests_made = drain_request_capture()
     log = _tool_call_log.get()
     if log is not None:
-        log.append((tool_name, result, context or {}))
+        context = dict(context or {})
+        if requests_made:
+            context["_requests"] = requests_made
+        log.append((tool_name, result, context))
 
 
 # 15 comfortably covers a legitimate multi-agency comparison in one
@@ -76,7 +87,13 @@ def _check_tool_call_budget() -> str | None:
     is already done. Returns an error string to hand back to the model
     (so it degrades to "answer with what you have," not a crash) if this
     turn already hit the cap, else None to proceed normally.
+
+    Also discards any requests already sitting in the capture buffer - a
+    prior tool call in this same turn that failed before reaching
+    _record_tool_call would otherwise leave its request there to be
+    wrongly attributed to this tool's own citation.
     """
+    drain_request_capture()
     log = _tool_call_log.get()
     if log is not None and len(log) >= MAX_TOOL_CALLS_PER_TURN:
         return (

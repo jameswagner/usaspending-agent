@@ -1,6 +1,7 @@
 """The _build_filters-based cluster: get_spending_by_category,
-get_spending_over_time, search_awards, get_spending_by_geography. All four
-funnel their filter params through the shared tool_filters._build_filters.
+get_spending_over_time, search_awards, get_spending_by_geography,
+search_subawards. All five funnel their filter params through the shared
+tool_filters._build_filters.
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ from ..response_shaping import _format_time_period
 from ..singletons import _get_usaspending_client
 from ..tool_filters import (
     SEARCH_AWARDS_FIELDS_BASE,
+    SUBAWARD_FIELDS,
     AwardType,
     DateType,
     GeoLayer,
@@ -917,6 +919,254 @@ def search_awards(
         amount = r.get(amount_field)
         amount_str = f"${amount:,.2f}" if isinstance(amount, (int, float)) else "unknown amount"
         lines.append(f"{award_id} — {recipient}: {amount_str} [internal_id: {internal_id}]")
+    has_next = results.page_metadata.hasNext if results.page_metadata else False
+    note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)
+    return _wrap_untrusted("\n".join(lines) + note)
+
+
+@traceable(run_type="tool", name="search_subawards_raw")
+def search_subawards_raw(
+    agency_name: str | None,
+    start_fiscal_year: int,
+    end_fiscal_year: int,
+    award_type: AwardType = "contracts",
+    limit: int = 5,
+    recipient_name: str | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    performed_in_state: str | None = None,
+    recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
+    keywords: str | None = None,
+    date_type: DateType | None = None,
+    place_of_performance_scope: Scope | None = None,
+    recipient_scope: Scope | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
+) -> SearchAwardsResponse:
+    """Call the same live endpoint search_awards_raw uses, with
+    spending_level="subawards" - confirmed live this returns individual
+    subaward records (not prime awards) from the same
+    search/spending_by_award/ endpoint, not a separate one.
+
+    recipient_name/recipient_in_state/recipient_in_county/recipient_in_city/
+    recipient_in_zip/recipient_in_district all filter the SUB-recipient in
+    this mode - confirmed live ("Thermo Electron" as recipient_search_text
+    correctly matched subawards TO Thermo Electron, not FROM it) - the
+    opposite of what these same parameter names mean on search_awards
+    (where they filter the prime recipient). performed_in_* still means the
+    subaward's own place of performance, unchanged.
+
+    recipient_id is deliberately not a parameter here (same as
+    search_awards_raw) - confirmed live it's silently ignored for
+    subawards, matching the API's own `messages` field.
+    """
+    client = _get_usaspending_client()
+    filters = _build_filters(
+        client,
+        agency_name,
+        start_fiscal_year,
+        end_fiscal_year,
+        award_type=award_type,
+        recipient_name=recipient_name,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        performed_in_state=performed_in_state,
+        recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county,
+        recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city,
+        recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip,
+        recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district,
+        recipient_in_district=recipient_in_district,
+        keywords=keywords,
+        date_type=date_type,
+        place_of_performance_scope=place_of_performance_scope,
+        recipient_scope=recipient_scope,
+        naics_code=naics_code,
+        psc_code=psc_code,
+        cfda_program=cfda_program,
+    )
+    return client.search_awards(
+        filters, fields=SUBAWARD_FIELDS, limit=limit, sort="Sub-Award Amount", order="desc",
+        spending_level="subawards",
+    )
+
+
+@beta_tool
+def search_subawards(
+    start_fiscal_year: int,
+    end_fiscal_year: int,
+    award_type: AwardType = "contracts",
+    limit: int = 5,
+    agency_name: str | None = None,
+    recipient_name: str | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    performed_in_state: str | None = None,
+    recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
+    keywords: str | None = None,
+    date_type: DateType | None = None,
+    place_of_performance_scope: Scope | None = None,
+    recipient_scope: Scope | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
+) -> str:
+    """Search for individual SUBAWARD records - money a prime awardee passed on to a sub-recipient to do part of the work. Use this for "who did X subcontract to" or "what subawards has agency Y's spending generated" questions about subawards in general, scoped by an awarding agency and/or a sub-recipient. For the subawards under one SPECIFIC prime award already found via search_awards, use get_award_subawards instead - this tool searches across many awards, not one award's own list.
+
+    CRITICAL, easy to get backwards: recipient_name (and every recipient_in_* location parameter below) filters the SUB-recipient here - the entity that received the subaward - NOT the prime awardee. This is the opposite of what these same parameter names mean on search_awards/get_spending_by_category/get_spending_over_time, where they filter the prime. There is no way to filter subawards by the PRIME recipient's name with this tool - use get_award_subawards on a specific prime award instead, or search_awards to find the prime award first.
+
+    Each result's internal_id is the PRIME award's internal_id (not a subaward-specific id) - pass it to get_award_details or get_award_subawards for the prime award's own full detail or its complete subaward list.
+
+    At least one of agency_name or recipient_name must be given - a query scoped
+    by neither would mean all federal subawards, ever, which this tool refuses
+    rather than silently running.
+
+    Args:
+        start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
+        end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
+        award_type: The broad buckets are contracts, grants, loans (default contracts) - same
+            vocabulary as search_awards's award_type, applied to the underlying prime award's type.
+        limit: Max number of results to return (default 5).
+        agency_name: Optional. The awarding agency's name, e.g. "National Science Foundation".
+            Omit for a cross-agency question about one sub-recipient - but then recipient_name
+            must be set instead.
+        recipient_name: Optional. Restrict to subawards received by a sub-recipient whose name
+            contains this text, e.g. "Thermo Electron" - an approximate text match. This is the
+            SUB-recipient, not the prime awardee - see the CRITICAL note above.
+        min_amount: Optional. Restrict to subawards worth at least this dollar amount.
+        max_amount: Optional. Restrict to subawards worth at most this dollar amount.
+        performed_in_state: Optional. Restrict to subawards for work performed in this US state.
+        recipient_in_state: Optional. Restrict to subawards whose SUB-recipient is
+            headquartered/located in this US state - not the prime.
+        performed_in_county: Optional. A specific county where work was performed - a 3-digit
+            FIPS code (e.g. "025" for Yavapai County, AZ), not a name. Requires
+            performed_in_state also be set. Use resolve_county_fips to find the code from a
+            county name - do not guess or construct one.
+        recipient_in_county: Optional. Same as performed_in_county, but for the SUB-recipient's
+            location. Requires recipient_in_state also be set.
+        performed_in_city: Optional. Restrict to work performed in this city, e.g. "Livermore".
+        recipient_in_city: Optional. Same as performed_in_city, but for the SUB-recipient's location.
+        performed_in_zip: Optional. Restrict to work performed in this 5-digit zip code.
+        recipient_in_zip: Optional. Restrict to a SUB-recipient located in this 5-digit zip code.
+        performed_in_district: Optional. A specific congressional district where work was
+            performed - a 2-digit number (e.g. "01"), paired with performed_in_state.
+        recipient_in_district: Optional. Same as performed_in_district, but for the SUB-recipient's
+            location, paired with recipient_in_state.
+        keywords: Optional. Free-text search over subaward descriptions, e.g. "climate research".
+        date_type: Optional. Which date the fiscal-year range is matched against - one of
+            action_date (default), date_signed, last_modified_date, or new_awards_only.
+        place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
+        recipient_scope: Optional. "domestic" or "foreign" - where the SUB-recipient is located.
+        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511".
+        psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
+        cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number, format NN.NNN.
+    """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    limit = _clamp_limit(limit)
+    scope = _scope_label(
+        agency_name, recipient_name, None,
+        performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county, recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city, recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
+        naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
+    )
+    try:
+        results = search_subawards_raw(
+            agency_name,
+            start_fiscal_year,
+            end_fiscal_year,
+            award_type,
+            limit,
+            recipient_name=recipient_name,
+            min_amount=min_amount,
+            max_amount=max_amount,
+            performed_in_state=performed_in_state,
+            recipient_in_state=recipient_in_state,
+            performed_in_county=performed_in_county,
+            recipient_in_county=recipient_in_county,
+            performed_in_city=performed_in_city,
+            recipient_in_city=recipient_in_city,
+            performed_in_zip=performed_in_zip,
+            recipient_in_zip=recipient_in_zip,
+            performed_in_district=performed_in_district,
+            recipient_in_district=recipient_in_district,
+            keywords=keywords,
+            date_type=date_type,
+            place_of_performance_scope=place_of_performance_scope,
+            recipient_scope=recipient_scope,
+            naics_code=naics_code,
+            psc_code=psc_code,
+            cfda_program=cfda_program,
+        )
+    except USASpendingAPIError as e:
+        logger.warning("search_subawards failed for %s: %s", scope, e)
+        return f"This query failed: {e}."
+
+    context = _record_optional_filter_context(
+        {"start_fiscal_year": start_fiscal_year, "end_fiscal_year": end_fiscal_year, "award_type": award_type},
+        agency_name=agency_name,
+        recipient_name=recipient_name,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        performed_in_state=performed_in_state,
+        recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county,
+        recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city,
+        recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip,
+        recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district,
+        recipient_in_district=recipient_in_district,
+        keywords=keywords,
+        date_type=date_type,
+        place_of_performance_scope=place_of_performance_scope,
+        recipient_scope=recipient_scope,
+        naics_code=naics_code,
+        psc_code=psc_code,
+        cfda_program=cfda_program,
+    )
+    _record_tool_call("search_subawards", results, context)
+
+    if not results.results:
+        return f"No subawards found for {scope} between FY{start_fiscal_year} and FY{end_fiscal_year}."
+
+    lines = []
+    for r in results.results:
+        sub_id = r.get("Sub-Award ID", "unknown")
+        sub_recipient = r.get("Sub-Awardee Name", "unknown")
+        amount = r.get("Sub-Award Amount")
+        amount_str = f"${amount:,.2f}" if isinstance(amount, (int, float)) else "unknown amount"
+        prime_award_id = r.get("Prime Award ID", "unknown")
+        prime_recipient = r.get("Prime Recipient Name", "unknown")
+        prime_internal_id = r.get("prime_award_generated_internal_id", "unknown")
+        lines.append(
+            f"{sub_id} — {sub_recipient}: {amount_str} (subaward under prime {prime_award_id} "
+            f"from {prime_recipient}) [internal_id: {prime_internal_id}]"
+        )
     has_next = results.page_metadata.hasNext if results.page_metadata else False
     note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)
     return _wrap_untrusted("\n".join(lines) + note)

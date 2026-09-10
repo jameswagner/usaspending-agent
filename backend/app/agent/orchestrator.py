@@ -35,6 +35,7 @@ from .tools import (
     get_agency_award_breakdown,
     get_agency_budget,
     get_award_details,
+    get_award_subawards,
     get_recipient_details,
     get_spending_by_category,
     get_spending_by_geography,
@@ -48,6 +49,7 @@ from .tools import (
     search_awards,
     search_guide,
     search_recipients,
+    search_subawards,
 )
 
 # code_execution_20260521 is the latest tool version - on Haiku 4.5 (the
@@ -106,7 +108,7 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have twenty-three tools. Sixteen retrieve data: search_guide "
+        "have twenty-five tools. Eighteen retrieve data: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
         "toptier code), resolve_naics_code (find the NAICS code matching a "
@@ -164,7 +166,20 @@ def _build_system_prompt() -> str:
         "data, recipient, funding — for ONE specific award, given the "
         "internal_id shown alongside a search_awards result; use this only "
         "for a follow-up question about a specific award already found via "
-        "search_awards, never to browse or list awards), search_recipients "
+        "search_awards, never to browse or list awards), "
+        "search_subawards (individual SUBAWARD records — money a prime "
+        "awardee passed on to a sub-recipient — scoped by an awarding "
+        "agency and/or a SUB-recipient; CRITICAL: recipient_name and every "
+        "recipient_in_* parameter on this tool filter the sub-recipient, "
+        "the OPPOSITE of what those same parameter names mean on every "
+        "other spending tool, where they filter the prime — never use this "
+        "to find subawards by the prime recipient's name, there is no way "
+        "to do that with this tool), "
+        "get_award_subawards (the complete subaward list for ONE specific "
+        "prime award already found via search_awards, given its "
+        "internal_id — use this instead of search_subawards when the "
+        "question is about one award's own subawards, not subawards in "
+        "general), search_recipients "
         "(find a company/organization/individual's exact recipient_id by "
         "name, UEI, or DUNS — a name alone is often genuinely ambiguous, so "
         "always resolve one here before scoping a spending question by "
@@ -176,7 +191,7 @@ def _build_system_prompt() -> str:
         "a recipient_id). Six do arithmetic: "
         "sum_values, average, percentage_of, delta, ratio, and rank_values. "
         "One more, code_execution, is a general-purpose Python/Bash sandbox. "
-        "You must call at least one of the twelve data tools before writing any "
+        "You must call at least one of the eighteen data tools before writing any "
         "answer, every question, with no exceptions — including questions "
         "that seem "
         "unrelated to federal spending, general-knowledge questions, "
@@ -292,6 +307,8 @@ def ask(question: str) -> AgentResult:
             get_spending_by_geography,
             search_awards,
             get_award_details,
+            search_subawards,
+            get_award_subawards,
             search_recipients,
             get_recipient_details,
             sum_values,

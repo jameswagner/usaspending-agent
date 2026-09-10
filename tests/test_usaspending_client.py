@@ -241,6 +241,50 @@ class TestSearchAwardsValidation:
         with pytest.raises(ValueError, match="award_type_codes"):
             client.search_awards(AdvancedFilters(keywords=["test"]), fields=["Award ID"])
 
+    def test_spending_level_defaults_to_awards(self, monkeypatch):
+        client = USASpendingClient()
+        captured = {}
+        monkeypatch.setattr(client, "_post", lambda path, body: (captured.update(body), {"results": []})[1])
+        client.search_awards(AdvancedFilters(award_type_codes=["A"]), fields=["Award ID"])
+        assert captured["spending_level"] == "awards"
+
+    def test_spending_level_subawards_is_passed_through(self, monkeypatch):
+        # Confirmed live: the same search/spending_by_award/ endpoint
+        # returns individual subaward records when this is set - not a
+        # separate endpoint.
+        client = USASpendingClient()
+        captured = {}
+        monkeypatch.setattr(client, "_post", lambda path, body: (captured.update(body), {"results": []})[1])
+        client.search_awards(AdvancedFilters(award_type_codes=["A"]), fields=["Sub-Award ID"], spending_level="subawards")
+        assert captured["spending_level"] == "subawards"
+
+
+class TestGetAwardSubawards:
+    def test_parses_real_response_shape(self, monkeypatch):
+        # Real live values (Electric Boat SSN 792 contract, 2026-09-10).
+        client = USASpendingClient()
+        body = {
+            "page_metadata": {"page": 1, "next": 2, "previous": None, "hasNext": True, "hasPrevious": False},
+            "results": [
+                {
+                    "id": 12345,
+                    "subaward_number": "PPD090=051",
+                    "description": "BATTERY KIT",
+                    "action_date": "2017-05-08",
+                    "amount": 12652399.44,
+                    "recipient_name": "STRYTEN ENERGY LLC",
+                },
+            ],
+        }
+        captured = {}
+        monkeypatch.setattr(client, "_post", lambda path, b: (captured.update({"path": path, "body": b}), body)[1])
+        response = client.get_award_subawards("CONT_AWD_N0002412C2115_9700_-NONE-_-NONE-", limit=3)
+        assert captured["path"] == "/api/v2/subawards/"
+        assert captured["body"]["award_id"] == "CONT_AWD_N0002412C2115_9700_-NONE-_-NONE-"
+        assert response.page_metadata.hasNext is True
+        assert response.results[0].recipient_name == "STRYTEN ENERGY LLC"
+        assert response.results[0].amount == 12652399.44
+
 
 class TestRecipientClientMethods:
     # Real live response shapes (Boeing, 2026-09-08), not synthetic -

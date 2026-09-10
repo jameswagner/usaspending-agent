@@ -439,16 +439,36 @@ class TestBuildToolCitation:
         assert citation.tool_name == "resolve_naics_code"
         assert citation.parameters == {"description": "custom software development"}
         assert citation.description == "NAICS code lookup: custom software development"
+        assert citation.url is None
+
+    def test_resolve_naics_code_url_from_top_match(self):
+        result = [{"slug": "541511", "term": "Custom Computer Programming Services", "rerank_score": 1.0}]
+        citation = build_tool_citation(
+            "resolve_naics_code", {"description": "custom software development"}, result
+        )
+        assert citation.url == "https://www.naics.com/naics-code-description/?code=541511"
 
     def test_resolve_psc_code(self):
         citation = build_tool_citation("resolve_psc_code", {"description": "office furniture"})
         assert citation is not None
         assert citation.description == "PSC code lookup: office furniture"
+        assert citation.url is None
+
+    def test_resolve_psc_code_url_from_top_match(self):
+        result = [{"slug": "7110", "term": "Office Furniture", "rerank_score": 1.0}]
+        citation = build_tool_citation("resolve_psc_code", {"description": "office furniture"}, result)
+        assert citation.url == "https://samsearch.co/psc-lookup/7110"
 
     def test_resolve_cfda_program(self):
         citation = build_tool_citation("resolve_cfda_program", {"description": "Medicaid grants to states"})
         assert citation is not None
         assert citation.description == "CFDA code lookup: Medicaid grants to states"
+        assert citation.url is None
+
+    def test_resolve_cfda_program_no_url_even_with_result(self):
+        result = [{"slug": "93.778", "term": "Medicaid", "rerank_score": 1.0}]
+        citation = build_tool_citation("resolve_cfda_program", {"description": "Medicaid grants to states"}, result)
+        assert citation.url is None
 
     def test_get_spending_by_category(self):
         citation = build_tool_citation(

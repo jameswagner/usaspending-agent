@@ -393,7 +393,7 @@ def _ask_legacy(question: str, conversation_id: str) -> AgentResult:
                 citations.append(citation)
             continue
 
-        tool_citation = build_tool_citation(tool_name, context)
+        tool_citation = build_tool_citation(tool_name, context, result)
         if tool_citation is None:
             continue
         dedup_key = (tool_citation.tool_name, tuple(sorted(tool_citation.parameters.items())))
@@ -461,7 +461,7 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
                 citations.append(citation)
             continue
 
-        tool_citation = build_tool_citation(tool_name, context)
+        tool_citation = build_tool_citation(tool_name, context, result)
         if tool_citation is None:
             continue
         dedup_key = (tool_citation.tool_name, tuple(sorted(tool_citation.parameters.items())))

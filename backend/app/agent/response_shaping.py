@@ -131,6 +131,17 @@ class Citation(BaseModel):
 # why this can't be a per-question deep link.
 GUIDE_URL = "https://www.usaspending.gov/federal-spending-guide"
 
+# Live-verified against two different codes (541511, 336611) that the page
+# renders the real, distinct description for each rather than a generic
+# template.
+NAICS_URL_BASE = "https://www.naics.com/naics-code-description/?code="
+
+# Live-verified against three codes (1280, 5820, 7210) matching this
+# app's own ingested official PSC data exactly. No equivalent
+# verified-accurate source exists yet for CFDA - see
+# resolve_cfda_program's citation branch.
+PSC_URL_BASE = "https://samsearch.co/psc-lookup/"
+
 # The live glossary is a sidebar popup on the main site, not a dedicated
 # HTML page - but it opens pre-scrolled to a specific term via this query
 # param, and this isn't a guess: it's the exact mechanism USASpending's own
@@ -206,6 +217,7 @@ class ToolCitation(BaseModel):
     tool_name: str
     parameters: dict[str, str | int | float]
     description: str
+    url: str | None = None
 
 
 # Tools whose results are never chart-worthy by shape (free text / a single
@@ -339,12 +351,14 @@ def _merge_optional_filter_params(params: dict, context: dict, keys: set[str]) -
             params[key] = context[key]
 
 
-def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
+def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitation | None:
     """Deterministic, unit-testable citation builder for the four live-data
-    tools - the same role should_chart plays for charts. Keyed on the
-    context dict each tool records (_record_tool_call's third element),
-    not the structured result, since what needs citing here is the query
-    that was run, not the shape of what came back.
+    tools - the same role should_chart plays for charts. Keyed mainly on
+    the context dict each tool records (_record_tool_call's third
+    element), not the structured result, since what needs citing here is
+    the query that was run, not the shape of what came back. result is
+    optional and only used where a citation needs something from the
+    result itself (e.g. resolve_naics_code's resolved code, for its url).
 
     Returns None for search_guide (cited separately, by chunk id/page - see
     ask()) and for a call with no context recorded (e.g. a failed lookup
@@ -364,10 +378,17 @@ def build_tool_citation(tool_name: str, context: dict) -> ToolCitation | None:
     if tool_name in ("resolve_naics_code", "resolve_psc_code", "resolve_cfda_program"):
         description = context["description"]
         label = {"resolve_naics_code": "NAICS", "resolve_psc_code": "PSC", "resolve_cfda_program": "CFDA"}[tool_name]
+        url = None
+        if result:
+            if tool_name == "resolve_naics_code":
+                url = f"{NAICS_URL_BASE}{result[0]['slug']}"
+            elif tool_name == "resolve_psc_code":
+                url = f"{PSC_URL_BASE}{result[0]['slug']}"
         return ToolCitation(
             tool_name=tool_name,
             parameters={"description": description},
             description=f"{label} code lookup: {description}",
+            url=url,
         )
 
     if tool_name == "get_agency_budget":

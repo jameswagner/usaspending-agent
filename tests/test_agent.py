@@ -2,6 +2,7 @@ from datetime import date, datetime, timezone
 from typing import Any, ClassVar, get_args
 
 import pytest
+from langchain_core.messages import AIMessage, HumanMessage
 
 from backend.app.agent.response_shaping import (
     GLOSSARY_URL_BASE,
@@ -13,6 +14,11 @@ from backend.app.agent.response_shaping import (
     current_fiscal_year,
     fiscal_year_to_date_range,
     should_chart,
+)
+from backend.app.agent.scope import (
+    FOLLOWUP_SCOPE_CLASSIFIER_PROMPT,
+    SCOPE_CLASSIFIER_PROMPT,
+    _is_in_scope,
 )
 from backend.app.agent.tool_filters import (
     AWARD_TYPE_GROUPS,
@@ -2007,3 +2013,73 @@ class TestGuideQuestionDedup:
 
         assert len(citations) == 1
         assert citations[0].chunk_id == "Analyst's_Guide_p5"
+
+
+class _FakeMessagesResponse:
+    def __init__(self, text):
+        self.content = [type("Block", (), {"type": "text", "text": text})()]
+
+
+class _FakeMessages:
+    def __init__(self, text, calls):
+        self._text = text
+        self._calls = calls
+
+    def create(self, **kwargs):
+        self._calls.append(kwargs)
+        return _FakeMessagesResponse(self._text)
+
+
+class _FakeClient:
+    def __init__(self, text, calls):
+        self.messages = _FakeMessages(text, calls)
+
+
+class _FakeRetriever:
+    def retrieve(self, query, top_k):
+        return []
+
+
+class TestIsInScopeRecentMessages:
+    def test_no_recent_messages_uses_bare_question_path(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr("backend.app.agent.scope._get_client", lambda: _FakeClient("YES", calls))
+        monkeypatch.setattr("backend.app.agent.scope._get_retriever", lambda: _FakeRetriever())
+
+        assert _is_in_scope("What is NSF's budget?") is True
+        assert calls[0]["system"] == SCOPE_CLASSIFIER_PROMPT
+        assert "Question: What is NSF's budget?" in calls[0]["messages"][0]["content"]
+
+    def test_recent_messages_uses_followup_prompt_and_skips_retrieval(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr("backend.app.agent.scope._get_client", lambda: _FakeClient("YES", calls))
+
+        def _retriever_should_not_be_called():
+            raise AssertionError("retriever should not be called on the follow-up path")
+
+        monkeypatch.setattr("backend.app.agent.scope._get_retriever", _retriever_should_not_be_called)
+
+        recent = [
+            HumanMessage(content="What was NASA's FY2024 budget?"),
+            AIMessage(content="It was $30.05 billion."),
+        ]
+        assert _is_in_scope("Was that a lot?", recent_messages=recent) is True
+        assert calls[0]["system"] == FOLLOWUP_SCOPE_CLASSIFIER_PROMPT
+        sent_content = calls[0]["messages"][0]["content"]
+        assert "What was NASA's FY2024 budget?" in sent_content
+        assert "Was that a lot?" in sent_content
+
+    def test_empty_recent_messages_falls_back_to_bare_question_path(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr("backend.app.agent.scope._get_client", lambda: _FakeClient("YES", calls))
+        monkeypatch.setattr("backend.app.agent.scope._get_retriever", lambda: _FakeRetriever())
+
+        _is_in_scope("What is NSF's budget?", recent_messages=[])
+        assert calls[0]["system"] == SCOPE_CLASSIFIER_PROMPT
+
+    def test_no_response_classifies_false(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr("backend.app.agent.scope._get_client", lambda: _FakeClient("NO", calls))
+        monkeypatch.setattr("backend.app.agent.scope._get_retriever", lambda: _FakeRetriever())
+
+        assert _is_in_scope("what's the weather") is False

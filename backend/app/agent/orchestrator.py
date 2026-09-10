@@ -482,13 +482,16 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
 
 @traceable(run_type="chain", name="agent_ask")
 def ask(question: str, conversation_id: str | None = None) -> AgentResult:
-    """conversation_id ties repeated calls into one LangGraph thread when
-    AGENT_ENGINE=langgraph (default "legacy" - zero behavior change for
-    every existing caller until the series in #61-#67 cuts over). None
-    generates a fresh id, so a caller that never passes one still gets a
-    valid (if unused) conversation_id back.
+    """conversation_id ties repeated calls into one LangGraph thread.
+    AGENT_ENGINE defaults to "langgraph" as of #67's cutover, verified via
+    #65's parity check (identical tool-selection pass rate against the
+    legacy path) and manual red-team/filter runs. Set AGENT_ENGINE=legacy
+    as an escape hatch back to the pre-#61 stateless tool_runner path if
+    something real-world surfaces that the parity check didn't catch.
+    None generates a fresh id, so a caller that never passes one still
+    gets a valid (if unused) conversation_id back.
     """
     conversation_id = conversation_id or str(uuid.uuid4())
-    if os.environ.get("AGENT_ENGINE", "legacy") == "langgraph":
-        return _ask_langgraph(question, conversation_id)
-    return _ask_legacy(question, conversation_id)
+    if os.environ.get("AGENT_ENGINE", "langgraph") == "legacy":
+        return _ask_legacy(question, conversation_id)
+    return _ask_langgraph(question, conversation_id)

@@ -10,10 +10,11 @@ propagates back out; tool_citations is read inside ask() before return.
 Real, billed API calls. Not part of CI:
     uv run python -m backend.app.agent.dev_tools.eval_tool_selection
 
-Reads AGENT_ENGINE (default "legacy") so this can run once per engine
-against the same dataset for #65's parity check - run once with
-AGENT_ENGINE=legacy and once with AGENT_ENGINE=langgraph, then diff each
-question's tools_called between the two experiments.
+Reads AGENT_ENGINE (default "langgraph", matching ask()'s own default
+since #67's cutover) so this can run once per engine against the same
+dataset for #65's parity check - run once with AGENT_ENGINE=legacy and
+once with AGENT_ENGINE=langgraph, then diff each question's tools_called
+between the two experiments.
 """
 from __future__ import annotations
 
@@ -222,7 +223,7 @@ def main() -> None:
     # Without this, evaluate()'s concurrency races the unlocked lazy singletons in singletons.py.
     warm_up()
 
-    engine = os.environ.get("AGENT_ENGINE", "legacy")
+    engine = os.environ.get("AGENT_ENGINE", "langgraph")
     print(f"Running under AGENT_ENGINE={engine!r}")
 
     client = Client()

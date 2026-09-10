@@ -4,10 +4,14 @@ the constants that configure them.
 from __future__ import annotations
 
 import os
+import sqlite3
 import types
 
 import anthropic
 from dotenv import load_dotenv
+from langchain_anthropic import ChatAnthropic
+from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.prebuilt import create_react_agent
 from langsmith.wrappers import wrap_anthropic
 
 from backend.app.retrieval.hybrid import HybridRetriever
@@ -32,12 +36,23 @@ PSC_WHOOSH_INDEX_DIR = os.environ.get("PSC_WHOOSH_INDEX_DIR", "./data/whoosh_psc
 CFDA_CHROMA_DB_DIR = os.environ.get("CFDA_CHROMA_DB_DIR", "./data/chroma_cfda")
 CFDA_WHOOSH_INDEX_DIR = os.environ.get("CFDA_WHOOSH_INDEX_DIR", "./data/whoosh_cfda")
 
+CONVERSATIONS_DB_PATH = os.environ.get("CONVERSATIONS_DB_PATH", "./data/conversations.db")
+
 _client: anthropic.Anthropic | None = None
 _retriever: HybridRetriever | None = None
 _naics_retriever: HybridRetriever | None = None
 _psc_retriever: HybridRetriever | None = None
 _cfda_retriever: HybridRetriever | None = None
 _usaspending_client: USASpendingClient | None = None
+
+# Unlike every other singleton in this file, these three are never lazily
+# constructed on first access (if x is None: x = Construct(), no lock) -
+# that exact pattern is the root cause of #44/#45/#54, all real concurrency
+# bugs. warm_up() assigns these exactly once, at startup, before any
+# request is served, so there's no request-time race to have.
+_checkpointer: SqliteSaver | None = None
+_chat_model: ChatAnthropic | None = None
+_conversation_graph = None
 
 
 def _get_client() -> anthropic.Anthropic:
@@ -108,6 +123,16 @@ def _get_usaspending_client() -> USASpendingClient:
     return _usaspending_client
 
 
+def _get_conversation_graph():
+    assert _conversation_graph is not None, "warm_up() must run before _get_conversation_graph()"
+    return _conversation_graph
+
+
+def _get_checkpointer() -> SqliteSaver:
+    assert _checkpointer is not None, "warm_up() must run before _get_checkpointer()"
+    return _checkpointer
+
+
 def warm_up() -> None:
     """Pre-load the retriever's models and both clients once, at server
     startup, instead of paying that cost on whichever request happens to
@@ -119,3 +144,21 @@ def warm_up() -> None:
     _get_cfda_retriever()
     _get_usaspending_client()
     _get_client()
+
+    # Deferred import: langgraph_tools -> tools/* -> this module (for
+    # _get_usaspending_client etc.) would be a circular import at module
+    # load time; by call time (warm_up() only runs from main.py's
+    # lifespan(), after every module has finished importing) the cycle
+    # doesn't exist.
+    from .langgraph_tools import LANGGRAPH_TOOLS
+
+    global _checkpointer, _chat_model, _conversation_graph
+    conn = sqlite3.connect(CONVERSATIONS_DB_PATH, check_same_thread=False)
+    _checkpointer = SqliteSaver(conn)
+    headers = {"anthropic-workspace-id": ANTHROPIC_WORKSPACE_ID} if ANTHROPIC_WORKSPACE_ID else None
+    _chat_model = ChatAnthropic(model=MODEL, max_tokens=2048, default_headers=headers)
+    _conversation_graph = create_react_agent(
+        model=_chat_model,
+        tools=LANGGRAPH_TOOLS,
+        checkpointer=_checkpointer,
+    )

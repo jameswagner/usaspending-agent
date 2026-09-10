@@ -32,6 +32,7 @@ def test_health(client):
 def test_ask_returns_agent_response(client, monkeypatch):
     fake_result = AgentResult(
         answer_text="A prime award is an agreement the federal government makes...",
+        conversation_id="test-conversation-id",
         charts=[ChartSpec(chart_type="bar", title="Spending by naics", labels=["A", "B"], values=[1.0, 2.0])],
         citations=[Citation(chunk_id="Analyst's_Guide_p8", source="Analyst's Guide", page=3)],
         tool_citations=[
@@ -63,7 +64,7 @@ def test_ask_returns_agent_response(client, monkeypatch):
 
 
 def test_ask_not_found_source_type(client, monkeypatch):
-    fake_result = AgentResult(answer_text=NOT_FOUND_MESSAGE)
+    fake_result = AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id="test-conversation-id")
     monkeypatch.setattr("backend.app.main.agent_ask", lambda question: fake_result)
 
     resp = client.post("/ask", json={"question": "what's the weather today"})
@@ -82,7 +83,7 @@ def test_ask_passes_question_through_to_agent(client, monkeypatch):
 
     def fake_agent_ask(question):
         received["question"] = question
-        return AgentResult(answer_text="ok")
+        return AgentResult(answer_text="ok", conversation_id="test-conversation-id")
 
     monkeypatch.setattr("backend.app.main.agent_ask", fake_agent_ask)
 
@@ -102,7 +103,10 @@ def test_ask_wrong_type_returns_422(client):
 
 
 def test_ask_rate_limited_after_exceeding_limit(client, monkeypatch):
-    monkeypatch.setattr("backend.app.main.agent_ask", lambda question: AgentResult(answer_text="ok"))
+    monkeypatch.setattr(
+        "backend.app.main.agent_ask",
+        lambda question: AgentResult(answer_text="ok", conversation_id="test-conversation-id"),
+    )
 
     for _ in range(ASK_RATE_LIMIT_PER_MINUTE):
         resp = client.post("/ask", json={"question": "What is a prime award?"})

@@ -5,6 +5,8 @@ capture buffer afterward.
 from __future__ import annotations
 
 import logging
+import os
+import uuid
 from datetime import datetime, timezone
 
 from langsmith import traceable
@@ -28,7 +30,7 @@ from .response_shaping import (
     should_chart,
 )
 from .scope import _is_in_scope
-from .singletons import MODEL, _get_client
+from .singletons import MODEL, _get_client, _get_conversation_graph
 from .tools import (
     _record_code_execution_calls,
     _tool_call_log,
@@ -255,19 +257,19 @@ def _build_system_prompt() -> str:
 
 class AgentResult(BaseModel):
     answer_text: str
+    conversation_id: str
     charts: list[ChartSpec] = []
     citations: list[Citation] = []
     tool_citations: list[ToolCitation] = []
 
 
-@traceable(run_type="chain", name="agent_ask")
-def ask(question: str) -> AgentResult:
+def _ask_legacy(question: str, conversation_id: str) -> AgentResult:
     if not _is_in_scope(question):
         # Currently the only trace of a scope-gate rejection anywhere - the
         # question and the fact it never reached the tool loop, without
         # this, wasn't recorded at all.
         logger.info("Scope gate rejected question: %r", question)
-        return AgentResult(answer_text=NOT_FOUND_MESSAGE)
+        return AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
 
     _tool_call_log.set([])
 
@@ -400,4 +402,92 @@ def ask(question: str) -> AgentResult:
         seen_tool_citation_keys.add(dedup_key)
         tool_citations.append(tool_citation)
 
-    return AgentResult(answer_text=answer_text, charts=charts, citations=citations, tool_citations=tool_citations)
+    return AgentResult(
+        answer_text=answer_text,
+        conversation_id=conversation_id,
+        charts=charts,
+        citations=citations,
+        tool_citations=tool_citations,
+    )
+
+
+def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
+    """LangGraph-backed path (issue #61 series) - conversation_id is a
+    real LangGraph thread_id, giving persisted, resumable history via the
+    checkpointer built in singletons.warm_up(). Scope-classifier
+    history-awareness (#62) and context-growth bounding (#63) land as
+    later parts of the same series; this part alone behaves like
+    _ask_legacy for a single turn, just through the graph instead of
+    tool_runner, with history persisted for a next turn to use.
+    """
+    if not _is_in_scope(question):
+        logger.info("Scope gate rejected question: %r", question)
+        # Deliberately not persisted into checkpointer state - an
+        # out-of-scope question shouldn't poison what the next in-scope
+        # question's history contains.
+        return AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
+
+    _tool_call_log.set([])
+
+    graph = _get_conversation_graph()
+    config = {"configurable": {"thread_id": conversation_id}}
+    final_state = graph.invoke({"messages": [{"role": "user", "content": question}]}, config=config)
+
+    final_messages = final_state["messages"]
+    answer_text = final_messages[-1].content if final_messages else ""
+
+    charts: list[ChartSpec] = []
+    seen_chunk_ids: set[str] = set()
+    seen_guide_questions: set[str] = set()
+    citations: list[Citation] = []
+    seen_tool_citation_keys: set[tuple] = set()
+    tool_citations: list[ToolCitation] = []
+    for tool_name, result, context in _tool_call_log.get() or []:
+        chart = should_chart(tool_name, result, context)
+        if chart is not None:
+            charts.append(chart)
+
+        if tool_name == "search_guide":
+            for chunk in result:
+                if chunk["id"] in seen_chunk_ids:
+                    continue
+                seen_chunk_ids.add(chunk["id"])
+                citation = _build_guide_citation(chunk)
+                if citation.question is not None:
+                    normalized_question = citation.question.strip().lower()
+                    if normalized_question in seen_guide_questions:
+                        continue
+                    seen_guide_questions.add(normalized_question)
+                citations.append(citation)
+            continue
+
+        tool_citation = build_tool_citation(tool_name, context)
+        if tool_citation is None:
+            continue
+        dedup_key = (tool_citation.tool_name, tuple(sorted(tool_citation.parameters.items())))
+        if dedup_key in seen_tool_citation_keys:
+            continue
+        seen_tool_citation_keys.add(dedup_key)
+        tool_citations.append(tool_citation)
+
+    return AgentResult(
+        answer_text=answer_text,
+        conversation_id=conversation_id,
+        charts=charts,
+        citations=citations,
+        tool_citations=tool_citations,
+    )
+
+
+@traceable(run_type="chain", name="agent_ask")
+def ask(question: str, conversation_id: str | None = None) -> AgentResult:
+    """conversation_id ties repeated calls into one LangGraph thread when
+    AGENT_ENGINE=langgraph (default "legacy" - zero behavior change for
+    every existing caller until the series in #61-#67 cuts over). None
+    generates a fresh id, so a caller that never passes one still gets a
+    valid (if unused) conversation_id back.
+    """
+    conversation_id = conversation_id or str(uuid.uuid4())
+    if os.environ.get("AGENT_ENGINE", "legacy") == "langgraph":
+        return _ask_langgraph(question, conversation_id)
+    return _ask_legacy(question, conversation_id)

@@ -39,7 +39,7 @@ def test_ask_returns_agent_response(client, monkeypatch):
             ToolCitation(tool_name="lookup_agency", parameters={"name": "NSF"}, description="Agency lookup: NSF")
         ],
     )
-    monkeypatch.setattr("backend.app.main.agent_ask", lambda question: fake_result)
+    monkeypatch.setattr("backend.app.main.agent_ask", lambda question, conversation_id: fake_result)
 
     resp = client.post("/ask", json={"question": "What is a prime award?"})
 
@@ -47,6 +47,7 @@ def test_ask_returns_agent_response(client, monkeypatch):
     data = resp.json()
     assert data["answer_text"] == fake_result.answer_text
     assert data["source_type"] == "agent"
+    assert data["conversation_id"] == "test-conversation-id"
     assert data["charts"] == [fake_result.charts[0].model_dump()]
     assert data["citations"] == [
         {
@@ -65,7 +66,7 @@ def test_ask_returns_agent_response(client, monkeypatch):
 
 def test_ask_not_found_source_type(client, monkeypatch):
     fake_result = AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id="test-conversation-id")
-    monkeypatch.setattr("backend.app.main.agent_ask", lambda question: fake_result)
+    monkeypatch.setattr("backend.app.main.agent_ask", lambda question, conversation_id: fake_result)
 
     resp = client.post("/ask", json={"question": "what's the weather today"})
 
@@ -81,8 +82,9 @@ def test_ask_not_found_source_type(client, monkeypatch):
 def test_ask_passes_question_through_to_agent(client, monkeypatch):
     received = {}
 
-    def fake_agent_ask(question):
+    def fake_agent_ask(question, conversation_id):
         received["question"] = question
+        received["conversation_id"] = conversation_id
         return AgentResult(answer_text="ok", conversation_id="test-conversation-id")
 
     monkeypatch.setattr("backend.app.main.agent_ask", fake_agent_ask)
@@ -90,6 +92,22 @@ def test_ask_passes_question_through_to_agent(client, monkeypatch):
     client.post("/ask", json={"question": "What is a sub-award?"})
 
     assert received["question"] == "What is a sub-award?"
+    assert received["conversation_id"] is None
+
+
+def test_ask_passes_conversation_id_through_to_agent(client, monkeypatch):
+    received = {}
+
+    def fake_agent_ask(question, conversation_id):
+        received["conversation_id"] = conversation_id
+        return AgentResult(answer_text="ok", conversation_id=conversation_id)
+
+    monkeypatch.setattr("backend.app.main.agent_ask", fake_agent_ask)
+
+    resp = client.post("/ask", json={"question": "What about FY2023?", "conversation_id": "existing-thread"})
+
+    assert received["conversation_id"] == "existing-thread"
+    assert resp.json()["conversation_id"] == "existing-thread"
 
 
 def test_ask_missing_question_field_returns_422(client):
@@ -105,7 +123,7 @@ def test_ask_wrong_type_returns_422(client):
 def test_ask_rate_limited_after_exceeding_limit(client, monkeypatch):
     monkeypatch.setattr(
         "backend.app.main.agent_ask",
-        lambda question: AgentResult(answer_text="ok", conversation_id="test-conversation-id"),
+        lambda question, conversation_id: AgentResult(answer_text="ok", conversation_id="test-conversation-id"),
     )
 
     for _ in range(ASK_RATE_LIMIT_PER_MINUTE):

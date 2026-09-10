@@ -51,11 +51,13 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 class AskRequest(BaseModel):
     question: str
+    conversation_id: str | None = None
 
 
 class AskResponse(BaseModel):
     answer_text: str
     source_type: str
+    conversation_id: str
     charts: list[dict] = []
     citations: list[Citation] = []
     tool_citations: list[ToolCitation] = []
@@ -78,7 +80,7 @@ def ask(request: Request, response: Response, payload: AskRequest) -> AskRespons
     # request body param below is "payload", not "request".
     logger.info("Received question: %r", payload.question)
     try:
-        result = agent_ask(payload.question)
+        result = agent_ask(payload.question, payload.conversation_id)
     except Exception:
         # Without this, an exception here (a bug in the agent loop, an
         # unhandled API error) would only ever surface as FastAPI's generic
@@ -95,6 +97,7 @@ def ask(request: Request, response: Response, payload: AskRequest) -> AskRespons
     return AskResponse(
         answer_text=result.answer_text,
         source_type=source_type,
+        conversation_id=result.conversation_id,
         charts=[c.model_dump() for c in result.charts],
         citations=result.citations,
         tool_citations=result.tool_citations,

@@ -23,25 +23,40 @@ SCOPE_CLASSIFIER_PROMPT = (
 
 # Genuinely different task from SCOPE_CLASSIFIER_PROMPT above, not a
 # variant of it - the prior turn was ALREADY confirmed in scope, so this
-# defaults to YES (continuation) and only says NO for a clear topic
-# pivot, rather than re-litigating scope from a blank slate on every
-# follow-up. No retrieved passage here - "does this match the corpus"
-# isn't the question for a follow-up; "did the conversation change
-# subject" is.
+# folds in two YES conditions instead of one: a genuine continuation of
+# the prior turn, OR a brand new in-domain question that has nothing to
+# do with the prior turn's specific subject (e.g. a different agency
+# entirely) - both are in scope, only a real domain pivot isn't. An
+# earlier version only had the continuation condition and, confirmed
+# live, incorrectly rejected every new-but-in-domain question asked
+# right after an in-scope one (e.g. asking about the Department of
+# Education immediately after a NASA question) - it had conflated "not
+# connected to the prior turn" with "off domain," which are not the same
+# thing. No retrieved passage here - unlike the bare-question path, a
+# full-sentence in-domain question doesn't need retrieval as a crutch to
+# be recognized as such.
 FOLLOWUP_SCOPE_CLASSIFIER_PROMPT = (
-    "You are given the most recent turn(s) of a conversation that was "
-    "ALREADY confirmed in scope for a USASpending.gov federal spending "
-    "assistant, plus a new follow-up question. Classify whether the "
-    "follow-up continues that conversation or is a complete pivot to an "
-    "unrelated topic. Default to YES (still in scope): a terse reaction, "
-    "clarification, or comparison that only makes sense in light of what "
-    "was just discussed (e.g. 'was that a lot?', 'why?', 'is that "
-    "normal?', 'what about last year?') is a continuation even though it "
-    "doesn't restate the subject itself. Answer NO only if the follow-up "
-    "is clearly, entirely unrelated to the ongoing conversation - a real "
-    "subject change (e.g. asking about the weather, a recipe, or the "
-    "capital of a country), not just a short or vague phrasing of a "
-    "continuation. Respond with only YES or NO, nothing else."
+    "You classify whether a user's question is in scope for a "
+    "USASpending.gov assistant: federal spending, budgets, "
+    "obligations/outlays, contracts, grants/financial assistance, awards, "
+    "recipients, federal agencies, or USASpending.gov data/fields/API "
+    "concepts. You are also given the immediately preceding turn(s) of "
+    "the conversation, which were already confirmed in scope.\n\n"
+    "Answer YES if EITHER is true:\n"
+    "1. The question is itself about this domain, even if it concerns a "
+    "completely different agency, recipient, or topic than the prior turn "
+    "(e.g. asking about a different agency's spending right after a "
+    "question about NASA is still in scope - a new in-domain question, "
+    "not a domain pivot).\n"
+    "2. The question is a short reaction, clarification, or comparison "
+    "that only makes sense in light of the prior turn (e.g. 'was that a "
+    "lot?', 'why?', 'is that normal?', 'what about last year?') - judge "
+    "these as a continuation of an already in-scope conversation, not "
+    "against their own words alone.\n\n"
+    "Answer NO only if the question is clearly about something else "
+    "entirely, unconnected to federal spending/budgets/awards/agencies in "
+    "any way (e.g. the weather, a recipe, general trivia, a coding "
+    "question). Respond with only YES or NO, nothing else."
 )
 
 
@@ -109,21 +124,23 @@ def _is_in_scope(question: str, recent_messages: list | None = None) -> bool:
 
     recent_messages (issue #62) is an optional LangGraph conversation
     message list (see _ask_langgraph). When there's a renderable prior
-    exchange, this switches entirely to FOLLOWUP_SCOPE_CLASSIFIER_PROMPT:
-    the prior turn already passed this same gate, so the question isn't
-    "does this match the corpus" (no retrieval happens for this branch at
-    all) but "did the conversation pivot away" - defaulting to YES and
-    only rejecting a clear subject change. This is a real, deliberate
-    fix, not a tweak: an earlier version tried folding history into the
-    *original* from-scratch prompt (still asking "is this in scope" cold)
-    and confirmed live it failed a fully generic follow-up with no
-    topical token ("Was that a lot?" after a budget question classified
-    NO, 3/3 repeats, even with the correct prior exchange present) - the
-    problem was the framing, not the missing context. With the
-    continuation-by-default framing, the same case classifies YES, and a
-    genuine pivot ("what's the capital of France?" as a follow-up) still
-    correctly classifies NO - both confirmed live, not assumed. Ships
-    without calibration data either way; a future
+    exchange, this switches entirely to FOLLOWUP_SCOPE_CLASSIFIER_PROMPT -
+    see that constant's own comment for why it needs two YES conditions
+    (continuation, or an independently new in-domain question), not just
+    one. Went through two live-tested iterations before landing here:
+    (1) folding history into the original from-scratch prompt failed a
+    fully generic follow-up with no topical token ("Was that a lot?"
+    classified NO, 3/3, even with correct history present); (2) a
+    continuation-only rewrite fixed that but then incorrectly rejected
+    every new-but-unrelated-entity in-domain question ("How much did the
+    Department of Education spend on Pell Grants?" right after a NASA
+    question classified NO, 5/5). All of the following are confirmed
+    live against the final version, repeated 3x each: "Was that a lot?"
+    (continuation, no topic token) -> YES; "What about FY2023?"
+    (continuation, weak anchor) -> YES; a new Department of
+    Education/Boeing question (unrelated entity, still in-domain) -> YES;
+    "capital of France?" / a recipe question (genuine domain pivot) ->
+    NO. Ships without calibration data either way; a future
     calibrate_scope_classifier.py-style pass extending its labeled set
     with real multi-turn examples would give this a measured accuracy
     figure the way the bare-question path already has.

@@ -2,6 +2,30 @@
 
 Deferred ideas and known minor issues — not urgent, not forgotten.
 
+## Found: Next.js dev-mode HMR WebSocket fails its handshake on this dev machine, blocking hydration entirely
+
+While debugging a real chat-input bug (see the `useConversation`/`api.ts`
+timeout fix), found that `next dev`'s HMR WebSocket
+(`ws://127.0.0.1:<port>/_next/hmr?id=...`) fails its handshake on this
+machine with `net::ERR_INVALID_HTTP_RESPONSE` — confirmed in both a real
+browser and a headless one, and identically with `--turbopack` (the
+default) and `--webpack`, so it's not bundler-specific.
+
+Worse than cosmetic: confirmed via a headless-browser check
+(`document.querySelector("textarea").__reactProps$...`) that this fully
+blocks React hydration, not just live-reload — the client JS bundle loads
+with zero errors, but event handlers never attach to the DOM, so nothing
+in the page is interactive. This made a real app bug (the loading-state
+timeout fix above) look identical to "the whole UI is broken" until
+isolated.
+
+**Workaround**: `npm run build && npm run start` (production mode, no
+HMR/dev-socket involved) works cleanly with zero console errors — use
+this for any UI verification on this machine until the dev-mode socket
+issue itself is root-caused. Not investigated further: likely a local
+network/security-software interaction with WebSocket upgrade responses
+on loopback, specific to this machine rather than the codebase.
+
 ## Added: per-period obligation breakdown on get_agency_budget, and a real arithmetic-in-prose regression found along the way
 
 A functional deep dive on `get_agency_budget` (params in vs. the real contract's

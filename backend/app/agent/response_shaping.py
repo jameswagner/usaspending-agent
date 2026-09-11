@@ -7,6 +7,7 @@ returned from a tool call, not on how that call was made.
 """
 from __future__ import annotations
 
+import json
 import re
 from datetime import date, datetime, timezone
 from typing import Literal
@@ -218,6 +219,10 @@ class ToolCitation(BaseModel):
     parameters: dict[str, str | int | float]
     description: str
     url: str | None = None
+    # A POST call has no browser-clickable url - curl holds the real,
+    # captured request(s) instead (see usaspending_client.py's
+    # drain_request_capture), reproducible exactly as sent.
+    curl: str | None = None
 
 
 # Tools whose results are never chart-worthy by shape (free text / a single
@@ -331,24 +336,83 @@ _ALL_OPTIONAL_FILTER_KEYS = {
     "max_amount",
     "performed_in_state",
     "recipient_in_state",
+    "performed_in_county",
+    "recipient_in_county",
+    "performed_in_city",
+    "recipient_in_city",
+    "performed_in_zip",
+    "recipient_in_zip",
+    "performed_in_district",
+    "recipient_in_district",
+    "keywords",
+    "date_type",
+    "place_of_performance_scope",
+    "recipient_scope",
+    "naics_code",
+    "psc_code",
+    "cfda_program",
 }
+
+
+_SCOPE_LABEL_KEYS = (
+    ("agency_name", None),
+    ("recipient_name", None),
+    ("recipient_id", None),
+    ("performed_in_state", "performed in"),
+    ("recipient_in_state", "recipient in"),
+    ("performed_in_county", "performed in"),
+    ("recipient_in_county", "recipient in"),
+    ("performed_in_city", "performed in"),
+    ("recipient_in_city", "recipient in"),
+    ("performed_in_zip", "performed in"),
+    ("recipient_in_zip", "recipient in"),
+    ("performed_in_district", "performed in"),
+    ("recipient_in_district", "recipient in"),
+    ("naics_code", "NAICS"),
+    ("psc_code", "PSC"),
+    ("cfda_program", "CFDA"),
+    ("keywords", "keywords"),
+)
 
 
 def _citation_scope_label(context: dict) -> str:
     """What a citation's description names as what the query was scoped
-    to. agency_name if given (existing behavior, preserved) - else
-    recipient_name (human-readable) or recipient_id (a resolved but
-    nameless identifier) if that's what scoped the call instead.
-    _build_filters (tool_filters.py) guarantees at least one of the three
-    is always present - "unknown scope" here would mean that guarantee
-    was violated, not a real expected case."""
-    return context.get("agency_name") or context.get("recipient_name") or context.get("recipient_id") or "unknown scope"
+    to - every real scoping filter actually set, combined (a naics_code-
+    only call used to previously show "unknown scope" here, since this
+    only checked agency_name/recipient_name/recipient_id while
+    _build_filters' real accepted scope list had grown well past those
+    three - see _ALL_OPTIONAL_FILTER_KEYS)."""
+    parts = [
+        f"{label} {context[key]}" if label else str(context[key])
+        for key, label in _SCOPE_LABEL_KEYS
+        if key in context
+    ]
+    return ", ".join(parts) if parts else "unknown scope"
 
 
 def _merge_optional_filter_params(params: dict, context: dict, keys: set[str]) -> None:
     for key in keys:
         if key in context:
             params[key] = context[key]
+
+
+def _curl_from_context(context: dict) -> str | None:
+    """Reproduces the real request(s) a POST-based tool call made, from
+    context["_requests"] (drained from usaspending_client.py's capture
+    buffer by _record_tool_call) - the actual (method, url, body) sent,
+    not a hand-reconstructed guess. A tool call that made more than one
+    live request (e.g. get_award_details with include_child_orders) gets
+    one curl command per line."""
+    requests_made = context.get("_requests")
+    if not requests_made:
+        return None
+    lines = []
+    for method, url, body in requests_made:
+        if body is None:
+            lines.append(f"curl '{url}'")
+        else:
+            lines.append(f"curl -X {method} '{url}' -H 'Content-Type: application/json' -d '{json.dumps(body)}'")
+    return "\n".join(lines)
 
 
 def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitation | None:
@@ -393,6 +457,15 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             url=url,
         )
 
+    if tool_name == "resolve_county_fips":
+        description = context["description"]
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"description": description},
+            description=f"County FIPS lookup: {description}",
+            curl=_curl_from_context(context),
+        )
+
     if tool_name == "get_agency_budget":
         params = {
             "agency_name": context["agency_name"],
@@ -425,7 +498,9 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             f"{params['category']} breakdown, {scope}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
         )
-        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+        return ToolCitation(
+            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+        )
 
     if tool_name == "get_spending_over_time":
         params = {
@@ -439,7 +514,9 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             f"Spending over time ({params['group']}), {scope}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
         )
-        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+        return ToolCitation(
+            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+        )
 
     if tool_name == "get_spending_by_geography":
         params = {
@@ -452,7 +529,9 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             f"Spending by {params['geo_layer']} ({params['scope']}), {scope}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
         )
-        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+        return ToolCitation(
+            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+        )
 
     if tool_name == "search_awards":
         params = {
@@ -470,7 +549,25 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             f"{params['award_type']} awards search, {scope}, "
             f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
         )
-        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+        return ToolCitation(
+            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+        )
+
+    if tool_name == "search_subawards":
+        params = {
+            "start_fiscal_year": context["start_fiscal_year"],
+            "end_fiscal_year": context["end_fiscal_year"],
+            "award_type": context["award_type"],
+        }
+        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
+        scope = _citation_scope_label(context)
+        description = (
+            f"{params['award_type']} subawards search, {scope}, "
+            f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
+        )
+        return ToolCitation(
+            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+        )
 
     if tool_name == "get_award_details":
         award_id = context["award_id"]
@@ -484,6 +581,15 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             parameters={"award_id": award_id},
             description=f"Award details: {label}",
             url=f"{BASE_URL}/api/v2/awards/{award_id}/",
+        )
+
+    if tool_name == "get_award_subawards":
+        award_id = context["award_id"]
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"award_id": award_id},
+            description=f"Subawards for award: {award_id}",
+            curl=_curl_from_context(context),
         )
 
     if tool_name == "list_top_agencies_by_budget":
@@ -501,6 +607,7 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             tool_name=tool_name,
             parameters={"keyword": keyword},
             description=f"Recipient search: {keyword}",
+            curl=_curl_from_context(context),
         )
 
     if tool_name == "get_recipient_details":
@@ -516,6 +623,7 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             tool_name=tool_name,
             parameters={"recipient_id": recipient_id},
             description=f"Recipient details: {label}",
+            url=f"{BASE_URL}/api/v2/recipient/{recipient_id}/",
         )
 
     if tool_name == "code_execution":

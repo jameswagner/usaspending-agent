@@ -65,6 +65,7 @@ def test_ask_returns_agent_response(client, monkeypatch):
             "parameters": {"name": "NSF"},
             "description": "Agency lookup: NSF",
             "url": None,
+            "curl": None,
         }
     ]
 

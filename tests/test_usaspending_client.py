@@ -12,6 +12,7 @@ from backend.app.usaspending_client import (
     USASpendingAPIError,
     USASpendingClient,
     _raise_with_detail,
+    drain_request_capture,
 )
 
 
@@ -433,3 +434,50 @@ class TestAdvancedFilters:
         filters = AdvancedFilters(keywords=["test"], naics_codes={"require": ["33"]})
         dumped = filters.model_dump(exclude_none=True)
         assert dumped["naics_codes"] == {"require": ["33"]}
+
+
+class TestRequestCapture:
+    def _fake_response(self, url: str) -> requests.Response:
+        resp = make_response(200, {"ok": True})
+        resp.url = url
+        return resp
+
+    def test_get_records_the_real_resolved_url(self, monkeypatch):
+        drain_request_capture()  # discard any leftover from a prior test
+        client = USASpendingClient()
+        monkeypatch.setattr(
+            client.session, "get", lambda url, params=None, timeout=None: self._fake_response(f"{url}?foo=bar")
+        )
+        client._get("/api/v2/agency/049/", params={"foo": "bar"})
+        assert drain_request_capture() == [("GET", "https://api.usaspending.gov/api/v2/agency/049/?foo=bar", None)]
+
+    def test_post_records_method_url_and_body(self, monkeypatch):
+        drain_request_capture()
+        client = USASpendingClient()
+        monkeypatch.setattr(
+            client.session, "post", lambda url, json=None, timeout=None: self._fake_response(url)
+        )
+        client._post("/api/v2/search/spending_by_category/naics/", {"agencies": []})
+        assert drain_request_capture() == [
+            ("POST", "https://api.usaspending.gov/api/v2/search/spending_by_category/naics/", {"agencies": []})
+        ]
+
+    def test_drain_clears_the_buffer(self, monkeypatch):
+        drain_request_capture()
+        client = USASpendingClient()
+        monkeypatch.setattr(client.session, "post", lambda url, json=None, timeout=None: self._fake_response(url))
+        client._post("/api/v2/search/spending_by_category/naics/", {})
+        drain_request_capture()
+        assert drain_request_capture() == []
+
+    def test_failed_request_is_still_captured(self, monkeypatch):
+        # _record_request runs before _raise_with_detail - a failed call
+        # should still show up (the caller decides whether to use it).
+        drain_request_capture()
+        client = USASpendingClient()
+        monkeypatch.setattr(client.session, "get", lambda url, params=None, timeout=None: make_response(404, {}))
+        with pytest.raises(USASpendingAPIError):
+            client._get("/api/v2/agency/nonexistent/")
+        captured = drain_request_capture()
+        assert len(captured) == 1
+        assert captured[0][0] == "GET"

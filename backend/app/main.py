@@ -7,7 +7,6 @@ from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -102,8 +101,3 @@ def ask(request: Request, response: Response, payload: AskRequest) -> AskRespons
         citations=result.citations,
         tool_citations=result.tool_citations,
     )
-
-
-# Minimal no-build frontend (plain HTML/JS, no npm) - mounted after the API
-# routes above, at /ui rather than "/", so it can't shadow /ask or /health.
-app.mount("/ui", StaticFiles(directory="frontend", html=True), name="ui")

@@ -46,12 +46,21 @@ uv run python -m backend.app.retrieval.pipeline.bm25_index       # both sources 
 
 ## Running
 
+Two processes: the FastAPI backend, and the Next.js frontend that talks to it
+through a server-side proxy route.
+
 ```bash
 uv run uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-- Browser UI: `http://127.0.0.1:8000/ui/`
-- API: `POST /ask` with `{"question": "..."}`, returns `{answer_text, source_type, charts, citations, tool_citations}`
+```bash
+cd web && npm install   # first time only
+npm run dev
+```
+
+- Browser UI: `http://localhost:3000`
+- API: `POST /ask` with `{"question": "...", "conversation_id": "..."}`, returns
+  `{answer_text, source_type, conversation_id, charts, citations, tool_citations}`
 - Health check: `GET /health`
 
 You can also run the agent directly from the CLI, without starting the server:
@@ -73,7 +82,7 @@ uv run ruff check .
 
 ```
 backend/app/
-  main.py                 FastAPI app (POST /ask, GET /health, serves frontend/ at /ui)
+  main.py                 FastAPI app (POST /ask, GET /health)
   agent/                  Tool-calling agent (package): singletons, tool definitions
                             (tools.py) + their shared filter-building layer
                             (tool_filters.py), arithmetic tools, scope gate,
@@ -89,7 +98,7 @@ backend/app/
     pipeline/               One-off scripts: PDF/Glossary API -> chunks -> indexes
     dev_tools/              Manual scripts: sanity_check.py, calibrate_threshold.py
   usaspending_client.py   Typed client for the live USASpending.gov API
-frontend/index.html        Minimal no-build UI (vanilla JS, served by FastAPI, no separate process)
+web/                        Next.js frontend (separate process, proxies to the FastAPI API)
 tests/                     Unit tests
 BACKLOG.md                 Known gaps and deferred work
 private/                   Gitignored: demo script, dev narrative, blog posts - not part of the deliverable

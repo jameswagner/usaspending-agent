@@ -674,17 +674,21 @@ class SpendingExplorerResult(BaseModel):
     """api_contracts/v2/spending.md's SpendingExplorerGeneralResponse/
     SpendingExplorerDetailedResponse, merged into one model - the two only
     differ in which optional fields are present, not their required
-    shape. id/code are typed as required strings in the contract but come
-    back null for an "Unreported Data" row (SpendingExplorerGeneralUnreportedResponse) -
+    shape. id/code/name are typed as required in the contract but reality
+    disagrees on both counts, confirmed live: id/code come back null for
+    an "Unreported Data" row (SpendingExplorerGeneralUnreportedResponse) -
     the gap between whole-of-government budgetary-resources totals and
-    what's actually been reported at the requested level so far."""
+    what's actually been reported at the requested level so far - and
+    name has also been observed null for an otherwise-normal
+    program_activity result (not the Unreported Data row, which does have
+    a real name - "Unreported Data" itself)."""
 
     model_config = ConfigDict(extra="allow")
 
     id: str | None = None
     code: str | None = None
     type: str
-    name: str
+    name: str | None = None
     amount: float
     account_number: str | None = None
 

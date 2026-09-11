@@ -47,12 +47,6 @@ from .awards import (
     get_award_subawards,
     get_idv_amounts_raw,
 )
-from .budget_function import (
-    Quarter,
-    _format_budget_function_results,
-    get_spending_by_budget_function,
-    get_spending_by_budget_function_raw,
-)
 from .business_type_labels import _format_business_type
 from .cfda import resolve_cfda_program
 from .location import _query_candidates, resolve_county_fips
@@ -86,6 +80,13 @@ from .spending import (
     search_subawards,
     search_subawards_raw,
 )
+from .spending_explorer import (
+    GroupBy,
+    Quarter,
+    _format_spending_explorer_results,
+    get_spending_explorer_breakdown,
+    get_spending_explorer_breakdown_raw,
+)
 
 __all__ = [
     "MAX_TOOL_CALLS_PER_TURN",
@@ -93,13 +94,13 @@ __all__ = [
     "VALID_GROUPS",
     "Category",
     "Group",
+    "GroupBy",
     "Quarter",
     "_agency_label",
     "_check_tool_call_budget",
     "_format_agency_award_breakdown",
     "_format_api_messages",
     "_format_award_details",
-    "_format_budget_function_results",
     "_format_business_type",
     "_format_contract_or_idv",
     "_format_financial_assistance",
@@ -111,6 +112,7 @@ __all__ = [
     "_format_recipient_listing",
     "_format_recipient_overview",
     "_format_recipient_state_only",
+    "_format_spending_explorer_results",
     "_format_top_agencies_by_budget",
     "_location_label",
     "_normalize_category",
@@ -131,12 +133,12 @@ __all__ = [
     "get_award_subawards",
     "get_idv_amounts_raw",
     "get_recipient_details",
-    "get_spending_by_budget_function",
-    "get_spending_by_budget_function_raw",
     "get_spending_by_category",
     "get_spending_by_category_raw",
     "get_spending_by_geography",
     "get_spending_by_geography_raw",
+    "get_spending_explorer_breakdown",
+    "get_spending_explorer_breakdown_raw",
     "get_spending_over_time",
     "get_spending_over_time_raw",
     "list_top_agencies_by_budget",

@@ -140,10 +140,3 @@ def test_ask_rate_limited_after_exceeding_limit(client, monkeypatch):
 
     assert resp.status_code == 429
     assert "Retry-After" in resp.headers
-
-
-def test_ui_serves_frontend(client):
-    resp = client.get("/ui/")
-    assert resp.status_code == 200
-    assert "text/html" in resp.headers["content-type"]
-    assert "USASpending" in resp.text

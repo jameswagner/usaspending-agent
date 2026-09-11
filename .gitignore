@@ -10,3 +10,6 @@ data/*
 *.egg-info/
 private/
 .claude/settings.local.json
+web/node_modules/
+web/.next/
+web/.env.local

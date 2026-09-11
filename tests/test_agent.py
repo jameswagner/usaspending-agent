@@ -286,7 +286,7 @@ class TestFormatAgencyAwardBreakdown:
         assert "Solo Office:" in result
         assert "()" not in result
 
-    def test_children_are_not_shown(self):
+    def test_children_are_not_shown_by_default(self):
         response = AgencySubAgencyResponse(
             toptier_code="075",
             fiscal_year=2024,
@@ -299,6 +299,36 @@ class TestFormatAgencyAwardBreakdown:
         )
         result = _format_agency_award_breakdown(response)
         assert "Child Office" not in result
+
+    def test_children_shown_when_include_offices_true(self):
+        response = AgencySubAgencyResponse(
+            toptier_code="075",
+            fiscal_year=2024,
+            results=[
+                SubAgencyBreakdown(
+                    name="Parent Office", abbreviation="PO", total_obligations=5.0, transaction_count=2, new_award_count=1,
+                    children=[SubAgencyOffice(name="Child Office", code="123", total_obligations=5.0, transaction_count=2, new_award_count=1)],
+                ),
+            ],
+        )
+        result = _format_agency_award_breakdown(response, include_offices=True)
+        assert "Child Office (123): $5.00 across 2 transactions, 1 new awards" in result
+
+    def test_office_with_null_name_falls_back_to_code(self):
+        # Real EPA offices return name=null live - see SubAgencyOffice's
+        # docstring - must not crash or show a blank/None label.
+        response = AgencySubAgencyResponse(
+            toptier_code="075",
+            fiscal_year=2024,
+            results=[
+                SubAgencyBreakdown(
+                    name="Parent Office", abbreviation="PO", total_obligations=5.0, transaction_count=2, new_award_count=1,
+                    children=[SubAgencyOffice(name=None, code="68HERH", total_obligations=1.0, transaction_count=1, new_award_count=1)],
+                ),
+            ],
+        )
+        result = _format_agency_award_breakdown(response, include_offices=True)
+        assert "(unnamed office, code 68HERH)" in result
 
 
 class TestSpendingByGeographyChart:

@@ -58,6 +58,7 @@ from backend.app.agent.tools import (
     _format_agency_award_breakdown,
     _format_api_messages,
     _format_award_details,
+    _format_budget_function_results,
     _format_business_type,
     _format_contract_or_idv,
     _format_financial_assistance,
@@ -78,6 +79,7 @@ from backend.app.agent.tools import (
     _scope_label,
     _tool_call_log,
     _truncation_note,
+    get_spending_by_budget_function_raw,
 )
 from backend.app.usaspending_client import (
     AgencySubAgencyResponse,
@@ -90,6 +92,8 @@ from backend.app.usaspending_client import (
     RecipientOverview,
     SpendingByCategoryResponse,
     SpendingByGeographyResponse,
+    SpendingExplorerResponse,
+    SpendingExplorerResult,
     SpendingOverTimeResponse,
     SubAgencyBreakdown,
     SubAgencyOffice,
@@ -124,6 +128,16 @@ def make_time_response(n: int) -> SpendingOverTimeResponse:
             for i in range(n)
         ],
     )
+
+
+def make_budget_function_response(n: int, include_unreported: bool = False) -> SpendingExplorerResponse:
+    results = [
+        SpendingExplorerResult(id=str(i), code=str(i), type="budget_function", name=f"Function {i}", amount=float(i) * 1000)
+        for i in range(n)
+    ]
+    if include_unreported:
+        results.append(SpendingExplorerResult(type="budget_function", name="Unreported Data", amount=50.0))
+    return SpendingExplorerResponse(total=1000.0, end_date="2026-06-30", results=results)
 
 
 def make_geography_response(n: int, geo_layer: str = "state") -> SpendingByGeographyResponse:
@@ -329,6 +343,34 @@ class TestSpendingByGeographyChart:
         assert "Unknown" in spec.labels
 
 
+class TestBudgetFunctionChart:
+    def test_multi_function_produces_bar_spec(self):
+        spec = should_chart("get_spending_by_budget_function", make_budget_function_response(3))
+        assert spec is not None
+        assert spec.chart_type == "bar"
+        assert spec.labels == ["Function 0", "Function 1", "Function 2"]
+        assert spec.values == [0.0, 1000.0, 2000.0]
+
+    def test_single_function_returns_none(self):
+        assert should_chart("get_spending_by_budget_function", make_budget_function_response(1)) is None
+
+    def test_unreported_row_excluded_from_chart_and_count(self):
+        # Two real named results plus one Unreported Data row (id=None) -
+        # the chart should show only the two real ones, not error or
+        # count the unreported row toward the 2+ threshold.
+        response = make_budget_function_response(2, include_unreported=True)
+        spec = should_chart("get_spending_by_budget_function", response)
+        assert spec.labels == ["Function 0", "Function 1"]
+        assert "Unreported Data" not in spec.labels
+
+    def test_only_unreported_row_returns_none(self):
+        response = SpendingExplorerResponse(
+            total=50.0, end_date="2026-06-30",
+            results=[SpendingExplorerResult(type="budget_function", name="Unreported Data", amount=50.0)],
+        )
+        assert should_chart("get_spending_by_budget_function", response) is None
+
+
 class TestNeverChartTools:
     def test_search_guide_never_charts(self):
         assert should_chart("search_guide", make_category_response(5)) is None
@@ -395,6 +437,87 @@ class TestFormatPeriodBreakdown:
         # as the Award Amount cumulative bug found earlier in this project.
         result = _format_period_breakdown([ObligationByPeriod(period=1, obligated=100.0)])
         assert "cumulative" in result.lower()
+
+
+class TestFormatBudgetFunctionResults:
+    def test_includes_total_and_end_date(self):
+        result = _format_budget_function_results(make_budget_function_response(2))
+        assert "Total obligated: $1,000.00" in result
+        assert "2026-06-30" in result
+
+    def test_named_result_includes_code(self):
+        result = _format_budget_function_results(make_budget_function_response(1))
+        assert "Function 0 (code 0): $0.00" in result
+
+    def test_unreported_row_labeled_as_gap_not_a_category(self):
+        result = _format_budget_function_results(make_budget_function_response(1, include_unreported=True))
+        assert "Unreported data: $50.00 (not yet broken down at this level)" in result
+        # Must never be presented as though it were a real named category.
+        assert "Unreported Data (code" not in result
+
+    def test_account_number_appended_for_federal_account_results(self):
+        response = SpendingExplorerResponse(
+            total=100.0, end_date="2026-06-30",
+            results=[
+                SpendingExplorerResult(
+                    id="1", code="5901", type="federal_account", name="Salaries and Expenses",
+                    amount=100.0, account_number="075-5901",
+                )
+            ],
+        )
+        result = _format_budget_function_results(response)
+        assert "account 075-5901" in result
+
+    def test_null_total_reported_as_no_data(self):
+        response = SpendingExplorerResponse(total=None, end_date="2026-06-30", results=[])
+        result = _format_budget_function_results(response)
+        assert "No data as of 2026-06-30" in result
+
+
+class TestGetSpendingByBudgetFunctionRaw:
+    # get_spending_by_budget_function_raw's only real logic is choosing
+    # which live "type"/filters to send based on how far the caller has
+    # already drilled - these pin that selection directly against a fake
+    # client, independent of any live network call.
+
+    class _FakeClient:
+        def __init__(self):
+            self.calls: list[tuple[str, dict]] = []
+
+        def spending_explorer(self, explorer_type, filters):
+            self.calls.append((explorer_type, dict(filters)))
+            return SpendingExplorerResponse(total=1.0, end_date="2026-06-30", results=[])
+
+    def test_no_budget_function_queries_top_level(self, monkeypatch):
+        fake = self._FakeClient()
+        monkeypatch.setattr("backend.app.agent.tools.budget_function._get_usaspending_client", lambda: fake)
+        get_spending_by_budget_function_raw(2026, "3")
+        explorer_type, filters = fake.calls[0]
+        assert explorer_type == "budget_function"
+        assert filters == {"fy": "2026", "quarter": "3"}
+
+    def test_budget_function_alone_queries_subfunctions(self, monkeypatch):
+        fake = self._FakeClient()
+        monkeypatch.setattr("backend.app.agent.tools.budget_function._get_usaspending_client", lambda: fake)
+        get_spending_by_budget_function_raw(2026, "3", budget_function="570")
+        explorer_type, filters = fake.calls[0]
+        assert explorer_type == "budget_subfunction"
+        assert filters == {"fy": "2026", "quarter": "3", "budget_function": "570"}
+
+    def test_both_given_queries_federal_accounts(self, monkeypatch):
+        fake = self._FakeClient()
+        monkeypatch.setattr("backend.app.agent.tools.budget_function._get_usaspending_client", lambda: fake)
+        get_spending_by_budget_function_raw(2026, "3", budget_function="570", budget_subfunction="571")
+        explorer_type, filters = fake.calls[0]
+        assert explorer_type == "federal_account"
+        assert filters == {"fy": "2026", "quarter": "3", "budget_function": "570", "budget_subfunction": "571"}
+
+    def test_subfunction_without_function_raises(self, monkeypatch):
+        fake = self._FakeClient()
+        monkeypatch.setattr("backend.app.agent.tools.budget_function._get_usaspending_client", lambda: fake)
+        with pytest.raises(USASpendingAPIError):
+            get_spending_by_budget_function_raw(2026, "3", budget_subfunction="571")
+        assert fake.calls == []
 
 
 class TestBuildToolCitation:
@@ -603,6 +726,25 @@ class TestBuildToolCitation:
         assert citation.parameters == {"limit": 10}
         assert citation.description == "Top 10 agencies by budget"
         assert citation.url == "https://api.usaspending.gov/api/v2/references/toptier_agencies/"
+
+    def test_get_spending_by_budget_function_top_level(self):
+        citation = build_tool_citation(
+            "get_spending_by_budget_function",
+            {"fiscal_year": 2026, "quarter": "3", "budget_function": None, "budget_subfunction": None},
+        )
+        assert citation is not None
+        assert citation.tool_name == "get_spending_by_budget_function"
+        assert citation.parameters == {"fiscal_year": 2026, "quarter": "3"}
+        assert citation.description == "Budget function breakdown, FY2026 Q3"
+
+    def test_get_spending_by_budget_function_drilled_down(self):
+        citation = build_tool_citation(
+            "get_spending_by_budget_function",
+            {"fiscal_year": 2026, "quarter": "3", "budget_function": "570", "budget_subfunction": "571"},
+        )
+        assert citation.parameters == {
+            "fiscal_year": 2026, "quarter": "3", "budget_function": "570", "budget_subfunction": "571",
+        }
 
     def test_search_recipients(self):
         citation = build_tool_citation("search_recipients", {"keyword": "Boeing"})

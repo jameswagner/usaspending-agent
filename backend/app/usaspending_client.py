@@ -670,6 +670,33 @@ class SpendingByGeographyResponse(BaseModel):
     messages: list[str] | None = None
 
 
+class SpendingExplorerResult(BaseModel):
+    """api_contracts/v2/spending.md's SpendingExplorerGeneralResponse/
+    SpendingExplorerDetailedResponse, merged into one model - the two only
+    differ in which optional fields are present, not their required
+    shape. id/code are typed as required strings in the contract but come
+    back null for an "Unreported Data" row (SpendingExplorerGeneralUnreportedResponse) -
+    the gap between whole-of-government budgetary-resources totals and
+    what's actually been reported at the requested level so far."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str | None = None
+    code: str | None = None
+    type: str
+    name: str
+    amount: float
+    account_number: str | None = None
+
+
+class SpendingExplorerResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    total: float | None = None
+    end_date: str
+    results: list[SpendingExplorerResult]
+
+
 class USASpendingAPIError(Exception):
     """Raised on a non-2xx response, with the API's own error detail (if any)
     as the message instead of a raw requests traceback — callers (e.g. an
@@ -1028,3 +1055,16 @@ class USASpendingClient:
             body["geo_layer_filters"] = geo_layer_filters
         data = self._post("/api/v2/search/spending_by_geography/", body)
         return SpendingByGeographyResponse(**data)
+
+    @traceable(run_type="tool", name="spending_explorer")
+    def spending_explorer(self, explorer_type: str, filters: dict[str, str]) -> SpendingExplorerResponse:
+        """POST /api/v2/spending/ - a genuinely different data lineage
+        (whole-of-government File A/B account data) from every other
+        method on this client (File C/D award-search data), per
+        api_contracts/v2/spending.md. filters is a plain dict, not an
+        AdvancedFilters - this endpoint's filter shape (fy/quarter plus
+        the drill-down ids) doesn't overlap with the award-search filter
+        object at all."""
+        body = {"type": explorer_type, "filters": filters}
+        data = self._post("/api/v2/spending/", body)
+        return SpendingExplorerResponse(**data)

@@ -319,6 +319,20 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
             values=[r.aggregated_amount for r in top],
         )
 
+    if tool_name == "get_spending_by_budget_function":
+        # Named results only - an "Unreported Data" row (r.id is None) has
+        # no category to label a bar with, same reasoning as the geography
+        # branch above excluding entries with no shape_code/display_name.
+        named = [r for r in structured_result.results if r.id is not None]
+        if len(named) < 2:
+            return None
+        return ChartSpec(
+            chart_type="bar",
+            title=f"Spending by {named[0].type.replace('_', ' ')}",
+            labels=[r.name for r in named],
+            values=[r.amount for r in named],
+        )
+
     return None
 
 
@@ -599,6 +613,17 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             parameters={"limit": limit},
             description=f"Top {limit} agencies by budget",
             url=f"{BASE_URL}/api/v2/references/toptier_agencies/",
+        )
+
+    if tool_name == "get_spending_by_budget_function":
+        params = {"fiscal_year": context["fiscal_year"], "quarter": context["quarter"]}
+        if context.get("budget_function"):
+            params["budget_function"] = context["budget_function"]
+        if context.get("budget_subfunction"):
+            params["budget_subfunction"] = context["budget_subfunction"]
+        description = f"Budget function breakdown, FY{params['fiscal_year']} Q{params['quarter']}"
+        return ToolCitation(
+            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
         )
 
     if tool_name == "search_recipients":

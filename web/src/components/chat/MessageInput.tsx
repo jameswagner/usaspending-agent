@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 interface MessageInputProps {
   onSend: (question: string) => Promise<void>;
@@ -10,11 +10,20 @@ interface MessageInputProps {
 
 export function MessageInput({ onSend, onNewConversation, loading }: MessageInputProps) {
   const [question, setQuestion] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Grows with content up to max-h-40 (matches the class below) instead of
+  // staying a fixed one-line box that scrolls its own text internally.
+  function resize(el: HTMLTextAreaElement) {
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }
 
   async function submit() {
     const trimmed = question.trim();
     if (!trimmed || loading) return;
     setQuestion("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     await onSend(trimmed);
   }
 
@@ -24,11 +33,15 @@ export function MessageInput({ onSend, onNewConversation, loading }: MessageInpu
         e.preventDefault();
         void submit();
       }}
-      className="flex items-end gap-2 border-t border-black/10 px-4 py-3 dark:border-white/10"
+      className="flex items-center gap-2 border-t border-black/10 px-4 py-3 dark:border-white/10"
     >
       <textarea
+        ref={textareaRef}
         value={question}
-        onChange={(e) => setQuestion(e.target.value)}
+        onChange={(e) => {
+          setQuestion(e.target.value);
+          resize(e.target);
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -36,9 +49,9 @@ export function MessageInput({ onSend, onNewConversation, loading }: MessageInpu
           }
         }}
         placeholder="e.g. What is a sub-award? / How is NSF spending broken down by NAICS code for FY2024?"
-        rows={1}
+        rows={2}
         autoFocus
-        className="max-h-40 flex-1 resize-none rounded-md border border-black/15 px-3 py-2 text-sm outline-none focus:border-black/40 dark:border-white/15 dark:focus:border-white/40"
+        className="max-h-40 flex-1 resize-none overflow-y-auto rounded-md border border-black/15 px-3 py-2 text-sm outline-none focus:border-black/40 dark:border-white/15 dark:focus:border-white/40"
       />
       <button
         type="submit"

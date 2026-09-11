@@ -159,8 +159,13 @@ def get_spending_explorer_breakdown(
     Args:
         group_by: What to group results by.
         fiscal_year: e.g. 2024 for FY2024. Data is not available before FY2017 Q2.
-        quarter: "1", "2", "3", or "4" — includes all quarters up to and including this one. The
-            most recently completed quarter's data isn't available until 45 days after it closes.
+        quarter: "1", "2", "3", or "4" — includes all quarters up to and including this one. Only a
+            CLOSED fiscal quarter has data; the in-progress quarter fails cleanly (confirmed live:
+            "Fiscal parameters provided do not belong to a current submission period") rather than
+            returning partial data, and the most recently closed quarter isn't available until
+            roughly 45 days after it closes either. There's no "current period" to fall back to —
+            if a call fails for this reason, try an earlier fiscal_year/quarter rather than
+            guessing forward.
         agency: An agency's toptier code (e.g. "075"), from a prior call's result, to scope to one agency.
         budget_function: A budget function's code (e.g. "570"), from a prior call's result.
         budget_subfunction: A budget sub-function's code, from a prior call's result.

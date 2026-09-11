@@ -2,7 +2,7 @@
 
 Verified against the official API contracts at
 https://github.com/fedspendingtransparency/usaspending-api/tree/master/usaspending_api/api_contracts/contracts/v2
-(checked 2026-09-02, budgetary_resources added 2026-09-07):
+(checked 2026-09-02, budgetary_resources added 2026-09-07, spending/ added 2026-09-11):
   - GET  /api/v2/references/toptier_agencies/            (agency name -> code lookup)
   - GET  /api/v2/agency/{toptier_code}/                  (agency overview)
   - GET  /api/v2/agency/{toptier_code}/budgetary_resources/  (appropriated budget, obligations, outlays by FY)
@@ -10,6 +10,7 @@ https://github.com/fedspendingtransparency/usaspending-api/tree/master/usaspendi
   - POST /api/v2/search/spending_over_time/
   - POST /api/v2/search/spending_by_award/
   - POST /api/v2/autocomplete/{naics,psc,cfda}/          (verified live, not currently called by any tool)
+  - POST /api/v2/spending/                               (Spending Explorer - obligated spending by agency)
 
 `AdvancedFilters` models the filter fields most likely to be used by this
 project's questions (keywords, time period, agencies, award types,
@@ -357,6 +358,26 @@ class AgencyBudgetaryResourcesResponse(BaseModel):
     toptier_code: str
     agency_data_by_year: list[AgencyYearBudget]
     messages: list[str] | None = None
+
+
+class SpendingExplorerAgencyResult(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    # id/code are null on the one synthetic "Unreported Data" row - real
+    # agency rows always carry both (confirmed live 2026-09-11).
+    id: str | None = None
+    code: str | None = None
+    name: str
+    amount: float
+    link: bool | None = None
+
+
+class SpendingByAgencyResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    total: float | None = None
+    end_date: str
+    results: list[SpendingExplorerAgencyResult]
 
 
 class SubAgencyOffice(BaseModel):
@@ -807,6 +828,36 @@ class USASpendingClient:
         isn't one."""
         data = self._get(f"/api/v2/agency/{toptier_code}/budgetary_resources/")
         return AgencyBudgetaryResourcesResponse(**data)
+
+    @traceable(run_type="tool", name="get_spending_by_agency_explorer")
+    def get_spending_by_agency_explorer(self, fiscal_year: int, quarter: int) -> SpendingByAgencyResponse:
+        """POST /api/v2/spending/, type="agency" - the live endpoint behind
+        usaspending.gov's own "FY spending by Agency" landing page. Returns
+        agency-reported OBLIGATED amounts (File B data, reconciled against
+        Treasury's own budget execution report), a genuinely different
+        figure from ToptierAgency.budget_authority_amount (appropriated
+        budget authority - see list_top_agencies_by_budget). Confirmed
+        live 2026-09-11 (FY2026 Q3): results include one synthetic
+        "Unreported Data" row (id/code null, see
+        SpendingExplorerAgencyResult) - the gap between this total and the
+        sum of what agencies individually reported; the live site renders
+        it as its own slice of the pie, so callers should decide
+        deliberately whether to include it rather than silently dropping
+        it.
+
+        Only a whole, CLOSED fiscal quarter has data - confirmed live that
+        the in-progress quarter 400s with "Fiscal parameters provided do
+        not belong to a current submission period", same for a quarter
+        closed too recently (the live site notes up to a 45-day
+        processing delay after a quarter's close). There's no "current
+        quarter" to default to here the way list_toptier_agencies's
+        active_fy/active_fq works - that reflects the in-progress quarter,
+        exactly the one that 400s - so callers must pass an
+        already-closed fiscal_year/quarter.
+        """
+        body = {"type": "agency", "filters": {"fy": str(fiscal_year), "quarter": str(quarter)}}
+        data = self._post("/api/v2/spending/", body)
+        return SpendingByAgencyResponse(**data)
 
     @traceable(run_type="tool", name="get_agency_sub_agency_breakdown")
     def get_agency_sub_agency_breakdown(

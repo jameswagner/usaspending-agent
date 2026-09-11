@@ -601,6 +601,17 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             url=f"{BASE_URL}/api/v2/references/toptier_agencies/",
         )
 
+    if tool_name == "list_top_agencies_by_spending":
+        fiscal_year = context["fiscal_year"]
+        quarter = context["quarter"]
+        limit = context["limit"]
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"fiscal_year": fiscal_year, "quarter": quarter, "limit": limit},
+            description=f"Top {limit} agencies by obligated spending, FY{fiscal_year} Q{quarter}",
+            curl=_curl_from_context(context),
+        )
+
     if tool_name == "search_recipients":
         keyword = context["keyword"]
         return ToolCitation(

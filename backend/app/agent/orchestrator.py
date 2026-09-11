@@ -43,6 +43,7 @@ from .tools import (
     get_spending_by_geography,
     get_spending_over_time,
     list_top_agencies_by_budget,
+    list_top_agencies_by_spending,
     lookup_agency,
     resolve_cfda_program,
     resolve_county_fips,
@@ -110,7 +111,7 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have twenty-five tools. Eighteen retrieve data: search_guide "
+        "have twenty-six tools. Nineteen retrieve data: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
         "toptier code), resolve_naics_code (find the NAICS code matching a "
@@ -135,7 +136,18 @@ def _build_system_prompt() -> str:
         "'which agency has the biggest budget' or 'what percent of the "
         "federal budget does X account for'; always reflects the current "
         "fiscal year/quarter, no historical range — use get_agency_budget "
-        "instead for one agency's budget history), get_agency_budget "
+        "instead for one agency's budget history), "
+        "list_top_agencies_by_spending "
+        "(rank agencies by OBLIGATED spending, largest first, for one CLOSED "
+        "fiscal quarter — use this, NEVER list_top_agencies_by_budget, for "
+        "'which agency spent the most' or 'how does spending break down by "
+        "agency' questions; budget authority and obligated spending are "
+        "different figures that can rank agencies in a different order, not "
+        "interchangeable even though both are agency rankings in dollars — "
+        "unlike list_top_agencies_by_budget this has no current-period "
+        "fallback, so if a call fails because the requested quarter isn't "
+        "closed/processed yet, try an earlier fiscal_year/quarter rather "
+        "than guessing forward), get_agency_budget "
         "(an agency's appropriated budgetary "
         "resources, obligations, and outlays for a fiscal year range — use "
         "this for 'what is X's budget' or 'how much money does X have', "
@@ -193,7 +205,7 @@ def _build_system_prompt() -> str:
         "a recipient_id). Six do arithmetic: "
         "sum_values, average, percentage_of, delta, ratio, and rank_values. "
         "One more, code_execution, is a general-purpose Python/Bash sandbox. "
-        "You must call at least one of the eighteen data tools before writing any "
+        "You must call at least one of the nineteen data tools before writing any "
         "answer, every question, with no exceptions — including questions "
         "that seem "
         "unrelated to federal spending, general-knowledge questions, "
@@ -302,6 +314,7 @@ def _ask_legacy(question: str, conversation_id: str) -> AgentResult:
             resolve_cfda_program,
             resolve_county_fips,
             list_top_agencies_by_budget,
+            list_top_agencies_by_spending,
             get_agency_budget,
             get_agency_award_breakdown,
             get_spending_by_category,

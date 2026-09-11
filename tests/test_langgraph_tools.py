@@ -10,7 +10,7 @@ from backend.app.agent.langgraph_tools import LANGGRAPH_TOOLS
 
 
 def test_langgraph_tools_is_nonempty():
-    assert len(LANGGRAPH_TOOLS) == 24
+    assert len(LANGGRAPH_TOOLS) == 25
 
 
 def test_every_tool_schema_matches_its_own_signature():

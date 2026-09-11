@@ -70,6 +70,7 @@ from backend.app.agent.tools import (
     _format_recipient_overview,
     _format_recipient_state_only,
     _format_top_agencies_by_budget,
+    _format_top_agencies_by_spending,
     _location_label,
     _normalize_category,
     _normalize_group,
@@ -88,8 +89,10 @@ from backend.app.usaspending_client import (
     RecipientListing,
     RecipientLocation,
     RecipientOverview,
+    SpendingByAgencyResponse,
     SpendingByCategoryResponse,
     SpendingByGeographyResponse,
+    SpendingExplorerAgencyResult,
     SpendingOverTimeResponse,
     SubAgencyBreakdown,
     SubAgencyOffice,
@@ -604,6 +607,15 @@ class TestBuildToolCitation:
         assert citation.description == "Top 10 agencies by budget"
         assert citation.url == "https://api.usaspending.gov/api/v2/references/toptier_agencies/"
 
+    def test_list_top_agencies_by_spending(self):
+        citation = build_tool_citation(
+            "list_top_agencies_by_spending", {"fiscal_year": 2026, "quarter": 3, "limit": 10}
+        )
+        assert citation is not None
+        assert citation.tool_name == "list_top_agencies_by_spending"
+        assert citation.parameters == {"fiscal_year": 2026, "quarter": 3, "limit": 10}
+        assert citation.description == "Top 10 agencies by obligated spending, FY2026 Q3"
+
     def test_search_recipients(self):
         citation = build_tool_citation("search_recipients", {"keyword": "Boeing"})
         assert citation is not None
@@ -885,6 +897,60 @@ class TestFormatTopAgenciesByBudget:
         agency = self._agency("HHS", "HHS", 3650342489549.92, 0.2355772266133647)
         result = _format_top_agencies_by_budget([agency])
         assert "15,495,311,418,794" not in result
+
+
+class TestFormatTopAgenciesBySpending:
+    # Real live shape (FY2026 Q3, confirmed 2026-09-11): the "Unreported
+    # Data" row carries id/code null and no `link` key at all - distinct
+    # from a real agency row's always-string id/code.
+    def _response(self, results, total=8305625034343.83, end_date="2026-06-30T00:00:00Z"):
+        return SpendingByAgencyResponse(total=total, end_date=end_date, results=results)
+
+    def _agency_result(self, name, amount, id_="1", code="000"):
+        return SpendingExplorerAgencyResult(id=id_, code=code, name=name, amount=amount, link=True)
+
+    def _unreported(self, amount):
+        return SpendingExplorerAgencyResult(id=None, code=None, name="Unreported Data", amount=amount)
+
+    def test_ranked_lines_include_amount_and_percentage_of_total(self):
+        response = self._response([
+            self._agency_result("Department of Health and Human Services", 2220752284024.05, id_="806", code="075"),
+            self._agency_result("Department of the Treasury", 1697183126709.08, id_="456", code="020"),
+        ])
+        result = _format_top_agencies_by_spending(response, 2026, 3, limit=10)
+        assert "1. Department of Health and Human Services: $2,220,752,284,024.05 (26.74% of total obligated)" in result
+        assert "2. Department of the Treasury: $1,697,183,126,709.08 (20.43% of total obligated)" in result
+
+    def test_unreported_data_row_excluded_from_ranking_but_shown_separately(self):
+        response = self._response([
+            self._agency_result("Department of Health and Human Services", 2220752284024.05, id_="806", code="075"),
+            self._unreported(-292127781049.26),
+        ])
+        result = _format_top_agencies_by_spending(response, 2026, 3, limit=10)
+        numbered_lines = [line for line in result.splitlines() if line[:1].isdigit() and line[1:3] == ". "]
+        assert numbered_lines == ["1. Department of Health and Human Services: $2,220,752,284,024.05 (26.74% of total obligated)"]
+        assert "Unreported Data: $-292,127,781,049.26" in result
+
+    def test_limit_truncates_ranking(self):
+        response = self._response([
+            self._agency_result("A", 300.0, id_="1"),
+            self._agency_result("B", 200.0, id_="2"),
+            self._agency_result("C", 100.0, id_="3"),
+        ], total=600.0)
+        result = _format_top_agencies_by_spending(response, 2026, 3, limit=2)
+        assert "A" in result
+        assert "B" in result
+        assert "3. C" not in result
+
+    def test_header_includes_fiscal_period_and_end_date(self):
+        response = self._response([self._agency_result("HHS", 1.0, id_="1")], total=1.0)
+        result = _format_top_agencies_by_spending(response, 2026, 3, limit=10)
+        assert result.startswith("FY2026 Q3, as of 2026-06-30")
+
+    def test_no_unreported_row_present_omits_that_line(self):
+        response = self._response([self._agency_result("HHS", 1.0, id_="1")], total=1.0)
+        result = _format_top_agencies_by_spending(response, 2026, 3, limit=10)
+        assert "Unreported" not in result
 
 
 class TestBuildFilters:

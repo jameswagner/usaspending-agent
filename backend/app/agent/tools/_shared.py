@@ -2,7 +2,7 @@
 budget, untrusted-data wrapping, API-message surfacing, scope labeling)
 plus the tools that don't funnel through _build_filters: search_guide,
 lookup_agency, get_agency_budget, get_agency_award_breakdown,
-list_top_agencies_by_budget.
+list_top_agencies_by_budget, list_top_agencies_by_spending.
 """
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from backend.app.usaspending_client import (
     AgencySubAgencyResponse,
     AgencyYearBudget,
     ObligationByPeriod,
+    SpendingByAgencyResponse,
     ToptierAgency,
     USASpendingAPIError,
     drain_request_capture,
@@ -405,6 +406,78 @@ def list_top_agencies_by_budget(limit: int = 10) -> str:
     _record_tool_call("list_top_agencies_by_budget", ranked, {"limit": limit})
 
     return _wrap_untrusted(_format_top_agencies_by_budget(ranked))
+
+
+def _format_top_agencies_by_spending(
+    response: SpendingByAgencyResponse, fiscal_year: int, quarter: int, limit: int
+) -> str:
+    # The "Unreported Data" row (id/code null) isn't a ranked agency -
+    # excluded from the ranked list, but its own amount is still
+    # surfaced separately, same as the live site's own pie slice.
+    reported = [r for r in response.results if r.id is not None]
+    unreported = next((r for r in response.results if r.id is None), None)
+    ranked = sorted(reported, key=lambda r: r.amount, reverse=True)[:limit]
+    total = response.total
+
+    header = f"FY{fiscal_year} Q{quarter}, as of {response.end_date[:10]}"
+    if total is not None:
+        header += f" - total obligated across all agencies: ${total:,.2f}"
+
+    lines = [
+        f"{i}. {r.name}: ${r.amount:,.2f}"
+        + (f" ({r.amount / total:.2%} of total obligated)" if total else "")
+        for i, r in enumerate(ranked, start=1)
+    ]
+
+    parts = [header] + lines
+    if unreported is not None:
+        parts.append(
+            f"Unreported Data: ${unreported.amount:,.2f} (gap between this reconciled total "
+            "and what agencies individually reported to File B)"
+        )
+    return "\n".join(parts)
+
+
+@beta_tool
+def list_top_agencies_by_spending(fiscal_year: int, quarter: int, limit: int = 10) -> str:
+    """List federal agencies ranked by OBLIGATED spending (money actually obligated against awards, reconciled against Treasury's budget execution report) for one closed fiscal quarter, largest first — the same figures and ranking as usaspending.gov's own "FY spending by Agency" page. Use this for "which agency spent the most," "how does federal spending break down by agency," or any "spending by agency" question — NEVER list_top_agencies_by_budget for this, since that ranks appropriated budget authority instead, a different figure that can (and does) rank agencies in a different order.
+
+    Only a CLOSED fiscal quarter has data — unlike list_top_agencies_by_budget, this has no
+    "current period" to fall back to, since the quarter still in progress is exactly the one with
+    no data yet (it fails cleanly if you try). If you don't already know which quarter is closed
+    and available, the safest starting guess is fiscal_year one less than the current fiscal year
+    with quarter=4; if a call fails, try an earlier quarter/year rather than guessing forward —
+    data for the most recently closed quarter isn't available until roughly 45 days after it closes.
+
+    Args:
+        fiscal_year: The fiscal year to rank, e.g. 2026 for FY2026.
+        quarter: Which fiscal quarter (1-4). The ranking is CUMULATIVE from the start of the
+            fiscal year through the end of this quarter, not just this quarter alone — the same
+            cumulative-obligations shape as get_agency_budget's period breakdown.
+        limit: Max number of agencies to return (default 10).
+    """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    limit = _clamp_limit(limit)
+    client = _get_usaspending_client()
+    try:
+        response = client.get_spending_by_agency_explorer(fiscal_year, quarter)
+    except USASpendingAPIError as e:
+        logger.warning("list_top_agencies_by_spending failed for FY%s Q%s: %s", fiscal_year, quarter, e)
+        return (
+            f"This query failed: {e}. This usually means the requested fiscal year/quarter "
+            "isn't closed and processed yet — try an earlier fiscal_year/quarter."
+        )
+
+    _record_tool_call(
+        "list_top_agencies_by_spending", response,
+        {"fiscal_year": fiscal_year, "quarter": quarter, "limit": limit},
+    )
+
+    if not response.results:
+        return f"No agency spending data found for FY{fiscal_year} Q{quarter}."
+
+    return _wrap_untrusted(_format_top_agencies_by_spending(response, fiscal_year, quarter, limit))
 
 
 @traceable(run_type="tool", name="get_agency_award_breakdown_raw")

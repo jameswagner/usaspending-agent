@@ -205,6 +205,69 @@ class TestListToptierAgenciesCaching:
         assert result[0].congressional_justification_url == "https://www.hhs.gov/cj"
 
 
+class TestGetSpendingByAgencyExplorer:
+    @pytest.fixture
+    def client(self):
+        return USASpendingClient()
+
+    def test_sends_fy_and_quarter_as_strings(self, client, monkeypatch):
+        captured = {}
+
+        def fake_post(path, body):
+            captured["path"] = path
+            captured["body"] = body
+            return {"total": 0.0, "end_date": "2026-06-30T00:00:00Z", "results": []}
+
+        monkeypatch.setattr(client, "_post", fake_post)
+        client.get_spending_by_agency_explorer(2026, 3)
+
+        assert captured["path"] == "/api/v2/spending/"
+        assert captured["body"] == {"type": "agency", "filters": {"fy": "2026", "quarter": "3"}}
+
+    def test_parses_real_response_shape(self, client, monkeypatch):
+        # Real live values (FY2026 Q3, confirmed 2026-09-11) - trimmed to
+        # the top result plus the synthetic "Unreported Data" row, whose
+        # id/code are null and which carries no `link` key at all, unlike
+        # every real agency row.
+        body = {
+            "total": 8305625034343.83,
+            "end_date": "2026-06-30T00:00:00Z",
+            "results": [
+                {
+                    "id": "806", "code": "075", "type": "agency",
+                    "name": "Department of Health and Human Services",
+                    "amount": 2220752284024.05, "link": True,
+                },
+                {"name": "Unreported Data", "amount": -292127781049.26},
+            ],
+        }
+        monkeypatch.setattr(client, "_post", lambda path, req_body, response_body=body: response_body)
+        result = client.get_spending_by_agency_explorer(2026, 3)
+
+        assert result.total == 8305625034343.83
+        assert result.end_date == "2026-06-30T00:00:00Z"
+        assert len(result.results) == 2
+        assert result.results[0].id == "806"
+        assert result.results[0].name == "Department of Health and Human Services"
+        assert result.results[1].id is None
+        assert result.results[1].name == "Unreported Data"
+        assert result.results[1].amount == -292127781049.26
+
+    def test_400_for_unavailable_quarter_raises_with_live_detail_message(self, client, monkeypatch):
+        # Real live behavior (2026-09-11): the in-progress quarter, or one
+        # closed too recently, 400s with this exact detail message rather
+        # than returning partial/empty data.
+        def fake_post(path, body):
+            resp = make_response(
+                400, {"detail": "Fiscal parameters provided do not belong to a current submission period"}
+            )
+            _raise_with_detail(resp)
+
+        monkeypatch.setattr(client, "_post", fake_post)
+        with pytest.raises(USASpendingAPIError, match="do not belong to a current submission period"):
+            client.get_spending_by_agency_explorer(2026, 4)
+
+
 class TestAutocompleteLocation:
     def test_parses_real_response_shape(self, monkeypatch):
         # Real live values (Yavapai County, AZ, 2026-09-10).

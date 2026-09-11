@@ -14,12 +14,15 @@ export function useConversation() {
     async (question: string) => {
       setLoading(true);
       setError(null);
+      const pendingTurn: ConversationTurn = { question, response: null };
+      setTurns((prev) => [...prev, pendingTurn]);
       try {
         const response = await askQuestion(question, conversationId);
         setConversationId(response.conversation_id);
-        setTurns((prev) => [...prev, { question, response }]);
+        setTurns((prev) => prev.map((turn) => (turn === pendingTurn ? { question, response } : turn)));
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
+        setTurns((prev) => prev.filter((turn) => turn !== pendingTurn));
       } finally {
         setLoading(false);
       }

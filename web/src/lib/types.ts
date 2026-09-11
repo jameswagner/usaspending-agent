@@ -41,8 +41,9 @@ export interface AskResponse {
 }
 
 // A UI-level turn - the question plus its response, as rendered in the
-// transcript. Not part of the backend API shape.
+// transcript. Not part of the backend API shape. response is null while
+// the question is in flight, so it can render immediately.
 export interface ConversationTurn {
   question: string;
-  response: AskResponse;
+  response: AskResponse | null;
 }

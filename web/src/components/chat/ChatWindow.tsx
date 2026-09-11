@@ -16,7 +16,7 @@ export function ChatWindow() {
           USASpending.gov.
         </p>
       </header>
-      <MessageList turns={turns} loading={loading} error={error} />
+      <MessageList turns={turns} error={error} />
       <MessageInput onSend={sendMessage} onNewConversation={newConversation} loading={loading} />
     </div>
   );

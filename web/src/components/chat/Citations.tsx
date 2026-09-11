@@ -7,8 +7,10 @@ interface CitationsProps {
 
 export function Citations({ citations, toolCitations }: CitationsProps) {
   return (
-    <div className="mt-4 border-t border-black/10 pt-3 text-sm text-black/70 dark:border-white/10 dark:text-white/70">
-      <h3 className="text-xs font-semibold tracking-wide text-black/50 uppercase dark:text-white/50">Sources</h3>
+    <details className="mt-4 border-t border-black/10 pt-3 text-sm text-black/70 dark:border-white/10 dark:text-white/70">
+      <summary className="cursor-pointer text-xs font-semibold tracking-wide text-black/50 uppercase dark:text-white/50">
+        Sources
+      </summary>
       <ul className="mt-1.5 space-y-1.5">
         {citations.map((citation, i) => (
           <li key={`guide-${i}`}>
@@ -21,7 +23,7 @@ export function Citations({ citations, toolCitations }: CitationsProps) {
           </li>
         ))}
       </ul>
-    </div>
+    </details>
   );
 }
 

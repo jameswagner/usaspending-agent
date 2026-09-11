@@ -9,6 +9,16 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ turn }: MessageBubbleProps) {
   const { question, response } = turn;
+
+  if (!response) {
+    return (
+      <div className="border-b border-black/10 pb-6 last:border-none dark:border-white/10">
+        <p className="font-semibold">{question}</p>
+        <p className="mt-2 text-sm text-black/50 dark:text-white/50">Thinking…</p>
+      </div>
+    );
+  }
+
   const hasCitations = response.citations.length > 0 || response.tool_citations.length > 0;
 
   return (

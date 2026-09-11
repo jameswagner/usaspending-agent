@@ -6,11 +6,10 @@ import { MessageBubble } from "./MessageBubble";
 
 interface MessageListProps {
   turns: ConversationTurn[];
-  loading: boolean;
   error: string | null;
 }
 
-export function MessageList({ turns, loading, error }: MessageListProps) {
+export function MessageList({ turns, error }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Ref-based bottom scroll, not flex-direction: column-reverse - reverse
@@ -23,7 +22,7 @@ export function MessageList({ turns, loading, error }: MessageListProps) {
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        {turns.length === 0 && !loading && (
+        {turns.length === 0 && (
           <p className="text-sm text-black/50 dark:text-white/50">
             e.g. What is a sub-award? / How is NSF spending broken down by NAICS code for FY2024?
           </p>
@@ -31,7 +30,6 @@ export function MessageList({ turns, loading, error }: MessageListProps) {
         {turns.map((turn, i) => (
           <MessageBubble key={i} turn={turn} />
         ))}
-        {loading && <p className="text-sm text-black/50 dark:text-white/50">Thinking…</p>}
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div ref={bottomRef} />
       </div>

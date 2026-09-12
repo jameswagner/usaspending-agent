@@ -271,6 +271,11 @@ def get_spending_by_category(
         recipient_in_district: Optional. Same as performed_in_district, but for the recipient's
             location, paired with recipient_in_state.
         keywords: Optional. Free-text search over award descriptions, e.g. "climate research".
+            Do NOT restate the award_type/category itself here (e.g. "grant", "contracts",
+            "cooperative agreement") - award_type already scopes that precisely, and doing so
+            on top silently narrows results to only the awards whose description text happens
+            to contain that literal word (most awards of that type don't say it) rather than
+            broadening or duplicating the filter. Rejected with an error if given alone.
         date_type: Optional. Which award date the fiscal-year range is matched against - one of
             action_date (default: any transaction/modification in the window - note this means
             a multi-year award active in more than one fiscal year appears in results for EACH
@@ -578,6 +583,11 @@ def get_spending_over_time(
         recipient_in_district: Optional. Same as performed_in_district, but for the recipient's
             location, paired with recipient_in_state.
         keywords: Optional. Free-text search over award descriptions, e.g. "climate research".
+            Do NOT restate the award_type/category itself here (e.g. "grant", "contracts",
+            "cooperative agreement") - award_type already scopes that precisely, and doing so
+            on top silently narrows results to only the awards whose description text happens
+            to contain that literal word (most awards of that type don't say it) rather than
+            broadening or duplicating the filter. Rejected with an error if given alone.
         date_type: Optional. Which award date the fiscal-year range is matched against - one of
             action_date (default: any transaction/modification in the window - note this means
             a multi-year award active in more than one fiscal year contributes to EACH of those
@@ -894,6 +904,11 @@ def search_awards(
         recipient_in_district: Optional. Same as performed_in_district, but for the recipient's
             location, paired with recipient_in_state.
         keywords: Optional. Free-text search over award descriptions, e.g. "climate research".
+            Do NOT restate the award_type/category itself here (e.g. "grant", "contracts",
+            "cooperative agreement") - award_type already scopes that precisely, and doing so
+            on top silently narrows results to only the awards whose description text happens
+            to contain that literal word (most awards of that type don't say it) rather than
+            broadening or duplicating the filter. Rejected with an error if given alone.
         date_type: Optional. See the IMPORTANT note above - one of action_date (default),
             date_signed, last_modified_date, or new_awards_only.
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
@@ -1190,6 +1205,10 @@ def search_subawards(
         recipient_in_district: Optional. Same as performed_in_district, but for the SUB-recipient's
             location, paired with recipient_in_state.
         keywords: Optional. Free-text search over subaward descriptions, e.g. "climate research".
+            Do NOT restate the award_type/category itself here (e.g. "grant", "contracts",
+            "cooperative agreement") - award_type already scopes that precisely, and doing so
+            on top silently narrows results to only the subawards whose description text
+            happens to contain that literal word. Rejected with an error if given alone.
         date_type: Optional. Which date the fiscal-year range is matched against - one of
             action_date (default), date_signed, last_modified_date, or new_awards_only.
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
@@ -1461,6 +1480,11 @@ def get_spending_by_geography(
         recipient_in_district: Optional. Same as performed_in_district, but for the recipient's
             location, paired with recipient_in_state.
         keywords: Optional. Free-text search over award descriptions, e.g. "climate research".
+            Do NOT restate the award_type/category itself here (e.g. "grant", "contracts",
+            "cooperative agreement") - award_type already scopes that precisely, and doing so
+            on top silently narrows results to only the awards whose description text happens
+            to contain that literal word (most awards of that type don't say it) rather than
+            broadening or duplicating the filter. Rejected with an error if given alone.
         date_type: Optional. Which award date the fiscal-year range is matched against - one of
             action_date (default), date_signed, last_modified_date, or new_awards_only.
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.

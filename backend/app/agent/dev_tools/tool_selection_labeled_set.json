@@ -40,11 +40,41 @@
     {"question": "Break down NSF's FY2023 contract obligations by sub-agency, and tell me how many new contracts each one signed.", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category"]},
     {"question": "How many new awards has EPA issued per sub-agency in FY2022?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_budget"]}
   ],
+  "spending_explorer_breakdown": [
+    {"question": "How was federal spending broken down by budget function in FY2023?", "expected_tool": "get_spending_explorer_breakdown", "confusable_with": ["get_spending_by_category"]},
+    {"question": "Show whole-of-government spending broken down by object class for FY2022.", "expected_tool": "get_spending_explorer_breakdown", "confusable_with": ["get_spending_by_category"]},
+    {"question": "According to the Spending Explorer, which agencies obligated the most whole-of-government spending in FY2023?", "expected_tool": "get_spending_explorer_breakdown", "confusable_with": ["list_top_agencies_by_budget", "get_agency_budget"]},
+    {"question": "Which agency has the largest appropriated budget authority this fiscal year?", "expected_tool": "list_top_agencies_by_budget", "confusable_with": ["get_spending_explorer_breakdown", "get_agency_budget"]},
+    {"question": "Break down federal spending on Medicare (budget function 570) by budget sub-function for FY2023.", "expected_tool": "get_spending_explorer_breakdown", "confusable_with": ["get_spending_by_category"]},
+    {"question": "Break the Department of Defense's FY2023 obligations down to the individual award level.", "expected_tool": "search_awards", "confusable_with": ["get_spending_explorer_breakdown"]}
+  ],
   "resolve_tools": [
     {"question": "What NAICS code covers custom software development businesses?", "expected_tool": "resolve_naics_code", "confusable_with": ["resolve_psc_code", "resolve_cfda_program"]},
     {"question": "What PSC code should I use for office furniture purchases?", "expected_tool": "resolve_psc_code", "confusable_with": ["resolve_naics_code", "resolve_cfda_program"]},
     {"question": "What CFDA program number covers Medicaid grants to states?", "expected_tool": "resolve_cfda_program", "confusable_with": ["resolve_naics_code", "resolve_psc_code"]},
-    {"question": "I'm researching federal spending on software - what code should I filter by?", "acceptable_tools": ["resolve_naics_code", "resolve_psc_code"], "check_hedge_language": true}
+    {"question": "I'm researching federal spending on software - what code should I filter by?", "acceptable_tools": ["resolve_naics_code", "resolve_psc_code"], "check_hedge_language": true},
+    {"question": "What's the FIPS code for Jefferson Parish, Louisiana?", "expected_tool": "resolve_county_fips", "confusable_with": ["resolve_naics_code", "resolve_psc_code", "resolve_cfda_program"]},
+    {"question": "What county code do I need to look up spending in Orleans Parish?", "expected_tool": "resolve_county_fips", "confusable_with": ["resolve_naics_code", "resolve_psc_code", "resolve_cfda_program"]}
+  ],
+  "agency_budget_ranking": [
+    {"question": "Which federal agency has the biggest budget?", "expected_tool": "list_top_agencies_by_budget", "confusable_with": ["get_agency_budget", "get_agency_award_breakdown", "lookup_agency"]},
+    {"question": "What percentage of the total federal budget does the Department of Defense account for?", "expected_tool": "list_top_agencies_by_budget", "confusable_with": ["get_agency_budget", "get_agency_award_breakdown"]},
+    {"question": "What is NSF's budget for FY2024?", "expected_tool": "get_agency_budget", "confusable_with": ["list_top_agencies_by_budget", "get_agency_award_breakdown", "lookup_agency"]},
+    {"question": "How many grants did NIH issue in FY2024?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["list_top_agencies_by_budget", "get_agency_budget"]}
+  ],
+  "subaward_tools": [
+    {"question": "Who did Electric Boat subcontract work to on their submarine contract?", "acceptable_tools": ["search_subawards", "get_award_subawards"], "confusable_with": ["search_awards"]},
+    {"question": "Show me subawards where Thermo Electron was the subcontractor on Department of Energy prime contracts.", "expected_tool": "search_subawards", "confusable_with": ["search_awards", "get_award_subawards"]},
+    {"question": "Which sub-recipients received subawards funded by NASA's prime contracts in FY2023?", "expected_tool": "search_subawards", "confusable_with": ["search_awards"]}
+  ],
+  "guide_and_lookup_tools": [
+    {"question": "What does 'obligation' mean in USASpending data?", "expected_tool": "search_guide"},
+    {"question": "What's the difference between a contract and a grant on USASpending?", "expected_tool": "search_guide"},
+    {"question": "What NAICS code covers computer systems design services?", "expected_tool": "resolve_naics_code", "confusable_with": ["search_guide"]},
+    {"question": "What does the NAICS classification system measure, and how is it used in federal spending data?", "expected_tool": "search_guide", "confusable_with": ["resolve_naics_code"]},
+    {"question": "What is the National Science Foundation and what does it do?", "expected_tool": "lookup_agency", "confusable_with": ["get_agency_budget", "get_agency_award_breakdown"]},
+    {"question": "What is NASA's mission and when was it established?", "expected_tool": "lookup_agency", "confusable_with": ["get_agency_budget", "get_agency_award_breakdown"]},
+    {"question": "What is the Department of Energy's total budget for FY2023?", "expected_tool": "get_agency_budget", "confusable_with": ["lookup_agency", "get_spending_by_category", "get_agency_award_breakdown"]}
   ],
   "search_vs_breakdown": [
     {"question": "Show me NSF's five biggest contracts in FY2023.", "expected_tool": "search_awards", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_spending_by_geography"]},
@@ -60,7 +90,10 @@
     {"question": "Look up Leidos and tell me its parent company and total transactions all-time.", "expected_tools": ["search_recipients", "get_recipient_details"]},
     {"question": "How much did NSF spend on custom software development contracts in FY2023?", "expected_tools": ["resolve_naics_code"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true},
     {"question": "How much federal spending went toward office furniture purchases in FY2023?", "expected_tools": ["resolve_psc_code"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true},
-    {"question": "Which agencies gave the most Medicaid grants to states in FY2023?", "expected_tools": ["resolve_cfda_program"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true}
+    {"question": "Which agencies gave the most Medicaid grants to states in FY2023?", "expected_tools": ["resolve_cfda_program"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true},
+    {"question": "How much federal spending went to Yavapai County, Arizona in FY2023?", "expected_tools": ["resolve_county_fips"], "then_one_of": ["search_awards", "get_spending_by_category", "get_spending_by_geography"], "check_hedge_language": true},
+    {"question": "Find NSF's single largest FY2023 contract, then tell me which subcontractors it went to.", "expected_tools": ["search_awards", "get_award_subawards"], "confusable_with": ["search_subawards"]},
+    {"question": "What was federal spending on Medicare (budget function 570) broken down by sub-function in FY2023? Then break the largest sub-function down further into federal accounts.", "expected_tools": ["get_spending_explorer_breakdown"], "confusable_with": ["get_spending_by_category"]}
   ],
   "ambiguous_intentional": [
     {"question": "How did NSF spend its money in FY2023?", "acceptable_tools": ["get_spending_by_category", "get_spending_over_time", "search_awards"]},

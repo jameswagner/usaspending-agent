@@ -5,6 +5,11 @@ from typing import Any, ClassVar, get_args
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
+from backend.app.agent.recipient_types import (
+    RECIPIENT_TYPE_NAMES,
+    RecipientType,
+    _normalize_recipient_type,
+)
 from backend.app.agent.response_shaping import (
     GLOSSARY_URL_BASE,
     GUIDE_URL,
@@ -27,13 +32,11 @@ from backend.app.agent.tool_filters import (
     LOAN_AWARD_TYPE_CODES,
     MAX_LIMIT,
     RECIPIENT_AWARD_TYPES,
-    RECIPIENT_TYPE_NAMES,
     US_STATE_ABBREVIATIONS,
     VALID_DATE_TYPES,
     AwardType,
     DateType,
     RecipientAwardType,
-    RecipientType,
     Scope,
     _amount_field_for_award_type,
     _build_filters,
@@ -44,7 +47,6 @@ from backend.app.agent.tool_filters import (
     _normalize_date_type,
     _normalize_district,
     _normalize_recipient_award_type,
-    _normalize_recipient_type,
     _normalize_scope,
     _normalize_state,
     _other_award_type_categories_to_try,

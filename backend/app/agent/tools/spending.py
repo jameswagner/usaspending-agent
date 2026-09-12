@@ -20,6 +20,7 @@ from backend.app.usaspending_client import (
     USASpendingAPIError,
 )
 
+from ..recipient_types import RecipientType
 from ..response_shaping import _format_time_period
 from ..singletons import _get_usaspending_client
 from ..tool_filters import (
@@ -29,7 +30,6 @@ from ..tool_filters import (
     DateType,
     GeoLayer,
     GeoScope,
-    RecipientType,
     Scope,
     _amount_field_for_award_type,
     _build_filters,

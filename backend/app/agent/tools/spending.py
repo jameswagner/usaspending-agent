@@ -33,6 +33,7 @@ from ..tool_filters import (
     _amount_field_for_award_type,
     _build_filters,
     _clamp_limit,
+    _other_award_type_categories_to_try,
     _record_optional_filter_context,
 )
 from ._shared import (
@@ -769,6 +770,15 @@ def search_awards(
     meaningful to a user, so don't quote it in your answer - pass it to
     get_award_details for full details on that specific award.
 
+    A zero-results response names other award type categories worth trying -
+    this tool only ever searches ONE award type per call, so an empty result
+    means nothing had that specific type, never that the recipient/program has
+    no award records at all. Follow that suggestion rather than concluding
+    from one or two empty calls that a program isn't tracked as individual
+    awards (e.g. a benefit/entitlement program is very likely
+    direct_payment_specified/direct_payment_unrestricted, not grants or
+    contracts).
+
     Args:
         start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
         end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
@@ -908,7 +918,13 @@ def search_awards(
     _record_tool_call("search_awards", results, context)
 
     if not results.results:
-        return f"No {award_type} awards found for {scope} between FY{start_fiscal_year} and FY{end_fiscal_year}."
+        others = _other_award_type_categories_to_try(award_type)
+        return (
+            f"No {award_type} awards found for {scope} between FY{start_fiscal_year} and FY{end_fiscal_year}. "
+            f"This does NOT mean no award records exist for this recipient/program - only that none are "
+            f"of type '{award_type}'. Before concluding there are no individual award records, try one or "
+            f"more of the other award type categories: {others}."
+        )
 
     amount_field = _amount_field_for_award_type(award_type)
     lines = []
@@ -1152,7 +1168,13 @@ def search_subawards(
     _record_tool_call("search_subawards", results, context)
 
     if not results.results:
-        return f"No subawards found for {scope} between FY{start_fiscal_year} and FY{end_fiscal_year}."
+        others = _other_award_type_categories_to_try(award_type)
+        return (
+            f"No {award_type} subawards found for {scope} between FY{start_fiscal_year} and FY{end_fiscal_year}. "
+            f"This does NOT mean no subaward records exist - only that none are under a '{award_type}'-type "
+            f"prime award. Before concluding there are no subaward records, try one or more of the other "
+            f"award type categories: {others}."
+        )
 
     lines = []
     for r in results.results:

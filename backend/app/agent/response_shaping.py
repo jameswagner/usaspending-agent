@@ -320,6 +320,12 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
         )
 
     if tool_name == "get_spending_explorer_breakdown":
+        # Unlike get_spending_by_geography above, no independent sort/cap
+        # here - the tool itself already sorts by amount and truncates to
+        # its own `limit` param before _record_tool_call runs (the live API
+        # returns every category unbounded, 100+ for an unscoped
+        # group_by="agency"), specifically so the chart can never show more
+        # than what the model's own answer presented. See spending_explorer.py.
         # Real results only - an "Unreported Data" row (r.id is None) has
         # no category to label a bar with, same reasoning as the geography
         # branch above excluding entries with no shape_code/display_name.

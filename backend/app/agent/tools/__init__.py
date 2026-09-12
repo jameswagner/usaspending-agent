@@ -84,6 +84,7 @@ from .spending_explorer import (
     GroupBy,
     Quarter,
     _format_spending_explorer_results,
+    _rank_and_truncate_spending_explorer_results,
     get_spending_explorer_breakdown,
     get_spending_explorer_breakdown_raw,
 )
@@ -118,6 +119,7 @@ __all__ = [
     "_normalize_category",
     "_normalize_group",
     "_query_candidates",
+    "_rank_and_truncate_spending_explorer_results",
     "_record_code_execution_calls",
     "_record_tool_call",
     "_scope_label",

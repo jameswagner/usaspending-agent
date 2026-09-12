@@ -77,6 +77,7 @@ from backend.app.agent.tools import (
     _normalize_category,
     _normalize_group,
     _query_candidates,
+    _rank_and_truncate_spending_explorer_results,
     _record_tool_call,
     _scope_label,
     _tool_call_log,
@@ -527,6 +528,42 @@ class TestFormatSpendingExplorerResults:
         response = SpendingExplorerResponse(total=None, end_date="2026-06-30", results=[])
         result = _format_spending_explorer_results(response)
         assert "No data as of 2026-06-30" in result
+
+
+class TestRankAndTruncateSpendingExplorerResults:
+    # Regression coverage for a real bug: get_spending_explorer_breakdown's
+    # live API has no limit param and always returns every category (100+
+    # for an unscoped group_by="agency"), so an ungated pass-through fed
+    # should_chart's bar chart hundreds of bars while the model's own text
+    # answer sensibly summarized to a "top 10" - the chart and the text
+    # disagreeing about how many categories were shown. This helper is what
+    # makes both draw from the same already-sorted, already-capped list.
+
+    def test_truncates_to_limit_sorted_descending(self):
+        # make_budget_function_response builds amounts in ASCENDING order
+        # (Function 0 = $0, Function 4 = $4000) - truncating the raw order
+        # would keep the smallest, not the largest.
+        response = make_budget_function_response(5)
+        capped, total_named = _rank_and_truncate_spending_explorer_results(response.results, limit=2)
+        assert total_named == 5
+        assert [r.name for r in capped] == ["Function 4", "Function 3"]
+
+    def test_under_limit_not_truncated(self):
+        response = make_budget_function_response(3)
+        capped, total_named = _rank_and_truncate_spending_explorer_results(response.results, limit=10)
+        assert total_named == 3
+        assert len(capped) == 3
+
+    def test_unreported_row_always_kept_and_excluded_from_count(self):
+        # The tool's own docstring promises the Unreported Data row is
+        # never omitted - it must survive a cap tight enough to drop every
+        # named result, and must not count against total_named (which
+        # drives the "top N of M named categories" note).
+        response = make_budget_function_response(5, include_unreported=True)
+        capped, total_named = _rank_and_truncate_spending_explorer_results(response.results, limit=1)
+        assert total_named == 5
+        assert any(r.name == "Unreported Data" for r in capped)
+        assert len(capped) == 2  # top 1 named + the always-kept unreported row
 
 
 class TestGetSpendingExplorerBreakdownRaw:

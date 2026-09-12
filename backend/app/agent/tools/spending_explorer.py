@@ -48,9 +48,14 @@ from typing import Literal, get_args
 from anthropic import beta_tool
 from langsmith import traceable
 
-from backend.app.usaspending_client import SpendingExplorerResponse, USASpendingAPIError
+from backend.app.usaspending_client import (
+    SpendingExplorerResponse,
+    SpendingExplorerResult,
+    USASpendingAPIError,
+)
 
 from ..singletons import _get_usaspending_client
+from ..tool_filters import _clamp_limit
 from ._shared import _check_tool_call_budget, _record_tool_call, _wrap_untrusted
 
 logger = logging.getLogger(__name__)
@@ -142,6 +147,24 @@ def get_spending_explorer_breakdown_raw(
     return client.spending_explorer(group_by, filters)
 
 
+def _rank_and_truncate_spending_explorer_results(
+    results: list[SpendingExplorerResult], limit: int
+) -> tuple[list[SpendingExplorerResult], int]:
+    """Sort named (non-"Unreported Data") results by amount descending and
+    truncate to `limit`, always keeping the Unreported Data row (r.id is
+    None), if any, regardless of the cap - see
+    get_spending_explorer_breakdown's own docstring promise never to omit
+    it. Returns (capped results with Unreported Data appended, total named
+    count before truncation) - the total is needed for the "top N of M"
+    truncation note, and this same capped list is what both the text
+    output and the chart (should_chart in response_shaping.py) render, so
+    neither can show more categories than the other.
+    """
+    named = sorted((r for r in results if r.id is not None), key=lambda r: -r.amount)
+    unreported = [r for r in results if r.id is None]
+    return named[:limit] + unreported, len(named)
+
+
 def _format_spending_explorer_results(response: SpendingExplorerResponse) -> str:
     if response.total is None:
         lines = [f"No data as of {response.end_date}."]
@@ -180,6 +203,7 @@ def get_spending_explorer_breakdown(
     object_class: str | None = None,
     recipient: str | None = None,
     program_activity: str | None = None,
+    limit: int = 10,
 ) -> str:
     """Whole-of-government obligated spending, grouped by budget_function/budget_subfunction/federal_account/program_activity/object_class/agency/recipient, for one fiscal year through one fiscal quarter — the same view as usaspending.gov's "Explore the Data > Spending Explorer". Use this for "spending by budget function," "spending by object class," "top agencies by whole-of-government obligations," or similar Explorer-style questions — NEVER get_spending_by_category, which has no budget_function/object_class category at all and reports a different, award-level number.
 
@@ -187,7 +211,9 @@ def get_spending_explorer_breakdown(
 
     Any of the seven optional filters below can be combined with any group_by — this is one flexible endpoint, not a fixed drill ladder. For example, group_by="object_class" filtered by agency shows one agency's spending broken down by object class; group_by="federal_account" filtered by budget_function shows that function's accounts. Get a code/id to use as a filter from a prior call's result (its `code` field), never guessed.
 
-    A result with no code represents "Unreported Data" — the live gap between the whole-of-government total and what's actually been reported at this level so far. State it as an unreported gap if present; never fold it silently into a named category or omit it.
+    Unlike the other breakdown tools, the live API has no limit/page param here and always returns every category at the requested level — an unscoped whole-of-government group_by="agency" call alone returns 100+ rows. Results are sorted by amount descending and truncated to `limit` before you ever see them, specifically so any chart built from this call's data matches what you actually present — set `limit` to match your answer (e.g. 10 for an open-ended "which agencies spent the most" question, higher if the question asks for a fuller breakdown), rather than dumping every row into a "top N" summary of your own choosing while a chart of all of them renders separately.
+
+    A result with no code represents "Unreported Data" — the live gap between the whole-of-government total and what's actually been reported at this level so far. It is always included regardless of `limit` (never counts against it) — state it as an unreported gap if present; never fold it silently into a named category or omit it.
 
     group_by="recipient" REQUIRES at least one of the other filters — an unscoped whole-of-government recipient breakdown times out live. Also, a recipient result's `id` here is NOT the same recipient_id search_recipients/get_recipient_details expect (missing a required level suffix) — never pass it to those tools directly; use search_recipients by name instead for a follow-up on one specific recipient.
 
@@ -217,9 +243,13 @@ def get_spending_explorer_breakdown(
         recipient: A recipient's id, from a prior call's result with group_by="recipient" — see the
             id-format warning above before reusing this elsewhere.
         program_activity: A program activity's code, from a prior call's result.
+        limit: Max number of named categories to return, ranked by amount descending (default 10).
+            The "Unreported Data" row, if present, is always included on top of this and never
+            counts against it.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
+    limit = _clamp_limit(limit)
     try:
         response = get_spending_explorer_breakdown_raw(
             group_by,
@@ -236,6 +266,16 @@ def get_spending_explorer_breakdown(
     except USASpendingAPIError as e:
         logger.warning("get_spending_explorer_breakdown failed: %s", e)
         return f"This query failed: {e}."
+
+    if not response.results:
+        return f"No {group_by} data found for FY{fiscal_year} Q{quarter}."
+
+    # The live API has no limit param and always returns every category at
+    # this level (100+ for an unscoped group_by="agency") - sorted and
+    # truncated before _record_tool_call runs, so the chart built from this
+    # same structured result (see should_chart in response_shaping.py) can
+    # never show more categories than the text actually presents.
+    response.results, total_named = _rank_and_truncate_spending_explorer_results(response.results, limit)
 
     _record_tool_call(
         "get_spending_explorer_breakdown",
@@ -254,7 +294,10 @@ def get_spending_explorer_breakdown(
         },
     )
 
-    if not response.results:
-        return f"No {group_by} data found for FY{fiscal_year} Q{quarter}."
-
-    return _wrap_untrusted(_format_spending_explorer_results(response))
+    note = ""
+    if total_named > limit:
+        note = (
+            f"\n\n(Note: this shows the top {limit} of {total_named} {group_by} categories "
+            "by amount - do not present this as the complete list.)"
+        )
+    return _wrap_untrusted(_format_spending_explorer_results(response) + note)

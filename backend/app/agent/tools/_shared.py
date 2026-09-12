@@ -425,13 +425,25 @@ def get_agency_award_breakdown_raw(
     )
 
 
-def _format_agency_award_breakdown(response: AgencySubAgencyResponse) -> str:
-    return "\n".join(
-        f"{r.name}{f' ({r.abbreviation})' if r.abbreviation else ''}: "
-        f"${r.total_obligations:,.2f} across {r.transaction_count:,} transactions, "
-        f"{r.new_award_count:,} new awards"
-        for r in response.results
-    )
+def _format_agency_award_breakdown(response: AgencySubAgencyResponse, include_offices: bool = False) -> str:
+    lines = []
+    for r in response.results:
+        lines.append(
+            f"{r.name}{f' ({r.abbreviation})' if r.abbreviation else ''}: "
+            f"${r.total_obligations:,.2f} across {r.transaction_count:,} transactions, "
+            f"{r.new_award_count:,} new awards"
+        )
+        if include_offices:
+            for office in r.children:
+                # name is nullable in practice (real EPA offices return
+                # null - see SubAgencyOffice's docstring), unlike the
+                # sub-agency level above, which always has a real name.
+                label = office.name or f"(unnamed office, code {office.code})"
+                lines.append(
+                    f"  {label} ({office.code}): ${office.total_obligations:,.2f} across "
+                    f"{office.transaction_count:,} transactions, {office.new_award_count:,} new awards"
+                )
+    return "\n".join(lines)
 
 
 @beta_tool
@@ -439,6 +451,7 @@ def get_agency_award_breakdown(
     agency_name: str,
     fiscal_year: int,
     award_type: AwardType | None = None,
+    include_offices: bool = False,
 ) -> str:
     """Get one agency's award spending broken down by sub-agency for a single fiscal year, including transaction counts and new-award counts alongside the dollar totals — not just the amount get_spending_by_category(category="awarding_subagency") gives. Use this specifically when the question asks about counts (how many transactions, how many new awards), not just dollar amounts.
 
@@ -450,6 +463,11 @@ def get_agency_award_breakdown(
             range; call again for each year if a multi-year breakdown is needed.
         award_type: Optional. Restrict to one award type or bucket — same vocabulary as
             search_awards's award_type. Omit to include all award types.
+        include_offices: Set True to also list each sub-agency's individual awarding offices
+            (same figures, one level more granular) — off by default since most "breakdown by
+            sub-agency" questions don't need office-level detail and it roughly doubles the
+            output length. Set it when the question specifically asks about offices, not just
+            sub-agencies.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -470,4 +488,4 @@ def get_agency_award_breakdown(
 
     has_next = response.page_metadata.hasNext if response.page_metadata else False
     note = _truncation_note(has_next, len(response.results)) + _format_api_messages(response.messages)
-    return _wrap_untrusted(_format_agency_award_breakdown(response) + note)
+    return _wrap_untrusted(_format_agency_award_breakdown(response, include_offices) + note)

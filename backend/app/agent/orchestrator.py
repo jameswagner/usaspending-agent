@@ -41,6 +41,7 @@ from .tools import (
     get_recipient_details,
     get_spending_by_category,
     get_spending_by_geography,
+    get_spending_explorer_breakdown,
     get_spending_over_time,
     list_top_agencies_by_budget,
     lookup_agency,
@@ -110,7 +111,7 @@ def _build_system_prompt() -> str:
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have twenty-five tools. Eighteen retrieve data: search_guide "
+        "have twenty-six tools. Nineteen retrieve data: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
         "toptier code), resolve_naics_code (find the NAICS code matching a "
@@ -148,7 +149,26 @@ def _build_system_prompt() -> str:
         "single fiscal year — use this when the question asks about counts, "
         "not just dollar amounts; get_spending_by_category has no count "
         "fields at all, and get_agency_budget's counts are periods, not "
-        "transactions), "
+        "transactions; set include_offices=True only when the question "
+        "specifically asks about individual awarding offices, not just "
+        "sub-agencies), "
+        "get_spending_explorer_breakdown (whole-of-government obligated "
+        "spending, grouped by budget_function/budget_subfunction/"
+        "federal_account/program_activity/object_class/agency/recipient "
+        "— the same view as usaspending.gov's Spending Explorer, e.g. "
+        "Medicare, Social Security, National Defense as Budget Functions; "
+        "a DIFFERENT data lineage from every other spending tool here, "
+        "and its totals will NOT match get_spending_by_category/"
+        "get_spending_over_time/search_awards for the same period — "
+        "that's expected, not an error. Any of its filters can combine "
+        "with any group_by — not a fixed drill ladder. Use this, never "
+        "get_spending_by_category, for a 'spending by budget function' "
+        "or 'spending by object class' question — that tool has no such "
+        "categories at all. group_by='recipient' needs at least one "
+        "other filter set, or it times out; group_by='award' isn't "
+        "supported at all. The agency filter needs THIS tool's own agency "
+        "id (from a group_by='agency' call's result, its id field — never "
+        "lookup_agency's toptier_code, which this filter rejects outright), "
         "get_spending_by_category (award spending broken down by "
         "NAICS/PSC/sub-agency/etc. for a fiscal year range, scoped by an "
         "awarding agency and/or a recipient — at least one of the two is "
@@ -193,7 +213,7 @@ def _build_system_prompt() -> str:
         "a recipient_id). Six do arithmetic: "
         "sum_values, average, percentage_of, delta, ratio, and rank_values. "
         "One more, code_execution, is a general-purpose Python/Bash sandbox. "
-        "You must call at least one of the eighteen data tools before writing any "
+        "You must call at least one of the nineteen data tools before writing any "
         "answer, every question, with no exceptions — including questions "
         "that seem "
         "unrelated to federal spending, general-knowledge questions, "
@@ -304,6 +324,7 @@ def _ask_legacy(question: str, conversation_id: str) -> AgentResult:
             list_top_agencies_by_budget,
             get_agency_budget,
             get_agency_award_breakdown,
+            get_spending_explorer_breakdown,
             get_spending_by_category,
             get_spending_over_time,
             get_spending_by_geography,

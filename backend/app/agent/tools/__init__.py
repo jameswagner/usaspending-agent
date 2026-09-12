@@ -80,6 +80,13 @@ from .spending import (
     search_subawards,
     search_subawards_raw,
 )
+from .spending_explorer import (
+    GroupBy,
+    Quarter,
+    _format_spending_explorer_results,
+    get_spending_explorer_breakdown,
+    get_spending_explorer_breakdown_raw,
+)
 
 __all__ = [
     "MAX_TOOL_CALLS_PER_TURN",
@@ -87,6 +94,8 @@ __all__ = [
     "VALID_GROUPS",
     "Category",
     "Group",
+    "GroupBy",
+    "Quarter",
     "_agency_label",
     "_check_tool_call_budget",
     "_format_agency_award_breakdown",
@@ -103,6 +112,7 @@ __all__ = [
     "_format_recipient_listing",
     "_format_recipient_overview",
     "_format_recipient_state_only",
+    "_format_spending_explorer_results",
     "_format_top_agencies_by_budget",
     "_location_label",
     "_normalize_category",
@@ -127,6 +137,8 @@ __all__ = [
     "get_spending_by_category_raw",
     "get_spending_by_geography",
     "get_spending_by_geography_raw",
+    "get_spending_explorer_breakdown",
+    "get_spending_explorer_breakdown_raw",
     "get_spending_over_time",
     "get_spending_over_time_raw",
     "list_top_agencies_by_budget",

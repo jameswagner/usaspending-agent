@@ -1450,15 +1450,27 @@ class TestBuildFilters:
         filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, description="vaccine research")
         assert filters.description == "vaccine research"
 
+    def test_recipient_type_alone_is_sufficient_scope(self):
+        # Recipient type (nonprofit, small_business, etc.) is a real
+        # scoping dimension - the live site answers queries scoped only by
+        # recipient_type, and the results are bounded (see #128).
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, recipient_type="nonprofit")
+        assert filters.recipient_type_names == ["nonprofit"]
+
     def test_award_type_alone_is_not_sufficient_scope(self):
         with pytest.raises(USASpendingAPIError, match="At least one of"):
             _build_filters(FakeClient(make_agency()), None, 2021, 2024, award_type="grants")
 
-    def test_recipient_type_alone_is_not_sufficient_scope(self):
-        # Broad classification, like award_type - "small_business" alone
-        # still spans nearly all of federal spending.
-        with pytest.raises(USASpendingAPIError, match="At least one of"):
-            _build_filters(FakeClient(make_agency()), None, 2021, 2024, recipient_type="small_business")
+    def test_recipient_type_plus_award_type_is_sufficient_scope(self):
+        # Even though award_type alone doesn't count as scope, combining
+        # it with recipient_type (which does count) is sufficient - answering
+        # "top contracts to nonprofits" directly (#128).
+        filters = _build_filters(
+            FakeClient(make_agency()), None, 2021, 2024,
+            recipient_type="nonprofit", award_type="contracts"
+        )
+        assert filters.recipient_type_names == ["nonprofit"]
+        assert filters.award_type_codes == ["A", "B", "C", "D"]
 
     def test_min_amount_alone_is_not_sufficient_scope(self):
         with pytest.raises(USASpendingAPIError, match="At least one of"):

@@ -489,11 +489,9 @@ def _build_filters(
     agency_name is optional - a recipient-only, cross-agency question needs
     to work too. At least one of agency_name/recipient_name/recipient_id/
     performed_in_state/recipient_in_state/naics_code/psc_code/cfda_program/
-    keywords/award_id/description must be given, or this raises;
-    award_type/min_amount/max_amount/date_type/*_scope/recipient_type
-    don't count on their own (see #16) - recipient_type is a broad
-    classification (e.g. "small_business" alone still spans nearly all of
-    federal spending), the same reasoning that excludes award_type.
+    keywords/award_id/description/recipient_type must be given, or this
+    raises; award_type/min_amount/max_amount/date_type/*_scope don't count
+    on their own (see #16).
 
     recipient_id is a real, precise filter - confirmed live 2026-09-08 to
     reproduce a recipient's true all-time total to the penny, unlike
@@ -526,16 +524,16 @@ def _build_filters(
         performed_in_zip, recipient_in_zip,
         performed_in_district, recipient_in_district,
         naics_code, psc_code, cfda_program, keywords,
-        award_id, description,
+        award_id, description, recipient_type,
     )
     if all(f is None for f in real_scoping_filters):
         raise USASpendingAPIError(
             "At least one of agency_name, recipient_name, recipient_id, performed_in_state, "
             "recipient_in_state, performed_in_county, recipient_in_county, performed_in_city, "
             "recipient_in_city, performed_in_zip, recipient_in_zip, performed_in_district, "
-            "recipient_in_district, naics_code, psc_code, cfda_program, keywords, award_id, or "
-            "description must be given - a question scoped by none of them would mean all federal "
-            "spending, ever."
+            "recipient_in_district, naics_code, psc_code, cfda_program, keywords, award_id, "
+            "description, or recipient_type must be given - a question scoped by none of them "
+            "would mean all federal spending, ever."
         )
 
     start_date, end_date = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)

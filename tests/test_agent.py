@@ -1270,6 +1270,29 @@ class TestBuildFilters:
         filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, keywords="climate research")
         assert filters.keywords == ["climate research"]
 
+    @pytest.mark.parametrize(
+        "keywords",
+        ["grant", "Grants", "contract", "CONTRACTS", "loan", "cooperative-agreement", "cooperative_agreements"],
+    )
+    def test_keywords_that_just_restate_an_award_type_raises(self, keywords):
+        # Regression for #124: the agent called search_awards with the
+        # correct award_type_codes for "grants" plus a redundant
+        # keywords=["grant"], which silently narrowed results to awards
+        # whose description text literally contains "grant" - missing the
+        # real #1 grant ($111.0B) entirely. This must be caught here, not
+        # left to silently corrupt results.
+        with pytest.raises(USASpendingAPIError, match="restates an award-type/category term"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, keywords=keywords)
+
+    def test_keywords_with_an_award_type_term_plus_a_real_topic_is_allowed(self):
+        # Only a bare restatement is rejected - a genuine topic phrase
+        # within the category (even one that contains "grants") must
+        # still work.
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", 2021, 2024, keywords="grants for flood mitigation"
+        )
+        assert filters.keywords == ["grants for flood mitigation"]
+
     def test_date_type_sets_it_on_the_time_period_object(self):
         # Regression for the real finding: a multi-year award appeared
         # under both FY2023 and FY2024 with the same total under the

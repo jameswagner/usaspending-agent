@@ -127,6 +127,34 @@ _BROAD_CATEGORY_FOR_AWARD_TYPE = {
 }
 
 
+# Built from AWARD_TYPE_GROUPS.keys() so it can't drift from the real
+# vocabulary: every group name with underscores spaced out, plus its
+# naive singular/plural counterpart ("grants"/"grant", "insurance"/
+# "insurances"). Used only to catch a `keywords` value that just restates
+# the award-type/category filter itself - see _keywords_restates_award_type.
+_AWARD_TYPE_KEYWORD_TERMS: set[str] = set()
+for _award_type_key in AWARD_TYPE_GROUPS:
+    _spaced = _award_type_key.replace("_", " ")
+    _AWARD_TYPE_KEYWORD_TERMS.add(_spaced)
+    _AWARD_TYPE_KEYWORD_TERMS.add(_spaced[:-1] if _spaced.endswith("s") else _spaced + "s")
+del _award_type_key, _spaced
+
+
+def _keywords_restates_award_type(keywords: str) -> bool:
+    """True if `keywords`, once normalized, is nothing but an award-type/
+    category term (e.g. "grant", "Contracts", "cooperative-agreement") -
+    the exact #124 bug: award_type already scopes results precisely, so
+    restating it as a keyword only narrows results to awards whose
+    description text happens to contain that literal word, which most
+    awards of that type don't (most grant descriptions never say
+    "grant"). A real topic phrase within the category (e.g. "grants for
+    flood mitigation") normalizes to something other than a bare term
+    here and is left alone.
+    """
+    normalized = re.sub(r"[\s_-]+", " ", keywords.strip().lower())
+    return normalized in _AWARD_TYPE_KEYWORD_TERMS
+
+
 def _other_award_type_categories_to_try(award_type: str) -> str:
     """Comma-joined list of the exhaustive categories not already implied
     by award_type - for a zero-results message, so the model has a
@@ -432,8 +460,12 @@ def _build_filters(
     @beta_tool wrapper covers all of these with no new except clause
     needed: agency_name doesn't resolve, award_type isn't a recognized
     AWARD_TYPE_GROUPS key, performed_in_state/recipient_in_state isn't a
-    recognized state, or min_amount > max_amount (caught here instead of
-    letting the live API reject an inverted bound with an opaque error).
+    recognized state, min_amount > max_amount (caught here instead of
+    letting the live API reject an inverted bound with an opaque error),
+    or keywords is nothing but an award-type/category term restating
+    award_type itself (see _keywords_restates_award_type - the #124 bug:
+    that combination doesn't error at the live API, it silently narrows
+    results instead, which is worse, so it's rejected here up front).
 
     performed_in_state and recipient_in_state are genuinely different
     filters, not two spellings of the same thing: verified live that for
@@ -552,6 +584,16 @@ def _build_filters(
         kwargs["recipient_locations"] = [recipient_location]
 
     if keywords is not None:
+        if _keywords_restates_award_type(keywords):
+            raise USASpendingAPIError(
+                f"keywords='{keywords}' just restates an award-type/category term. award_type "
+                "already scopes results to that category precisely - restating it as a keyword "
+                "on top silently narrows results to only the awards whose description text "
+                "happens to contain that exact word, which most awards of that type don't (e.g. "
+                "most grant descriptions never say \"grant\"). Use award_type for the category, "
+                "and keywords only for a topic within it (e.g. 'flood mitigation'), or omit "
+                "keywords entirely."
+            )
         kwargs["keywords"] = [keywords]
 
     if date_type is not None:

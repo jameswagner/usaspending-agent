@@ -20,6 +20,7 @@ from backend.app.usaspending_client import (
     USASpendingAPIError,
 )
 
+from ..recipient_types import RecipientType
 from ..response_shaping import _format_time_period
 from ..singletons import _get_usaspending_client
 from ..tool_filters import (
@@ -121,6 +122,9 @@ def get_spending_by_category_raw(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
 ) -> SpendingByCategoryResponse:
     """Call the API once, return the structured response. Raises
     USASpendingAPIError on failure — the @beta_tool wrapper decides how to
@@ -171,6 +175,9 @@ def get_spending_by_category_raw(
         naics_code=naics_code,
         psc_code=psc_code,
         cfda_program=cfda_program,
+        award_id=award_id,
+        recipient_type=recipient_type,
+        description=description,
     )
     return client.spending_by_category(category, filters, limit=limit)
 
@@ -204,6 +211,9 @@ def get_spending_by_category(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
 ) -> str:
     """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for a fiscal year range, scoped by an awarding agency and/or a recipient, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions.
 
@@ -278,6 +288,18 @@ def get_spending_by_category(
             to browse if you don't have the exact code.
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".
+        award_id: Optional. Restrict to a single known award (PIID/FAIN/URI), e.g.
+            "1605SS17F00018" - a fuzzy text match, not an exact-id lookup. Useful when you
+            already have a specific award's ID (e.g. from search_awards) and want spending
+            scoped to just that one award.
+        recipient_type: Optional. Restrict to recipients tagged with this business/recipient
+            type, e.g. "small_business", "woman_owned_business", "nonprofit", "higher_education".
+            Not sufficient scope on its own (like award_type) - still needs agency_name,
+            recipient_name/id, a location, or another real scoping filter alongside it.
+        description: Optional. Restrict to awards whose own description text matches this
+            phrase, e.g. "vaccine research". Distinct from keywords - keywords also matches
+            recipient name, PIID/FAIN/URI, and NAICS/PSC description text, so a keywords hit
+            doesn't imply a description hit or vice versa.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -295,6 +317,7 @@ def get_spending_by_category(
         performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
         performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
+        award_id=award_id, description=description,
     )
     try:
         response = get_spending_by_category_raw(
@@ -325,6 +348,9 @@ def get_spending_by_category(
             naics_code=naics_code,
             psc_code=psc_code,
             cfda_program=cfda_program,
+            award_id=award_id,
+            recipient_type=recipient_type,
+            description=description,
         )
     except USASpendingAPIError as e:
         logger.warning("get_spending_by_category failed for %s/%s: %s", scope, category, e)
@@ -359,6 +385,9 @@ def get_spending_by_category(
         naics_code=naics_code,
         psc_code=psc_code,
         cfda_program=cfda_program,
+        award_id=award_id,
+        recipient_type=recipient_type,
+        description=description,
     )
     _record_tool_call("get_spending_by_category", response, context)
 
@@ -420,6 +449,9 @@ def get_spending_over_time_raw(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
 ) -> SpendingOverTimeResponse:
     """Call the API once, return the structured response. Same filter
     resolution (via _build_filters) as get_spending_by_category_raw -
@@ -453,6 +485,9 @@ def get_spending_over_time_raw(
         naics_code=naics_code,
         psc_code=psc_code,
         cfda_program=cfda_program,
+        award_id=award_id,
+        recipient_type=recipient_type,
+        description=description,
     )
     return client.spending_over_time(filters, group=_normalize_group(group))
 
@@ -485,6 +520,9 @@ def get_spending_over_time(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
 ) -> str:
     """Get USASpending spending trends over time for a fiscal year range, scoped by an awarding agency and/or a recipient, grouped by period. Use this for "how has X's spending changed/trended over time" questions.
 
@@ -553,6 +591,16 @@ def get_spending_over_time(
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".
+        award_id: Optional. Restrict to a single known award (PIID/FAIN/URI), e.g.
+            "1605SS17F00018" - a fuzzy text match, not an exact-id lookup.
+        recipient_type: Optional. Restrict to recipients tagged with this business/recipient
+            type, e.g. "small_business", "woman_owned_business", "nonprofit", "higher_education".
+            Not sufficient scope on its own (like award_type) - still needs agency_name,
+            recipient_name/id, a location, or another real scoping filter alongside it.
+        description: Optional. Restrict to awards whose own description text matches this
+            phrase, e.g. "vaccine research". Distinct from keywords - keywords also matches
+            recipient name, PIID/FAIN/URI, and NAICS/PSC description text, so a keywords hit
+            doesn't imply a description hit or vice versa.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -564,6 +612,7 @@ def get_spending_over_time(
         performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
         performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
+        award_id=award_id, description=description,
     )
     try:
         response = get_spending_over_time_raw(
@@ -593,6 +642,9 @@ def get_spending_over_time(
             naics_code=naics_code,
             psc_code=psc_code,
             cfda_program=cfda_program,
+            award_id=award_id,
+            recipient_type=recipient_type,
+            description=description,
         )
     except USASpendingAPIError as e:
         logger.warning("get_spending_over_time failed for %s: %s", scope, e)
@@ -627,6 +679,9 @@ def get_spending_over_time(
         naics_code=naics_code,
         psc_code=psc_code,
         cfda_program=cfda_program,
+        award_id=award_id,
+        recipient_type=recipient_type,
+        description=description,
     )
     _record_tool_call("get_spending_over_time", response, context)
 
@@ -667,6 +722,9 @@ def search_awards_raw(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
 ) -> SearchAwardsResponse:
     """Call the API once, return the structured response (results +
     page_metadata), sorted largest-amount-first (Award Amount, or Loan
@@ -712,6 +770,9 @@ def search_awards_raw(
         naics_code=naics_code,
         psc_code=psc_code,
         cfda_program=cfda_program,
+        award_id=award_id,
+        recipient_type=recipient_type,
+        description=description,
     )
     amount_field = _amount_field_for_award_type(award_type)
     fields = SEARCH_AWARDS_FIELDS_BASE + [amount_field]
@@ -745,6 +806,9 @@ def search_awards(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
 ) -> str:
     """Search for individual award records (specific contracts, grants, or loans) for a fiscal year range, scoped by an awarding agency and/or a recipient. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead. Results are ranked largest-amount-first by default — use this directly for "biggest"/"top N" questions.
 
@@ -840,6 +904,18 @@ def search_awards(
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".
+        award_id: Optional. Restrict to a single known award by its plain Award ID (PIID/FAIN/URI,
+            e.g. "1605SS17F00018") - a fuzzy text match, not an exact-id lookup. This is the same
+            "Award ID" shown in this tool's own results, NOT the longer internal_id shown alongside
+            it (that one is for get_award_details, not this filter).
+        recipient_type: Optional. Restrict to recipients tagged with this business/recipient
+            type, e.g. "small_business", "woman_owned_business", "nonprofit", "higher_education".
+            Not sufficient scope on its own (like award_type) - still needs agency_name,
+            recipient_name, a location, or another real scoping filter alongside it.
+        description: Optional. Restrict to awards whose own description text matches this
+            phrase, e.g. "vaccine research". Distinct from keywords - keywords also matches
+            recipient name, PIID/FAIN/URI, and NAICS/PSC description text, so a keywords hit
+            doesn't imply a description hit or vice versa.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -854,6 +930,7 @@ def search_awards(
         performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
         performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
+        award_id=award_id, description=description,
     )
     try:
         results = search_awards_raw(
@@ -882,6 +959,9 @@ def search_awards(
             naics_code=naics_code,
             psc_code=psc_code,
             cfda_program=cfda_program,
+            award_id=award_id,
+            recipient_type=recipient_type,
+            description=description,
         )
     except USASpendingAPIError as e:
         logger.warning("search_awards failed for %s: %s", scope, e)
@@ -914,6 +994,9 @@ def search_awards(
         naics_code=naics_code,
         psc_code=psc_code,
         cfda_program=cfda_program,
+        award_id=award_id,
+        recipient_type=recipient_type,
+        description=description,
     )
     _record_tool_call("search_awards", results, context)
 
@@ -929,12 +1012,12 @@ def search_awards(
     amount_field = _amount_field_for_award_type(award_type)
     lines = []
     for r in results.results:
-        award_id = r.get("Award ID", "unknown")
+        result_award_id = r.get("Award ID", "unknown")
         internal_id = r.get("generated_internal_id", "unknown")
         recipient = r.get("Recipient Name", "unknown")
         amount = r.get(amount_field)
         amount_str = f"${amount:,.2f}" if isinstance(amount, (int, float)) else "unknown amount"
-        lines.append(f"{award_id} — {recipient}: {amount_str} [internal_id: {internal_id}]")
+        lines.append(f"{result_award_id} — {recipient}: {amount_str} [internal_id: {internal_id}]")
     has_next = results.page_metadata.hasNext if results.page_metadata else False
     note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)
     return _wrap_untrusted("\n".join(lines) + note)
@@ -967,6 +1050,9 @@ def search_subawards_raw(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
 ) -> SearchAwardsResponse:
     """Call the same live endpoint search_awards_raw uses, with
     spending_level="subawards" - confirmed live this returns individual
@@ -980,6 +1066,15 @@ def search_subawards_raw(
     opposite of what these same parameter names mean on search_awards
     (where they filter the prime recipient). performed_in_* still means the
     subaward's own place of performance, unchanged.
+
+    recipient_type is NOT reversed the way recipient_name is - live-verified
+    2026-09-12 that recipient_type_names still matches the PRIME recipient's
+    business categories in subawards mode (e.g. recipient_type="veteran_
+    owned_business" returned subawards whose Prime Recipient Name was a
+    veteran-owned firm, sub-recipient unconstrained). description IS
+    subaward-scoped, matching SUBAWARD_FIELDS' "Sub-Award Description" -
+    confirmed from the live filter's own field mapping (subaward_description,
+    not the prime award's description).
 
     recipient_id is deliberately not a parameter here (same as
     search_awards_raw) - confirmed live it's silently ignored for
@@ -1012,6 +1107,9 @@ def search_subawards_raw(
         naics_code=naics_code,
         psc_code=psc_code,
         cfda_program=cfda_program,
+        award_id=award_id,
+        recipient_type=recipient_type,
+        description=description,
     )
     return client.search_awards(
         filters, fields=SUBAWARD_FIELDS, limit=limit, sort="Sub-Award Amount", order="desc",
@@ -1046,6 +1144,9 @@ def search_subawards(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
 ) -> str:
     """Search for individual SUBAWARD records - money a prime awardee passed on to a sub-recipient to do part of the work. Use this for "who did X subcontract to" or "what subawards has agency Y's spending generated" questions about subawards in general, scoped by an awarding agency and/or a sub-recipient. For the subawards under one SPECIFIC prime award already found via search_awards, use get_award_subawards instead - this tool searches across many awards, not one award's own list.
 
@@ -1096,6 +1197,16 @@ def search_subawards(
         naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511".
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number, format NN.NNN.
+        award_id: Optional. Restrict to subawards under a single known award by its plain Award ID
+            (PIID/FAIN/URI, e.g. "1605SS17F00018") - a fuzzy text match. This is the PRIME award's
+            ID, not a subaward-specific id.
+        recipient_type: Optional. Restrict to subawards whose PRIME recipient is tagged with this
+            business/recipient type, e.g. "small_business", "veteran_owned_business" - unlike
+            recipient_name above, this is NOT reversed to the sub-recipient (live-verified). Not
+            sufficient scope on its own (like award_type).
+        description: Optional. Restrict to subawards whose own description text matches this
+            phrase, e.g. "climate research" - this IS the sub-award's own description, unlike
+            recipient_type above. Distinct from keywords, which also matches other text fields.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -1108,6 +1219,7 @@ def search_subawards(
         performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
         performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
+        award_id=award_id, description=description,
     )
     try:
         results = search_subawards_raw(
@@ -1136,6 +1248,9 @@ def search_subawards(
             naics_code=naics_code,
             psc_code=psc_code,
             cfda_program=cfda_program,
+            award_id=award_id,
+            recipient_type=recipient_type,
+            description=description,
         )
     except USASpendingAPIError as e:
         logger.warning("search_subawards failed for %s: %s", scope, e)
@@ -1164,6 +1279,9 @@ def search_subawards(
         naics_code=naics_code,
         psc_code=psc_code,
         cfda_program=cfda_program,
+        award_id=award_id,
+        recipient_type=recipient_type,
+        description=description,
     )
     _record_tool_call("search_subawards", results, context)
 
@@ -1230,6 +1348,9 @@ def get_spending_by_geography_raw(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
 ) -> SpendingByGeographyResponse:
     client = _get_usaspending_client()
     filters = _build_filters(
@@ -1244,6 +1365,7 @@ def get_spending_by_geography_raw(
         keywords=keywords, date_type=date_type,
         place_of_performance_scope=place_of_performance_scope, recipient_scope=recipient_scope,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program,
+        award_id=award_id, recipient_type=recipient_type, description=description,
     )
     return client.spending_by_geography(filters, scope, geo_layer, geo_layer_filters)
 
@@ -1286,6 +1408,9 @@ def get_spending_by_geography(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
 ) -> str:
     """Get spending broken down by geographic region (state, county, congressional district, or country) for a fiscal year range, ranked by total amount descending. Use this for "which states/counties/districts/countries got the most X funding" — a full breakdown in one call, instead of checking one place at a time.
 
@@ -1343,6 +1468,14 @@ def get_spending_by_geography(
         naics_code: Optional. Restrict to this exact NAICS industry code.
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code.
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number, format NN.NNN.
+        award_id: Optional. Restrict to a single known award by its plain Award ID (PIID/FAIN/URI) -
+            a fuzzy text match, not an exact-id lookup.
+        recipient_type: Optional. Restrict to recipients tagged with this business/recipient
+            type, e.g. "small_business", "woman_owned_business", "nonprofit", "higher_education".
+            Not sufficient scope on its own (like award_type).
+        description: Optional. Restrict to awards whose own description text matches this
+            phrase, e.g. "vaccine research". Distinct from keywords, which also matches other
+            text fields (recipient name, PIID/FAIN/URI, NAICS/PSC description).
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -1354,6 +1487,7 @@ def get_spending_by_geography(
         performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
         performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
+        award_id=award_id, description=description,
     )
     try:
         response = get_spending_by_geography_raw(
@@ -1369,6 +1503,7 @@ def get_spending_by_geography(
             keywords=keywords, date_type=date_type,
             place_of_performance_scope=place_of_performance_scope, recipient_scope=recipient_scope,
             naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program,
+            award_id=award_id, recipient_type=recipient_type, description=description,
         )
     except USASpendingAPIError as e:
         logger.warning("get_spending_by_geography failed for %s: %s", scope_label_str, e)
@@ -1389,6 +1524,7 @@ def get_spending_by_geography(
         keywords=keywords, date_type=date_type,
         place_of_performance_scope=place_of_performance_scope, recipient_scope=recipient_scope,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program,
+        award_id=award_id, recipient_type=recipient_type, description=description,
     )
     _record_tool_call("get_spending_by_geography", response, context)
 

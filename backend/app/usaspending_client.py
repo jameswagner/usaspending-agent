@@ -232,7 +232,9 @@ class AdvancedFilters(BaseModel):
 # the live contracts by dev_tools/check_filter_coverage.py.
 ADVANCED_FILTER_FIELD_COVERAGE: dict[str, str] = {
     "keywords": "exposed (keywords)",
-    "description": "modeled, not exposed",
+    "description": "exposed (description) - distinct from keywords: phrase-prefix match against the "
+                    "award's own description text only, where keywords also matches PIID/FAIN/URI and "
+                    "several other text fields",
     "time_period": "exposed (start_fiscal_year/end_fiscal_year, date_type)",
     "place_of_performance_scope": "exposed (place_of_performance_scope)",
     "place_of_performance_locations": "exposed (performed_in_state)",
@@ -242,9 +244,14 @@ ADVANCED_FILTER_FIELD_COVERAGE: dict[str, str] = {
                     "search_awards (confirmed live: silently ignored there, see this field's own comment above)",
     "recipient_scope": "exposed (recipient_scope)",
     "recipient_locations": "exposed (recipient_in_state)",
-    "recipient_type_names": "modeled, not exposed - vocabulary not yet verified against a real reference list, unlike award_type/state",
+    "recipient_type_names": "exposed (recipient_type) - vocabulary is the snake_case keys from "
+                             "USASpending's own BUSINESS_CATEGORIES_LOOKUP_DICT (common/helpers/"
+                             "business_categories_helper.py), live-verified 2026-09-12 - NOT the "
+                             "human-readable display names search_filters.md's own example shows, "
+                             "which return zero results live",
     "award_type_codes": "exposed (award_type)",
-    "award_ids": "modeled, not exposed",
+    "award_ids": "exposed (award_id) - single known Award ID (PIID/FAIN/URI), fuzzy-matched, wrapped "
+                 "into a 1-item list",
     "award_amounts": "exposed (min_amount/max_amount)",
     "program_numbers": "exposed (cfda_program) - direct code passthrough, not a keyword lookup: verified live that "
                         "an analyst asking about a specific CFDA program already knows the number (e.g. 10.001), the "

@@ -27,6 +27,7 @@ from backend.app.usaspending_client import (
     USASpendingClient,
 )
 
+from .recipient_types import _normalize_recipient_type
 from .response_shaping import fiscal_year_to_date_range
 
 # Verified against USASpending's own award_types.md contract (checked
@@ -404,6 +405,9 @@ def _build_filters(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: str | None = None,
+    description: str | None = None,
 ) -> AdvancedFilters:
     """Resolve agency_name + fiscal-year range into an AdvancedFilters -
     the shared first step of all three spending tools, replacing what was
@@ -453,8 +457,11 @@ def _build_filters(
     agency_name is optional - a recipient-only, cross-agency question needs
     to work too. At least one of agency_name/recipient_name/recipient_id/
     performed_in_state/recipient_in_state/naics_code/psc_code/cfda_program/
-    keywords must be given, or this raises; award_type/min_amount/
-    max_amount/date_type/*_scope don't count on their own (see #16).
+    keywords/award_id/description must be given, or this raises;
+    award_type/min_amount/max_amount/date_type/*_scope/recipient_type
+    don't count on their own (see #16) - recipient_type is a broad
+    classification (e.g. "small_business" alone still spans nearly all of
+    federal spending), the same reasoning that excludes award_type.
 
     recipient_id is a real, precise filter - confirmed live 2026-09-08 to
     reproduce a recipient's true all-time total to the penny, unlike
@@ -468,6 +475,16 @@ def _build_filters(
     search_awards silently ignores this filter entirely (the live API's
     own `messages` field says so explicitly), so it's never passed through
     on that tool's path.
+
+    award_id/recipient_type/description are plain passthroughs into
+    award_ids/recipient_type_names/description (all live-verified
+    2026-09-12 against the real API, across search_awards,
+    get_spending_by_category, and get_spending_by_geography). description
+    is distinct from keywords - description does a phrase-prefix match
+    against the award's own description text only, where keywords also
+    matches PIID/FAIN/URI and several other text fields (recipient name,
+    NAICS/PSC description, etc.) - so a keywords hit doesn't imply a
+    description hit or vice versa.
     """
     real_scoping_filters = (
         agency_name, recipient_name, recipient_id,
@@ -477,14 +494,16 @@ def _build_filters(
         performed_in_zip, recipient_in_zip,
         performed_in_district, recipient_in_district,
         naics_code, psc_code, cfda_program, keywords,
+        award_id, description,
     )
     if all(f is None for f in real_scoping_filters):
         raise USASpendingAPIError(
             "At least one of agency_name, recipient_name, recipient_id, performed_in_state, "
             "recipient_in_state, performed_in_county, recipient_in_county, performed_in_city, "
             "recipient_in_city, performed_in_zip, recipient_in_zip, performed_in_district, "
-            "recipient_in_district, naics_code, psc_code, cfda_program, or keywords must be given - "
-            "a question scoped by none of them would mean all federal spending, ever."
+            "recipient_in_district, naics_code, psc_code, cfda_program, keywords, award_id, or "
+            "description must be given - a question scoped by none of them would mean all federal "
+            "spending, ever."
         )
 
     start_date, end_date = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
@@ -557,6 +576,15 @@ def _build_filters(
 
     if cfda_program is not None:
         kwargs["program_numbers"] = [_validate_cfda_program(cfda_program)]
+
+    if award_id is not None:
+        kwargs["award_ids"] = [award_id.strip()]
+
+    if recipient_type is not None:
+        kwargs["recipient_type_names"] = [_normalize_recipient_type(recipient_type)]
+
+    if description is not None:
+        kwargs["description"] = description
 
     return AdvancedFilters(**kwargs)
 
@@ -642,6 +670,9 @@ def _record_optional_filter_context(
     naics_code: str | None = None,
     psc_code: str | None = None,
     cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: str | None = None,
+    description: str | None = None,
 ) -> dict:
     """Adds each optional filter param to a citation context dict, but
     only the ones actually set - so a citation reflects exactly which
@@ -671,6 +702,9 @@ def _record_optional_filter_context(
         ("naics_code", naics_code),
         ("psc_code", psc_code),
         ("cfda_program", cfda_program),
+        ("award_id", award_id),
+        ("recipient_type", recipient_type),
+        ("description", description),
     ):
         if value is not None:
             context[key] = value

@@ -5,6 +5,11 @@ from typing import Any, ClassVar, get_args
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
+from backend.app.agent.recipient_types import (
+    RECIPIENT_TYPE_NAMES,
+    RecipientType,
+    _normalize_recipient_type,
+)
 from backend.app.agent.response_shaping import (
     GLOSSARY_URL_BASE,
     GUIDE_URL,
@@ -1322,6 +1327,32 @@ class TestBuildFilters:
         with pytest.raises(USASpendingAPIError, match="doesn't look like a CFDA"):
             _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, cfda_program="research grants")
 
+    # award_id/recipient_type/description (2026-09-12, issue #28) - all
+    # live-verified against the real API: award_ids/description matching
+    # confirmed on search_awards, spending_by_category, and
+    # spending_by_geography; recipient_type_names confirmed to need the
+    # snake_case key, not search_filters.md's own display-name example.
+
+    def test_award_id_becomes_single_item_award_ids_list(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, award_id="1605SS17F00018")
+        assert filters.award_ids == ["1605SS17F00018"]
+
+    def test_recipient_type_becomes_normalized_single_item_list(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", 2021, 2024, recipient_type="Small Business"
+        )
+        assert filters.recipient_type_names == ["small_business"]
+
+    def test_unknown_recipient_type_raises(self):
+        with pytest.raises(USASpendingAPIError, match="Unknown recipient_type"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, recipient_type="not_a_real_type")
+
+    def test_description_passes_through_as_a_plain_string(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", 2021, 2024, description="vaccine research"
+        )
+        assert filters.description == "vaccine research"
+
     # agency_name optional / recipient_id (2026-09-08) - real, live-verified
     # findings: recipient_id reproduces a recipient's true all-time total
     # to the penny on get_spending_by_category/get_spending_over_time, but
@@ -1388,9 +1419,23 @@ class TestBuildFilters:
         filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, keywords="climate research")
         assert filters.keywords == ["climate research"]
 
+    def test_award_id_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, award_id="1605SS17F00018")
+        assert filters.award_ids == ["1605SS17F00018"]
+
+    def test_description_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, description="vaccine research")
+        assert filters.description == "vaccine research"
+
     def test_award_type_alone_is_not_sufficient_scope(self):
         with pytest.raises(USASpendingAPIError, match="At least one of"):
             _build_filters(FakeClient(make_agency()), None, 2021, 2024, award_type="grants")
+
+    def test_recipient_type_alone_is_not_sufficient_scope(self):
+        # Broad classification, like award_type - "small_business" alone
+        # still spans nearly all of federal spending.
+        with pytest.raises(USASpendingAPIError, match="At least one of"):
+            _build_filters(FakeClient(make_agency()), None, 2021, 2024, recipient_type="small_business")
 
     def test_min_amount_alone_is_not_sufficient_scope(self):
         with pytest.raises(USASpendingAPIError, match="At least one of"):
@@ -2115,6 +2160,24 @@ class TestNormalizeScope:
             _normalize_scope("martian", "recipient_scope")
 
 
+class TestNormalizeRecipientType:
+    # Live-verified 2026-09-12: the snake_case key (e.g. "small_business")
+    # is what the live API actually wants - search_filters.md's own
+    # example ("Small Business", a human-readable display name) returns
+    # zero results against a query with known real matches.
+
+    def test_snake_case_key_passes_through(self):
+        assert _normalize_recipient_type("small_business") == "small_business"
+
+    def test_case_and_spacing_insensitive(self):
+        assert _normalize_recipient_type("Small Business") == "small_business"
+        assert _normalize_recipient_type("SMALL-BUSINESS") == "small_business"
+
+    def test_garbage_raises(self):
+        with pytest.raises(USASpendingAPIError, match="Unknown recipient_type"):
+            _normalize_recipient_type("not_a_real_type")
+
+
 class TestCodeValidation:
     # Format-only validation, not existence checks against a real
     # vocabulary - NAICS/PSC/CFDA are large government classification
@@ -2256,6 +2319,9 @@ class TestLiteralTypesMatchVocabulary:
 
     def test_recipient_award_type_literal_matches_recipient_award_types(self):
         assert set(get_args(RecipientAwardType)) == RECIPIENT_AWARD_TYPES
+
+    def test_recipient_type_literal_matches_recipient_type_names(self):
+        assert set(get_args(RecipientType)) == set(RECIPIENT_TYPE_NAMES)
 
 
 class TestClampLimit:

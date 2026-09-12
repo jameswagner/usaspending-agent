@@ -22,6 +22,23 @@ government) - every other group_by works fine unscoped.
 confirmed live to reliably time out (45s+, zero response) both scoped and
 unscoped - not a transient blip, checked twice. Re-verify before adding
 it rather than assuming this has changed.
+
+The `agency` filter is the one exception to "get an id from a prior
+result": it does NOT accept lookup_agency's toptier_code, only this
+endpoint's own internal agency id (a group_by="agency" result's `id`
+field - not its `code` field, which IS the toptier code and is rejected
+outright). Confirmed live: HHS is toptier_code "075" but Spending
+Explorer agency id "806" - passing "075" 400s with "Agency ID provided
+does not correspond to a toptier agency". Found live 2026-09-11 after
+the model, asked for HHS's spending by object class, correctly called
+lookup_agency first (this tool's own docstring said to, at the time),
+got HHS's toptier_code, passed it as the agency filter, got a clean
+rejection from the live API, and gave up on object_class entirely -
+falling back to a PSC breakdown from a completely different tool instead
+(disclosed to the user, but not actually answering the question asked) -
+rather than resolving the right id. See get_spending_explorer_breakdown's
+own Args docstring for the agency param, which now tells the model to
+resolve this via group_by="agency" instead of lookup_agency.
 """
 from __future__ import annotations
 
@@ -186,7 +203,13 @@ def get_spending_explorer_breakdown(
             roughly 45 days after it closes either. There's no "current period" to fall back to —
             if a call fails for this reason, try an earlier fiscal_year/quarter rather than
             guessing forward.
-        agency: An agency's toptier code (e.g. "075"), from a prior call's result, to scope to one agency.
+        agency: An agency's Spending Explorer id from a prior call's result with group_by="agency"
+            (its `id` field) — NOT lookup_agency's toptier_code, and NOT the `code` field on a
+            group_by="agency" result either (that IS the toptier code). Confirmed live these are
+            different id spaces (e.g. HHS: Spending Explorer id "806", toptier_code "075") and the
+            toptier_code is rejected outright ("Agency ID provided does not correspond to a toptier
+            agency"). To scope by an agency you don't already have this id for, call this tool once
+            with group_by="agency" (no filters) first to look it up.
         budget_function: A budget function's code (e.g. "570"), from a prior call's result.
         budget_subfunction: A budget sub-function's code, from a prior call's result.
         federal_account: A federal account's code, from a prior call's result.

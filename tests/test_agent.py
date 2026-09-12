@@ -553,6 +553,22 @@ class TestGetSpendingExplorerBreakdownRaw:
             get_spending_explorer_breakdown_raw("recipient", 2026, "3")
         assert fake.calls == []
 
+    def test_unsupported_group_by_raises_before_any_live_call(self, monkeypatch):
+        # "award" is deliberately excluded from the GroupBy Literal (see
+        # the module docstring - confirmed live to hang), but the Literal
+        # is only a schema-level hint to the model, not a runtime
+        # constraint on this plain Python function. If a group_by ever
+        # slips through anyway (a different call path, model behavior,
+        # a looser SDK version), this must fail fast with a clear message
+        # instead of reaching the live API and hanging for real - this
+        # test calls with "award" the same way a slipped-through value
+        # would arrive, bypassing the type checker entirely.
+        fake = self._FakeClient()
+        monkeypatch.setattr("backend.app.agent.tools.spending_explorer._get_usaspending_client", lambda: fake)
+        with pytest.raises(USASpendingAPIError, match="award"):
+            get_spending_explorer_breakdown_raw("award", 2026, "3")  # type: ignore[arg-type]
+        assert fake.calls == []
+
     def test_scoped_recipient_is_allowed(self, monkeypatch):
         fake = self._FakeClient()
         monkeypatch.setattr("backend.app.agent.tools.spending_explorer._get_usaspending_client", lambda: fake)

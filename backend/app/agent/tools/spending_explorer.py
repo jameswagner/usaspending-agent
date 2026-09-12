@@ -26,7 +26,7 @@ it rather than assuming this has changed.
 from __future__ import annotations
 
 import logging
-from typing import Literal
+from typing import Literal, get_args
 
 from anthropic import beta_tool
 from langsmith import traceable
@@ -60,6 +60,16 @@ _FILTER_PARAM_NAMES = (
     "program_activity",
 )
 
+# GroupBy's own Literal args, not a separately-maintained set - the schema
+# and this runtime check can't drift apart. Enforced here, not just left
+# to the tool schema built from the Literal, because a group_by that
+# slips through anyway (a different call path, a looser SDK version, model
+# behavior) must fail fast with an actionable message instead of reaching
+# client.spending_explorer() and hanging for real - confirmed live that
+# group_by="award" specifically times out with zero response after 45s+,
+# both scoped and unscoped (see the module docstring).
+_SUPPORTED_GROUP_BY = set(get_args(GroupBy))
+
 
 @traceable(run_type="tool", name="get_spending_explorer_breakdown_raw")
 def get_spending_explorer_breakdown_raw(
@@ -75,11 +85,21 @@ def get_spending_explorer_breakdown_raw(
     program_activity: str | None = None,
 ) -> SpendingExplorerResponse:
     """Call the API once, return the structured response. Raises
-    USASpendingAPIError on failure, or before ever reaching the live API
-    if group_by="recipient" has no scoping filter at all - confirmed live
-    that query times out rather than erroring cleanly, so this fails fast
-    with an actionable message instead of hanging the whole turn.
+    USASpendingAPIError on failure, before ever reaching the live API if
+    group_by isn't one of the supported values (in particular "award",
+    a real API value but confirmed to hang) or if group_by="recipient"
+    has no scoping filter at all - confirmed live that query times out
+    rather than erroring cleanly, so both fail fast with an actionable
+    message instead of hanging the whole turn.
     """
+    if group_by not in _SUPPORTED_GROUP_BY:
+        raise USASpendingAPIError(
+            f"group_by={group_by!r} is not supported. Must be one of: "
+            f"{', '.join(sorted(_SUPPORTED_GROUP_BY))}. "
+            "(group_by='award' is a real API value but confirmed to hang live - "
+            "use search_awards or get_award_details for award-level data instead.)"
+        )
+
     filter_kwargs = {
         "agency": agency,
         "budget_function": budget_function,

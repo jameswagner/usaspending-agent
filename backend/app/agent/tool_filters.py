@@ -100,6 +100,48 @@ def _normalize_award_type(award_type: str) -> str:
     return award_type.strip().lower().replace(" ", "_").replace("-", "_")
 
 
+# The 7 non-overlapping "leaf" categories that together cover every
+# possible award (IDVs excluded - see AWARD_TYPE_GROUPS's docstring). The
+# other 10 AWARD_TYPE_GROUPS keys are sub-types whose codes are already a
+# subset of one of these seven's codes (e.g. "contracts" = A,B,C,D, the
+# same codes "bpa_call"/"purchase_order"/"delivery_order"/
+# "definitive_contract" split out individually) - so once a broad
+# bucket's search comes back empty, trying its own sub-type afterward is
+# guaranteed to also come back empty, not a fresh thing to check.
+EXHAUSTIVE_AWARD_TYPE_CATEGORIES = [
+    "contracts", "grants", "loans", "insurance",
+    "other_financial_assistance", "direct_payment_specified", "direct_payment_unrestricted",
+]
+
+_BROAD_CATEGORY_FOR_AWARD_TYPE = {
+    "contracts": "contracts", "bpa_call": "contracts", "purchase_order": "contracts",
+    "delivery_order": "contracts", "definitive_contract": "contracts",
+    "grants": "grants", "block_grant": "grants", "formula_grant": "grants",
+    "project_grant": "grants", "cooperative_agreement": "grants",
+    "loans": "loans", "direct_loan": "loans", "guaranteed_loan": "loans",
+    "insurance": "insurance",
+    "other_financial_assistance": "other_financial_assistance",
+    "direct_payment_specified": "direct_payment_specified",
+    "direct_payment_unrestricted": "direct_payment_unrestricted",
+}
+
+
+def _other_award_type_categories_to_try(award_type: str) -> str:
+    """Comma-joined list of the exhaustive categories not already implied
+    by award_type - for a zero-results message, so the model has a
+    concrete next step instead of concluding no award records exist after
+    one or two guesses. Found live (2026-09-11): asked for the top awards
+    under a Social Security retirement CFDA program, the model tried
+    "grants" then "contracts" (both genuinely zero - the real records are
+    direct_payment_unrestricted), got zero both times, and fabricated an
+    explanation ("these payments aren't tracked as individual awards")
+    instead of trying the remaining categories - live search confirmed
+    1,738 real award records existed the whole time.
+    """
+    current_broad = _BROAD_CATEGORY_FOR_AWARD_TYPE[_normalize_award_type(award_type)]
+    return ", ".join(c for c in EXHAUSTIVE_AWARD_TYPE_CATEGORIES if c != current_broad)
+
+
 # POST /api/v2/recipient/'s own award_type enum (recipient.md) - a real,
 # different, coarser vocabulary from AWARD_TYPE_GROUPS/AwardType above, not
 # reusable: only 6 broad buckets, no sub-type granularity (no

@@ -23,6 +23,7 @@ from backend.app.agent.scope import (
 )
 from backend.app.agent.tool_filters import (
     AWARD_TYPE_GROUPS,
+    EXHAUSTIVE_AWARD_TYPE_CATEGORIES,
     LOAN_AWARD_TYPE_CODES,
     MAX_LIMIT,
     RECIPIENT_AWARD_TYPES,
@@ -43,6 +44,7 @@ from backend.app.agent.tool_filters import (
     _normalize_recipient_award_type,
     _normalize_scope,
     _normalize_state,
+    _other_award_type_categories_to_try,
     _validate_cfda_program,
     _validate_naics_code,
     _validate_psc_code,
@@ -1063,6 +1065,42 @@ class TestAwardTypeNormalization:
         loan_subtypes = ["direct_loan", "guaranteed_loan"]
         for key in loan_subtypes:
             assert AWARD_TYPE_GROUPS[key][0] in AWARD_TYPE_GROUPS["loans"]
+
+
+class TestOtherAwardTypeCategoriesToTry:
+    # Regression coverage for the real bug: asked for the top awards under
+    # a Social Security retirement CFDA program, the model tried "grants"
+    # then "contracts" (both genuinely empty - the real records are
+    # direct_payment_unrestricted), got zero both times, and concluded
+    # (wrongly - 1,738 real records existed) that the program isn't
+    # tracked as individual awards at all, instead of trying the
+    # remaining categories.
+
+    def test_excludes_the_broad_category_just_tried(self):
+        others = _other_award_type_categories_to_try("grants")
+        assert "grants" not in others.split(", ")
+
+    def test_excludes_the_broad_category_for_a_specific_subtype_too(self):
+        # cooperative_agreement is a grants sub-type - its own broad
+        # category ("grants") must still be excluded, not just the exact
+        # string "cooperative_agreement".
+        others = _other_award_type_categories_to_try("cooperative_agreement")
+        assert "grants" not in others.split(", ")
+        assert "cooperative_agreement" not in others.split(", ")
+
+    def test_lists_the_other_six_exhaustive_categories(self):
+        others = _other_award_type_categories_to_try("contracts").split(", ")
+        assert set(others) == set(EXHAUSTIVE_AWARD_TYPE_CATEGORIES) - {"contracts"}
+
+    def test_case_and_spacing_insensitive(self):
+        assert _other_award_type_categories_to_try("Contracts") == _other_award_type_categories_to_try("contracts")
+
+    def test_direct_payment_subtypes_are_distinct_categories(self):
+        # Unlike every other sub-type, these two are their own leaf
+        # categories in EXHAUSTIVE_AWARD_TYPE_CATEGORIES, not folded under
+        # a shared broad bucket - trying one must not exclude the other.
+        others = _other_award_type_categories_to_try("direct_payment_specified")
+        assert "direct_payment_unrestricted" in others.split(", ")
 
 
 def make_agency(name: str = "National Science Foundation") -> ToptierAgency:

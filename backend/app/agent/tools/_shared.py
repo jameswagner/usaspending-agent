@@ -169,6 +169,8 @@ def _scope_label(
     psc_code: str | None = None,
     cfda_program: str | None = None,
     keywords: str | None = None,
+    award_id: str | None = None,
+    description: str | None = None,
 ) -> str:
     """Label for a failure/no-results message. _build_filters guarantees
     at least one of these is set."""
@@ -180,6 +182,7 @@ def _scope_label(
         or performed_in_zip or recipient_in_zip
         or performed_in_district or recipient_in_district
         or naics_code or psc_code or cfda_program or keywords
+        or award_id or description
         or "unknown scope"
     )
 

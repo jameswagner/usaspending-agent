@@ -15,6 +15,7 @@ from __future__ import annotations
 from backend.app.agent.orchestrator import ask
 from backend.app.agent.singletons import warm_up
 from backend.app.agent.tools import search_awards_raw
+from backend.app.usaspending_client import USASpendingAPIError
 
 
 def case_search_awards_sorted_by_amount() -> None:
@@ -177,6 +178,69 @@ def case_new_awards_only_eliminates_cross_fiscal_year_duplication() -> None:
         print(f"FAIL: new_awards_only still overlaps: {new_only_overlap}")
 
 
+def case_sort_by_outlays_and_subsidy_cost_and_recency() -> None:
+    print("\n=== sort_by: outlays/subsidy_cost/recency, plus their invalid-combo errors ===")
+    # Live-verified via curl 2026-09-12: sorting VA FY2026 contracts by
+    # "Total Outlays" ranks Booz Allen Hamilton's 36C10B21N10070021 first
+    # ($1.11B outlayed), a different #1 than the default amount sort
+    # (which leads with a larger-obligated, smaller-outlayed contract).
+    by_outlays = search_awards_raw(
+        "Department of Veterans Affairs", 2026, 2026, award_type="contracts",
+        sort_by="outlays", limit=3,
+    )
+    print(f"VA contracts sorted by outlays: {[r.get('Award ID') for r in by_outlays.results]}")
+    if by_outlays.results and by_outlays.results[0].get("Award ID") == "36C10B21N10070021":
+        print("OK: outlays sort matches the live-curl-confirmed top result.")
+    elif not by_outlays.results:
+        print("INCONCLUSIVE: no VA FY2026 contract results this run.")
+    else:
+        print(f"NOTE: top result is {by_outlays.results[0].get('Award ID')}, not the curl-confirmed "
+              "one - re-verify against a fresh curl call before assuming a regression (real award "
+              "data changes over time).")
+
+    by_subsidy = search_awards_raw(
+        "Small Business Administration", 2023, 2023, award_type="direct_loan",
+        sort_by="subsidy_cost", limit=3,
+    )
+    print(f"SBA direct loans sorted by subsidy_cost: {by_subsidy.results}")
+    if by_subsidy.results and "Subsidy Cost" in by_subsidy.results[0]:
+        print("OK: 'Subsidy Cost' is a real field on live loan results, sort didn't error.")
+    elif not by_subsidy.results:
+        print("INCONCLUSIVE: no SBA direct_loan results for FY2023 this run.")
+    else:
+        print(f"FAIL: 'Subsidy Cost' missing from a real loan result - keys: {list(by_subsidy.results[0].keys())}")
+
+    by_recency = search_awards_raw(
+        "National Science Foundation", 2023, 2023, award_type="contracts",
+        sort_by="recency", limit=3,
+    )
+    print(f"NSF contracts sorted by recency: {by_recency.results}")
+    if by_recency.results and "Last Modified Date" in by_recency.results[0]:
+        print("OK: 'Last Modified Date' is a real field on live contract results, sort didn't error.")
+    elif not by_recency.results:
+        print("INCONCLUSIVE: no NSF FY2023 contract results this run.")
+    else:
+        print(f"FAIL: 'Last Modified Date' missing - keys: {list(by_recency.results[0].keys())}")
+
+    try:
+        search_awards_raw(
+            "Small Business Administration", 2023, 2023, award_type="direct_loan",
+            sort_by="outlays", limit=1,
+        )
+        print("FAIL: sort_by='outlays' on a loan award_type should have raised, but didn't.")
+    except USASpendingAPIError:
+        print("OK: sort_by='outlays' on a loan award_type raises a clean error, as expected.")
+
+    try:
+        search_awards_raw(
+            "National Science Foundation", 2023, 2023, award_type="contracts",
+            sort_by="subsidy_cost", limit=1,
+        )
+        print("FAIL: sort_by='subsidy_cost' on a non-loan award_type should have raised, but didn't.")
+    except USASpendingAPIError:
+        print("OK: sort_by='subsidy_cost' on a non-loan award_type raises a clean error, as expected.")
+
+
 def main() -> None:
     # Required for AGENT_ENGINE=langgraph (_get_conversation_graph() asserts
     # warm_up() already ran); harmless no-op cost for the legacy path.
@@ -188,6 +252,7 @@ def main() -> None:
     case_location_filters_are_independent()
     case_loan_amount_field_name()
     case_new_awards_only_eliminates_cross_fiscal_year_duplication()
+    case_sort_by_outlays_and_subsidy_cost_and_recency()
 
 
 if __name__ == "__main__":

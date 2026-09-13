@@ -31,11 +31,13 @@ from ..tool_filters import (
     GeoLayer,
     GeoScope,
     Scope,
+    SortBy,
     _amount_field_for_award_type,
     _build_filters,
     _clamp_limit,
     _other_award_type_categories_to_try,
     _record_optional_filter_context,
+    _sort_field_for_award_type,
 )
 from ._shared import (
     _check_tool_call_budget,
@@ -714,6 +716,7 @@ def search_awards_raw(
     end_fiscal_year: int,
     award_type: AwardType = "contracts",
     limit: int = 5,
+    sort_by: SortBy = "amount",
     recipient_name: str | None = None,
     min_amount: float | None = None,
     max_amount: float | None = None,
@@ -739,14 +742,15 @@ def search_awards_raw(
     description: str | None = None,
 ) -> SearchAwardsResponse:
     """Call the API once, return the structured response (results +
-    page_metadata), sorted largest-amount-first (Award Amount, or Loan
-    Value for loan award types - see _amount_field_for_award_type). The
-    live API's own default order is essentially arbitrary - an unsorted
-    "top 5" NSF FY2023 contracts query once returned awards from $7K to
-    $7.2M while the true largest that year ($3.13B) never appeared.
-    Unlike the filter params, which are optional and behavior-preserving
-    when omitted, this sort is NOT optional - there's no meaningful
-    default ordering to preserve.
+    page_metadata), sorted largest-first by sort_by (default "amount":
+    Award Amount, or Loan Value for loan award types - see
+    _amount_field_for_award_type; see _sort_field_for_award_type for the
+    other sort_by options). The live API's own default order is
+    essentially arbitrary - an unsorted "top 5" NSF FY2023 contracts
+    query once returned awards from $7K to $7.2M while the true largest
+    that year ($3.13B) never appeared. Unlike the filter params, which
+    are optional and behavior-preserving when omitted, this sort is NOT
+    optional - there's no meaningful default ordering to preserve.
 
     Filter resolution (agency, award_type, recipient, amount, location) is
     delegated to _build_filters, same as the other two spending tools. No
@@ -787,8 +791,11 @@ def search_awards_raw(
         description=description,
     )
     amount_field = _amount_field_for_award_type(award_type)
+    sort_field = _sort_field_for_award_type(award_type, sort_by)
     fields = SEARCH_AWARDS_FIELDS_BASE + [amount_field]
-    return client.search_awards(filters, fields=fields, limit=limit, sort=amount_field, order="desc")
+    if sort_field != amount_field:
+        fields = fields + [sort_field]
+    return client.search_awards(filters, fields=fields, limit=limit, sort=sort_field, order="desc")
 
 
 @beta_tool
@@ -797,6 +804,7 @@ def search_awards(
     end_fiscal_year: int,
     award_type: AwardType = "contracts",
     limit: int = 5,
+    sort_by: SortBy = "amount",
     agency_name: str | None = None,
     recipient_name: str | None = None,
     min_amount: float | None = None,
@@ -822,7 +830,7 @@ def search_awards(
     recipient_type: RecipientType | None = None,
     description: str | None = None,
 ) -> str:
-    """Search for individual award records (specific contracts, grants, or loans) for a fiscal year range, scoped by an awarding agency and/or a recipient. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead. Results are ranked largest-amount-first by default — use this directly for "biggest"/"top N" questions.
+    """Search for individual award records (specific contracts, grants, or loans) for a fiscal year range, scoped by an awarding agency and/or a recipient. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead. Results are ranked largest-first by sort_by (default "amount") — use this directly for "biggest"/"top N" questions, including "top N by outlay/subsidy cost" or "most recently modified" with sort_by set accordingly.
 
     At least one of agency_name or recipient_name must be given - a query scoped
     by neither would mean all federal awards, ever, which this tool refuses rather
@@ -869,6 +877,14 @@ def search_awards(
             direct_payment_unrestricted (other assistance types). Case/spacing/hyphens don't
             matter (e.g. "Cooperative Agreement" also works).
         limit: Max number of results to return (default 5).
+        sort_by: One of: amount (default - Award Amount, or Loan Value for loan award
+            types), outlays (Total Outlays - the amount actually paid out so far, distinct
+            from the obligated amount "amount" sorts by; NOT valid for loan award types,
+            which have no such field - use subsidy_cost for loans instead), subsidy_cost
+            (the government's actual budgetary cost of a loan, distinct from Loan Value's
+            face value; ONLY valid for loan award types), recency (Last Modified Date - use
+            for "most recently modified/updated award to X" questions). Whichever field is
+            sorted on is also shown in each result line, not just used silently for ordering.
         agency_name: Optional. The awarding agency's name, e.g. "National Science
             Foundation". Omit for a cross-agency question about one recipient - but then
             recipient_name must be set instead.
@@ -956,6 +972,7 @@ def search_awards(
             end_fiscal_year,
             award_type,
             limit,
+            sort_by=sort_by,
             recipient_name=recipient_name,
             min_amount=min_amount,
             max_amount=max_amount,
@@ -989,6 +1006,7 @@ def search_awards(
             "start_fiscal_year": start_fiscal_year,
             "end_fiscal_year": end_fiscal_year,
             "award_type": award_type,
+            "sort_by": sort_by,
         },
         agency_name=agency_name,
         recipient_name=recipient_name,
@@ -1027,6 +1045,7 @@ def search_awards(
         )
 
     amount_field = _amount_field_for_award_type(award_type)
+    sort_field = _sort_field_for_award_type(award_type, sort_by)
     lines = []
     for r in results.results:
         result_award_id = r.get("Award ID", "unknown")
@@ -1034,7 +1053,14 @@ def search_awards(
         recipient = r.get("Recipient Name", "unknown")
         amount = r.get(amount_field)
         amount_str = f"${amount:,.2f}" if isinstance(amount, (int, float)) else "unknown amount"
-        lines.append(f"{result_award_id} — {recipient}: {amount_str} [internal_id: {internal_id}]")
+        sort_str = ""
+        if sort_field != amount_field:
+            sort_value = r.get(sort_field)
+            sort_value_str = (
+                f"${sort_value:,.2f}" if isinstance(sort_value, (int, float)) else str(sort_value)
+            )
+            sort_str = f", {sort_field}: {sort_value_str}"
+        lines.append(f"{result_award_id} — {recipient}: {amount_str}{sort_str} [internal_id: {internal_id}]")
     has_next = results.page_metadata.hasNext if results.page_metadata else False
     note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)
     return _wrap_untrusted("\n".join(lines) + note)

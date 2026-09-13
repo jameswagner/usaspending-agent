@@ -684,6 +684,69 @@ def _amount_field_for_award_type(award_type: str) -> str:
     return "Loan Value" if any(c in LOAN_AWARD_TYPE_CODES for c in codes) else "Award Amount"
 
 
+def _is_loan_award_type(award_type: str) -> bool:
+    codes = AWARD_TYPE_GROUPS.get(_normalize_award_type(award_type), [])
+    return any(c in LOAN_AWARD_TYPE_CODES for c in codes)
+
+
+# A static Literal mirror of SORT_BY_FIELD_NAMES.keys() - same
+# schema-enum-generation reasoning as AwardType above.
+SortBy = Literal["amount", "outlays", "subsidy_cost", "recency"]
+
+# "recency" reuses the same field name search_awards's own
+# date_type="last_modified_date" already means, for vocabulary
+# consistency - and, unlike "Total Outlays"/"Subsidy Cost", "Last
+# Modified Date" is a base field valid across every award_type family
+# (contracts, non-loan assistance, loans alike), confirmed live
+# 2026-09-12 against /api/v2/search/spending_by_award/'s own sort-field
+# validation error for each family.
+SORT_BY_FIELD_NAMES = {
+    "recency": "Last Modified Date",
+}
+
+
+def _sort_field_for_award_type(award_type: str, sort_by: str) -> str:
+    """Resolve sort_by + award_type into the real API sort field name,
+    or raise a clean USASpendingAPIError for a combination the live API
+    doesn't support.
+
+    Confirmed live 2026-09-12 against /api/v2/search/spending_by_award/'s
+    sort-field allowlist (returned in its own 400 error body) for each
+    award-type family:
+      - "Total Outlays" is valid for Contracts and Non-Loan Assistance,
+        but absent entirely from the Loan Award field mapping - loans
+        never outlay against an "Award Amount"-shaped total the way a
+        contract/grant does.
+      - "Subsidy Cost" (the government's actual budgetary cost of a
+        loan, distinct from "Loan Value"'s face value) exists only in
+        the Loan Award mapping.
+    Assumes award_type is already a valid AWARD_TYPE_GROUPS key, same
+    assumption _amount_field_for_award_type makes.
+    """
+    if sort_by == "amount":
+        return _amount_field_for_award_type(award_type)
+    if sort_by == "recency":
+        return SORT_BY_FIELD_NAMES["recency"]
+    is_loan = _is_loan_award_type(award_type)
+    if sort_by == "outlays":
+        if is_loan:
+            raise USASpendingAPIError(
+                "sort_by='outlays' isn't valid for loan award types - loans have no "
+                "'Total Outlays' field. Use sort_by='subsidy_cost' instead, or omit "
+                "sort_by to sort by amount (Loan Value)."
+            )
+        return "Total Outlays"
+    if sort_by == "subsidy_cost":
+        if not is_loan:
+            raise USASpendingAPIError(
+                "sort_by='subsidy_cost' is only valid for loan award types (award_type "
+                "'loans', 'direct_loan', or 'guaranteed_loan') - it isn't a field on "
+                "contracts, grants, or other assistance awards."
+            )
+        return "Subsidy Cost"
+    raise USASpendingAPIError(f"Unknown sort_by '{sort_by}'. Must be one of: amount, outlays, subsidy_cost, recency")
+
+
 def _record_optional_filter_context(
     context: dict,
     *,

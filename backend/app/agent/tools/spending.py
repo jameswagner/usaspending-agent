@@ -215,11 +215,13 @@ def get_spending_by_category(
     recipient_type: RecipientType | None = None,
     description: str | None = None,
 ) -> str:
-    """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for a fiscal year range, scoped by an awarding agency and/or a recipient, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions.
+    """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for a fiscal year range, scoped by a real scoping filter, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions. Returns only the top `limit` categories, not a grand total - for "what is the total/how much funding" questions, use get_spending_over_time instead (grouped by fiscal_year), never this tool's top-N rows.
 
-    At least one of agency_name, recipient_name, or recipient_id must be given - a query
-    scoped by none of them would mean all federal spending, ever, which this tool refuses
-    rather than silently running.
+    At least one real scoping filter must be given - agency_name, recipient_name,
+    recipient_id, a location filter (performed_in_*/recipient_in_*), naics_code, psc_code,
+    cfda_program, keywords, award_id, description, or recipient_type. A query scoped by
+    none of them would mean all federal spending, ever, which this tool refuses rather than
+    silently running.
 
     Args:
         category: One of: awarding_agency, awarding_subagency, cfda, country, county, defc, district, federal_account, funding_agency, funding_subagency, naics, psc, recipient, recipient_duns, state_territory. Enforced in code - any other value (including ones the API's own docs list, like object_class or tas, which 404 in practice) fails cleanly with this exact list rather than reaching the live API. recipient and recipient_duns return the same results for every case tested - either works for "top recipients" questions.
@@ -299,8 +301,7 @@ def get_spending_by_category(
             scoped to just that one award.
         recipient_type: Optional. Restrict to recipients tagged with this business/recipient
             type, e.g. "small_business", "woman_owned_business", "nonprofit", "higher_education".
-            Not sufficient scope on its own (like award_type) - still needs agency_name,
-            recipient_name/id, a location, or another real scoping filter alongside it.
+            Sufficient scope on its own, unlike award_type.
         description: Optional. Restrict to awards whose own description text matches this
             phrase, e.g. "vaccine research". Distinct from keywords - keywords also matches
             recipient name, PIID/FAIN/URI, and NAICS/PSC description text, so a keywords hit
@@ -529,11 +530,13 @@ def get_spending_over_time(
     recipient_type: RecipientType | None = None,
     description: str | None = None,
 ) -> str:
-    """Get USASpending spending trends over time for a fiscal year range, scoped by an awarding agency and/or a recipient, grouped by period. Use this for "how has X's spending changed/trended over time" questions.
+    """Get USASpending spending trends over time for a fiscal year range, scoped by a real scoping filter, grouped by period. Use this for "how much/what total funding went to X" questions (group by fiscal_year over the requested range - the response's aggregated_amount for a single-period range is the exact grand total, computed server-side, not a top-N slice) as well as "how has X's spending changed/trended over time" questions.
 
-    At least one of agency_name, recipient_name, or recipient_id must be given - a query
-    scoped by none of them would mean all federal spending, ever, which this tool refuses
-    rather than silently running.
+    At least one real scoping filter must be given - agency_name, recipient_name,
+    recipient_id, a location filter (performed_in_*/recipient_in_*), naics_code, psc_code,
+    cfda_program, keywords, award_id, description, or recipient_type. A query scoped by
+    none of them would mean all federal spending, ever, which this tool refuses rather than
+    silently running.
 
     Args:
         start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
@@ -605,8 +608,7 @@ def get_spending_over_time(
             "1605SS17F00018" - a fuzzy text match, not an exact-id lookup.
         recipient_type: Optional. Restrict to recipients tagged with this business/recipient
             type, e.g. "small_business", "woman_owned_business", "nonprofit", "higher_education".
-            Not sufficient scope on its own (like award_type) - still needs agency_name,
-            recipient_name/id, a location, or another real scoping filter alongside it.
+            Sufficient scope on its own, unlike award_type.
         description: Optional. Restrict to awards whose own description text matches this
             phrase, e.g. "vaccine research". Distinct from keywords - keywords also matches
             recipient name, PIID/FAIN/URI, and NAICS/PSC description text, so a keywords hit

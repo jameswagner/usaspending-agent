@@ -2,6 +2,7 @@ from backend.app.retrieval.pipeline.ingest import (
     chunk_unit,
     clean_page_text,
     detect_repeated_lines,
+    is_toc_page,
     question_split,
 )
 
@@ -158,6 +159,35 @@ class TestQuestionSplit:
         assert len(units) == 2
         assert units[1].startswith("Where is the full list")
         assert "sub-tier agencies" not in units[1]
+
+
+class TestIsTocPage:
+    def test_page_of_dot_leader_lines_is_toc(self):
+        # real bug (#148): the guide's ToC page got chunked/embedded like
+        # ordinary content and surfaced as a top retrieval result
+        text = (
+            "Contents\n"
+            "AWARD AND ACCOUNT SPENDING COMPARISON ....................... 2\n"
+            "AWARD SPENDING ............................................... 3\n"
+            "HOW TO ACCESS THE DATA ....................................... 8\n"
+        )
+        assert is_toc_page(text) is True
+
+    def test_ordinary_content_page_is_not_toc(self):
+        text = (
+            "AWARD SPENDING\n"
+            "'What is a prime award?'\n"
+            "A prime award is an agreement that the federal government makes."
+        )
+        assert is_toc_page(text) is False
+
+    def test_page_with_a_single_ellipsis_is_not_toc(self):
+        text = "Some content that trails off... and continues normally."
+        assert is_toc_page(text) is False
+
+    def test_empty_page_is_not_toc(self):
+        assert is_toc_page("") is False
+        assert is_toc_page("   \n  ") is False
 
 
 class TestChunkUnit:

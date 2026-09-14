@@ -65,6 +65,15 @@
     { "question": "Compare a prime award to a sub-award", "label": "in_scope" },
     { "question": "What's the difference between a Funding Agency and an Awarding Agency?", "label": "in_scope" }
   ],
+  "clearly_in_scope_misleading_domain_terms": [
+    { "question": "Has Leidos' federal revenue grown or shrunk since FY2020?", "label": "in_scope", "note": "issue #46 - confirmed rejected live; 'federal revenue' reads as a business-finance term instead of spending data" },
+    { "question": "What was Leidos' total revenue from federal contracts last year?", "label": "in_scope", "note": "issue #46 - phrasing variant of the 'federal revenue' repro" },
+    { "question": "How much money did Booz Allen Hamilton receive from the federal government in FY2023?", "label": "in_scope", "note": "issue #46 - phrasing variant using 'received' instead of 'revenue'" },
+    { "question": "Which state received the most federal Medicare-related grant spending in fiscal year 2023?", "label": "in_scope", "note": "issue #46 - confirmed rejected 3/3 even with 'federal' and 'grant' present in the same sentence" },
+    { "question": "Which state received the most Medicare spending in fiscal year 2023?", "label": "in_scope", "note": "issue #46 - confirmed rejected 3/3; 'Medicare' alone reads as healthcare, not a federal spending program" },
+    { "question": "How much did Medicare spend in fiscal year 2023?", "label": "in_scope", "note": "issue #46 - confirmed rejected 3/3" },
+    { "question": "What agency awards the most Medicaid-related grants?", "label": "in_scope", "note": "issue #46 - same trigger-word shape as Medicare, untested variant" }
+  ],
   "clearly_out_of_scope": [
     { "question": "What's the capital of France?", "label": "out_of_scope" },
     { "question": "How do I train a dog to sit?", "label": "out_of_scope" },

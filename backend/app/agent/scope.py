@@ -5,20 +5,29 @@ from __future__ import annotations
 
 from langsmith import traceable
 
-from .singletons import MODEL, _get_client, _get_retriever
+from .singletons import MODEL, RERANK_CONFIDENCE_THRESHOLD, _get_client, _get_retriever
 
 SCOPE_CLASSIFIER_PROMPT = (
     "You classify whether a user question is in scope for a USASpending.gov "
     "assistant: federal spending, budgets, obligations/outlays, contracts, "
     "grants/financial assistance, awards, recipients, federal agencies, or "
-    "USASpending.gov data/fields/API concepts. You are given the single "
-    "most relevant passage a retrieval system found for this question, "
-    "which may or may not actually be relevant — a weak or unrelated "
-    "passage does NOT mean the question is out of scope, since many "
-    "in-scope questions (e.g. live spending-data lookups) have no good "
-    "match in this retrieval corpus at all. Use the passage only as "
-    "supporting evidence when it looks genuinely on-topic; ignore it if it "
-    "looks irrelevant. Respond with only YES or NO, nothing else."
+    "USASpending.gov data/fields/API concepts. A question can be in scope "
+    "even if it contains a term that sounds like it belongs to a different "
+    "domain (healthcare, general business finance, etc.) - many federal "
+    "spending programs and budget categories have names like that. For "
+    "example, 'Medicare' is itself a major federal spending program (in "
+    "scope, not just a healthcare term), and a company's 'federal revenue' "
+    "means money it received from federal contracts/grants (in-scope "
+    "spending data, not general business finance). Judge the sentence as a "
+    "whole against the categories above, not any single word in isolation. "
+    "You are given the single most relevant passage a retrieval system "
+    "found for this question, which may or may not actually be relevant — "
+    "a weak or unrelated passage does NOT mean the question is out of "
+    "scope, since many in-scope questions (e.g. live spending-data "
+    "lookups) have no good match in this retrieval corpus at all. Use the "
+    "passage only as supporting evidence when it looks genuinely on-topic; "
+    "ignore it if it looks irrelevant. Respond with only YES or NO, "
+    "nothing else."
 )
 
 # Genuinely different task from SCOPE_CLASSIFIER_PROMPT above, not a
@@ -63,7 +72,7 @@ FOLLOWUP_SCOPE_CLASSIFIER_PROMPT = (
 @traceable(run_type="retriever", name="scope_classifier_context")
 def _get_top_passage(question: str) -> str:
     results = _get_retriever().retrieve(question, top_k=1)
-    if not results:
+    if not results or results[0]["rerank_score"] <= RERANK_CONFIDENCE_THRESHOLD:
         return "No relevant passage was found for this question."
     top = results[0]
     return f"Most relevant passage found (rerank score {top['rerank_score']:.2f}):\n{top['text']}"

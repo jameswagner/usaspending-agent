@@ -3,13 +3,15 @@
 import { useEffect, useRef } from "react";
 import type { ConversationTurn } from "@/lib/types";
 import { MessageBubble } from "./MessageBubble";
+import { QuickQuestions } from "./QuickQuestions";
 
 interface MessageListProps {
   turns: ConversationTurn[];
   error: string | null;
+  onSend: (question: string) => Promise<void>;
 }
 
-export function MessageList({ turns, error }: MessageListProps) {
+export function MessageList({ turns, error, onSend }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Ref-based bottom scroll, not flex-direction: column-reverse - reverse
@@ -23,9 +25,12 @@ export function MessageList({ turns, error }: MessageListProps) {
     <div className="flex-1 overflow-y-auto px-4 py-4">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         {turns.length === 0 && (
-          <p className="text-sm text-black/50 dark:text-white/50">
-            e.g. What is a sub-award? / How is NSF spending broken down by NAICS code for FY2024?
-          </p>
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-black/50 dark:text-white/50">
+              e.g. What is a sub-award? / How is NSF spending broken down by NAICS code for FY2024?
+            </p>
+            <QuickQuestions onSend={onSend} />
+          </div>
         )}
         {turns.map((turn, i) => (
           <MessageBubble key={i} turn={turn} />

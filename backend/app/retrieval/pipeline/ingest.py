@@ -126,6 +126,18 @@ def clean_page_text(page_text: str, repeated_lines: set) -> str:
     return cleaned
 
 
+_DOT_LEADER_RE = re.compile(r"\.{4,}|(?:\. ){4,}\.")
+
+
+def is_toc_page(page_text: str, min_dot_leader_lines: int = 3, min_ratio: float = 0.5) -> bool:
+    """Detect a table-of-contents page by its dot-leader lines (e.g. 'AWARD SPENDING ....... 3')."""
+    lines = [ln for ln in page_text.splitlines() if ln.strip()]
+    if not lines:
+        return False
+    dot_leader_lines = sum(1 for ln in lines if _DOT_LEADER_RE.search(ln))
+    return dot_leader_lines >= min_dot_leader_lines and dot_leader_lines / len(lines) >= min_ratio
+
+
 def paragraph_split(text: str) -> list[str]:
     paras = [p.strip() for p in re.split(r"\n\s*\n+", text) if p.strip()]
     return paras
@@ -209,6 +221,8 @@ def ingest_pdf_to_chunks(pdf_path: Path, out_path: Path, source_name: str = "Ana
     all_chunks: list[Chunk] = []
     chunk_id = 0
     for i, page_text in enumerate(pages, start=1):
+        if is_toc_page(page_text):
+            continue
         cleaned = clean_page_text(page_text, repeated)
         units = question_split(cleaned)
         for u_idx, unit in enumerate(units):

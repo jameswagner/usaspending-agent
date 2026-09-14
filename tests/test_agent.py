@@ -24,8 +24,10 @@ from backend.app.agent.response_shaping import (
 from backend.app.agent.scope import (
     FOLLOWUP_SCOPE_CLASSIFIER_PROMPT,
     SCOPE_CLASSIFIER_PROMPT,
+    _get_top_passage,
     _is_in_scope,
 )
+from backend.app.agent.singletons import RERANK_CONFIDENCE_THRESHOLD
 from backend.app.agent.tool_filters import (
     AWARD_TYPE_GROUPS,
     EXHAUSTIVE_AWARD_TYPE_CATEGORIES,
@@ -2635,8 +2637,36 @@ class _FakeClient:
 
 
 class _FakeRetriever:
+    def __init__(self, results=None):
+        self._results = results if results is not None else []
+
     def retrieve(self, query, top_k):
-        return []
+        return self._results
+
+
+class TestGetTopPassage:
+    def test_below_threshold_result_is_treated_as_no_match(self, monkeypatch):
+        # real bug (#148): a ToC chunk scored -6.46 was handed to the scope
+        # classifier verbatim, labeled "Most relevant passage found"
+        below = RERANK_CONFIDENCE_THRESHOLD - 1
+        monkeypatch.setattr(
+            "backend.app.agent.scope._get_retriever",
+            lambda: _FakeRetriever([{"rerank_score": below, "text": "Contents\nAWARD SPENDING....2"}]),
+        )
+        assert _get_top_passage("some question") == "No relevant passage was found for this question."
+
+    def test_above_threshold_result_is_returned(self, monkeypatch):
+        above = RERANK_CONFIDENCE_THRESHOLD + 1
+        monkeypatch.setattr(
+            "backend.app.agent.scope._get_retriever",
+            lambda: _FakeRetriever([{"rerank_score": above, "text": "A prime award is an agreement."}]),
+        )
+        result = _get_top_passage("some question")
+        assert "A prime award is an agreement." in result
+
+    def test_no_results_is_treated_as_no_match(self, monkeypatch):
+        monkeypatch.setattr("backend.app.agent.scope._get_retriever", lambda: _FakeRetriever([]))
+        assert _get_top_passage("some question") == "No relevant passage was found for this question."
 
 
 class TestIsInScopeRecentMessages:

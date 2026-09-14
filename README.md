@@ -103,6 +103,30 @@ You can also run the agent directly from the CLI, without starting the server:
 uv run python -m backend.app.agent --question "What is a prime award?"
 ```
 
+## Deployment
+
+Backend on Railway, frontend on Vercel — two separate deploys, connected by one env var.
+
+**Backend (Railway):**
+- Connect this repo; Railway builds `Dockerfile` (see `railway.json`). The image bakes the
+  Guide/Glossary/NAICS/PSC/CFDA indices in at build time (read-only at runtime, never
+  rewritten), so only the conversation-history DB needs persistent storage.
+- Add a Volume mounted at `/data` — `CONVERSATIONS_DB_PATH` already defaults to
+  `/data/conversations.db` in the image.
+- Env vars: `ANTHROPIC_API_KEY` (required), `ANTHROPIC_WORKSPACE_ID` (if using an
+  identity-linked key), `LANGSMITH_*` (optional tracing), `ASK_RATE_LIMIT_PER_MINUTE`
+  (optional, default 20).
+- Single-instance/single-worker only — the `SqliteSaver` checkpointer is one sqlite
+  connection in one process. Don't set `--workers` > 1 or scale replicas past 1 (see #72
+  for the Postgres swap that would allow that).
+- Health check: `GET /health` (already wired into `railway.json`).
+
+**Frontend (Vercel):**
+- Deploy `web/` as the project root.
+- Set `FASTAPI_BASE_URL` to the Railway backend's public URL. The browser never calls the
+  backend directly — `web/src/app/api/ask/route.ts` proxies server-side — so no CORS setup
+  is needed on the FastAPI side.
+
 ## Testing
 
 ```bash

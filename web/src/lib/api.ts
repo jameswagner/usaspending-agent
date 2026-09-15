@@ -1,3 +1,4 @@
+import { createParser } from "eventsource-parser";
 import type { AskResponse } from "./types";
 
 // One tool-status event from POST /api/ask/stream's SSE body - see
@@ -8,25 +9,6 @@ export type ToolStreamEvent =
   | { type: "tool_call_start"; tool_name: string; args: Record<string, unknown> }
   | { type: "tool_result"; tool_name: string; summary: string }
   | { type: "tool_error"; tool_name: string; message: string };
-
-// No event of a given frame beyond "keep-alive" comment (`: keep-alive`,
-// no event:/data: lines) - parseFrame returns null for those, and the
-// idle timer below still gets reset on receiving one, since a keep-alive
-// is itself proof the connection is alive.
-function parseSSEFrame(frame: string): { eventName: string; data: unknown } | null {
-  let eventName = "message";
-  const dataLines: string[] = [];
-  for (const line of frame.split("\n")) {
-    if (line.startsWith(":")) continue;
-    if (line.startsWith("event: ")) {
-      eventName = line.slice("event: ".length);
-    } else if (line.startsWith("data: ")) {
-      dataLines.push(line.slice("data: ".length));
-    }
-  }
-  if (dataLines.length === 0) return null;
-  return { eventName, data: JSON.parse(dataLines.join("\n")) };
-}
 
 // A long multi-tool-call turn with periodic keep-alives shouldn't hit a
 // flat wall-clock cap the way a fully-silent unary request should (see
@@ -57,6 +39,30 @@ export async function askQuestionStream(
     idleTimeout = setTimeout(() => controller.abort(), STREAM_IDLE_TIMEOUT_MS);
   };
 
+  // Set synchronously from inside the parser's onEvent callback (feed() is
+  // sync), then checked right after each feed() call to decide whether to
+  // stop reading - eventsource-parser's callback style has no way to
+  // "return" a value directly out of feed() itself. Keep-alive comment
+  // frames (`: keep-alive`, no event:/data: lines) never reach onEvent at
+  // all - just proof-of-life for the idle timer above, which already
+  // resets on every reader.read(), comment or not.
+  let finalResponse: AskResponse | undefined;
+  let streamError: Error | undefined;
+
+  const parser = createParser({
+    onEvent: (message) => {
+      if (!message.event || !message.data) return;
+      const data = JSON.parse(message.data);
+      if (message.event === "done") {
+        finalResponse = data as AskResponse;
+      } else if (message.event === "error") {
+        streamError = new Error((data as { message?: string })?.message ?? "The server reported an error.");
+      } else if (message.event === "tool_call_start" || message.event === "tool_result" || message.event === "tool_error") {
+        onEvent({ type: message.event, ...(data as object) } as ToolStreamEvent);
+      }
+    },
+  });
+
   try {
     resetIdleTimer();
     const resp = await fetch("/api/ask/stream", {
@@ -71,35 +77,17 @@ export async function askQuestionStream(
 
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
-    let buffer = "";
 
-    while (true) {
+    while (!finalResponse && !streamError) {
       const { done, value } = await reader.read();
       resetIdleTimer();
       if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      let frameEnd: number;
-      while ((frameEnd = buffer.indexOf("\n\n")) !== -1) {
-        const frame = buffer.slice(0, frameEnd);
-        buffer = buffer.slice(frameEnd + 2);
-        const parsed = parseSSEFrame(frame);
-        if (!parsed) continue;
-        const { eventName, data } = parsed;
-
-        if (eventName === "done") {
-          return data as AskResponse;
-        }
-        if (eventName === "error") {
-          const message = (data as { message?: string })?.message ?? "The server reported an error.";
-          throw new Error(message);
-        }
-        if (eventName === "tool_call_start" || eventName === "tool_result" || eventName === "tool_error") {
-          onEvent({ type: eventName, ...(data as object) } as ToolStreamEvent);
-        }
-      }
+      parser.feed(decoder.decode(value, { stream: true }));
     }
-    throw new Error("Stream ended without a final answer.");
+
+    if (streamError) throw streamError;
+    if (!finalResponse) throw new Error("Stream ended without a final answer.");
+    return finalResponse;
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
       throw new Error("Request timed out - the server may be unresponsive.");

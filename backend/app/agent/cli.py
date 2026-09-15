@@ -8,7 +8,7 @@ from __future__ import annotations
 from backend.app.logging_config import configure_logging
 
 from .orchestrator import ask
-from .singletons import MODEL
+from .singletons import MODEL, warm_up
 
 
 def main():
@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--question", required=True)
     args = parser.parse_args()
 
+    warm_up()
     print(f"[model={MODEL}]")
     result = ask(args.question)
     print(result.answer_text)

@@ -20,9 +20,11 @@ from backend.app.usaspending_client import (
     AdvancedFilters,
     AgencyFilter,
     AwardAmount,
+    CodePathObject,
     LocationObject,
     NAICSCodeObject,
     TimePeriod,
+    TreasuryAccountComponentsObject,
     USASpendingAPIError,
     USASpendingClient,
 )
@@ -43,12 +45,19 @@ from .response_shaping import fiscal_year_to_date_range
 # find_agency_by_name, so the model only has to recognize a term close to
 # what it already is, not correctly classify it into a bucket first.
 #
-# IDV-family codes (IDV_A through IDV_E - GWACs, BOAs, BPAs, etc.) are
-# deliberately not included: those are a structurally different kind of
-# award record (a vehicle other awards get issued under, not a
-# transaction itself), and search_awards's field set/behavior for that
-# category hasn't been verified - a real scope limitation, not an
-# oversight, flagged here rather than silently extended to cover it.
+# IDV-family codes (IDV_A through IDV_E - GWACs, BOAs, BPAs, etc.) - a
+# structurally different kind of award record (a vehicle other awards get
+# issued under, not a transaction itself) from plain contracts, but
+# live-verified 2026-09-15 (#146) that search_awards's field set/behavior
+# for this category works the same way as contracts: "Award Amount" sorts
+# fine, "Total Outlays" sorts fine, and award_ids/PIID lookups resolve
+# correctly (e.g. "12024B18D9025" -> CONT_IDV_12024B18D9025_12C2). Exposed
+# as its own explicit "idv" value rather than folded into "contracts" -
+# same "let code do the exact lookup, don't make the model guess a bucket"
+# reasoning as cooperative_agreement/bpa_call above, and a plain PIID
+# search against "contracts" (codes A-D) genuinely won't find an IDV
+# (its codes are a disjoint set), so a model that doesn't know to ask for
+# "idv" specifically needs a real, distinct value to reach for.
 AWARD_TYPE_GROUPS: dict[str, list[str]] = {
     "contracts": ["A", "B", "C", "D"],
     "grants": ["02", "03", "04", "05"],
@@ -57,6 +66,7 @@ AWARD_TYPE_GROUPS: dict[str, list[str]] = {
     "purchase_order": ["B"],
     "delivery_order": ["C"],
     "definitive_contract": ["D"],
+    "idv": ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"],
     "direct_loan": ["07"],
     "guaranteed_loan": ["08"],
     "block_grant": ["02"],
@@ -84,7 +94,7 @@ AWARD_TYPE_GROUPS: dict[str, list[str]] = {
 # in how it's built.
 AwardType = Literal[
     "contracts", "grants", "loans",
-    "bpa_call", "purchase_order", "delivery_order", "definitive_contract",
+    "bpa_call", "purchase_order", "delivery_order", "definitive_contract", "idv",
     "direct_loan", "guaranteed_loan",
     "block_grant", "formula_grant", "project_grant", "cooperative_agreement",
     "insurance", "other_financial_assistance",
@@ -101,22 +111,25 @@ def _normalize_award_type(award_type: str) -> str:
     return award_type.strip().lower().replace(" ", "_").replace("-", "_")
 
 
-# The 7 non-overlapping "leaf" categories that together cover every
-# possible award (IDVs excluded - see AWARD_TYPE_GROUPS's docstring). The
-# other 10 AWARD_TYPE_GROUPS keys are sub-types whose codes are already a
-# subset of one of these seven's codes (e.g. "contracts" = A,B,C,D, the
-# same codes "bpa_call"/"purchase_order"/"delivery_order"/
-# "definitive_contract" split out individually) - so once a broad
-# bucket's search comes back empty, trying its own sub-type afterward is
-# guaranteed to also come back empty, not a fresh thing to check.
+# The 8 non-overlapping "leaf" categories that together cover every
+# possible award. The other 10 AWARD_TYPE_GROUPS keys are sub-types whose
+# codes are already a subset of one of these eight's codes (e.g.
+# "contracts" = A,B,C,D, the same codes "bpa_call"/"purchase_order"/
+# "delivery_order"/"definitive_contract" split out individually) - so once
+# a broad bucket's search comes back empty, trying its own sub-type
+# afterward is guaranteed to also come back empty, not a fresh thing to
+# check. "idv" is its own leaf, not folded under "contracts" - its codes
+# (IDV_A-IDV_E) are disjoint from A/B/C/D, so a "contracts" search coming
+# back empty says nothing about whether an IDV exists.
 EXHAUSTIVE_AWARD_TYPE_CATEGORIES = [
-    "contracts", "grants", "loans", "insurance",
+    "contracts", "grants", "loans", "idv", "insurance",
     "other_financial_assistance", "direct_payment_specified", "direct_payment_unrestricted",
 ]
 
 _BROAD_CATEGORY_FOR_AWARD_TYPE = {
     "contracts": "contracts", "bpa_call": "contracts", "purchase_order": "contracts",
     "delivery_order": "contracts", "definitive_contract": "contracts",
+    "idv": "idv",
     "grants": "grants", "block_grant": "grants", "formula_grant": "grants",
     "project_grant": "grants", "cooperative_agreement": "grants",
     "loans": "loans", "direct_loan": "loans", "guaranteed_loan": "loans",
@@ -405,6 +418,23 @@ def _validate_cfda_program(cfda_program: str) -> str:
     return code
 
 
+# federal_account's wire format (per get_award_funding's own output, e.g.
+# "028-8704") is AID-MAIN - the two treasury_account_components fields that
+# together identify a federal account, one level up from a full TAS.
+_FEDERAL_ACCOUNT_PATTERN = re.compile(r"^\d{2,4}-\d{4}$")
+
+
+def _validate_federal_account(federal_account: str) -> tuple[str, str]:
+    code = federal_account.strip()
+    if not _FEDERAL_ACCOUNT_PATTERN.match(code):
+        raise USASpendingAPIError(
+            f"'{federal_account}' doesn't look like a federal account (expected AID-MAIN, e.g. '028-8704' - "
+            "the federal_account value shown on a get_award_funding_breakdown row)."
+        )
+    aid, main = code.split("-")
+    return aid, main
+
+
 def _build_filters(
     client: USASpendingClient,
     agency_name: str | None,
@@ -436,7 +466,10 @@ def _build_filters(
     award_id: str | None = None,
     recipient_type: str | None = None,
     description: str | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
     award_type_counts_as_scope: bool = False,
+    scope_required: bool = True,
 ) -> AdvancedFilters:
     """Resolve agency_name + fiscal-year range into an AdvancedFilters -
     the shared first step of all three spending tools, replacing what was
@@ -500,6 +533,13 @@ def _build_filters(
     Search table handles fine with an award-type + fiscal-year filter
     alone, so that combination is real scope for this tool specifically.
 
+    scope_required=False skips the mandatory-scope check entirely -
+    for get_award_type_breakdown (#123), whose underlying
+    spending_by_award_count endpoint returns a fixed six-integer shape
+    (never a ranked/paginated list) and is confirmed live to answer fast
+    even fully unscoped, unlike the timeout risk documented on
+    get_spending_by_category's own group_by="recipient".
+
     recipient_id is a real, precise filter - confirmed live 2026-09-08 to
     reproduce a recipient's true all-time total to the penny, unlike
     recipient_name (a text match, confirmed wrong in both directions: it
@@ -532,17 +572,18 @@ def _build_filters(
         performed_in_district, recipient_in_district,
         naics_code, psc_code, cfda_program, keywords,
         award_id, description, recipient_type,
+        tas_code, federal_account,
     )
     has_real_scope = any(f is not None for f in real_scoping_filters)
     if not has_real_scope and award_type_counts_as_scope and award_type is not None:
         has_real_scope = True
-    if not has_real_scope:
+    if not has_real_scope and scope_required:
         message = (
             "At least one of agency_name, recipient_name, recipient_id, performed_in_state, "
             "recipient_in_state, performed_in_county, recipient_in_county, performed_in_city, "
             "recipient_in_city, performed_in_zip, recipient_in_zip, performed_in_district, "
             "recipient_in_district, naics_code, psc_code, cfda_program, keywords, award_id, "
-            "description, or recipient_type must be given"
+            "description, recipient_type, tas_code, or federal_account must be given"
         )
         if award_type_counts_as_scope:
             message += ", or award_type (browsing by award type + fiscal year alone is fine here)"
@@ -639,6 +680,17 @@ def _build_filters(
     if description is not None:
         kwargs["description"] = description
 
+    if tas_code is not None:
+        # Treated as a single-segment path (a full TAS code, not a
+        # hierarchy level) - CodePathObject's require is a list of paths,
+        # but this codebase only ever has one known TAS to filter by at a
+        # time, same one-code-at-a-time shape as naics_code/psc_code above.
+        kwargs["tas_codes"] = CodePathObject(require=[[tas_code.strip()]])
+
+    if federal_account is not None:
+        aid, main = _validate_federal_account(federal_account)
+        kwargs["treasury_account_components"] = [TreasuryAccountComponentsObject(aid=aid, main=main)]
+
     return AdvancedFilters(**kwargs)
 
 
@@ -681,12 +733,13 @@ def _amount_field_for_award_type(award_type: str) -> str:
     Assistance award types per spending_by_award.md's field tables, but
     Loans (codes 07/08) expose "Loan Value" instead - sorting or reading
     "Award Amount" for a loan-type search would be invalid/empty for that
-    field. IDV codes are never in AWARD_TYPE_GROUPS (see its docstring),
-    so loans-vs-everything-else is the only branch this codebase needs.
+    field. IDV codes are never loan codes, so loans-vs-everything-else is
+    still the only branch this codebase needs.
 
     Live-verified 2026-09-06 (dev_tools/verify_shared_filters.py): "Loan
     Value" is a real field on live loan-type search_awards results, and
-    sorting by it doesn't error.
+    sorting by it doesn't error. IDVs' own "Award Amount"/"Total Outlays"
+    sort fields live-verified 2026-09-15 (#146).
 
     Assumes award_type is already a valid AWARD_TYPE_GROUPS key - callers
     only reach this after _build_filters has already validated it earlier
@@ -789,6 +842,8 @@ def _record_optional_filter_context(
     award_id: str | None = None,
     recipient_type: str | None = None,
     description: str | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
 ) -> dict:
     """Adds each optional filter param to a citation context dict, but
     only the ones actually set - so a citation reflects exactly which
@@ -821,6 +876,8 @@ def _record_optional_filter_context(
         ("award_id", award_id),
         ("recipient_type", recipient_type),
         ("description", description),
+        ("tas_code", tas_code),
+        ("federal_account", federal_account),
     ):
         if value is not None:
             context[key] = value

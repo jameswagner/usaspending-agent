@@ -35,6 +35,11 @@ from ._shared import (
     lookup_agency,
     search_guide,
 )
+from .award_type_breakdown import (
+    _format_award_type_counts,
+    get_award_type_breakdown,
+    get_award_type_breakdown_raw,
+)
 from .awards import (
     _agency_label,
     _format_award_details,
@@ -42,8 +47,11 @@ from .awards import (
     _format_financial_assistance,
     _format_period_of_performance,
     _location_label,
+    _unresolved_award_id_hint,
     get_award_details,
     get_award_details_raw,
+    get_award_funding_breakdown,
+    get_award_funding_breakdown_raw,
     get_award_subawards,
     get_idv_amounts_raw,
 )
@@ -102,6 +110,7 @@ __all__ = [
     "_format_agency_award_breakdown",
     "_format_api_messages",
     "_format_award_details",
+    "_format_award_type_counts",
     "_format_business_type",
     "_format_contract_or_idv",
     "_format_financial_assistance",
@@ -125,6 +134,7 @@ __all__ = [
     "_scope_label",
     "_tool_call_log",
     "_truncation_note",
+    "_unresolved_award_id_hint",
     "_wrap_untrusted",
     "get_agency_award_breakdown",
     "get_agency_award_breakdown_raw",
@@ -132,7 +142,11 @@ __all__ = [
     "get_agency_budget_raw",
     "get_award_details",
     "get_award_details_raw",
+    "get_award_funding_breakdown",
+    "get_award_funding_breakdown_raw",
     "get_award_subawards",
+    "get_award_type_breakdown",
+    "get_award_type_breakdown_raw",
     "get_idv_amounts_raw",
     "get_recipient_details",
     "get_spending_by_category",

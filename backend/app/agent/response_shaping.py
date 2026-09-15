@@ -279,6 +279,29 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
             values=[r.total_obligations for r in structured_result.results],
         )
 
+    if tool_name == "get_award_type_breakdown":
+        counts = structured_result.results
+        labeled = [
+            ("Contracts", counts.contracts),
+            ("Contract IDVs", counts.idvs),
+            ("Grants", counts.grants),
+            ("Direct Payments", counts.direct_payments),
+            ("Loans", counts.loans),
+            ("Other", counts.other),
+        ]
+        nonzero = [(label, count) for label, count in labeled if count > 0]
+        if len(nonzero) < 2:
+            return None
+        title = "Awards by type"
+        if agency_name:
+            title += f" — {agency_name}"
+        return ChartSpec(
+            chart_type="bar",
+            title=title,
+            labels=[label for label, _ in nonzero],
+            values=[count for _, count in nonzero],
+        )
+
     if tool_name == "get_spending_by_category":
         if len(structured_result.results) < 2:
             return None
@@ -371,6 +394,8 @@ _ALL_OPTIONAL_FILTER_KEYS = {
     "naics_code",
     "psc_code",
     "cfda_program",
+    "tas_code",
+    "federal_account",
 }
 
 
@@ -392,6 +417,8 @@ _SCOPE_LABEL_KEYS = (
     ("psc_code", "PSC"),
     ("cfda_program", "CFDA"),
     ("keywords", "keywords"),
+    ("tas_code", "TAS"),
+    ("federal_account", "federal account"),
 )
 
 
@@ -506,6 +533,21 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         description = f"Award breakdown by sub-agency, {params['agency_name']}, FY{params['fiscal_year']}"
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
 
+    if tool_name == "get_award_type_breakdown":
+        params = {
+            "start_fiscal_year": context["start_fiscal_year"],
+            "end_fiscal_year": context["end_fiscal_year"],
+        }
+        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
+        scope = _citation_scope_label(context)
+        description = (
+            f"Award type breakdown, {scope}, "
+            f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
+        )
+        return ToolCitation(
+            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+        )
+
     if tool_name == "get_spending_by_category":
         params = {
             "category": context["category"],
@@ -609,6 +651,15 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             tool_name=tool_name,
             parameters={"award_id": award_id},
             description=f"Subawards for award: {award_id}",
+            curl=_curl_from_context(context),
+        )
+
+    if tool_name == "get_award_funding_breakdown":
+        award_id = context["award_id"]
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"award_id": award_id},
+            description=f"Federal account funding breakdown for award: {award_id}",
             curl=_curl_from_context(context),
         )
 

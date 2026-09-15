@@ -89,12 +89,18 @@ from backend.app.agent.tools import (
     _scope_label,
     _tool_call_log,
     _truncation_note,
+    _unresolved_award_id_hint,
     get_spending_explorer_breakdown_raw,
 )
+from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
+from backend.app.agent.tools.awards import get_award_funding_breakdown
 from backend.app.agent.tools.location import resolve_county_fips
 from backend.app.agent.tools.spending import search_awards
 from backend.app.usaspending_client import (
     AgencySubAgencyResponse,
+    AwardFundingResponse,
+    AwardFundingRow,
+    AwardTypeCounts,
     CategoryResult,
     GeographyTypeResult,
     IDVAmountsResponse,
@@ -104,6 +110,7 @@ from backend.app.usaspending_client import (
     RecipientLocation,
     RecipientOverview,
     SearchAwardsResponse,
+    SpendingByAwardCountResponse,
     SpendingByCategoryResponse,
     SpendingByGeographyResponse,
     SpendingExplorerResponse,
@@ -128,6 +135,18 @@ def make_category_response(n: int) -> SpendingByCategoryResponse:
             CategoryResult(name=f"Category {i}", code=str(i), amount=float(i) * 100)
             for i in range(n)
         ],
+    )
+
+
+def make_award_type_count_response(
+    contracts=0, idvs=0, grants=0, direct_payments=0, loans=0, other=0
+) -> SpendingByAwardCountResponse:
+    return SpendingByAwardCountResponse(
+        results=AwardTypeCounts(
+            contracts=contracts, idvs=idvs, grants=grants,
+            direct_payments=direct_payments, loans=loans, other=other,
+        ),
+        spending_level="awards",
     )
 
 
@@ -238,6 +257,32 @@ class TestSpendingOverTime:
 
     def test_zero_periods_returns_none(self):
         assert should_chart("get_spending_over_time", make_time_response(0)) is None
+
+
+class TestAwardTypeBreakdown:
+    def test_multi_type_produces_bar_spec(self):
+        spec = should_chart(
+            "get_award_type_breakdown",
+            make_award_type_count_response(contracts=810, idvs=37, grants=28420),
+        )
+        assert spec is not None
+        assert spec.chart_type == "bar"
+        assert spec.labels == ["Contracts", "Contract IDVs", "Grants"]
+        assert spec.values == [810, 37, 28420]
+
+    def test_zero_count_types_are_excluded(self):
+        spec = should_chart(
+            "get_award_type_breakdown",
+            make_award_type_count_response(contracts=810, grants=28420, loans=0, other=0),
+        )
+        assert spec is not None
+        assert spec.labels == ["Contracts", "Grants"]
+
+    def test_single_nonzero_type_returns_none(self):
+        assert should_chart("get_award_type_breakdown", make_award_type_count_response(contracts=810)) is None
+
+    def test_all_zero_returns_none(self):
+        assert should_chart("get_award_type_breakdown", make_award_type_count_response()) is None
 
 
 class TestSpendingByCategory:
@@ -760,6 +805,27 @@ class TestBuildToolCitation:
         assert citation.tool_name == "get_spending_by_category"
         assert citation.description == "naics breakdown, National Science Foundation, FY2023-FY2024"
 
+    def test_get_award_type_breakdown(self):
+        citation = build_tool_citation(
+            "get_award_type_breakdown",
+            {
+                "agency_name": "National Science Foundation",
+                "start_fiscal_year": 2023,
+                "end_fiscal_year": 2024,
+            },
+        )
+        assert citation is not None
+        assert citation.tool_name == "get_award_type_breakdown"
+        assert citation.description == "Award type breakdown, National Science Foundation, FY2023-FY2024"
+
+    def test_get_award_type_breakdown_unscoped(self):
+        citation = build_tool_citation(
+            "get_award_type_breakdown",
+            {"start_fiscal_year": 2023, "end_fiscal_year": 2024},
+        )
+        assert citation is not None
+        assert citation.description == "Award type breakdown, unknown scope, FY2023-FY2024"
+
     def test_get_spending_over_time(self):
         citation = build_tool_citation(
             "get_spending_over_time",
@@ -1055,6 +1121,13 @@ class TestBuildToolCitation:
         assert citation.parameters == {"award_id": "CONT_AWD_X"}
         assert citation.description == "Subawards for award: CONT_AWD_X"
 
+    def test_get_award_funding_breakdown(self):
+        citation = build_tool_citation("get_award_funding_breakdown", {"award_id": "CONT_AWD_X"})
+        assert citation is not None
+        assert citation.tool_name == "get_award_funding_breakdown"
+        assert citation.parameters == {"award_id": "CONT_AWD_X"}
+        assert citation.description == "Federal account funding breakdown for award: CONT_AWD_X"
+
     def test_resolve_county_fips(self):
         citation = build_tool_citation("resolve_county_fips", {"description": "Yavapai County"})
         assert citation is not None
@@ -1114,6 +1187,16 @@ class TestAwardTypeNormalization:
         for key in loan_subtypes:
             assert AWARD_TYPE_GROUPS[key][0] in AWARD_TYPE_GROUPS["loans"]
 
+    def test_idv_codes_are_disjoint_from_contracts(self):
+        # Regression coverage for #146: a plain PIID search under the
+        # default award_type="contracts" (codes A-D) genuinely can't find
+        # an IDV, since IDV_A-IDV_E are a completely separate code family,
+        # not a subset of A-D the way bpa_call/purchase_order/etc. are.
+        assert AWARD_TYPE_GROUPS["idv"] == [
+            "IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E",
+        ]
+        assert set(AWARD_TYPE_GROUPS["idv"]).isdisjoint(AWARD_TYPE_GROUPS["contracts"])
+
 
 class TestOtherAwardTypeCategoriesToTry:
     # Regression coverage for the real bug: asked for the top awards under
@@ -1149,6 +1232,16 @@ class TestOtherAwardTypeCategoriesToTry:
         # a shared broad bucket - trying one must not exclude the other.
         others = _other_award_type_categories_to_try("direct_payment_specified")
         assert "direct_payment_unrestricted" in others.split(", ")
+
+    def test_idv_is_its_own_leaf_category(self):
+        # #146: idv is disjoint from contracts, so a zero-results contracts
+        # search should still suggest trying idv, and vice versa.
+        assert "idv" in EXHAUSTIVE_AWARD_TYPE_CATEGORIES
+        others = _other_award_type_categories_to_try("contracts")
+        assert "idv" in others.split(", ")
+        others = _other_award_type_categories_to_try("idv")
+        assert "contracts" in others.split(", ")
+        assert "idv" not in others.split(", ")
 
 
 def make_agency(name: str = "National Science Foundation") -> ToptierAgency:
@@ -1356,6 +1449,26 @@ class TestBuildFilters:
         with pytest.raises(USASpendingAPIError, match="doesn't look like a CFDA"):
             _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, cfda_program="research grants")
 
+    # tas_code/federal_account - exposing the already-modeled
+    # tas_codes/treasury_account_components AdvancedFilters fields.
+
+    def test_tas_code_becomes_single_path_require_list(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", 2021, 2024, tas_code="020-2020/2021-1521"
+        )
+        assert filters.tas_codes.require == [["020-2020/2021-1521"]]
+
+    def test_federal_account_becomes_treasury_account_components(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, federal_account="028-8704")
+        assert len(filters.treasury_account_components) == 1
+        component = filters.treasury_account_components[0]
+        assert component.aid == "028"
+        assert component.main == "8704"
+
+    def test_malformed_federal_account_raises(self):
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a federal account"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, federal_account="not-an-account")
+
     # award_id/recipient_type/description (2026-09-12, issue #28) - all
     # live-verified against the real API: award_ids/description matching
     # confirmed on search_awards, spending_by_category, and
@@ -1448,6 +1561,14 @@ class TestBuildFilters:
         filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, keywords="climate research")
         assert filters.keywords == ["climate research"]
 
+    def test_tas_code_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, tas_code="020-2020/2021-1521")
+        assert filters.tas_codes.require == [["020-2020/2021-1521"]]
+
+    def test_federal_account_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, federal_account="028-8704")
+        assert filters.treasury_account_components[0].aid == "028"
+
     def test_award_id_alone_is_sufficient_scope(self):
         filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, award_id="1605SS17F00018")
         assert filters.award_ids == ["1605SS17F00018"]
@@ -1506,6 +1627,21 @@ class TestBuildFilters:
         # unaffected by making it optional.
         filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024)
         assert filters.agencies[0].name == "National Science Foundation"
+
+    # get_award_type_breakdown_raw passes scope_required=False (#123): its
+    # underlying spending_by_award_count endpoint returns a fixed six-integer
+    # shape and is confirmed live to answer fast even fully unscoped, unlike
+    # the timeout risk get_spending_by_category's group_by="recipient" has.
+
+    def test_scope_required_false_allows_fully_unscoped(self):
+        filters = _build_filters(FakeClient(None), None, 2021, 2024, scope_required=False)
+        assert filters.model_dump(exclude_none=True) == {
+            "time_period": [{"start_date": "2020-10-01", "end_date": "2024-09-30"}]
+        }
+
+    def test_scope_required_true_by_default_still_rejects_unscoped(self):
+        with pytest.raises(USASpendingAPIError, match="At least one of"):
+            _build_filters(FakeClient(None), None, 2021, 2024)
 
     def test_recipient_id_passthrough(self):
         filters = _build_filters(
@@ -1680,6 +1816,11 @@ class TestAmountFieldForAwardType:
         assert _amount_field_for_award_type("grants") == "Award Amount"
         assert _amount_field_for_award_type("cooperative_agreement") == "Award Amount"
 
+    def test_idv_uses_award_amount(self):
+        # #146: IDVs aren't loans, so they follow the same "Award Amount"
+        # path as contracts/grants - live-verified 2026-09-15.
+        assert _amount_field_for_award_type("idv") == "Award Amount"
+
     def test_loans_use_loan_value(self):
         assert _amount_field_for_award_type("loans") == "Loan Value"
         assert _amount_field_for_award_type("direct_loan") == "Loan Value"
@@ -1825,6 +1966,138 @@ class TestSearchAwardsMultiYearCaveat:
         )
         assert "CAVEAT" not in result
 
+
+class TestUnresolvedAwardIdHint:
+    # Regression coverage for #146: get_award_details 404s on a plain
+    # PIID/FAIN (most commonly an IDV's, since search_awards's own
+    # award_type="contracts" default won't have surfaced its real
+    # internal_id) with no indication of why - this hint closes the loop
+    # by pointing back at search_awards(award_type="idv", ...).
+
+    def test_plain_piid_gets_the_hint(self):
+        hint = _unresolved_award_id_hint("12024B18D9025")
+        assert "search_awards" in hint
+        assert 'award_type="idv"' in hint
+
+    def test_real_contract_internal_id_gets_no_hint(self):
+        assert _unresolved_award_id_hint("CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-") == ""
+
+    def test_real_idv_internal_id_gets_no_hint(self):
+        assert _unresolved_award_id_hint("CONT_IDV_12024B18D9025_12C2") == ""
+
+    def test_real_financial_assistance_internal_id_gets_no_hint(self):
+        assert _unresolved_award_id_hint("ASST_NON_0856145_049") == ""
+
+    def test_case_insensitive_prefix_check(self):
+        assert _unresolved_award_id_hint("cont_idv_12024b18d9025_12c2") == ""
+class TestGetAwardTypeBreakdown:
+    # #123: the six-way award-type count split the real Advanced Search
+    # results page shows first, in one call.
+
+    def _mock_client(self, response, monkeypatch, agency=None):
+        client = FakeClient(agency)
+        client.spending_by_award_count = lambda *a, **kw: response
+        monkeypatch.setattr("backend.app.agent.tools.award_type_breakdown._get_usaspending_client", lambda: client)
+
+    def test_formats_all_six_buckets_and_total(self, monkeypatch):
+        self._mock_client(
+            make_award_type_count_response(contracts=810, idvs=37, grants=28420),
+            monkeypatch,
+            agency=make_agency(),
+        )
+        result = get_award_type_breakdown.func(
+            start_fiscal_year=2023, end_fiscal_year=2023, agency_name="National Science Foundation"
+        )
+        assert "Contracts: 810" in result
+        assert "Contract IDVs: 37" in result
+        assert "Grants: 28,420" in result
+        assert "Direct Payments: 0" in result
+        assert "Loans: 0" in result
+        assert "Other: 0" in result
+        assert "Total: 29,267" in result
+
+    def test_unscoped_call_succeeds_with_no_scoping_filter(self, monkeypatch):
+        # Unlike every other _build_filters-based tool, no real scoping
+        # filter is required here - a bare fiscal-year range is valid.
+        self._mock_client(
+            make_award_type_count_response(contracts=5927129, grants=627607),
+            monkeypatch,
+        )
+        result = get_award_type_breakdown.func(start_fiscal_year=2024, end_fiscal_year=2024)
+        assert "Contracts: 5,927,129" in result
+        assert "Grants: 627,607" in result
+
+    def test_api_messages_surfaced(self, monkeypatch):
+        response = make_award_type_count_response(contracts=1)
+        response.messages = ["a live API notice"]
+        self._mock_client(response, monkeypatch)
+        result = get_award_type_breakdown.func(start_fiscal_year=2024, end_fiscal_year=2024)
+        assert "a live API notice" in result
+
+
+class TestGetAwardFundingBreakdown:
+    # No path previously existed to answer "which federal accounts/TAS
+    # funded this award" - this wraps POST /api/v2/awards/funding/ as its
+    # own tool, separate from get_award_details (a different, later-timed
+    # File C data source).
+
+    def _mock_client(self, response, monkeypatch):
+        client = FakeClient(make_agency())
+        client.get_award_funding = lambda *a, **kw: response
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+
+    def test_formats_funding_rows(self, monkeypatch):
+        response = AwardFundingResponse(
+            results=[
+                AwardFundingRow(
+                    federal_account="028-8704",
+                    account_title="ENVIRONMENTAL PROGRAMS AND MANAGEMENT",
+                    object_class_name="Contractual services",
+                    program_activity_name="Research",
+                    disaster_emergency_fund_code="Q",
+                    transaction_obligated_amount=1500.0,
+                    gross_outlay_amount=1200.0,
+                    reporting_fiscal_year=2023,
+                    reporting_fiscal_quarter=2,
+                )
+            ],
+            page_metadata=PageMetadata(page=1, hasNext=False),
+        )
+        self._mock_client(response, monkeypatch)
+        result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
+        assert "028-8704" in result
+        assert "ENVIRONMENTAL PROGRAMS AND MANAGEMENT" in result
+        assert "$1,500.00 obligated" in result
+        assert "$1,200.00 outlayed" in result
+        assert "object class Contractual services" in result
+        assert "program activity Research" in result
+        assert "DEFC Q" in result
+        assert "FY2023 Q2" in result
+
+    def test_no_results(self, monkeypatch):
+        self._mock_client(AwardFundingResponse(results=[]), monkeypatch)
+        result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
+        assert "No federal account funding data found" in result
+
+    def test_api_error_returns_failure_message(self, monkeypatch):
+        client = FakeClient(make_agency())
+
+        def raise_error(*a, **kw):
+            raise USASpendingAPIError("boom")
+
+        client.get_award_funding = raise_error
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+        result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
+        assert "This query failed: boom." in result
+
+    def test_truncation_note_when_more_results_exist(self, monkeypatch):
+        response = AwardFundingResponse(
+            results=[AwardFundingRow(federal_account="028-8704", transaction_obligated_amount=1.0)],
+            page_metadata=PageMetadata(page=1, hasNext=True),
+        )
+        self._mock_client(response, monkeypatch)
+        result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
+        assert "complete" in result.lower() or "exhaustive" in result.lower() or "more" in result.lower()
 
 
 class TestAgencyLabel:

@@ -8,6 +8,7 @@ from backend.app.usaspending_client import (
     AdvancedFilters,
     AgencySubAgencyResponse,
     RecipientOverview,
+    SpendingByAwardCountResponse,
     ToptierAgency,
     USASpendingAPIError,
     USASpendingClient,
@@ -397,6 +398,43 @@ class TestRecipientClientMethods:
         assert isinstance(overview, RecipientOverview)
         assert overview.name == "REDACTED DUE TO PII"
         assert overview.total_transactions == 2243854
+
+
+class TestSpendingByAwardCount:
+    # Real live response shape (NSF FY2024, 2026-09-15), not synthetic -
+    # see #123.
+
+    def test_parses_real_response_shape(self, monkeypatch):
+        client = USASpendingClient()
+        body = {
+            "results": {"contracts": 810, "direct_payments": 0, "grants": 28420, "idvs": 37, "loans": 0, "other": 0},
+            "spending_level": "awards",
+            "messages": ["For searches, time period start and end dates are currently limited..."],
+        }
+        monkeypatch.setattr(client, "_post", lambda path, b: body)
+        response = client.spending_by_award_count(AdvancedFilters())
+        assert isinstance(response, SpendingByAwardCountResponse)
+        assert response.results.contracts == 810
+        assert response.results.grants == 28420
+        assert response.results.idvs == 37
+        assert response.messages
+
+    def test_posts_to_award_count_endpoint(self, monkeypatch):
+        client = USASpendingClient()
+        captured: dict = {}
+
+        def fake_post(path, body):
+            captured["path"] = path
+            captured["body"] = body
+            return {
+                "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 0, "other": 0},
+                "spending_level": "awards",
+            }
+
+        monkeypatch.setattr(client, "_post", fake_post)
+        client.spending_by_award_count(AdvancedFilters())
+        assert captured["path"] == "/api/v2/search/spending_by_award_count/"
+        assert "filters" in captured["body"]
 
 
 class TestGetAgencySubAgencyBreakdown:

@@ -740,6 +740,8 @@ def search_awards_raw(
     award_id: str | None = None,
     recipient_type: RecipientType | None = None,
     description: str | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
 ) -> SearchAwardsResponse:
     """Call the API once, return the structured response (results +
     page_metadata), sorted largest-first by sort_by (default "amount":
@@ -795,6 +797,8 @@ def search_awards_raw(
         award_id=award_id,
         recipient_type=recipient_type,
         description=description,
+        tas_code=tas_code,
+        federal_account=federal_account,
         award_type_counts_as_scope=True,
     )
     amount_field = _amount_field_for_award_type(award_type)
@@ -840,6 +844,8 @@ def search_awards(
     award_id: str | None = None,
     recipient_type: RecipientType | None = None,
     description: str | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
 ) -> str:
     """Search for individual award records (specific contracts, grants, or loans) for a fiscal year range, scoped by an awarding agency and/or a recipient. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead. Results are ranked largest-first by sort_by (default "amount") — use this directly for "biggest"/"top N" questions, including "top N by outlay/subsidy cost" or "most recently modified" with sort_by set accordingly.
 
@@ -886,12 +892,15 @@ def search_awards(
             of these for a general "show me X's contracts/grants" question. For a question asking
             about a SPECIFIC sub-type rather than the broad category, use the specific value
             instead of guessing which broad bucket it falls under: bpa_call, purchase_order,
-            delivery_order, definitive_contract (contract sub-types); direct_loan, guaranteed_loan
-            (loan sub-types); block_grant, formula_grant, project_grant, cooperative_agreement
-            (grant sub-types - e.g. "cooperative agreement" is cooperative_agreement, NOT
-            contracts); insurance, other_financial_assistance, direct_payment_specified,
-            direct_payment_unrestricted (other assistance types). Case/spacing/hyphens don't
-            matter (e.g. "Cooperative Agreement" also works).
+            delivery_order, definitive_contract (contract sub-types); idv (Indefinite Delivery
+            Vehicle - a GWAC, BPA, or other contract vehicle that other awards get issued under,
+            NOT itself under "contracts" - its codes are disjoint from A/B/C/D, so searching for
+            an IDV's own PIID under award_type="contracts" returns zero results); direct_loan,
+            guaranteed_loan (loan sub-types); block_grant, formula_grant, project_grant,
+            cooperative_agreement (grant sub-types - e.g. "cooperative agreement" is
+            cooperative_agreement, NOT contracts); insurance, other_financial_assistance,
+            direct_payment_specified, direct_payment_unrestricted (other assistance types).
+            Case/spacing/hyphens don't matter (e.g. "Cooperative Agreement" also works).
         limit: Max number of results to return (default 5).
         sort_by: One of: amount (default - Award Amount, or Loan Value for loan award
             types), outlays (Total Outlays - the amount actually paid out so far, distinct
@@ -956,13 +965,22 @@ def search_awards(
         award_id: Optional. Restrict to a single known award by its plain Award ID (PIID/FAIN/URI,
             e.g. "1605SS17F00018") - a fuzzy text match, not an exact-id lookup. This is the same
             "Award ID" shown in this tool's own results, NOT the longer internal_id shown alongside
-            it (that one is for get_award_details, not this filter).
+            it (that one is for get_award_details, not this filter). If the PIID is for a contract
+            vehicle (IDV) rather than a plain contract, pass award_type="idv" too - the default
+            award_type="contracts" won't find it, since IDV codes are disjoint from A/B/C/D.
         recipient_type: Optional. Restrict to recipients tagged with this business/recipient
             type, e.g. "small_business", "woman_owned_business", "nonprofit", "higher_education".
         description: Optional. Restrict to awards whose own description text matches this
             phrase, e.g. "vaccine research". Distinct from keywords - keywords also matches
             recipient name, PIID/FAIN/URI, and NAICS/PSC description text, so a keywords hit
             doesn't imply a description hit or vice versa.
+        tas_code: Optional. Restrict to awards funded by this exact Treasury Account Symbol,
+            e.g. "020-2020/2021-1521". Must be the real code - get it from a
+            get_award_funding_breakdown call, not guessed.
+        federal_account: Optional. Restrict to awards funded by this exact federal account
+            (the AID-MAIN pair one level up from a full TAS), e.g. "028-8704" - the
+            federal_account value shown on a get_award_funding_breakdown row. Different from
+            tas_code: a federal account groups multiple TAS together.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -978,6 +996,7 @@ def search_awards(
         performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
         award_id=award_id, description=description,
+        tas_code=tas_code, federal_account=federal_account,
     )
     try:
         results = search_awards_raw(
@@ -1010,6 +1029,8 @@ def search_awards(
             award_id=award_id,
             recipient_type=recipient_type,
             description=description,
+            tas_code=tas_code,
+            federal_account=federal_account,
         )
     except USASpendingAPIError as e:
         logger.warning("search_awards failed for %s: %s", scope, e)
@@ -1046,6 +1067,8 @@ def search_awards(
         award_id=award_id,
         recipient_type=recipient_type,
         description=description,
+        tas_code=tas_code,
+        federal_account=federal_account,
     )
     _record_tool_call("search_awards", results, context)
 

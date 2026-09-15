@@ -1,6 +1,8 @@
 # usaspending-agent
 A tool-calling assistant for questions about USASpending.gov federal spending data. An LLM agent picks between retrieval (conceptual/definitional term lookups, and semantic NAICS/PSC/CFDA/county code lookups) and live USASpending API calls (actual numbers), across as many tool calls and turns as a question needs.
 
+**Live demo:** [usaspending-agent.vercel.app](https://usaspending-agent.vercel.app/) (frontend on Vercel, backend on Railway — see [Deployment](#deployment))
+
 ## Architecture
 
 - **Conceptual questions** ("what is a sub-award?", "what is an IDV?") are answered by hybrid retrieval over two sources — the Analyst's Guide to Federal Spending Data (a PDF, Q&A-chunked) and the live USASpending Glossary API (~150 terms, one chunk per term) — combined into one Chroma + Whoosh index: dense embeddings (Chroma) + BM25 keyword search (Whoosh), merged and reranked with a cross-encoder.

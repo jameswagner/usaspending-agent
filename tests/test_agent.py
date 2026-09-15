@@ -89,6 +89,7 @@ from backend.app.agent.tools import (
     _scope_label,
     _tool_call_log,
     _truncation_note,
+    _unresolved_award_id_hint,
     get_spending_explorer_breakdown_raw,
 )
 from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
@@ -1186,6 +1187,16 @@ class TestAwardTypeNormalization:
         for key in loan_subtypes:
             assert AWARD_TYPE_GROUPS[key][0] in AWARD_TYPE_GROUPS["loans"]
 
+    def test_idv_codes_are_disjoint_from_contracts(self):
+        # Regression coverage for #146: a plain PIID search under the
+        # default award_type="contracts" (codes A-D) genuinely can't find
+        # an IDV, since IDV_A-IDV_E are a completely separate code family,
+        # not a subset of A-D the way bpa_call/purchase_order/etc. are.
+        assert AWARD_TYPE_GROUPS["idv"] == [
+            "IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E",
+        ]
+        assert set(AWARD_TYPE_GROUPS["idv"]).isdisjoint(AWARD_TYPE_GROUPS["contracts"])
+
 
 class TestOtherAwardTypeCategoriesToTry:
     # Regression coverage for the real bug: asked for the top awards under
@@ -1221,6 +1232,16 @@ class TestOtherAwardTypeCategoriesToTry:
         # a shared broad bucket - trying one must not exclude the other.
         others = _other_award_type_categories_to_try("direct_payment_specified")
         assert "direct_payment_unrestricted" in others.split(", ")
+
+    def test_idv_is_its_own_leaf_category(self):
+        # #146: idv is disjoint from contracts, so a zero-results contracts
+        # search should still suggest trying idv, and vice versa.
+        assert "idv" in EXHAUSTIVE_AWARD_TYPE_CATEGORIES
+        others = _other_award_type_categories_to_try("contracts")
+        assert "idv" in others.split(", ")
+        others = _other_award_type_categories_to_try("idv")
+        assert "contracts" in others.split(", ")
+        assert "idv" not in others.split(", ")
 
 
 def make_agency(name: str = "National Science Foundation") -> ToptierAgency:
@@ -1795,6 +1816,11 @@ class TestAmountFieldForAwardType:
         assert _amount_field_for_award_type("grants") == "Award Amount"
         assert _amount_field_for_award_type("cooperative_agreement") == "Award Amount"
 
+    def test_idv_uses_award_amount(self):
+        # #146: IDVs aren't loans, so they follow the same "Award Amount"
+        # path as contracts/grants - live-verified 2026-09-15.
+        assert _amount_field_for_award_type("idv") == "Award Amount"
+
     def test_loans_use_loan_value(self):
         assert _amount_field_for_award_type("loans") == "Loan Value"
         assert _amount_field_for_award_type("direct_loan") == "Loan Value"
@@ -1941,6 +1967,29 @@ class TestSearchAwardsMultiYearCaveat:
         assert "CAVEAT" not in result
 
 
+class TestUnresolvedAwardIdHint:
+    # Regression coverage for #146: get_award_details 404s on a plain
+    # PIID/FAIN (most commonly an IDV's, since search_awards's own
+    # award_type="contracts" default won't have surfaced its real
+    # internal_id) with no indication of why - this hint closes the loop
+    # by pointing back at search_awards(award_type="idv", ...).
+
+    def test_plain_piid_gets_the_hint(self):
+        hint = _unresolved_award_id_hint("12024B18D9025")
+        assert "search_awards" in hint
+        assert 'award_type="idv"' in hint
+
+    def test_real_contract_internal_id_gets_no_hint(self):
+        assert _unresolved_award_id_hint("CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-") == ""
+
+    def test_real_idv_internal_id_gets_no_hint(self):
+        assert _unresolved_award_id_hint("CONT_IDV_12024B18D9025_12C2") == ""
+
+    def test_real_financial_assistance_internal_id_gets_no_hint(self):
+        assert _unresolved_award_id_hint("ASST_NON_0856145_049") == ""
+
+    def test_case_insensitive_prefix_check(self):
+        assert _unresolved_award_id_hint("cont_idv_12024b18d9025_12c2") == ""
 class TestGetAwardTypeBreakdown:
     # #123: the six-way award-type count split the real Advanced Search
     # results page shows first, in one call.

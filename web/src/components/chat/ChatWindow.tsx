@@ -10,9 +10,9 @@ export function ChatWindow() {
   return (
     <div className="flex h-dvh flex-col">
       <header className="border-b border-black/10 px-4 py-3 dark:border-white/10">
-        <h1 className="text-lg font-semibold">USASpending RAG assistant</h1>
+        <h1 className="text-lg font-semibold">USASpending assistant</h1>
         <p className="text-sm text-black/60 dark:text-white/60">
-          Ask about federal spending — definitions from the Analyst&apos;s Guide, or live numbers from
+          Ask about federal spending: definitions from the Analyst&apos;s Guide or Glossary, or live numbers from
           USASpending.gov.
         </p>
       </header>

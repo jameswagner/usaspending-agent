@@ -3,6 +3,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --chart-series: #2a78d6;
+  --chart-ink: #0b0b0b;
+  --chart-muted-ink: #898781;
+  --chart-gridline: #e1e0d9;
 }
 
 @theme inline {
@@ -16,6 +20,10 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --chart-series: #3987e5;
+    --chart-ink: #ffffff;
+    --chart-muted-ink: #898781;
+    --chart-gridline: #2c2c2a;
   }
 }
 

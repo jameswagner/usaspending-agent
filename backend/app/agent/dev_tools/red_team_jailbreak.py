@@ -88,8 +88,7 @@ def run_case(case: dict) -> bool:
 
 
 def main() -> None:
-    # Required for AGENT_ENGINE=langgraph (_get_conversation_graph() asserts
-    # warm_up() already ran); harmless no-op cost for the legacy path.
+    # _get_conversation_graph() asserts warm_up() already ran.
     warm_up()
     outcomes = {case["name"]: run_case(case) for case in CASES}
 

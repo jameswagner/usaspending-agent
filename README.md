@@ -8,7 +8,7 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 - **Conceptual questions** ("what is a sub-award?", "what is an IDV?") are answered by hybrid retrieval over two sources — the Analyst's Guide to Federal Spending Data (a PDF, Q&A-chunked) and the live USASpending Glossary API (~150 terms, one chunk per term) — combined into one Chroma + Whoosh index: dense embeddings (Chroma) + BM25 keyword search (Whoosh), merged and reranked with a cross-encoder.
 - **Code-lookup questions** ("what NAICS code is custom software development?") resolve a plain-English description to a NAICS/PSC/CFDA code or county FIPS code, each (except county, which calls the live location endpoint directly) via its own separate Chroma + Whoosh index, same hybrid-retrieval shape as the conceptual index above.
 - **Live-data questions** ("how much did NSF spend on X?") are answered by calling the real USASpending.gov API.
-- A tool-calling agent decides which tool(s) a question needs, including questions that need more than one. It runs on LangGraph by default (`create_react_agent`, via `langgraph_tools.py`'s LangChain-compatible wrappers of the same tool functions), with a SQLite checkpointer keyed by `conversation_id` giving real multi-turn memory — a follow-up like "what about last year?" resolves against the prior turn's history. `AGENT_ENGINE=legacy` switches to the original, stateless Anthropic SDK tool-runner loop.
+- A tool-calling agent decides which tool(s) a question needs, including questions that need more than one. It runs on LangGraph (`create_react_agent`, via `langgraph_tools.py`'s LangChain-compatible wrappers of the same tool functions), with a SQLite checkpointer keyed by `conversation_id` giving real multi-turn memory — a follow-up like "what about last year?" resolves against the prior turn's history.
 - A cheap classifier gates obviously out-of-scope questions before the (more expensive) agent loop runs at all — a first-turn version (bare question + best retrieval passage) and a separate follow-up version that folds in prior conversation turns, so a continuation like "was that a lot?" isn't misjudged as off-topic just because it has no keywords of its own.
 - The model never does multi-number math (totals, percentages, ratios, before/after change, rankings) in its own prose — it calls one of six typed arithmetic tools, or `code_execution` as a fallback for calculations those six don't cover.
 
@@ -178,9 +178,8 @@ backend/app/
                                 separate follow-up classifier that folds in prior
                                 conversation turns
     response_shaping.py       Chart/citation logic, fiscal-year math
-    orchestrator.py           System prompt, AgentResult, ask() - dispatches to
-                                the LangGraph path (default) or the legacy
-                                stateless tool-runner path (AGENT_ENGINE=legacy)
+    orchestrator.py           System prompt, AgentResult, ask() - runs the
+                                LangGraph conversation path
     cli.py                    The --question CLI entry point
     dev_tools/                Manual, opt-in scripts (real billed LLM calls unless
                                 noted, not in CI): red-team checks (data-injection,

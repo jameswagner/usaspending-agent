@@ -32,8 +32,8 @@ export function MessageList({ turns, error, onSend }: MessageListProps) {
             <QuickQuestions onSend={onSend} />
           </div>
         )}
-        {turns.map((turn, i) => (
-          <MessageBubble key={i} turn={turn} />
+        {turns.map((turn) => (
+          <MessageBubble key={turn.id} turn={turn} />
         ))}
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div ref={bottomRef} />

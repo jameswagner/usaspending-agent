@@ -39,11 +39,12 @@ export function useConversation() {
 
       setLoading(true);
       setError(null);
-      const pendingTurn: ConversationTurn = { question, response: null, status: { kind: "pending" } };
+      const turnId = crypto.randomUUID();
+      const pendingTurn: ConversationTurn = { id: turnId, question, response: null, status: { kind: "pending" } };
       setTurns((prev) => [...prev, pendingTurn]);
 
       const updateStatus = (status: TurnStatus) => {
-        setTurns((prev) => prev.map((turn) => (turn === pendingTurn ? { ...turn, status } : turn)));
+        setTurns((prev) => prev.map((turn) => (turn.id === turnId ? { ...turn, status } : turn)));
       };
 
       try {
@@ -55,7 +56,7 @@ export function useConversation() {
         );
         setConversationId(response.conversation_id);
         setTurns((prev) =>
-          prev.map((turn) => (turn === pendingTurn ? { question, response, status: { kind: "done" } } : turn))
+          prev.map((turn) => (turn.id === turnId ? { id: turnId, question, response, status: { kind: "done" } } : turn))
         );
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") {
@@ -65,7 +66,7 @@ export function useConversation() {
           return;
         }
         setError(err instanceof Error ? err.message : String(err));
-        setTurns((prev) => prev.filter((turn) => turn !== pendingTurn));
+        setTurns((prev) => prev.filter((turn) => turn.id !== turnId));
       } finally {
         if (activeControllerRef.current === controller) {
           setLoading(false);

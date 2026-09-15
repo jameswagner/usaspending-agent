@@ -21,7 +21,7 @@ from backend.app.usaspending_client import (
 )
 
 from ..recipient_types import RecipientType
-from ..response_shaping import _format_time_period
+from ..response_shaping import _format_time_period, fiscal_year_to_date_range
 from ..singletons import _get_usaspending_client
 from ..tool_filters import (
     SEARCH_AWARDS_FIELDS_BASE,
@@ -799,7 +799,11 @@ def search_awards_raw(
     )
     amount_field = _amount_field_for_award_type(award_type)
     sort_field = _sort_field_for_award_type(award_type, sort_by)
-    fields = SEARCH_AWARDS_FIELDS_BASE + [amount_field]
+    # "Start Date" (period of performance) is fetched unconditionally so search_awards
+    # can flag when a result's shown amount is a multi-year lifetime total that predates
+    # the requested range, not spending scoped to it - see the overlap-vs-action-date
+    # caveat in search_awards's docstring and issue #118.
+    fields = SEARCH_AWARDS_FIELDS_BASE + [amount_field, "Start Date"]
     if sort_field != amount_field:
         fields = fields + [sort_field]
     return client.search_awards(filters, fields=fields, limit=limit, sort=sort_field, order="desc")
@@ -1056,6 +1060,13 @@ def search_awards(
 
     amount_field = _amount_field_for_award_type(award_type)
     sort_field = _sort_field_for_award_type(award_type, sort_by)
+    # Award-summary results OVERLAP the requested range rather than being scoped to it
+    # (confirmed live, see #118 and fedspendingtransparency/usaspending-api#1707): an
+    # award that started before start_fiscal_year still shows its full lifetime amount,
+    # not spending specific to this range. Flag any result whose period of performance
+    # started before the range so that isn't presented as if it were period-scoped.
+    range_start_date, _ = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
+    any_predates_range = False
     lines = []
     for r in results.results:
         result_award_id = r.get("Award ID", "unknown")
@@ -1070,9 +1081,24 @@ def search_awards(
                 f"${sort_value:,.2f}" if isinstance(sort_value, (int, float)) else str(sort_value)
             )
             sort_str = f", {sort_field}: {sort_value_str}"
-        lines.append(f"{result_award_id} — {recipient}: {amount_str}{sort_str} [internal_id: {internal_id}]")
+        predates_range = isinstance((start_date := r.get("Start Date")), str) and start_date < range_start_date
+        flag_str = ""
+        if predates_range:
+            any_predates_range = True
+            flag_str = f" [PERIOD OF PERFORMANCE STARTED {start_date}, BEFORE FY{start_fiscal_year} - amount shown is this award's lifetime total, not spending scoped to this range]"
+        lines.append(
+            f"{result_award_id} — {recipient}: {amount_str}{sort_str} [internal_id: {internal_id}]{flag_str}"
+        )
     has_next = results.page_metadata.hasNext if results.page_metadata else False
     note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)
+    if any_predates_range:
+        note += (
+            "\n\nCAVEAT: one or more awards above started before the requested fiscal year range. "
+            "This tool returns an award if it had ANY activity during the requested range, but always "
+            "shows that award's full lifetime total/outlays - not the amount specific to this range. "
+            "State this distinction explicitly if reporting these figures as this period's spending; "
+            "use get_spending_over_time instead for a genuinely period-scoped, non-duplicative total."
+        )
     return _wrap_untrusted("\n".join(lines) + note)
 
 

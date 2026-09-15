@@ -92,15 +92,18 @@ from backend.app.agent.tools import (
     get_spending_explorer_breakdown_raw,
 )
 from backend.app.agent.tools.location import resolve_county_fips
+from backend.app.agent.tools.spending import search_awards
 from backend.app.usaspending_client import (
     AgencySubAgencyResponse,
     CategoryResult,
     GeographyTypeResult,
     IDVAmountsResponse,
     ObligationByPeriod,
+    PageMetadata,
     RecipientListing,
     RecipientLocation,
     RecipientOverview,
+    SearchAwardsResponse,
     SpendingByCategoryResponse,
     SpendingByGeographyResponse,
     SpendingExplorerResponse,
@@ -1740,6 +1743,88 @@ class TestFormatApiMessages:
         result = _format_api_messages(["message one", "message two"])
         assert "message one" in result
         assert "message two" in result
+
+
+class TestSearchAwardsMultiYearCaveat:
+    # Regression coverage for #118: search_awards' award-summary results OVERLAP
+    # the requested fiscal-year range rather than being scoped to it - an award
+    # that predates the range still shows its full lifetime total, not spending
+    # specific to the requested years. Confirmed live against a real 15-year
+    # NSF/Leidos contract (Award Amount $3.13B vs. ~$217M actually obligated in
+    # FY2023) and against fedspendingtransparency/usaspending-api#1707, an
+    # official confirmation this is deliberate API behavior USAspending has no
+    # plans to change - so this tool caveats it rather than trying to correct it.
+
+    def _mock_client(self, results, monkeypatch):
+        response = SearchAwardsResponse(
+            results=results,
+            page_metadata=PageMetadata(page=1, hasNext=False),
+        )
+        client = FakeClient(make_agency())
+        client.search_awards = lambda *a, **kw: response
+        monkeypatch.setattr("backend.app.agent.tools.spending._get_usaspending_client", lambda: client)
+
+    def test_award_predating_range_is_flagged(self, monkeypatch):
+        self._mock_client(
+            [
+                {
+                    "Award ID": "NSFDACS1219442",
+                    "generated_internal_id": "CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-",
+                    "Recipient Name": "LEIDOS, INC.",
+                    "Award Amount": 3129062649.79,
+                    "Start Date": "2011-12-23",
+                }
+            ],
+            monkeypatch,
+        )
+        result = search_awards.func(
+            start_fiscal_year=2023, end_fiscal_year=2023, agency_name="National Science Foundation"
+        )
+        assert "PERIOD OF PERFORMANCE STARTED 2011-12-23" in result
+        assert "BEFORE FY2023" in result
+        assert "lifetime total" in result
+        assert "CAVEAT" in result
+        assert "get_spending_over_time" in result
+
+    def test_award_starting_within_range_is_not_flagged(self, monkeypatch):
+        self._mock_client(
+            [
+                {
+                    "Award ID": "SOMEAWARD",
+                    "generated_internal_id": "CONT_AWD_SOMEAWARD",
+                    "Recipient Name": "SOME RECIPIENT, INC.",
+                    "Award Amount": 500000.0,
+                    "Start Date": "2023-01-15",
+                }
+            ],
+            monkeypatch,
+        )
+        result = search_awards.func(
+            start_fiscal_year=2023, end_fiscal_year=2023, agency_name="National Science Foundation"
+        )
+        assert "PERIOD OF PERFORMANCE STARTED" not in result
+        assert "CAVEAT" not in result
+
+    def test_missing_start_date_is_not_flagged(self, monkeypatch):
+        # A malformed/missing "Start Date" field shouldn't be treated as
+        # predating the range (that would be a false positive on every
+        # result missing the field, not just the genuinely multi-year ones).
+        self._mock_client(
+            [
+                {
+                    "Award ID": "SOMEAWARD",
+                    "generated_internal_id": "CONT_AWD_SOMEAWARD",
+                    "Recipient Name": "SOME RECIPIENT, INC.",
+                    "Award Amount": 500000.0,
+                }
+            ],
+            monkeypatch,
+        )
+        result = search_awards.func(
+            start_fiscal_year=2023, end_fiscal_year=2023, agency_name="National Science Foundation"
+        )
+        assert "CAVEAT" not in result
+
 
 
 class TestAgencyLabel:

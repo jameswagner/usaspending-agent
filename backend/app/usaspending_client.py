@@ -10,6 +10,7 @@ https://github.com/fedspendingtransparency/usaspending-api/tree/master/usaspendi
   - POST /api/v2/search/spending_over_time/
   - POST /api/v2/search/spending_by_award/
   - POST /api/v2/autocomplete/{naics,psc,cfda}/          (verified live, not currently called by any tool)
+  - POST /api/v2/autocomplete/awarding_agency_office/    (sub-tier agency resolution fallback for find_agency_by_name)
 
 `AdvancedFilters` models the filter fields most likely to be used by this
 project's questions (keywords, time period, agencies, award types,
@@ -26,6 +27,7 @@ api.usaspending.gov are otherwise invisible to LangSmith entirely.
 from __future__ import annotations
 
 import contextvars
+import re
 import time
 from typing import Any, Literal
 
@@ -315,6 +317,33 @@ class LocationAutocompleteResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     results: LocationAutocompleteResults
+
+
+class AgencyAutocompleteRef(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    # abbreviation is None live for some offices/sub-agencies without one
+    # (e.g. "Bureau of Indian Affairs and Bureau of Indian Education").
+    abbreviation: str | None = None
+    code: str
+    name: str
+
+
+class SubtierAgencyMatch(AgencyAutocompleteRef):
+    toptier_agency: AgencyAutocompleteRef
+
+
+class AgencyOfficeAutocompleteResults(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    toptier_agency: list[AgencyAutocompleteRef] = []
+    subtier_agency: list[SubtierAgencyMatch] = []
+
+
+class AgencyOfficeAutocompleteResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    results: AgencyOfficeAutocompleteResults
 
 
 class AgencyOverview(BaseModel):
@@ -827,24 +856,86 @@ class USASpendingClient:
         data = self._post("/api/v2/autocomplete/location/", {"search_text": search_text})
         return LocationAutocompleteResponse(**data)
 
+    @traceable(run_type="tool", name="autocomplete_awarding_agency_office")
+    def autocomplete_awarding_agency_office(self, search_text: str) -> AgencyOfficeAutocompleteResponse:
+        """POST /api/v2/autocomplete/awarding_agency_office/. Resolves
+        top-tier agencies, sub-tier agencies (NIH, CDC, IRS, ...), and
+        offices in one call - unlike list_toptier_agencies, which only
+        covers the ~100 cabinet-level/independent agencies. Used by
+        find_agency_by_name as a fallback when a name doesn't match a
+        top-tier agency directly.
+        """
+        data = self._post("/api/v2/autocomplete/awarding_agency_office/", {"search_text": search_text})
+        return AgencyOfficeAutocompleteResponse(**data)
+
     @traceable(run_type="tool", name="find_agency_by_name")
     def find_agency_by_name(self, name: str) -> ToptierAgency | None:
         """Case-insensitive match against agency name or abbreviation.
 
-        Tries an exact match first, then falls back to substring match, since
-        callers (an LLM tool call, a user query) rarely type the full official
-        agency name.
+        Tries an exact match first, then falls back to a whole-word substring
+        match against the ~100 top-tier agencies, since callers (an LLM tool
+        call, a user query) rarely type the full official agency name - e.g.
+        "Education" for "Department of Education". Word boundaries matter
+        here: a bare (non-boundary) substring check would match "IRS" inside
+        "Department of Veterans Affairs" (the tail of "Affairs"), live-verified
+        2026-09-15, which is wrong.
+
+        On a miss, falls back to the awarding_agency_office autocomplete
+        endpoint, which also covers well-known sub-tier agencies (NIH, CDC,
+        FDA under HHS; IRS under Treasury; ...) - resolving to the match's
+        parent top-tier agency, since every other tool (budgets, breakdowns,
+        ...) keys off a toptier_code.
         """
         agencies = self.list_toptier_agencies()
         name_lower = name.lower()
+        name_pattern = re.compile(rf"\b{re.escape(name_lower)}\b")
 
         for a in agencies:
             if a.agency_name.lower() == name_lower or a.abbreviation.lower() == name_lower:
                 return a
         for a in agencies:
-            if name_lower in a.agency_name.lower():
+            if name_pattern.search(a.agency_name.lower()):
                 return a
+
+        for code in self._candidate_autocomplete_toptier_codes(name_lower):
+            match = next((a for a in agencies if a.toptier_code == code), None)
+            if match is not None:
+                return match
         return None
+
+    def _candidate_autocomplete_toptier_codes(self, name_lower: str):
+        """Yields toptier_code candidates from the autocomplete response,
+        best guess first. Two things to guard against, both live-verified
+        2026-09-15:
+
+        - The endpoint's own ranking isn't relevance-sorted for our
+          purposes: searching "IRS" returns Veterans Affairs first (its
+          name, "...Affairs", contains "irs" as a substring) ahead of the
+          actual IRS sub-agency entry elsewhere in the same response. So
+          exact abbreviation/name matches are tried before the API's own
+          first result.
+        - A candidate's toptier_code can be one list_toptier_agencies()
+          doesn't recognize: searching "FEMA" returns it as its own
+          top-tier match (code 058), but the toptier_agencies reference
+          endpoint doesn't list a code-058 agency at all - FEMA only
+          reports there nested under DHS (code 070), which does show up as
+          a second, subtier-level match in the same response. The caller
+          tries each yielded code against the real agency list in order and
+          keeps going past ones that don't resolve.
+        """
+        results = self.autocomplete_awarding_agency_office(name_lower).results
+
+        for t in results.toptier_agency:
+            if (t.abbreviation and t.abbreviation.lower() == name_lower) or t.name.lower() == name_lower:
+                yield t.code
+        for s in results.subtier_agency:
+            if (s.abbreviation and s.abbreviation.lower() == name_lower) or s.name.lower() == name_lower:
+                yield s.toptier_agency.code
+
+        for t in results.toptier_agency:
+            yield t.code
+        for s in results.subtier_agency:
+            yield s.toptier_agency.code
 
     @traceable(run_type="tool", name="get_agency_overview")
     def get_agency_overview(self, toptier_code: str, fiscal_year: int | None = None) -> AgencyOverview:

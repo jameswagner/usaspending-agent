@@ -98,8 +98,10 @@ class TestFindAgencyByName:
         result = client.find_agency_by_name("Education")
         assert result.toptier_code == "091"
 
-    def test_no_match_returns_none(self, client, agencies, monkeypatch):
+    def test_no_match_falls_back_to_autocomplete_and_returns_none_on_a_miss(self, client, agencies, monkeypatch):
         monkeypatch.setattr(client, "list_toptier_agencies", lambda: agencies)
+        empty = {"results": {"toptier_agency": [], "subtier_agency": [], "office": []}, "messages": []}
+        monkeypatch.setattr(client, "_post", lambda path, body: empty)
         result = client.find_agency_by_name("Department of Pizza")
         assert result is None
 
@@ -114,6 +116,63 @@ class TestFindAgencyByName:
         monkeypatch.setattr(client, "list_toptier_agencies", lambda: agencies)
         result = client.find_agency_by_name("NSF")
         assert result.toptier_code == "049"
+
+    def test_subtier_agency_name_resolves_to_parent_toptier_agency(self, client, monkeypatch):
+        # Real shape (verified live 2026-09-15): NIH has no entry of its own
+        # in list_toptier_agencies, only HHS does - the fallback must resolve
+        # NIH's toptier_agency.code ("075") back to the already-fetched HHS
+        # ToptierAgency object.
+        hhs = make_agency("Department of Health and Human Services", "HHS", code="075")
+        agencies = [hhs, make_agency("National Science Foundation", "NSF", code="049")]
+        monkeypatch.setattr(client, "list_toptier_agencies", lambda: agencies)
+        body = {
+            "results": {
+                "toptier_agency": [],
+                "subtier_agency": [
+                    {
+                        "abbreviation": "NIH",
+                        "code": "7529",
+                        "name": "National Institutes of Health",
+                        "offices": [],
+                        "toptier_agency": {"abbreviation": "HHS", "code": "075", "name": "Department of Health and Human Services"},
+                    }
+                ],
+                "office": [],
+            },
+            "messages": [],
+        }
+        monkeypatch.setattr(client, "_post", lambda path, b: body)
+        result = client.find_agency_by_name("NIH")
+        assert result is hhs
+
+    def test_autocomplete_toptier_match_resolves_directly(self, client, monkeypatch):
+        # A search term that only the autocomplete endpoint's fuzzier
+        # matching turns up (missed by the plain substring pass above) can
+        # also land directly in the toptier_agency bucket, not just
+        # subtier_agency.
+        hhs = make_agency("Department of Health and Human Services", "HHS", code="075")
+        agencies = [hhs]
+        monkeypatch.setattr(client, "list_toptier_agencies", lambda: agencies)
+        body = {
+            "results": {
+                "toptier_agency": [
+                    {
+                        "abbreviation": "HHS",
+                        "code": "075",
+                        "name": "Department of Health and Human Services",
+                        "subtier_agencies": [],
+                    }
+                ],
+                "subtier_agency": [],
+                "office": [],
+            },
+            "messages": [],
+        }
+        monkeypatch.setattr(client, "_post", lambda path, b: body)
+        # deliberately not an exact or substring match against the fixture
+        # agency, so this only resolves via the autocomplete fallback
+        result = client.find_agency_by_name("Health & Human Svcs")
+        assert result is hhs
 
 
 class TestListToptierAgenciesCaching:

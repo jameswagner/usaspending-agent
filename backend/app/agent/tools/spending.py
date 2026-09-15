@@ -758,6 +758,12 @@ def search_awards_raw(
     ignores that filter entirely (the live API's own `messages` field says
     so explicitly) - recipient_name (an approximate text match) is the
     only recipient-scoping option this specific tool has.
+
+    Unlike the other two spending tools, award_type alone (which every
+    call here has - it defaults to "contracts") counts as real scope
+    (award_type_counts_as_scope=True), so this never raises for missing
+    scope the way get_spending_by_category/get_spending_over_time can -
+    see _build_filters' docstring and #125.
     """
     client = _get_usaspending_client()
     filters = _build_filters(
@@ -789,6 +795,7 @@ def search_awards_raw(
         award_id=award_id,
         recipient_type=recipient_type,
         description=description,
+        award_type_counts_as_scope=True,
     )
     amount_field = _amount_field_for_award_type(award_type)
     sort_field = _sort_field_for_award_type(award_type, sort_by)
@@ -832,9 +839,14 @@ def search_awards(
 ) -> str:
     """Search for individual award records (specific contracts, grants, or loans) for a fiscal year range, scoped by an awarding agency and/or a recipient. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead. Results are ranked largest-first by sort_by (default "amount") — use this directly for "biggest"/"top N" questions, including "top N by outlay/subsidy cost" or "most recently modified" with sort_by set accordingly.
 
-    At least one of agency_name or recipient_name must be given - a query scoped
-    by neither would mean all federal awards, ever, which this tool refuses rather
-    than silently running.
+    No filter beyond the fiscal-year range and award_type is required - unlike
+    get_spending_by_category/get_spending_over_time, which need a real scoping
+    filter (agency, recipient, location, etc.) or they refuse to run at all, this
+    tool just returns a ranked/paginated list, the same shape the real site's own
+    Advanced Search table handles fine with an award-type + fiscal-year filter
+    alone. Add agency_name/recipient_name/a location/etc. to narrow further, but
+    don't invent a keywords value (e.g. restating award_type itself) just to
+    satisfy a scope requirement this tool doesn't actually have.
 
     IMPORTANT about fiscal-year scoping: by default (date_type omitted), an
     award appears here if it had ANY transaction/modification in the queried
@@ -943,8 +955,6 @@ def search_awards(
             it (that one is for get_award_details, not this filter).
         recipient_type: Optional. Restrict to recipients tagged with this business/recipient
             type, e.g. "small_business", "woman_owned_business", "nonprofit", "higher_education".
-            Not sufficient scope on its own (like award_type) - still needs agency_name,
-            recipient_name, a location, or another real scoping filter alongside it.
         description: Optional. Restrict to awards whose own description text matches this
             phrase, e.g. "vaccine research". Distinct from keywords - keywords also matches
             recipient name, PIID/FAIN/URI, and NAICS/PSC description text, so a keywords hit

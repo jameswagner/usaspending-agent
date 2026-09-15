@@ -436,6 +436,7 @@ def _build_filters(
     award_id: str | None = None,
     recipient_type: str | None = None,
     description: str | None = None,
+    award_type_counts_as_scope: bool = False,
 ) -> AdvancedFilters:
     """Resolve agency_name + fiscal-year range into an AdvancedFilters -
     the shared first step of all three spending tools, replacing what was
@@ -491,7 +492,13 @@ def _build_filters(
     performed_in_state/recipient_in_state/naics_code/psc_code/cfda_program/
     keywords/award_id/description/recipient_type must be given, or this
     raises; award_type/min_amount/max_amount/date_type/*_scope don't count
-    on their own (see #16).
+    on their own (see #16) - UNLESS award_type_counts_as_scope=True, which
+    search_awards_raw passes (see #125): unlike the aggregate tools, where
+    an unscoped whole-of-government breakdown can time out live (see
+    get_spending_by_category's docstring), search_awards just returns a
+    ranked/paginated list - the same shape the real site's own Advanced
+    Search table handles fine with an award-type + fiscal-year filter
+    alone, so that combination is real scope for this tool specifically.
 
     recipient_id is a real, precise filter - confirmed live 2026-09-08 to
     reproduce a recipient's true all-time total to the penny, unlike
@@ -526,15 +533,21 @@ def _build_filters(
         naics_code, psc_code, cfda_program, keywords,
         award_id, description, recipient_type,
     )
-    if all(f is None for f in real_scoping_filters):
-        raise USASpendingAPIError(
+    has_real_scope = any(f is not None for f in real_scoping_filters)
+    if not has_real_scope and award_type_counts_as_scope and award_type is not None:
+        has_real_scope = True
+    if not has_real_scope:
+        message = (
             "At least one of agency_name, recipient_name, recipient_id, performed_in_state, "
             "recipient_in_state, performed_in_county, recipient_in_county, performed_in_city, "
             "recipient_in_city, performed_in_zip, recipient_in_zip, performed_in_district, "
             "recipient_in_district, naics_code, psc_code, cfda_program, keywords, award_id, "
-            "description, or recipient_type must be given - a question scoped by none of them "
-            "would mean all federal spending, ever."
+            "description, or recipient_type must be given"
         )
+        if award_type_counts_as_scope:
+            message += ", or award_type (browsing by award type + fiscal year alone is fine here)"
+        message += " - a question scoped by none of them would mean all federal spending, ever."
+        raise USASpendingAPIError(message)
 
     start_date, end_date = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
     kwargs: dict = {

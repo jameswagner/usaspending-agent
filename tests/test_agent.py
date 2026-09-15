@@ -1479,6 +1479,25 @@ class TestBuildFilters:
         with pytest.raises(USASpendingAPIError, match="At least one of"):
             _build_filters(FakeClient(make_agency()), None, 2021, 2024, min_amount=1_000_000)
 
+    # search_awards_raw passes award_type_counts_as_scope=True (#125): the
+    # real site's Advanced Search answers "FY + award type alone" directly,
+    # and unlike the aggregate tools this one can't run away (a paginated,
+    # ranked list, not a whole-of-government sum).
+
+    def test_award_type_counts_as_scope_when_opted_in(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), None, 2021, 2024,
+            award_type="grants", award_type_counts_as_scope=True,
+        )
+        assert filters.agencies is None
+        assert filters.award_type_codes is not None
+
+    def test_award_type_counts_as_scope_does_not_relax_other_tools(self):
+        # Opting in doesn't help without award_type actually set - still
+        # needs a real scoping filter or award_type itself.
+        with pytest.raises(USASpendingAPIError, match="At least one of"):
+            _build_filters(FakeClient(make_agency()), None, 2021, 2024, award_type_counts_as_scope=True)
+
     def test_agency_name_given_still_resolves_normally(self):
         # Regression: the common case (agency_name alone) must be
         # unaffected by making it optional.

@@ -248,8 +248,7 @@ def case_sort_by_outlays_and_subsidy_cost_and_recency() -> None:
 
 
 def main() -> None:
-    # Required for AGENT_ENGINE=langgraph (_get_conversation_graph() asserts
-    # warm_up() already ran); harmless no-op cost for the legacy path.
+    # _get_conversation_graph() asserts warm_up() already ran.
     warm_up()
     case_search_awards_sorted_by_amount()
     case_award_amount_filter()

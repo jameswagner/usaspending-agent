@@ -3,16 +3,10 @@ turn 2's bare follow-up still scopes to the prior turn's subject, and
 turn 3's comparison calls the `delta` tool using both prior figures
 rather than restating them in prose.
 
-Real, billed API calls, run under AGENT_ENGINE=langgraph. Not part of
-CI - run manually:
-    AGENT_ENGINE=langgraph uv run python -m backend.app.agent.dev_tools.verify_conversation
+Real, billed API calls. Not part of CI - run manually:
+    uv run python -m backend.app.agent.dev_tools.verify_conversation
 """
 from __future__ import annotations
-
-import os
-
-if os.environ.get("AGENT_ENGINE") != "langgraph":
-    raise SystemExit("Set AGENT_ENGINE=langgraph before running this script.")
 
 import uuid
 

@@ -5,21 +5,12 @@ capture buffer afterward.
 from __future__ import annotations
 
 import logging
-import os
 import uuid
 from datetime import datetime, timezone
 
 from langsmith import traceable
 from pydantic import BaseModel
 
-from .arithmetic_tools import (
-    average,
-    delta,
-    percentage_of,
-    rank_values,
-    ratio,
-    sum_values,
-)
 from .response_shaping import (
     ChartSpec,
     Citation,
@@ -30,64 +21,8 @@ from .response_shaping import (
     should_chart,
 )
 from .scope import _is_in_scope
-from .singletons import MODEL, _get_client, _get_conversation_graph
-from .tools import (
-    _record_code_execution_calls,
-    _tool_call_log,
-    get_agency_award_breakdown,
-    get_agency_budget,
-    get_award_details,
-    get_award_subawards,
-    get_recipient_details,
-    get_spending_by_category,
-    get_spending_by_geography,
-    get_spending_explorer_breakdown,
-    get_spending_over_time,
-    list_top_agencies_by_budget,
-    lookup_agency,
-    resolve_cfda_program,
-    resolve_county_fips,
-    resolve_naics_code,
-    resolve_psc_code,
-    search_awards,
-    search_guide,
-    search_recipients,
-    search_subawards,
-)
-
-# code_execution_20260521 is the latest tool version - on Haiku 4.5 (the
-# default AGENT_MODEL) it behaves identically to code_execution_20250825
-# (no REPL persistence/programmatic tool calling available on Haiku
-# regardless), so there's no cost to using the latest version now, and it
-# means nothing needs to change here if AGENT_MODEL is ever swapped to a
-# more capable model. No anthropic-beta header is required for any current
-# tool version (only the legacy Python-only code_execution_20250522 needed
-# one) - verified against the current docs, not assumed.
-#
-# cache_control on the LAST tool in the tools=[...] list, in addition to
-# the marker on the system block itself (see the tool_runner call below).
-# The docs claim a tool-level marker alone caches the system prompt too
-# ("tools, then system" hierarchy) - verified live that this claim did NOT
-# hold in practice: a tool-only marker produced zero
-# cache_creation_input_tokens even with a system prompt well over Haiku
-# 4.5's 4,096-token minimum. Only marking the system block directly
-# actually created a cache entry. Kept this tool-level marker anyway
-# (harmless, may still help cache the tools portion on its own) but don't
-# rely on it alone - always verify against real usage_metadata
-# (cache_creation_input_tokens / cache_read_input_tokens), not the docs'
-# stated behavior.
-#
-# ttl: "1h" over the "5m" default - this app's real traffic pattern is
-# sporadic (a demo, someone testing it out), not sustained load. A 1h
-# cache write costs 2x base input price vs. 1.25x for 5m, but on this
-# ~5-6K token prefix at Haiku pricing that's a few thousandths of a cent
-# either way - negligible - while 5m would expire between most real
-# requests and pay the write premium repeatedly for near-zero read benefit.
-_CODE_EXECUTION_TOOL = {
-    "type": "code_execution_20260521",
-    "name": "code_execution",
-    "cache_control": {"type": "ephemeral", "ttl": "1h"},
-}
+from .singletons import _get_conversation_graph
+from .tools import _tool_call_log
 
 logger = logging.getLogger(__name__)
 
@@ -299,155 +234,6 @@ class AgentResult(BaseModel):
     tool_citations: list[ToolCitation] = []
 
 
-def _ask_legacy(question: str, conversation_id: str) -> AgentResult:
-    if not _is_in_scope(question):
-        # Currently the only trace of a scope-gate rejection anywhere - the
-        # question and the fact it never reached the tool loop, without
-        # this, wasn't recorded at all.
-        logger.info("Scope gate rejected question: %r", question)
-        return AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
-
-    _tool_call_log.set([])
-
-    runner = _get_client().beta.messages.tool_runner(
-        model=MODEL,
-        max_tokens=2048,
-        # cache_control goes on the system block itself, not just the last
-        # tool - verified live that a tool-only marker (matching what the
-        # docs describe as sufficient to cover the system prompt too)
-        # produced zero cache_creation_input_tokens, while marking the
-        # system block directly worked. Kept the tool-level marker too
-        # (see _CODE_EXECUTION_TOOL) since it's harmless and may still
-        # help cache the tools portion separately.
-        system=[
-            {
-                "type": "text",
-                "text": _build_system_prompt(),
-                # ttl: "1h", not the "5m" default - see _CODE_EXECUTION_TOOL's
-                # comment for why this app's sporadic traffic pattern makes
-                # the longer TTL worth its (negligible, on this prefix size)
-                # extra write cost.
-                "cache_control": {"type": "ephemeral", "ttl": "1h"},
-            }
-        ],
-        tools=[
-            search_guide,
-            lookup_agency,
-            resolve_naics_code,
-            resolve_psc_code,
-            resolve_cfda_program,
-            resolve_county_fips,
-            list_top_agencies_by_budget,
-            get_agency_budget,
-            get_agency_award_breakdown,
-            get_spending_explorer_breakdown,
-            get_spending_by_category,
-            get_spending_over_time,
-            get_spending_by_geography,
-            search_awards,
-            get_award_details,
-            search_subawards,
-            get_award_subawards,
-            search_recipients,
-            get_recipient_details,
-            sum_values,
-            average,
-            percentage_of,
-            delta,
-            ratio,
-            rank_values,
-            _CODE_EXECUTION_TOOL,
-        ],
-        messages=[{"role": "user", "content": question}],
-    )
-
-    final = None
-    for message in runner:
-        final = message
-        _record_code_execution_calls(message)
-
-    # The LAST text block, not the first: a message can contain more than
-    # one when a server-side tool (code_execution) runs mid-message, since
-    # its tool_use/result appear inline rather than needing a client round
-    # trip. Claude typically narrates before calling a tool ("Now I'll
-    # calculate...") and then writes a separate, self-contained synthesis
-    # after the tool result - taking the first block silently returned the
-    # throwaway narration instead of the real answer (caught live: asked
-    # for a standard deviation, got back "Now I'll calculate..." with no
-    # number). Every other tool here requires a full round trip, so its
-    # final message only ever has one text block anyway - this is a
-    # strict generalization, not a behavior change for those cases.
-    text_blocks = [b.text for b in final.content if b.type == "text"]
-    answer_text = text_blocks[-1] if text_blocks else ""
-
-    # One chart per chart-worthy tool call in the turn (e.g. a "compare NSF
-    # and Education's spending trend" question makes two get_spending_over_time
-    # calls, each its own chart) - previously took only the first and
-    # silently dropped the rest, which a real two-agency comparison question
-    # surfaced immediately. Deliberately not merged into one multi-series
-    # chart: two calls aren't guaranteed to cover the same fiscal years, and
-    # aligning them onto one shared axis is real logic this doesn't attempt.
-    #
-    # Guide citations (chunk id/source/page) and live-data citations (tool +
-    # query parameters, since there's no "page" for a live lookup) are both
-    # built from the same capture buffer. Arithmetic the model does on top
-    # of retrieved numbers (totals, percentages, deltas, ratios, rankings)
-    # is verified by routing it through arithmetic_tools.py instead of
-    # trusting the model's own prose math - those six calls are pure,
-    # deterministic recomputation with no new source to point to, so
-    # they're not cited. code_execution is different: it's a general-
-    # purpose sandbox that can run arbitrary computation, so its calls ARE
-    # recorded (_record_code_execution_calls, above) and cited with the
-    # actual command that ran, the same way a data lookup cites its query.
-    charts: list[ChartSpec] = []
-    seen_chunk_ids: set[str] = set()
-    # Separate from seen_chunk_ids: a single logical Q&A entry can span
-    # more than one physical chunk (long-answer chunks get split further
-    # beyond the Q&A boundary), which would otherwise show the same
-    # question twice under two different chunk_ids. Normalized
-    # (stripped/lowercased) so trivial whitespace differences between
-    # chunks don't defeat the dedup.
-    seen_guide_questions: set[str] = set()
-    citations: list[Citation] = []
-    seen_tool_citation_keys: set[tuple] = set()
-    tool_citations: list[ToolCitation] = []
-    for tool_name, result, context in _tool_call_log.get() or []:
-        chart = should_chart(tool_name, result, context)
-        if chart is not None:
-            charts.append(chart)
-
-        if tool_name == "search_guide":
-            for chunk in result:
-                if chunk["id"] in seen_chunk_ids:
-                    continue
-                seen_chunk_ids.add(chunk["id"])
-                citation = _build_guide_citation(chunk)
-                if citation.question is not None:
-                    normalized_question = citation.question.strip().lower()
-                    if normalized_question in seen_guide_questions:
-                        continue
-                    seen_guide_questions.add(normalized_question)
-                citations.append(citation)
-            continue
-
-        tool_citation = build_tool_citation(tool_name, context, result)
-        if tool_citation is None:
-            continue
-        dedup_key = (tool_citation.tool_name, tuple(sorted(tool_citation.parameters.items())))
-        if dedup_key in seen_tool_citation_keys:
-            continue
-        seen_tool_citation_keys.add(dedup_key)
-        tool_citations.append(tool_citation)
-
-    return AgentResult(
-        answer_text=answer_text,
-        conversation_id=conversation_id,
-        charts=charts,
-        citations=citations,
-        tool_citations=tool_citations,
-    )
-
-
 def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
     """LangGraph-backed path - conversation_id is a real LangGraph
     thread_id, giving persisted, resumable history via the checkpointer
@@ -519,10 +305,7 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
 @traceable(run_type="chain", name="agent_ask")
 def ask(question: str, conversation_id: str | None = None) -> AgentResult:
     """conversation_id ties repeated calls into one LangGraph thread.
-    AGENT_ENGINE=legacy is an escape hatch back to the stateless
-    tool_runner path. None generates a fresh id.
+    None generates a fresh id.
     """
     conversation_id = conversation_id or str(uuid.uuid4())
-    if os.environ.get("AGENT_ENGINE", "langgraph") == "legacy":
-        return _ask_legacy(question, conversation_id)
     return _ask_langgraph(question, conversation_id)

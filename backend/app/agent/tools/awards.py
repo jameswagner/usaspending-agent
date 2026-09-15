@@ -13,7 +13,11 @@ from typing import Any
 from anthropic import beta_tool
 from langsmith import traceable
 
-from backend.app.usaspending_client import AwardFundingResponse, IDVAmountsResponse, USASpendingAPIError
+from backend.app.usaspending_client import (
+    AwardFundingResponse,
+    IDVAmountsResponse,
+    USASpendingAPIError,
+)
 
 from ..singletons import _get_usaspending_client
 from ._shared import (

@@ -73,6 +73,7 @@ from backend.app.agent.tools import (
     _format_geography_result,
     _format_period_breakdown,
     _format_period_of_performance,
+    _format_child_recipient,
     _format_recipient_address,
     _format_recipient_level,
     _format_recipient_listing,
@@ -102,6 +103,7 @@ from backend.app.usaspending_client import (
     AwardFundingRow,
     AwardTypeCounts,
     CategoryResult,
+    ChildRecipient,
     GeographyTypeResult,
     IDVAmountsResponse,
     ObligationByPeriod,
@@ -973,6 +975,20 @@ class TestBuildToolCitation:
     def test_get_recipient_details_falls_back_to_recipient_id_without_name(self):
         citation = build_tool_citation("get_recipient_details", {"recipient_id": "abc-P"})
         assert citation.description == "Recipient details: abc-P"
+
+    def test_get_recipient_children(self):
+        citation = build_tool_citation(
+            "get_recipient_children",
+            {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P", "name": "THE BOEING COMPANY"},
+        )
+        assert citation is not None
+        assert citation.tool_name == "get_recipient_children"
+        assert citation.parameters == {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P"}
+        assert citation.description == "Recipient children: THE BOEING COMPANY"
+
+    def test_get_recipient_children_falls_back_to_recipient_id_without_name(self):
+        citation = build_tool_citation("get_recipient_children", {"recipient_id": "abc-P"})
+        assert citation.description == "Recipient children: abc-P"
 
     # agency_name is now optional on all three spending tools (2026-09-08) -
     # these three regression tests pin that the citation builder doesn't
@@ -2487,6 +2503,19 @@ class TestRecipientFormatting:
 
     def test_format_business_type_unknown_code_falls_back_to_title_case(self):
         assert _format_business_type("some_new_flag") == "Some New Flag"
+
+    BOEING_CHILD = ChildRecipient(
+        name="THE BOEING COMPANY", duns="832963495", uei="MF2LE5RK6L84",
+        recipient_id="241d908a-e5e9-f275-b625-6b1f76859002-C", state_province="MO", amount=23975032530.57,
+    )
+
+    def test_format_child_recipient_includes_amount_state_and_ids(self):
+        result = _format_child_recipient(self.BOEING_CHILD)
+        assert "$23,975,032,530.57" in result
+        assert "MO" in result
+        assert "UEI MF2LE5RK6L84" in result
+        assert "DUNS 832963495" in result
+        assert "recipient_id: 241d908a-e5e9-f275-b625-6b1f76859002-C" in result
 
     def test_format_recipient_listing_includes_amount_labeled_as_last_12_months(self):
         result = _format_recipient_listing(self.BOEING_LISTING)

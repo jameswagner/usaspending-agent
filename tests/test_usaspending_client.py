@@ -7,6 +7,7 @@ import requests
 from backend.app.usaspending_client import (
     AdvancedFilters,
     AgencySubAgencyResponse,
+    ChildRecipient,
     RecipientOverview,
     SpendingByAwardCountResponse,
     ToptierAgency,
@@ -398,6 +399,27 @@ class TestRecipientClientMethods:
         assert isinstance(overview, RecipientOverview)
         assert overview.name == "REDACTED DUE TO PII"
         assert overview.total_transactions == 2243854
+
+    def test_get_recipient_children_parses_real_response_shape(self, monkeypatch):
+        client = USASpendingClient()
+        body = [
+            {
+                "recipient_id": "241d908a-e5e9-f275-b625-6b1f76859002-C",
+                "name": "THE BOEING COMPANY", "duns": "832963495", "uei": "MF2LE5RK6L84",
+                "amount": 23975032530.57, "state_province": "MO",
+            },
+            {
+                "recipient_id": "e7360887-4da9-617b-357b-1c3446728140-C",
+                "name": "BOEING DISTRIBUTION SERVICES X, INC.", "duns": "069172294", "uei": "X3K6MA9ZLTW6",
+                "amount": 62785867.7, "state_province": "FL",
+            },
+        ]
+        monkeypatch.setattr(client, "_get", lambda path, params=None: body)
+        children = client.get_recipient_children("NU2UC8MX6NK1", year="all")
+        assert len(children) == 2
+        assert all(isinstance(c, ChildRecipient) for c in children)
+        assert children[0].name == "THE BOEING COMPANY"
+        assert children[1].amount == 62785867.7
 
 
 class TestSpendingByAwardCount:

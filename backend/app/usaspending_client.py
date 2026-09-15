@@ -745,6 +745,22 @@ class RecipientOverview(BaseModel):
     total_face_value_loan_transactions: int
 
 
+class ChildRecipient(BaseModel):
+    """recipient/children/duns_or_uei.md. One row per child recipient
+    under a given parent - amount respects `year` like RecipientOverview's
+    total_transaction_amount, unlike RecipientListing.amount above.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str | None = None
+    duns: str | None = None
+    uei: str | None = None
+    recipient_id: str
+    state_province: str | None = None
+    amount: float
+
+
 class GeographyTypeResult(BaseModel):
     """search/spending_by_geography.md. population/per_capita are computed
     by the live API itself, but reflect current-day figures regardless of
@@ -1257,6 +1273,19 @@ class USASpendingClient:
         params = {"year": year} if year else None
         data = self._get(f"/api/v2/recipient/{recipient_id}/", params=params)
         return RecipientOverview(**data)
+
+    @traceable(run_type="tool", name="get_recipient_children")
+    def get_recipient_children(self, duns_or_uei: str, year: str | None = None) -> list[ChildRecipient]:
+        """GET /api/v2/recipient/children/{duns_or_uei}/{?year}
+        (recipient/children/duns_or_uei.md). Keyed by DUNS or UEI, not
+        recipient_id - a third identifier space from RecipientOverview's
+        own recipient_id. Confirmed live 2026-09-15: the response is a
+        bare, unsorted array (Boeing's 123 children not in amount order),
+        with no sort/order params and no pagination - not present in the
+        upstream contract, and passing them live had no effect."""
+        params = {"year": year} if year else None
+        data = self._get(f"/api/v2/recipient/children/{duns_or_uei}/", params=params)
+        return [ChildRecipient(**c) for c in data]
 
     @traceable(run_type="tool", name="spending_by_geography")
     def spending_by_geography(

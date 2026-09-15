@@ -35,6 +35,7 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 | `get_award_subawards` | The complete subaward list for one specific prime award already found via `search_awards`, given its `internal_id` — the award-profile page's own Sub-Awards tab, as opposed to `search_subawards`' cross-award search |
 | `search_recipients` | Find a company/organization/individual's exact `recipient_id` by name, UEI, or DUNS — a name alone is often genuinely ambiguous (e.g. "Boeing" resolves to 6+ distinct recipients sharing the same display name), so this shows every real candidate rather than silently picking one, for a precise follow-up via `get_recipient_details` or the `recipient_id` filter above |
 | `get_recipient_details` | Full profile for one already-resolved recipient — identity, parent company, address, business types, and total federal transactions for a fiscal year, `"all"` (default), or `"latest"` (trailing 12 months) |
+| `get_recipient_children` | The individual child recipients rolling up into one already-resolved "parent"-level recipient's total, e.g. "which subsidiaries make up Boeing's total" — resolves the live API's DUNS/UEI keying internally, so callers still pass a `recipient_id` |
 | `sum_values`, `average`, `percentage_of`, `delta`, `ratio`, `rank_values` | Deterministic arithmetic over numbers the tools above already returned — totals, shares, before/after change, cross-entity comparison, ranking |
 | `code_execution` | Anthropic's sandboxed Python/Bash fallback for calculations the six typed tools don't cover (e.g. a statistic like standard deviation) |
 
@@ -167,7 +168,8 @@ backend/app/
                                 tool_filters._build_filters), awards.py
                                 (get_award_details/get_award_subawards),
                                 recipients.py (search_recipients/
-                                get_recipient_details) + business_type_labels.py
+                                get_recipient_details/get_recipient_children) +
+                                business_type_labels.py
                                 (its code->label table), naics.py/psc.py/cfda.py/
                                 location.py (the resolve_*_code / resolve_county_fips
                                 semantic code-lookup tools)

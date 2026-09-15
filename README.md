@@ -88,7 +88,9 @@ cd web && npm install   # first time only
 npm run dev
 ```
 
-- Browser UI: `http://localhost:3000`
+- Browser UI: `http://localhost:3000` — the empty chat state shows 5 randomly-sampled
+  quick-question buttons (from `web/src/lib/demoQuestions.ts`'s hand-vetted set of 20,
+  each verified live to trigger its expected tool call) for a fast first-touch demo
 - API: `POST /ask` with `{"question": "...", "conversation_id": "..."}`, returns
   `{answer_text, source_type, conversation_id, charts, citations, tool_citations}` —
   omit `conversation_id` on the first call, then pass back the one returned to continue

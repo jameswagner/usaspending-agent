@@ -56,6 +56,7 @@ from backend.app.agent.tool_filters import (
     _validate_naics_code,
     _validate_psc_code,
 )
+from backend.app.agent.tools.location import resolve_county_fips
 from backend.app.agent.tools import (
     MAX_TOOL_CALLS_PER_TURN,
     VALID_CATEGORIES,
@@ -1623,6 +1624,26 @@ class TestQueryCandidates:
     def test_borough_and_census_area_also_stripped(self):
         assert _query_candidates("Anchorage Borough")[-1] == "Anchorage"
         assert _query_candidates("Bethel Census Area")[-1] == "Bethel"
+
+
+class TestResolveCountyFipsErrorHandling:
+    # Unlike every other data tool, resolve_county_fips previously had no
+    # try/except USASpendingAPIError around its live call - a failure (e.g.
+    # the timeout/connection-error wrapping added to usaspending_client.py)
+    # would raise straight out of the tool instead of degrading to the
+    # same "This query failed: ..." string every other tool returns.
+    def test_api_error_returns_failure_string_instead_of_raising(self, monkeypatch):
+        from backend.app.usaspending_client import USASpendingAPIError
+
+        def raise_error(description):
+            raise USASpendingAPIError("USASpending.gov is responding slowly")
+
+        monkeypatch.setattr(
+            "backend.app.agent.tools.location._get_usaspending_client",
+            lambda: SimpleNamespace(autocomplete_location=raise_error),
+        )
+        result = resolve_county_fips.func(description="Yavapai County")
+        assert result == "This query failed: USASpending.gov is responding slowly."
 
 
 class TestAmountFieldForAwardType:

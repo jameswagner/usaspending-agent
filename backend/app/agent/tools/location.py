@@ -13,6 +13,8 @@ import re
 
 from anthropic import beta_tool
 
+from backend.app.usaspending_client import USASpendingAPIError
+
 from ..singletons import _get_usaspending_client
 from ..tool_filters import _normalize_county_fips
 from ._shared import _check_tool_call_budget, _record_tool_call, _wrap_untrusted
@@ -55,11 +57,14 @@ def resolve_county_fips(description: str) -> str:
     client = _get_usaspending_client()
 
     counties = []
-    for candidate in _query_candidates(description):
-        response = client.autocomplete_location(candidate)
-        counties = response.results.counties
-        if counties:
-            break
+    try:
+        for candidate in _query_candidates(description):
+            response = client.autocomplete_location(candidate)
+            counties = response.results.counties
+            if counties:
+                break
+    except USASpendingAPIError as e:
+        return f"This query failed: {e}."
 
     if not counties:
         return f"No county found matching '{description}'."

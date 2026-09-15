@@ -481,3 +481,61 @@ class TestRequestCapture:
         captured = drain_request_capture()
         assert len(captured) == 1
         assert captured[0][0] == "GET"
+
+
+class TestTimeoutAndConnectionErrorWrapping:
+    """_get/_post must turn a raw requests exception (raised when the
+    mounted Retry exhausts, or a connection never completes at all) into a
+    USASpendingAPIError with an honest, actionable message - not let it
+    propagate as an unhandled exception no caller here catches."""
+
+    @pytest.mark.parametrize(
+        "exc",
+        [
+            requests.exceptions.Timeout("timed out"),
+            requests.exceptions.ConnectionError("connection refused"),
+            requests.exceptions.RetryError("max retries exceeded"),
+        ],
+    )
+    def test_get_wraps_timeout_and_connection_errors(self, monkeypatch, exc):
+        client = USASpendingClient()
+
+        def fake_get(url, params=None, timeout=None):
+            raise exc
+
+        monkeypatch.setattr(client.session, "get", fake_get)
+        with pytest.raises(USASpendingAPIError) as exc_info:
+            client._get("/api/v2/agency/049/")
+        assert "USASpending.gov" in str(exc_info.value)
+        assert exc_info.value.__cause__ is exc
+
+    @pytest.mark.parametrize(
+        "exc",
+        [
+            requests.exceptions.Timeout("timed out"),
+            requests.exceptions.ConnectionError("connection refused"),
+            requests.exceptions.RetryError("max retries exceeded"),
+        ],
+    )
+    def test_post_wraps_timeout_and_connection_errors(self, monkeypatch, exc):
+        client = USASpendingClient()
+
+        def fake_post(url, json=None, timeout=None):
+            raise exc
+
+        monkeypatch.setattr(client.session, "post", fake_post)
+        with pytest.raises(USASpendingAPIError) as exc_info:
+            client._post("/api/v2/search/spending_by_category/naics/", {})
+        assert "USASpending.gov" in str(exc_info.value)
+        assert exc_info.value.__cause__ is exc
+
+    def test_non_timeout_http_error_path_is_unaffected(self, monkeypatch):
+        # A normal 4xx/5xx response (no exception raised by session.get
+        # itself) must still go through _raise_with_detail exactly as
+        # before - this fix only wraps exceptions from the request call
+        # itself, not ordinary error status codes.
+        client = USASpendingClient()
+        monkeypatch.setattr(client.session, "get", lambda url, params=None, timeout=None: make_response(404, {}))
+        with pytest.raises(USASpendingAPIError) as exc_info:
+            client._get("/api/v2/agency/nonexistent/")
+        assert "404" in str(exc_info.value)

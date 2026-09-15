@@ -17,7 +17,10 @@ import logging
 from anthropic import beta_tool
 from langsmith import traceable
 
-from backend.app.usaspending_client import SpendingByAwardCountResponse, USASpendingAPIError
+from backend.app.usaspending_client import (
+    SpendingByAwardCountResponse,
+    USASpendingAPIError,
+)
 
 from ..recipient_types import RecipientType
 from ..singletons import _get_usaspending_client

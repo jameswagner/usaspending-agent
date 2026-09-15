@@ -1,5 +1,4 @@
-# usaspending-rag
-
+# usaspending-agent
 A tool-calling assistant for questions about USASpending.gov federal spending data. An LLM agent picks between retrieval (conceptual/definitional term lookups, and semantic NAICS/PSC/CFDA/county code lookups) and live USASpending API calls (actual numbers), across as many tool calls and turns as a question needs.
 
 ## Architecture

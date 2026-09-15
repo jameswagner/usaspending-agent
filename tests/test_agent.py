@@ -56,7 +56,6 @@ from backend.app.agent.tool_filters import (
     _validate_naics_code,
     _validate_psc_code,
 )
-from backend.app.agent.tools.location import resolve_county_fips
 from backend.app.agent.tools import (
     MAX_TOOL_CALLS_PER_TURN,
     VALID_CATEGORIES,
@@ -92,6 +91,7 @@ from backend.app.agent.tools import (
     _truncation_note,
     get_spending_explorer_breakdown_raw,
 )
+from backend.app.agent.tools.location import resolve_county_fips
 from backend.app.usaspending_client import (
     AgencySubAgencyResponse,
     CategoryResult,

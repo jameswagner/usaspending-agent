@@ -140,3 +140,70 @@ def test_ask_rate_limited_after_exceeding_limit(client, monkeypatch):
 
     assert resp.status_code == 429
     assert "Retry-After" in resp.headers
+
+
+async def _fake_sse_event_generator(question, conversation_id):
+    yield b'event: tool_call_start\ndata: {"tool_name": "get_agency_budget", "args": {}}\n\n'
+    yield b'event: tool_result\ndata: {"tool_name": "get_agency_budget", "summary": "ok"}\n\n'
+    yield (
+        b'event: done\ndata: {"answer_text": "NASA\'s budget is $30B.", "source_type": "agent", '
+        b'"conversation_id": "' + conversation_id.encode() + b'", "charts": [], "citations": [], '
+        b'"tool_citations": []}\n\n'
+    )
+
+
+def test_ask_stream_returns_sse_content_type(client, monkeypatch):
+    monkeypatch.setattr("backend.app.main.sse_event_generator", _fake_sse_event_generator)
+    resp = client.post("/ask/stream", json={"question": "What is NASA's budget?"})
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/event-stream")
+
+
+def test_ask_stream_yields_frames_in_order(client, monkeypatch):
+    monkeypatch.setattr("backend.app.main.sse_event_generator", _fake_sse_event_generator)
+    with client.stream("POST", "/ask/stream", json={"question": "What is NASA's budget?"}) as resp:
+        body = b"".join(resp.iter_bytes())
+    events = [line for line in body.decode().split("\n") if line.startswith("event: ")]
+    assert events == ["event: tool_call_start", "event: tool_result", "event: done"]
+
+
+def test_ask_stream_generates_conversation_id_when_absent(client, monkeypatch):
+    received = {}
+
+    async def capturing_generator(question, conversation_id):
+        received["conversation_id"] = conversation_id
+        yield b"event: done\ndata: {}\n\n"
+
+    monkeypatch.setattr("backend.app.main.sse_event_generator", capturing_generator)
+    with client.stream("POST", "/ask/stream", json={"question": "What is NASA's budget?"}) as resp:
+        list(resp.iter_bytes())
+    assert received["conversation_id"]
+
+
+def test_ask_stream_reuses_conversation_id_when_given(client, monkeypatch):
+    received = {}
+
+    async def capturing_generator(question, conversation_id):
+        received["conversation_id"] = conversation_id
+        yield b"event: done\ndata: {}\n\n"
+
+    monkeypatch.setattr("backend.app.main.sse_event_generator", capturing_generator)
+    with client.stream(
+        "POST", "/ask/stream", json={"question": "What about FY2023?", "conversation_id": "existing-thread"}
+    ) as resp:
+        list(resp.iter_bytes())
+    assert received["conversation_id"] == "existing-thread"
+
+
+def test_ask_stream_rate_limited_after_exceeding_limit(client, monkeypatch):
+    monkeypatch.setattr("backend.app.main.sse_event_generator", _fake_sse_event_generator)
+
+    for _ in range(ASK_RATE_LIMIT_PER_MINUTE):
+        with client.stream("POST", "/ask/stream", json={"question": "What is NASA's budget?"}) as resp:
+            list(resp.iter_bytes())
+            assert resp.status_code == 200
+
+    resp = client.post("/ask/stream", json={"question": "What is NASA's budget?"})
+
+    assert resp.status_code == 429
+    assert "Retry-After" in resp.headers

@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -18,6 +20,7 @@ from backend.app.agent import ask as agent_ask
 from backend.app.agent.orchestrator import NOT_FOUND_MESSAGE
 from backend.app.agent.response_shaping import Citation, ToolCitation
 from backend.app.agent.singletons import warm_up
+from backend.app.agent.streaming import sse_event_generator
 from backend.app.logging_config import configure_logging
 
 logger = logging.getLogger(__name__)
@@ -100,4 +103,21 @@ def ask(request: Request, response: Response, payload: AskRequest) -> AskRespons
         charts=[c.model_dump() for c in result.charts],
         citations=result.citations,
         tool_citations=result.tool_citations,
+    )
+
+
+@app.post("/ask/stream")
+@limiter.limit(f"{ASK_RATE_LIMIT_PER_MINUTE}/minute")
+def ask_stream(request: Request, response: Response, payload: AskRequest) -> StreamingResponse:
+    # Same rate-limit wiring as /ask (see that handler's comment) - slowapi
+    # needs to write its headers onto `response` before this function
+    # returns, which it does here since those headers only cover the
+    # normal-response path; they don't apply once headers are already
+    # streaming.
+    logger.info("Received question (stream): %r", payload.question)
+    conversation_id = payload.conversation_id or str(uuid.uuid4())
+    return StreamingResponse(
+        sse_event_generator(payload.question, conversation_id),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

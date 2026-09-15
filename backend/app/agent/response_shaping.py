@@ -248,6 +248,18 @@ NEVER_CHART_TOOLS = {
 }
 
 
+_CATEGORY_ACRONYMS = {"naics", "psc", "cfda", "defc", "duns"}
+
+
+def _label_category(raw: str) -> str:
+    """Title-case a tool-internal category/geo_layer/group_by value (e.g.
+    "recipient_duns", "naics") for display in a chart title - preserving
+    known USASpending acronyms (NAICS, PSC, ...) in all caps rather than
+    title-casing them into "Naics"/"Psc"."""
+    words = raw.replace("_", " ").split()
+    return " ".join(w.upper() if w in _CATEGORY_ACRONYMS else w.capitalize() for w in words)
+
+
 def should_chart(tool_name: str, structured_result, context: dict | None = None) -> ChartSpec | None:
     """Deterministic, unit-testable chart-eligibility check keyed on the
     actual result's cardinality — not on guessing intent from the question,
@@ -305,7 +317,7 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
     if tool_name == "get_spending_by_category":
         if len(structured_result.results) < 2:
             return None
-        title = f"Spending by {structured_result.category}"
+        title = f"Spending by {_label_category(structured_result.category)}"
         if agency_name:
             title += f" — {agency_name}"
         return ChartSpec(
@@ -332,7 +344,7 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
         if len(structured_result.results) < 2:
             return None
         top = sorted(structured_result.results, key=lambda r: -r.aggregated_amount)[:20]
-        title = f"Spending by {structured_result.geo_layer}"
+        title = f"Spending by {_label_category(structured_result.geo_layer)}"
         if agency_name:
             title += f" — {agency_name}"
         return ChartSpec(
@@ -357,7 +369,7 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
             return None
         return ChartSpec(
             chart_type="bar",
-            title=f"Spending by {named[0].type.replace('_', ' ')}",
+            title=f"Spending by {_label_category(named[0].type)}",
             labels=[r.name or r.code or "Unknown" for r in named],
             values=[r.amount for r in named],
         )

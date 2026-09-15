@@ -1,7 +1,9 @@
 """get_award_details and its IDV child-order rollup - full detail on one
 specific award (contract, IDV, grant, loan, or other financial
 assistance), as opposed to spending.py's aggregate/list tools. Also
-get_award_subawards, listing one award's own subawards - see #22.
+get_award_subawards, listing one award's own subawards. Also
+get_award_funding_breakdown, the Federal Account/TAS funding breakdown for
+one specific award.
 """
 from __future__ import annotations
 
@@ -11,7 +13,11 @@ from typing import Any
 from anthropic import beta_tool
 from langsmith import traceable
 
-from backend.app.usaspending_client import IDVAmountsResponse, USASpendingAPIError
+from backend.app.usaspending_client import (
+    AwardFundingResponse,
+    IDVAmountsResponse,
+    USASpendingAPIError,
+)
 
 from ..singletons import _get_usaspending_client
 from ._shared import (
@@ -72,6 +78,16 @@ def get_idv_amounts_raw(award_id: str) -> IDVAmountsResponse:
     separate call from get_award_details_raw."""
     client = _get_usaspending_client()
     return client.get_idv_amounts(award_id)
+
+
+@traceable(run_type="tool", name="get_award_funding_breakdown_raw")
+def get_award_funding_breakdown_raw(award_id: str, limit: int = 10) -> AwardFundingResponse:
+    """Call the API once, return the structured Federal Account Funding
+    rows. Raises USASpendingAPIError on failure - see
+    USASpendingClient.get_award_funding's docstring for why this is a
+    separate call from get_award_details_raw rather than merged into it."""
+    client = _get_usaspending_client()
+    return client.get_award_funding(award_id, limit=limit)
 
 
 def _agency_label(agency: dict[str, Any] | None) -> str:
@@ -399,6 +415,62 @@ def get_award_subawards(award_id: str, limit: int = 10) -> str:
         f"{s.subaward_number} — {s.recipient_name}: ${s.amount:,.2f} ({s.action_date}) - {s.description}"
         for s in response.results
     ]
+    has_next = response.page_metadata.hasNext if response.page_metadata else False
+    note = _truncation_note(has_next, len(response.results))
+    return _wrap_untrusted("\n".join(lines) + note)
+
+
+def _format_funding_row(row) -> str:
+    account = row.federal_account or "unknown federal account"
+    if row.account_title:
+        account += f" ({row.account_title})"
+    amount = row.transaction_obligated_amount or 0
+    line = f"{account}: ${amount:,.2f} obligated"
+    if row.gross_outlay_amount is not None:
+        line += f", ${row.gross_outlay_amount:,.2f} outlayed"
+    detail_bits = []
+    if row.object_class_name or row.object_class:
+        detail_bits.append(f"object class {row.object_class_name or row.object_class}")
+    if row.program_activity_name:
+        detail_bits.append(f"program activity {row.program_activity_name}")
+    if row.disaster_emergency_fund_code:
+        detail_bits.append(f"DEFC {row.disaster_emergency_fund_code}")
+    if detail_bits:
+        line += " (" + ", ".join(detail_bits) + ")"
+    if row.reporting_fiscal_year:
+        period = f"FY{row.reporting_fiscal_year}"
+        if row.reporting_fiscal_quarter:
+            period += f" Q{row.reporting_fiscal_quarter}"
+        line += f" [{period}]"
+    return line
+
+
+@beta_tool
+def get_award_funding_breakdown(award_id: str, limit: int = 10) -> str:
+    """Get the Federal Account Funding breakdown for one specific award - which Treasury Account Symbol (TAS)/object class/program activity/Disaster Emergency Fund Code combinations actually funded it, and how much each contributed. This is the award-profile page's own "Federal Account Funding" tab. Use this for "which federal account(s) paid for this contract/grant" or "what TAS funded this award" questions about a SPECIFIC award already found via search_awards - not for browsing spending across many awards by account (no tool does that yet).
+
+    This is a separate, later-timed data source (a Treasury account-level DATA Act "File C" submission) from get_award_details' own total_obligation (an award/transaction-level "File D2" figure) - the two are only best-effort linked, not guaranteed to sum to the same total. Always call get_award_details first for the award's own headline totals; call this only when the question is specifically about which federal account(s)/TAS funded it.
+
+    Args:
+        award_id: The internal_id shown alongside a search_awards result (or get_award_details' own
+            award_id parameter) - the hash-style generated_unique_award_id, not the plain PIID/FAIN.
+            Do not guess or construct one.
+        limit: Max number of funding rows to return, ranked by reporting period descending (default 10).
+    """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    try:
+        response = get_award_funding_breakdown_raw(award_id, limit=limit)
+    except USASpendingAPIError as e:
+        logger.warning("get_award_funding_breakdown failed for %s: %s", award_id, e)
+        return f"This query failed: {e}."
+
+    _record_tool_call("get_award_funding_breakdown", response, {"award_id": award_id})
+
+    if not response.results:
+        return f"No federal account funding data found for award {award_id}."
+
+    lines = [_format_funding_row(row) for row in response.results]
     has_next = response.page_metadata.hasNext if response.page_metadata else False
     note = _truncation_note(has_next, len(response.results))
     return _wrap_untrusted("\n".join(lines) + note)

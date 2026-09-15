@@ -20,9 +20,11 @@ from backend.app.usaspending_client import (
     AdvancedFilters,
     AgencyFilter,
     AwardAmount,
+    CodePathObject,
     LocationObject,
     NAICSCodeObject,
     TimePeriod,
+    TreasuryAccountComponentsObject,
     USASpendingAPIError,
     USASpendingClient,
 )
@@ -416,6 +418,23 @@ def _validate_cfda_program(cfda_program: str) -> str:
     return code
 
 
+# federal_account's wire format (per get_award_funding's own output, e.g.
+# "028-8704") is AID-MAIN - the two treasury_account_components fields that
+# together identify a federal account, one level up from a full TAS.
+_FEDERAL_ACCOUNT_PATTERN = re.compile(r"^\d{2,4}-\d{4}$")
+
+
+def _validate_federal_account(federal_account: str) -> tuple[str, str]:
+    code = federal_account.strip()
+    if not _FEDERAL_ACCOUNT_PATTERN.match(code):
+        raise USASpendingAPIError(
+            f"'{federal_account}' doesn't look like a federal account (expected AID-MAIN, e.g. '028-8704' - "
+            "the federal_account value shown on a get_award_funding_breakdown row)."
+        )
+    aid, main = code.split("-")
+    return aid, main
+
+
 def _build_filters(
     client: USASpendingClient,
     agency_name: str | None,
@@ -447,6 +466,8 @@ def _build_filters(
     award_id: str | None = None,
     recipient_type: str | None = None,
     description: str | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
     award_type_counts_as_scope: bool = False,
     scope_required: bool = True,
 ) -> AdvancedFilters:
@@ -551,6 +572,7 @@ def _build_filters(
         performed_in_district, recipient_in_district,
         naics_code, psc_code, cfda_program, keywords,
         award_id, description, recipient_type,
+        tas_code, federal_account,
     )
     has_real_scope = any(f is not None for f in real_scoping_filters)
     if not has_real_scope and award_type_counts_as_scope and award_type is not None:
@@ -561,7 +583,7 @@ def _build_filters(
             "recipient_in_state, performed_in_county, recipient_in_county, performed_in_city, "
             "recipient_in_city, performed_in_zip, recipient_in_zip, performed_in_district, "
             "recipient_in_district, naics_code, psc_code, cfda_program, keywords, award_id, "
-            "description, or recipient_type must be given"
+            "description, recipient_type, tas_code, or federal_account must be given"
         )
         if award_type_counts_as_scope:
             message += ", or award_type (browsing by award type + fiscal year alone is fine here)"
@@ -657,6 +679,17 @@ def _build_filters(
 
     if description is not None:
         kwargs["description"] = description
+
+    if tas_code is not None:
+        # Treated as a single-segment path (a full TAS code, not a
+        # hierarchy level) - CodePathObject's require is a list of paths,
+        # but this codebase only ever has one known TAS to filter by at a
+        # time, same one-code-at-a-time shape as naics_code/psc_code above.
+        kwargs["tas_codes"] = CodePathObject(require=[[tas_code.strip()]])
+
+    if federal_account is not None:
+        aid, main = _validate_federal_account(federal_account)
+        kwargs["treasury_account_components"] = [TreasuryAccountComponentsObject(aid=aid, main=main)]
 
     return AdvancedFilters(**kwargs)
 
@@ -809,6 +842,8 @@ def _record_optional_filter_context(
     award_id: str | None = None,
     recipient_type: str | None = None,
     description: str | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
 ) -> dict:
     """Adds each optional filter param to a citation context dict, but
     only the ones actually set - so a citation reflects exactly which
@@ -841,6 +876,8 @@ def _record_optional_filter_context(
         ("award_id", award_id),
         ("recipient_type", recipient_type),
         ("description", description),
+        ("tas_code", tas_code),
+        ("federal_account", federal_account),
     ):
         if value is not None:
             context[key] = value

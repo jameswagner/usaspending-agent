@@ -394,6 +394,8 @@ _ALL_OPTIONAL_FILTER_KEYS = {
     "naics_code",
     "psc_code",
     "cfda_program",
+    "tas_code",
+    "federal_account",
 }
 
 
@@ -415,6 +417,8 @@ _SCOPE_LABEL_KEYS = (
     ("psc_code", "PSC"),
     ("cfda_program", "CFDA"),
     ("keywords", "keywords"),
+    ("tas_code", "TAS"),
+    ("federal_account", "federal account"),
 )
 
 
@@ -647,6 +651,15 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             tool_name=tool_name,
             parameters={"award_id": award_id},
             description=f"Subawards for award: {award_id}",
+            curl=_curl_from_context(context),
+        )
+
+    if tool_name == "get_award_funding_breakdown":
+        award_id = context["award_id"]
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"award_id": award_id},
+            description=f"Federal account funding breakdown for award: {award_id}",
             curl=_curl_from_context(context),
         )
 

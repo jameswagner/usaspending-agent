@@ -50,6 +50,8 @@ from .awards import (
     _unresolved_award_id_hint,
     get_award_details,
     get_award_details_raw,
+    get_award_funding_breakdown,
+    get_award_funding_breakdown_raw,
     get_award_subawards,
     get_idv_amounts_raw,
 )
@@ -140,6 +142,8 @@ __all__ = [
     "get_agency_budget_raw",
     "get_award_details",
     "get_award_details_raw",
+    "get_award_funding_breakdown",
+    "get_award_funding_breakdown_raw",
     "get_award_subawards",
     "get_award_type_breakdown",
     "get_award_type_breakdown_raw",

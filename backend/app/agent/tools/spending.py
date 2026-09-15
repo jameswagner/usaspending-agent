@@ -740,6 +740,8 @@ def search_awards_raw(
     award_id: str | None = None,
     recipient_type: RecipientType | None = None,
     description: str | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
 ) -> SearchAwardsResponse:
     """Call the API once, return the structured response (results +
     page_metadata), sorted largest-first by sort_by (default "amount":
@@ -795,6 +797,8 @@ def search_awards_raw(
         award_id=award_id,
         recipient_type=recipient_type,
         description=description,
+        tas_code=tas_code,
+        federal_account=federal_account,
         award_type_counts_as_scope=True,
     )
     amount_field = _amount_field_for_award_type(award_type)
@@ -840,6 +844,8 @@ def search_awards(
     award_id: str | None = None,
     recipient_type: RecipientType | None = None,
     description: str | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
 ) -> str:
     """Search for individual award records (specific contracts, grants, or loans) for a fiscal year range, scoped by an awarding agency and/or a recipient. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead. Results are ranked largest-first by sort_by (default "amount") — use this directly for "biggest"/"top N" questions, including "top N by outlay/subsidy cost" or "most recently modified" with sort_by set accordingly.
 
@@ -968,6 +974,13 @@ def search_awards(
             phrase, e.g. "vaccine research". Distinct from keywords - keywords also matches
             recipient name, PIID/FAIN/URI, and NAICS/PSC description text, so a keywords hit
             doesn't imply a description hit or vice versa.
+        tas_code: Optional. Restrict to awards funded by this exact Treasury Account Symbol,
+            e.g. "020-2020/2021-1521". Must be the real code - get it from a
+            get_award_funding_breakdown call, not guessed.
+        federal_account: Optional. Restrict to awards funded by this exact federal account
+            (the AID-MAIN pair one level up from a full TAS), e.g. "028-8704" - the
+            federal_account value shown on a get_award_funding_breakdown row. Different from
+            tas_code: a federal account groups multiple TAS together.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -983,6 +996,7 @@ def search_awards(
         performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
         award_id=award_id, description=description,
+        tas_code=tas_code, federal_account=federal_account,
     )
     try:
         results = search_awards_raw(
@@ -1015,6 +1029,8 @@ def search_awards(
             award_id=award_id,
             recipient_type=recipient_type,
             description=description,
+            tas_code=tas_code,
+            federal_account=federal_account,
         )
     except USASpendingAPIError as e:
         logger.warning("search_awards failed for %s: %s", scope, e)
@@ -1051,6 +1067,8 @@ def search_awards(
         award_id=award_id,
         recipient_type=recipient_type,
         description=description,
+        tas_code=tas_code,
+        federal_account=federal_account,
     )
     _record_tool_call("search_awards", results, context)
 

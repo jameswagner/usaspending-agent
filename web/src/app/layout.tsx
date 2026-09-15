@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "USASpending RAG",
+  title: "USASpending Assistant",
   description: "Ask about federal spending data.",
 };
 

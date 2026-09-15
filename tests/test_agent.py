@@ -92,10 +92,13 @@ from backend.app.agent.tools import (
     get_spending_explorer_breakdown_raw,
 )
 from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
+from backend.app.agent.tools.awards import get_award_funding_breakdown
 from backend.app.agent.tools.location import resolve_county_fips
 from backend.app.agent.tools.spending import search_awards
 from backend.app.usaspending_client import (
     AgencySubAgencyResponse,
+    AwardFundingResponse,
+    AwardFundingRow,
     AwardTypeCounts,
     CategoryResult,
     GeographyTypeResult,
@@ -1117,6 +1120,13 @@ class TestBuildToolCitation:
         assert citation.parameters == {"award_id": "CONT_AWD_X"}
         assert citation.description == "Subawards for award: CONT_AWD_X"
 
+    def test_get_award_funding_breakdown(self):
+        citation = build_tool_citation("get_award_funding_breakdown", {"award_id": "CONT_AWD_X"})
+        assert citation is not None
+        assert citation.tool_name == "get_award_funding_breakdown"
+        assert citation.parameters == {"award_id": "CONT_AWD_X"}
+        assert citation.description == "Federal account funding breakdown for award: CONT_AWD_X"
+
     def test_resolve_county_fips(self):
         citation = build_tool_citation("resolve_county_fips", {"description": "Yavapai County"})
         assert citation is not None
@@ -1418,6 +1428,26 @@ class TestBuildFilters:
         with pytest.raises(USASpendingAPIError, match="doesn't look like a CFDA"):
             _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, cfda_program="research grants")
 
+    # tas_code/federal_account - exposing the already-modeled
+    # tas_codes/treasury_account_components AdvancedFilters fields.
+
+    def test_tas_code_becomes_single_path_require_list(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", 2021, 2024, tas_code="020-2020/2021-1521"
+        )
+        assert filters.tas_codes.require == [["020-2020/2021-1521"]]
+
+    def test_federal_account_becomes_treasury_account_components(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, federal_account="028-8704")
+        assert len(filters.treasury_account_components) == 1
+        component = filters.treasury_account_components[0]
+        assert component.aid == "028"
+        assert component.main == "8704"
+
+    def test_malformed_federal_account_raises(self):
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a federal account"):
+            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, federal_account="not-an-account")
+
     # award_id/recipient_type/description (2026-09-12, issue #28) - all
     # live-verified against the real API: award_ids/description matching
     # confirmed on search_awards, spending_by_category, and
@@ -1509,6 +1539,14 @@ class TestBuildFilters:
     def test_keywords_alone_is_sufficient_scope(self):
         filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, keywords="climate research")
         assert filters.keywords == ["climate research"]
+
+    def test_tas_code_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, tas_code="020-2020/2021-1521")
+        assert filters.tas_codes.require == [["020-2020/2021-1521"]]
+
+    def test_federal_account_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, federal_account="028-8704")
+        assert filters.treasury_account_components[0].aid == "028"
 
     def test_award_id_alone_is_sufficient_scope(self):
         filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, award_id="1605SS17F00018")
@@ -1946,6 +1984,71 @@ class TestGetAwardTypeBreakdown:
         self._mock_client(response, monkeypatch)
         result = get_award_type_breakdown.func(start_fiscal_year=2024, end_fiscal_year=2024)
         assert "a live API notice" in result
+
+
+class TestGetAwardFundingBreakdown:
+    # No path previously existed to answer "which federal accounts/TAS
+    # funded this award" - this wraps POST /api/v2/awards/funding/ as its
+    # own tool, separate from get_award_details (a different, later-timed
+    # File C data source).
+
+    def _mock_client(self, response, monkeypatch):
+        client = FakeClient(make_agency())
+        client.get_award_funding = lambda *a, **kw: response
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+
+    def test_formats_funding_rows(self, monkeypatch):
+        response = AwardFundingResponse(
+            results=[
+                AwardFundingRow(
+                    federal_account="028-8704",
+                    account_title="ENVIRONMENTAL PROGRAMS AND MANAGEMENT",
+                    object_class_name="Contractual services",
+                    program_activity_name="Research",
+                    disaster_emergency_fund_code="Q",
+                    transaction_obligated_amount=1500.0,
+                    gross_outlay_amount=1200.0,
+                    reporting_fiscal_year=2023,
+                    reporting_fiscal_quarter=2,
+                )
+            ],
+            page_metadata=PageMetadata(page=1, hasNext=False),
+        )
+        self._mock_client(response, monkeypatch)
+        result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
+        assert "028-8704" in result
+        assert "ENVIRONMENTAL PROGRAMS AND MANAGEMENT" in result
+        assert "$1,500.00 obligated" in result
+        assert "$1,200.00 outlayed" in result
+        assert "object class Contractual services" in result
+        assert "program activity Research" in result
+        assert "DEFC Q" in result
+        assert "FY2023 Q2" in result
+
+    def test_no_results(self, monkeypatch):
+        self._mock_client(AwardFundingResponse(results=[]), monkeypatch)
+        result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
+        assert "No federal account funding data found" in result
+
+    def test_api_error_returns_failure_message(self, monkeypatch):
+        client = FakeClient(make_agency())
+
+        def raise_error(*a, **kw):
+            raise USASpendingAPIError("boom")
+
+        client.get_award_funding = raise_error
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+        result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
+        assert "This query failed: boom." in result
+
+    def test_truncation_note_when_more_results_exist(self, monkeypatch):
+        response = AwardFundingResponse(
+            results=[AwardFundingRow(federal_account="028-8704", transaction_obligated_amount=1.0)],
+            page_metadata=PageMetadata(page=1, hasNext=True),
+        )
+        self._mock_client(response, monkeypatch)
+        result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
+        assert "complete" in result.lower() or "exhaustive" in result.lower() or "more" in result.lower()
 
 
 class TestAgencyLabel:

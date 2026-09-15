@@ -34,11 +34,18 @@ export function MessageBubble({ turn }: MessageBubbleProps) {
         <p
           className={
             isError
-              ? "mt-2 text-sm text-amber-600 dark:text-amber-400"
-              : "mt-2 text-sm text-black/50 dark:text-white/50"
+              ? "mt-2 flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400"
+              : "mt-2 flex items-start gap-2 text-sm text-black/50 dark:text-white/50"
           }
         >
-          {text}
+          {/* A raw tool-result summary (e.g. a wall of category/amount
+              pairs) can look enough like a finished answer that this dot
+              is the only thing telling a user the turn isn't done yet -
+              status text alone wasn't a strong enough signal in practice. */}
+          {!isError && (
+            <span className="mt-1 h-2 w-2 shrink-0 animate-pulse rounded-full bg-black/40 dark:bg-white/40" />
+          )}
+          <span className="font-mono text-xs leading-relaxed">{text}</span>
         </p>
       </div>
     );

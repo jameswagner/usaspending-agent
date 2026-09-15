@@ -43,12 +43,19 @@ from .response_shaping import fiscal_year_to_date_range
 # find_agency_by_name, so the model only has to recognize a term close to
 # what it already is, not correctly classify it into a bucket first.
 #
-# IDV-family codes (IDV_A through IDV_E - GWACs, BOAs, BPAs, etc.) are
-# deliberately not included: those are a structurally different kind of
-# award record (a vehicle other awards get issued under, not a
-# transaction itself), and search_awards's field set/behavior for that
-# category hasn't been verified - a real scope limitation, not an
-# oversight, flagged here rather than silently extended to cover it.
+# IDV-family codes (IDV_A through IDV_E - GWACs, BOAs, BPAs, etc.) - a
+# structurally different kind of award record (a vehicle other awards get
+# issued under, not a transaction itself) from plain contracts, but
+# live-verified 2026-09-15 (#146) that search_awards's field set/behavior
+# for this category works the same way as contracts: "Award Amount" sorts
+# fine, "Total Outlays" sorts fine, and award_ids/PIID lookups resolve
+# correctly (e.g. "12024B18D9025" -> CONT_IDV_12024B18D9025_12C2). Exposed
+# as its own explicit "idv" value rather than folded into "contracts" -
+# same "let code do the exact lookup, don't make the model guess a bucket"
+# reasoning as cooperative_agreement/bpa_call above, and a plain PIID
+# search against "contracts" (codes A-D) genuinely won't find an IDV
+# (its codes are a disjoint set), so a model that doesn't know to ask for
+# "idv" specifically needs a real, distinct value to reach for.
 AWARD_TYPE_GROUPS: dict[str, list[str]] = {
     "contracts": ["A", "B", "C", "D"],
     "grants": ["02", "03", "04", "05"],
@@ -57,6 +64,7 @@ AWARD_TYPE_GROUPS: dict[str, list[str]] = {
     "purchase_order": ["B"],
     "delivery_order": ["C"],
     "definitive_contract": ["D"],
+    "idv": ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"],
     "direct_loan": ["07"],
     "guaranteed_loan": ["08"],
     "block_grant": ["02"],
@@ -84,7 +92,7 @@ AWARD_TYPE_GROUPS: dict[str, list[str]] = {
 # in how it's built.
 AwardType = Literal[
     "contracts", "grants", "loans",
-    "bpa_call", "purchase_order", "delivery_order", "definitive_contract",
+    "bpa_call", "purchase_order", "delivery_order", "definitive_contract", "idv",
     "direct_loan", "guaranteed_loan",
     "block_grant", "formula_grant", "project_grant", "cooperative_agreement",
     "insurance", "other_financial_assistance",
@@ -101,22 +109,25 @@ def _normalize_award_type(award_type: str) -> str:
     return award_type.strip().lower().replace(" ", "_").replace("-", "_")
 
 
-# The 7 non-overlapping "leaf" categories that together cover every
-# possible award (IDVs excluded - see AWARD_TYPE_GROUPS's docstring). The
-# other 10 AWARD_TYPE_GROUPS keys are sub-types whose codes are already a
-# subset of one of these seven's codes (e.g. "contracts" = A,B,C,D, the
-# same codes "bpa_call"/"purchase_order"/"delivery_order"/
-# "definitive_contract" split out individually) - so once a broad
-# bucket's search comes back empty, trying its own sub-type afterward is
-# guaranteed to also come back empty, not a fresh thing to check.
+# The 8 non-overlapping "leaf" categories that together cover every
+# possible award. The other 10 AWARD_TYPE_GROUPS keys are sub-types whose
+# codes are already a subset of one of these eight's codes (e.g.
+# "contracts" = A,B,C,D, the same codes "bpa_call"/"purchase_order"/
+# "delivery_order"/"definitive_contract" split out individually) - so once
+# a broad bucket's search comes back empty, trying its own sub-type
+# afterward is guaranteed to also come back empty, not a fresh thing to
+# check. "idv" is its own leaf, not folded under "contracts" - its codes
+# (IDV_A-IDV_E) are disjoint from A/B/C/D, so a "contracts" search coming
+# back empty says nothing about whether an IDV exists.
 EXHAUSTIVE_AWARD_TYPE_CATEGORIES = [
-    "contracts", "grants", "loans", "insurance",
+    "contracts", "grants", "loans", "idv", "insurance",
     "other_financial_assistance", "direct_payment_specified", "direct_payment_unrestricted",
 ]
 
 _BROAD_CATEGORY_FOR_AWARD_TYPE = {
     "contracts": "contracts", "bpa_call": "contracts", "purchase_order": "contracts",
     "delivery_order": "contracts", "definitive_contract": "contracts",
+    "idv": "idv",
     "grants": "grants", "block_grant": "grants", "formula_grant": "grants",
     "project_grant": "grants", "cooperative_agreement": "grants",
     "loans": "loans", "direct_loan": "loans", "guaranteed_loan": "loans",
@@ -689,12 +700,13 @@ def _amount_field_for_award_type(award_type: str) -> str:
     Assistance award types per spending_by_award.md's field tables, but
     Loans (codes 07/08) expose "Loan Value" instead - sorting or reading
     "Award Amount" for a loan-type search would be invalid/empty for that
-    field. IDV codes are never in AWARD_TYPE_GROUPS (see its docstring),
-    so loans-vs-everything-else is the only branch this codebase needs.
+    field. IDV codes are never loan codes, so loans-vs-everything-else is
+    still the only branch this codebase needs.
 
     Live-verified 2026-09-06 (dev_tools/verify_shared_filters.py): "Loan
     Value" is a real field on live loan-type search_awards results, and
-    sorting by it doesn't error.
+    sorting by it doesn't error. IDVs' own "Award Amount"/"Total Outlays"
+    sort fields live-verified 2026-09-15 (#146).
 
     Assumes award_type is already a valid AWARD_TYPE_GROUPS key - callers
     only reach this after _build_filters has already validated it earlier

@@ -23,6 +23,35 @@ from ._shared import (
 
 logger = logging.getLogger(__name__)
 
+# generated_unique_award_id's own real prefixes (live-verified 2026-09-15,
+# #146): CONT_AWD_/CONT_IDV_ for contracts/IDVs, ASST_NON_ for financial
+# assistance (grants/loans/direct payments/other). A value that starts
+# with neither is almost certainly a plain PIID/FAIN passed by mistake -
+# used only to decide whether to append the IDV-resolution hint below, not
+# to validate/reject the input (the live API is still the source of truth
+# for whether it resolves).
+_INTERNAL_ID_PREFIXES = ("CONT_", "ASST_")
+
+
+def _unresolved_award_id_hint(award_id: str) -> str:
+    """Appended to a get_award_details failure message when award_id
+    doesn't look like a real internal_id - most commonly a plain PIID/FAIN
+    passed by mistake, including the #146 case (a plain IDV PIID). Empty
+    string when award_id already has a real prefix, since the failure is
+    then something else (a bad/nonexistent internal_id) this hint doesn't
+    apply to."""
+    if award_id.upper().startswith(_INTERNAL_ID_PREFIXES):
+        return ""
+    return (
+        " This tool requires the hash-style internal_id (e.g. "
+        "'CONT_AWD_...' for a contract, 'CONT_IDV_...' for a contract vehicle/IDV, "
+        "'ASST_NON_...' for a grant/loan/other assistance award), not a plain "
+        "Award ID/PIID/FAIN. Resolve it first via search_awards — if this is a "
+        "contract vehicle (IDV) rather than a plain contract, call "
+        "search_awards(award_type=\"idv\", award_id=<PIID>) — then use the "
+        "internal_id shown in that result."
+    )
+
 
 @traceable(run_type="tool", name="get_award_details_raw")
 def get_award_details_raw(award_id: str) -> dict[str, Any]:
@@ -322,7 +351,7 @@ def get_award_details(award_id: str, include_child_orders: bool = False) -> str:
         data = get_award_details_raw(award_id)
     except USASpendingAPIError as e:
         logger.warning("get_award_details failed for %s: %s", award_id, e)
-        return f"This query failed: {e}."
+        return f"This query failed: {e}.{_unresolved_award_id_hint(award_id)}"
 
     child_order_rollup = None
     if include_child_orders and data.get("category") == "idv":

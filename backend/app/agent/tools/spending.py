@@ -886,12 +886,15 @@ def search_awards(
             of these for a general "show me X's contracts/grants" question. For a question asking
             about a SPECIFIC sub-type rather than the broad category, use the specific value
             instead of guessing which broad bucket it falls under: bpa_call, purchase_order,
-            delivery_order, definitive_contract (contract sub-types); direct_loan, guaranteed_loan
-            (loan sub-types); block_grant, formula_grant, project_grant, cooperative_agreement
-            (grant sub-types - e.g. "cooperative agreement" is cooperative_agreement, NOT
-            contracts); insurance, other_financial_assistance, direct_payment_specified,
-            direct_payment_unrestricted (other assistance types). Case/spacing/hyphens don't
-            matter (e.g. "Cooperative Agreement" also works).
+            delivery_order, definitive_contract (contract sub-types); idv (Indefinite Delivery
+            Vehicle - a GWAC, BPA, or other contract vehicle that other awards get issued under,
+            NOT itself under "contracts" - its codes are disjoint from A/B/C/D, so searching for
+            an IDV's own PIID under award_type="contracts" returns zero results); direct_loan,
+            guaranteed_loan (loan sub-types); block_grant, formula_grant, project_grant,
+            cooperative_agreement (grant sub-types - e.g. "cooperative agreement" is
+            cooperative_agreement, NOT contracts); insurance, other_financial_assistance,
+            direct_payment_specified, direct_payment_unrestricted (other assistance types).
+            Case/spacing/hyphens don't matter (e.g. "Cooperative Agreement" also works).
         limit: Max number of results to return (default 5).
         sort_by: One of: amount (default - Award Amount, or Loan Value for loan award
             types), outlays (Total Outlays - the amount actually paid out so far, distinct
@@ -956,7 +959,9 @@ def search_awards(
         award_id: Optional. Restrict to a single known award by its plain Award ID (PIID/FAIN/URI,
             e.g. "1605SS17F00018") - a fuzzy text match, not an exact-id lookup. This is the same
             "Award ID" shown in this tool's own results, NOT the longer internal_id shown alongside
-            it (that one is for get_award_details, not this filter).
+            it (that one is for get_award_details, not this filter). If the PIID is for a contract
+            vehicle (IDV) rather than a plain contract, pass award_type="idv" too - the default
+            award_type="contracts" won't find it, since IDV codes are disjoint from A/B/C/D.
         recipient_type: Optional. Restrict to recipients tagged with this business/recipient
             type, e.g. "small_business", "woman_owned_business", "nonprofit", "higher_education".
         description: Optional. Restrict to awards whose own description text matches this

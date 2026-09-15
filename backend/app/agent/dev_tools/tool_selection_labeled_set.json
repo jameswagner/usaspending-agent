@@ -95,6 +95,11 @@
     {"question": "Find NSF's single largest FY2023 contract, then tell me which subcontractors it went to.", "expected_tools": ["search_awards", "get_award_subawards"], "confusable_with": ["search_subawards"]},
     {"question": "What was federal spending on Medicare (budget function 570) broken down by sub-function in FY2023? Then break the largest sub-function down further into federal accounts.", "expected_tools": ["get_spending_explorer_breakdown"], "confusable_with": ["get_spending_by_category"]}
   ],
+  "award_type_breakdown": [
+    {"question": "How many federal contracts vs. grants vs. loans were awarded government-wide in FY2024?", "expected_tool": "get_award_type_breakdown", "confusable_with": ["get_spending_by_category", "search_awards"]},
+    {"question": "What's NSF's award-type mix for FY2023 - how many contracts, grants, and IDVs did it issue?", "expected_tool": "get_award_type_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_award_breakdown"]},
+    {"question": "Break down NSF's FY2023 spending by award type.", "expected_tool": "get_award_type_breakdown", "confusable_with": ["get_spending_by_category", "search_awards", "get_spending_over_time"]}
+  ],
   "ambiguous_intentional": [
     {"question": "How did NSF spend its money in FY2023?", "acceptable_tools": ["get_spending_by_category", "get_spending_over_time", "search_awards"]},
     {"question": "Where did the Department of Defense's FY2023 spending go?", "acceptable_tools": ["get_spending_by_category", "get_spending_by_geography"]},

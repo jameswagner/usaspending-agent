@@ -35,6 +35,11 @@ from ._shared import (
     lookup_agency,
     search_guide,
 )
+from .award_type_breakdown import (
+    _format_award_type_counts,
+    get_award_type_breakdown,
+    get_award_type_breakdown_raw,
+)
 from .awards import (
     _agency_label,
     _format_award_details,
@@ -103,6 +108,7 @@ __all__ = [
     "_format_agency_award_breakdown",
     "_format_api_messages",
     "_format_award_details",
+    "_format_award_type_counts",
     "_format_business_type",
     "_format_contract_or_idv",
     "_format_financial_assistance",
@@ -135,6 +141,8 @@ __all__ = [
     "get_award_details",
     "get_award_details_raw",
     "get_award_subawards",
+    "get_award_type_breakdown",
+    "get_award_type_breakdown_raw",
     "get_idv_amounts_raw",
     "get_recipient_details",
     "get_spending_by_category",

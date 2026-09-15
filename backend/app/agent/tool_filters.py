@@ -448,6 +448,7 @@ def _build_filters(
     recipient_type: str | None = None,
     description: str | None = None,
     award_type_counts_as_scope: bool = False,
+    scope_required: bool = True,
 ) -> AdvancedFilters:
     """Resolve agency_name + fiscal-year range into an AdvancedFilters -
     the shared first step of all three spending tools, replacing what was
@@ -511,6 +512,13 @@ def _build_filters(
     Search table handles fine with an award-type + fiscal-year filter
     alone, so that combination is real scope for this tool specifically.
 
+    scope_required=False skips the mandatory-scope check entirely -
+    for get_award_type_breakdown (#123), whose underlying
+    spending_by_award_count endpoint returns a fixed six-integer shape
+    (never a ranked/paginated list) and is confirmed live to answer fast
+    even fully unscoped, unlike the timeout risk documented on
+    get_spending_by_category's own group_by="recipient".
+
     recipient_id is a real, precise filter - confirmed live 2026-09-08 to
     reproduce a recipient's true all-time total to the penny, unlike
     recipient_name (a text match, confirmed wrong in both directions: it
@@ -547,7 +555,7 @@ def _build_filters(
     has_real_scope = any(f is not None for f in real_scoping_filters)
     if not has_real_scope and award_type_counts_as_scope and award_type is not None:
         has_real_scope = True
-    if not has_real_scope:
+    if not has_real_scope and scope_required:
         message = (
             "At least one of agency_name, recipient_name, recipient_id, performed_in_state, "
             "recipient_in_state, performed_in_county, recipient_in_county, performed_in_city, "

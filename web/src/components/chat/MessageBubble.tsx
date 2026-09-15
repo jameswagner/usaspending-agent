@@ -8,14 +8,38 @@ interface MessageBubbleProps {
   turn: ConversationTurn;
 }
 
+function statusLine(status: ConversationTurn["status"]): { text: string; isError: boolean } {
+  switch (status.kind) {
+    case "tool_call":
+      return { text: `Calling ${status.toolName}…`, isError: false };
+    case "tool_result":
+      return { text: `${status.toolName}: ${status.summary}`, isError: false };
+    case "tool_error":
+      return { text: `${status.toolName}: ${status.message}`, isError: true };
+    case "pending":
+    case "done":
+    default:
+      return { text: "Thinking…", isError: false };
+  }
+}
+
 export function MessageBubble({ turn }: MessageBubbleProps) {
-  const { question, response } = turn;
+  const { question, response, status } = turn;
 
   if (!response) {
+    const { text, isError } = statusLine(status);
     return (
       <div className="border-b border-black/10 pb-6 last:border-none dark:border-white/10">
         <p className="font-semibold">{question}</p>
-        <p className="mt-2 text-sm text-black/50 dark:text-white/50">Thinking…</p>
+        <p
+          className={
+            isError
+              ? "mt-2 text-sm text-amber-600 dark:text-amber-400"
+              : "mt-2 text-sm text-black/50 dark:text-white/50"
+          }
+        >
+          {text}
+        </p>
       </div>
     );
   }

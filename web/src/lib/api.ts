@@ -1,4 +1,103 @@
+import { createParser } from "eventsource-parser";
 import type { AskResponse } from "./types";
+
+// One tool-status event from POST /api/ask/stream's SSE body - see
+// backend/app/agent/streaming.py's event protocol. Named "tool_name" (not
+// camelCase) to match the wire payload verbatim, so askQuestionStream can
+// spread `data` straight into this shape with no field renaming.
+export type ToolStreamEvent =
+  | { type: "tool_call_start"; tool_name: string; args: Record<string, unknown> }
+  | { type: "tool_result"; tool_name: string; summary: string }
+  | { type: "tool_error"; tool_name: string; message: string };
+
+// A long multi-tool-call turn with periodic keep-alives shouldn't hit a
+// flat wall-clock cap the way a fully-silent unary request should (see
+// REQUEST_TIMEOUT_MS below) - this is an IDLE timeout instead, reset on
+// every frame received (including keep-alives), well over the backend's
+// own 15s keep-alive interval so it only fires on a genuine hang.
+const STREAM_IDLE_TIMEOUT_MS = 30_000;
+
+// Calls this Next.js app's own /api/ask/stream route (never FastAPI
+// directly - see app/api/ask/stream/route.ts), consuming the SSE body via
+// fetch + a stream reader rather than EventSource, since EventSource has
+// no way to send a POST body. onEvent fires for each tool-status frame as
+// it arrives; the returned promise resolves with the same AskResponse
+// shape askQuestion returns, once the server's `done` frame arrives.
+export async function askQuestionStream(
+  question: string,
+  conversationId: string | null,
+  onEvent: (event: ToolStreamEvent) => void,
+  { signal: externalSignal }: { signal?: AbortSignal } = {}
+): Promise<AskResponse> {
+  const controller = new AbortController();
+  const onExternalAbort = () => controller.abort();
+  externalSignal?.addEventListener("abort", onExternalAbort);
+
+  let idleTimeout: ReturnType<typeof setTimeout> | undefined;
+  const resetIdleTimer = () => {
+    clearTimeout(idleTimeout);
+    idleTimeout = setTimeout(() => controller.abort(), STREAM_IDLE_TIMEOUT_MS);
+  };
+
+  // Set synchronously from inside the parser's onEvent callback (feed() is
+  // sync), then checked right after each feed() call to decide whether to
+  // stop reading - eventsource-parser's callback style has no way to
+  // "return" a value directly out of feed() itself. Keep-alive comment
+  // frames (`: keep-alive`, no event:/data: lines) never reach onEvent at
+  // all - just proof-of-life for the idle timer above, which already
+  // resets on every reader.read(), comment or not.
+  let finalResponse: AskResponse | undefined;
+  let streamError: Error | undefined;
+
+  const parser = createParser({
+    onEvent: (message) => {
+      if (!message.event || !message.data) return;
+      const data = JSON.parse(message.data);
+      if (message.event === "done") {
+        finalResponse = data as AskResponse;
+      } else if (message.event === "error") {
+        streamError = new Error((data as { message?: string })?.message ?? "The server reported an error.");
+      } else if (message.event === "tool_call_start" || message.event === "tool_result" || message.event === "tool_error") {
+        onEvent({ type: message.event, ...(data as object) } as ToolStreamEvent);
+      }
+    },
+  });
+
+  try {
+    resetIdleTimer();
+    const resp = await fetch("/api/ask/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, conversation_id: conversationId }),
+      signal: controller.signal,
+    });
+    if (!resp.ok || !resp.body) {
+      throw new Error(`Server error: ${resp.status}`);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (!finalResponse && !streamError) {
+      const { done, value } = await reader.read();
+      resetIdleTimer();
+      if (done) break;
+      parser.feed(decoder.decode(value, { stream: true }));
+    }
+
+    if (streamError) throw streamError;
+    if (!finalResponse) throw new Error("Stream ended without a final answer.");
+    return finalResponse;
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Request timed out - the server may be unresponsive.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(idleTimeout);
+    externalSignal?.removeEventListener("abort", onExternalAbort);
+  }
+}
 
 // A hung request (dead dev server, dropped connection, anything) must
 // still settle the fetch promise - without a bound, sendMessage's loading

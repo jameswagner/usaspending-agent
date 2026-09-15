@@ -40,10 +40,28 @@ export interface AskResponse {
   tool_citations: ToolCitation[];
 }
 
+// The in-flight status of a turn being streamed from POST /ask/stream
+// (see web/src/lib/api.ts's askQuestionStream and backend/app/agent/
+// streaming.py's SSE event protocol) - "pending" covers the gap before the
+// first frame arrives. Irrelevant once response is set (always "done" by
+// then), kept mainly for MessageBubble's live status line.
+export type TurnStatus =
+  | { kind: "pending" }
+  | { kind: "tool_call"; toolName: string }
+  | { kind: "tool_result"; toolName: string; summary: string }
+  | { kind: "tool_error"; toolName: string; message: string }
+  | { kind: "done" };
+
 // A UI-level turn - the question plus its response, as rendered in the
 // transcript. Not part of the backend API shape. response is null while
-// the question is in flight, so it can render immediately.
+// the question is in flight, so it can render immediately. id is a stable
+// identity for matching a turn across the streaming status updates that
+// replace it in state (useConversation.ts) - the turn object itself gets
+// swapped out on every status change, so object reference equality can't
+// be used to find "the same turn" again afterward.
 export interface ConversationTurn {
+  id: string;
   question: string;
   response: AskResponse | null;
+  status: TurnStatus;
 }

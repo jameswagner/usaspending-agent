@@ -41,7 +41,7 @@ function slugify(title: string): string {
 }
 
 export function ChartBlock({ chart }: ChartBlockProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
   const data = chart.labels.map((label, i) => ({ label, value: chart.values[i] }));
   const isBar = chart.chart_type === "bar";
   // Horizontal bars need height proportional to category count, and a
@@ -61,7 +61,7 @@ export function ChartBlock({ chart }: ChartBlockProps) {
   };
 
   function handleDownload() {
-    const svg = containerRef.current?.querySelector("svg");
+    const svg = chartRef.current?.querySelector("svg");
     if (!svg) return;
     const { width, height } = svg.getBoundingClientRect();
     const scale = 2;
@@ -97,7 +97,7 @@ export function ChartBlock({ chart }: ChartBlockProps) {
   }
 
   return (
-    <div className="w-full max-w-xl" ref={containerRef}>
+    <div className="w-full max-w-xl">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-medium" style={{ color: "var(--chart-ink)" }}>
           {chart.title}
@@ -116,6 +116,7 @@ export function ChartBlock({ chart }: ChartBlockProps) {
           </svg>
         </button>
       </div>
+      <div ref={chartRef}>
       <ResponsiveContainer width="100%" height={isBar ? barChartHeight : 300}>
         {chart.chart_type === "line" ? (
           <LineChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 8 }}>
@@ -166,6 +167,7 @@ export function ChartBlock({ chart }: ChartBlockProps) {
           </BarChart>
         )}
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }

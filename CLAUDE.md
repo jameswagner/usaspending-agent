@@ -24,6 +24,32 @@ When asked to commit changes:
 If a task requires multiple related commits, they can go on the same
 branch/PR — no need for one PR per commit.
 
+## Verify against the live API and upstream repo, not memory or docstrings alone
+
+Before filing an issue or writing a fix that touches USAspending API
+behavior (a tool returning a wrong/misleading value, a missing filter or
+category, an endpoint choice), check:
+
+- **The live endpoint docs**: https://api.usaspending.gov/docs/endpoints —
+  confirm a field/param/enum actually exists and behaves as assumed by
+  hitting the real API, not by trusting this codebase's docstrings or your
+  own training-data recall. Docstrings here can drift from the live
+  contract; the API is the source of truth.
+- **The upstream contract/source**:
+  https://github.com/fedspendingtransparency/usaspending-api/tree/master/usaspending_api
+  (the `api_contracts/contracts/` subtree has per-endpoint field tables) —
+  useful for confirming an enum's exact members or a field's real meaning
+  when the live response alone is ambiguous.
+- **Upstream's own issue tracker**
+  (fedspendingtransparency/usaspending-api, not this repo) before assuming
+  a weird API behavior is unreported or fixable — several "bugs" turn out
+  to be long-standing, deliberate design choices the USAspending team has
+  already responded to (e.g. #118's overlap-vs-action-date behavior,
+  confirmed via fedspendingtransparency/usaspending-api#1707, open since
+  2019). Citing that context in an issue/PR write-up saves someone
+  re-discovering it later and sets expectations correctly (caveat vs.
+  fixable bug vs. wait-for-upstream).
+
 ## Comments: default to none
 
 One line, max, and only when the *why* isn't obvious from the code itself.

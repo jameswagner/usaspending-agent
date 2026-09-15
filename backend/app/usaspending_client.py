@@ -9,6 +9,7 @@ https://github.com/fedspendingtransparency/usaspending-api/tree/master/usaspendi
   - POST /api/v2/search/spending_by_category/
   - POST /api/v2/search/spending_over_time/
   - POST /api/v2/search/spending_by_award/
+  - POST /api/v2/search/spending_by_award_count/
   - POST /api/v2/autocomplete/{naics,psc,cfda}/          (verified live, not currently called by any tool)
   - POST /api/v2/autocomplete/awarding_agency_office/    (sub-tier agency resolution fallback for find_agency_by_name)
 
@@ -464,6 +465,34 @@ class SpendingByCategoryResponse(BaseModel):
     results: list[CategoryResult]
     limit: int
     page_metadata: PageMetadata | None = None
+    messages: list[str] | None = None
+
+
+class AwardTypeCounts(BaseModel):
+    """spending_by_award_count.md's AwardTypeResult - six non-overlapping
+    buckets covering every award (idvs kept separate from contracts here,
+    unlike AWARD_TYPE_GROUPS's own "contracts" bucket which folds IDV
+    sub-types in - this is the live API's own split, not ours). Confirmed
+    live 2026-09-15: this is the shape for spending_level="awards" (the
+    default); spending_level="subawards" returns a different subgrant/
+    subcontract shape instead, not modeled here since nothing wires that
+    mode through."""
+
+    model_config = ConfigDict(extra="allow")
+
+    contracts: int
+    idvs: int
+    grants: int
+    direct_payments: int
+    loans: int
+    other: int
+
+
+class SpendingByAwardCountResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    results: AwardTypeCounts
+    spending_level: str
     messages: list[str] | None = None
 
 
@@ -1020,6 +1049,24 @@ class USASpendingClient:
         }
         data = self._post("/api/v2/search/spending_over_time/", body)
         return SpendingOverTimeResponse(**data)
+
+    @traceable(run_type="tool", name="spending_by_award_count")
+    def spending_by_award_count(self, filters: AdvancedFilters) -> SpendingByAwardCountResponse:
+        """POST /api/v2/search/spending_by_award_count/
+        (spending_by_award_count.md) - the six-way award-type count split
+        (contracts/idvs/grants/direct_payments/loans/other) the real
+        Advanced Search results page shows first, above any other
+        breakdown. See #123.
+
+        Confirmed live 2026-09-15: unlike spending_by_category's
+        group_by="recipient", a fully unscoped whole-of-government call
+        here returns fast (it's six integers, not a ranked list) - so
+        this is never given a mandatory-scope requirement the way the
+        other _build_filters-based tools are.
+        """
+        body = {"filters": filters.model_dump(exclude_none=True)}
+        data = self._post("/api/v2/search/spending_by_award_count/", body)
+        return SpendingByAwardCountResponse(**data)
 
     @traceable(run_type="tool", name="search_awards_api")
     def search_awards(

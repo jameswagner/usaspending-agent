@@ -234,31 +234,15 @@ class AgentResult(BaseModel):
     tool_citations: list[ToolCitation] = []
 
 
-def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
-    """LangGraph-backed path - conversation_id is a real LangGraph
-    thread_id, giving persisted, resumable history via the checkpointer
-    built in singletons.warm_up().
+def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
+    """Turn the current call's _tool_call_log buffer into the chart/citation
+    lists an AgentResult carries. Shared by both _ask_langgraph (reads the
+    buffer once, after graph.invoke() fully completes) and streaming.py
+    (reads the same buffer after graph.stream() fully completes) - the
+    buffer's own population (_record_tool_call, called as a side effect
+    during tool execution) doesn't care whether the graph ran via invoke()
+    or stream().
     """
-    graph = _get_conversation_graph()
-    config = {"configurable": {"thread_id": conversation_id}}
-    # A cheap, already-in-memory-or-sqlite lookup (no extra LLM call) - on
-    # a brand new thread_id this is just {} (confirmed live), not an error.
-    recent_messages = graph.get_state(config).values.get("messages", [])
-
-    if not _is_in_scope(question, recent_messages):
-        logger.info("Scope gate rejected question: %r", question)
-        # Deliberately not persisted into checkpointer state - an
-        # out-of-scope question shouldn't poison what the next in-scope
-        # question's history contains.
-        return AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
-
-    _tool_call_log.set([])
-
-    final_state = graph.invoke({"messages": [{"role": "user", "content": question}]}, config=config)
-
-    final_messages = final_state["messages"]
-    answer_text = final_messages[-1].content if final_messages else ""
-
     charts: list[ChartSpec] = []
     seen_chunk_ids: set[str] = set()
     seen_guide_questions: set[str] = set()
@@ -300,6 +284,34 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
         citations=citations,
         tool_citations=tool_citations,
     )
+
+
+def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
+    """LangGraph-backed path - conversation_id is a real LangGraph
+    thread_id, giving persisted, resumable history via the checkpointer
+    built in singletons.warm_up().
+    """
+    graph = _get_conversation_graph()
+    config = {"configurable": {"thread_id": conversation_id}}
+    # A cheap, already-in-memory-or-sqlite lookup (no extra LLM call) - on
+    # a brand new thread_id this is just {} (confirmed live), not an error.
+    recent_messages = graph.get_state(config).values.get("messages", [])
+
+    if not _is_in_scope(question, recent_messages):
+        logger.info("Scope gate rejected question: %r", question)
+        # Deliberately not persisted into checkpointer state - an
+        # out-of-scope question shouldn't poison what the next in-scope
+        # question's history contains.
+        return AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
+
+    _tool_call_log.set([])
+
+    final_state = graph.invoke({"messages": [{"role": "user", "content": question}]}, config=config)
+
+    final_messages = final_state["messages"]
+    answer_text = final_messages[-1].content if final_messages else ""
+
+    return _build_result(answer_text, conversation_id)
 
 
 @traceable(run_type="chain", name="agent_ask")

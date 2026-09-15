@@ -715,6 +715,18 @@ class USASpendingAPIError(Exception):
     """
 
 
+# Also raised (not just non-2xx responses) when the session's mounted Retry
+# (total=3, backoff_factor=1.0, status_forcelist=[429,500,502,503,504])
+# exhausts, or a connection never completes at all - without this, that case
+# surfaced as a raw requests exception no caller here catches, so a slow/
+# unreachable USASpending.gov crashed the tool call instead of producing an
+# honest, model- and user-facing message.
+_TIMEOUT_MESSAGE = (
+    "USASpending.gov is responding slowly or is temporarily unreachable "
+    "(request timed out after retries). Please try again in a moment."
+)
+
+
 def _raise_with_detail(resp: requests.Response) -> None:
     try:
         resp.raise_for_status()
@@ -756,13 +768,19 @@ class USASpendingClient:
         self.session.mount("http://", adapter)
 
     def _get(self, path: str, params: dict | None = None) -> dict:
-        resp = self.session.get(f"{BASE_URL}{path}", params=params, timeout=self.timeout)
+        try:
+            resp = self.session.get(f"{BASE_URL}{path}", params=params, timeout=self.timeout)
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.RetryError) as e:
+            raise USASpendingAPIError(_TIMEOUT_MESSAGE) from e
         _record_request("GET", resp.url, None)
         _raise_with_detail(resp)
         return resp.json()
 
     def _post(self, path: str, body: dict) -> dict:
-        resp = self.session.post(f"{BASE_URL}{path}", json=body, timeout=self.timeout)
+        try:
+            resp = self.session.post(f"{BASE_URL}{path}", json=body, timeout=self.timeout)
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.RetryError) as e:
+            raise USASpendingAPIError(_TIMEOUT_MESSAGE) from e
         _record_request("POST", f"{BASE_URL}{path}", body)
         _raise_with_detail(resp)
         return resp.json()

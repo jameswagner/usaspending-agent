@@ -166,3 +166,12 @@ uv run pytest tests/test_agent.py -xvs
 The tool-count and schema assertions will fail if a tool is in `__all__` but missing from `_BETA_TOOLS`, or if the `_raw` and `@beta_tool` signatures don't match.
 
 After the chart/citation step, manually test with the live agent to ensure charts render correctly and citations are present — there's no automated test for "citation was shown to the user," so visual inspection is the only gate.
+
+## Add cases to the tool-selection eval
+
+A new tool (or a new filter that makes an existing tool confusable with another) needs at least one entry in `backend/app/agent/dev_tools/tool_selection_labeled_set.json` — this is what actually checks the model *picks* the new tool for the questions it's meant to answer, not just that the tool is wired up correctly. Add:
+
+- A question this tool should clearly be the answer to, with `expected_tool` set to its name.
+- If the new tool could plausibly be confused with an existing one (e.g. a new geography/breakdown tool vs. `get_spending_by_category`), also add `confusable_with` naming that tool, and consider a question on the *existing* tool's own entries that this new one might now wrongly steal.
+
+`eval_tool_selection.py` (`backend/app/agent/dev_tools/eval_tool_selection.py`) is what runs this dataset — **do not run it** as part of adding a tool unless the user explicitly asks: it makes real, billed LLM calls against a LangSmith experiment, it's opt-in by design (not part of CI or the regular test suite), and it's the user's call whether that cost is warranted right now. Adding the labeled-set entry is the deliverable; running the eval is a separate, explicit request.

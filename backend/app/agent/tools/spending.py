@@ -82,6 +82,8 @@ Category = Literal[
     "state_territory",
 ]
 
+SpendingLevel = Literal["transactions", "awards", "subawards", "award_financial"]
+
 
 def _normalize_category(category: str) -> str:
     """Same normalize-then-validate pattern as _normalize_award_type/
@@ -129,6 +131,7 @@ def get_spending_by_category_raw(
     recipient_type: RecipientType | None = None,
     description: str | None = None,
     def_codes: list[str] | None = None,
+    spending_level: SpendingLevel = "transactions",
 ) -> SpendingByCategoryResponse:
     """Call the API once, return the structured response. Raises
     USASpendingAPIError on failure — the @beta_tool wrapper decides how to
@@ -184,7 +187,7 @@ def get_spending_by_category_raw(
         description=description,
         def_codes=def_codes,
     )
-    return client.spending_by_category(category, filters, limit=limit)
+    return client.spending_by_category(category, filters, limit=limit, spending_level=spending_level)
 
 
 @beta_tool
@@ -220,6 +223,7 @@ def get_spending_by_category(
     recipient_type: RecipientType | None = None,
     description: str | None = None,
     def_codes: list[str] | None = None,
+    spending_level: SpendingLevel = "transactions",
 ) -> str:
     """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for a fiscal year range, scoped by a real scoping filter, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions. Returns only the top `limit` categories, not a grand total - for "what is the total/how much funding" questions, use get_spending_over_time instead (grouped by fiscal_year), never this tool's top-N rows.
 
@@ -318,6 +322,13 @@ def get_spending_by_category(
             code in that group - e.g. def_codes=["covid"] covers all 7 COVID-relief codes.
             Sufficient scope on its own. For a spending-by-DEFC breakdown instead of filtering
             to a specific one, use category="defc" instead.
+        spending_level: Optional. The level of spending detail to aggregate by (default
+            "transactions"). "awards" aggregates at the award level, "subawards" aggregates
+            subaward totals (e.g. total subawards to a district), "award_financial" includes
+            award financial details. Use "subawards" to answer questions like "what total
+            subaward dollars went to district X" - the same aggregation as with "transactions",
+            but summing subaward amounts instead. "transactions" is the default and sums
+            individual transaction-level details.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -370,6 +381,7 @@ def get_spending_by_category(
             recipient_type=recipient_type,
             description=description,
             def_codes=def_codes,
+            spending_level=spending_level,
         )
     except USASpendingAPIError as e:
         logger.warning("get_spending_by_category failed for %s/%s: %s", scope, category, e)
@@ -380,6 +392,7 @@ def get_spending_by_category(
             "category": category,
             "start_fiscal_year": start_fiscal_year,
             "end_fiscal_year": end_fiscal_year,
+            "spending_level": spending_level,
         },
         agency_name=agency_name,
         award_type=award_type,

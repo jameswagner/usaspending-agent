@@ -281,14 +281,8 @@ ADVANCED_FILTER_FIELD_COVERAGE: dict[str, str] = {
     "object_classes": "modeled, not exposed",
     "object_class": "modeled, not exposed (older-contract name, see AdvancedFilters docstring)",
     "program_activity": "modeled, not exposed (older-contract name, see AdvancedFilters docstring)",
-    "def_codes": "exposed (def_codes) - on get_spending_by_category/get_spending_over_time/search_awards. "
-                 "Accepts literal DEFC codes (e.g. 'L') or the group aliases 'covid'/'covid_19' and "
-                 "'infrastructure'/'iija' (see tool_filters.DEFC_GROUP_ALIASES) - the live API itself does "
-                 "NOT accept those alias strings (confirmed live: silently returns an all-zero/empty "
-                 "response rather than erroring), so expansion happens client-side before the request goes "
-                 "out. Not yet wired into search_subawards/get_spending_by_geography/"
-                 "get_award_type_breakdown - no demonstrated need yet, same incremental-exposure reasoning "
-                 "as every other entry here.",
+    "def_codes": "exposed (def_codes) - on get_spending_by_category/get_spending_over_time/search_awards, "
+                 "with client-side group-alias expansion (see tool_filters.DEFC_GROUP_ALIASES).",
     "award_unique_id": "modeled, not exposed",
 }
 
@@ -373,24 +367,14 @@ class AgencyOverview(BaseModel):
 
 
 class DisasterFunding(BaseModel):
-    """One row of disaster/overview.md's `funding` array - the budget
-    authority provided under a single DEFC, not the spending against it
-    (that's DisasterSpending, a government-wide total across every
-    requested DEFC, not broken out per-code the way funding is)."""
+    """One row of disaster/overview.md's `funding` array - budget authority under a single DEFC."""
 
     def_code: str
     amount: float
 
 
 class DisasterSpending(BaseModel):
-    """disaster/overview.md's own field docs spell out the derived
-    figures the raw numbers support, reproduced here rather than
-    recomputed as extra fields, since the real site doesn't either -
-    total_obligations - award_obligations = "Other Obligations";
-    total_budget_authority - total_obligations = "Remaining Balance";
-    (total_obligations - award_obligations) - (total_outlays -
-    award_outlays) = "Other Obligated But Not Yet Outlayed". All four are
-    nullable per the contract, not just optional."""
+    """All four fields are nullable per the contract, not just optional."""
 
     award_obligations: float | None = None
     award_outlays: float | None = None
@@ -399,15 +383,7 @@ class DisasterSpending(BaseModel):
 
 
 class DisasterAdditional(BaseModel):
-    """Per disaster/overview.md: "Special cases where financial details
-    were not labeled with the searched DEFC, but should still be
-    considered in the overview." Live-verified 2026-09-15 this is None
-    for a real def_codes=L query - real but apparently uncommon; modeled
-    so a caller summing spending/budget authority for a DEFC-filtered
-    query doesn't silently under-count when it IS present, not left out
-    as "modeled, not exposed" the way DEFCAmount/IDVAmountsResponse's own
-    breakout fields are - this one directly affects a top-line total
-    get_disaster_spending_overview will actually report."""
+    """Spending/budget authority not labeled with the searched DEFC but that should still count toward the total - modeled (not skipped) since it feeds get_disaster_spending_overview's own top-line total."""
 
     total_budget_authority: float
     spending: DisasterSpending
@@ -1086,32 +1062,9 @@ class USASpendingClient:
 
     @traceable(run_type="tool", name="get_disaster_overview")
     def get_disaster_overview(self, def_codes: list[str] | None = None) -> DisasterOverviewResponse:
-        """GET /api/v2/disaster/overview/{?def_codes} (#110) - the one
-        number this app had zero coverage of before: total disaster/
-        relief budget authority and award obligations/outlays, optionally
-        scoped to one or more DEFC. No fiscal_year param - the live
-        contract doesn't take one; the figures are all-time totals for
-        whichever DEFC are requested (or every DEFC ever issued, if
-        def_codes is omitted).
-
-        An unrecognized def_codes value does NOT error - confirmed live
-        (2026-09-15) that both a made-up code and the group-alias string
-        "covid_19" (which this endpoint, like search_awards, does not
-        accept directly) come back as a normal 200 with every figure zero
-        and funding=[], not a 400. Callers passing a def_codes list
-        through here should already have run it through
-        tool_filters._normalize_def_codes so a group alias like "covid"
-        resolves to real codes first.
-
-        Sent as a single comma-joined string, NOT a plain list - the
-        contract's own param doc says "Comma-delimited list", and this is
-        not just documentation-following: confirmed live that letting
-        requests encode a list the normal way (repeated `?def_codes=L&
-        def_codes=M` query params) silently returns results for ONLY the
-        last code, with no error indicating the first was dropped - a real
-        undercount bug if built the "obvious" way instead of checked
-        against this endpoint specifically.
-        """
+        """GET /api/v2/disaster/overview/{?def_codes} - all-time totals, no fiscal_year param.
+        def_codes must already be normalized (no group aliases) and is sent comma-joined,
+        not as a plain list - a repeated-param list silently keeps only the last code."""
         params = {"def_codes": ",".join(def_codes)} if def_codes else None
         data = self._get("/api/v2/disaster/overview/", params=params)
         return DisasterOverviewResponse(**data)

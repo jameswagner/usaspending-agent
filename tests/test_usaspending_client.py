@@ -461,7 +461,7 @@ class TestSpendingByAwardCount:
 
 
 class TestGetDisasterOverview:
-    # Real live response shape (def_codes=L, 2026-09-15), not synthetic - see #110.
+    # Real live response shape (def_codes=L), not synthetic.
 
     def test_parses_real_response_shape(self, monkeypatch):
         client = USASpendingClient()
@@ -485,9 +485,7 @@ class TestGetDisasterOverview:
         assert response.additional is None
 
     def test_parses_additional_block_when_present(self, monkeypatch):
-        # Per disaster/overview.md's own example - live-verified 2026-09-15 that
-        # a plain def_codes=L query returns additional=None, but the field is
-        # real (not speculative) and needs to parse correctly when it does show up.
+        # additional is real, not speculative - see disaster/overview.md's own example.
         client = USASpendingClient()
         body = {
             "funding": [{"def_code": "Z", "amount": 11230000000}],
@@ -510,10 +508,7 @@ class TestGetDisasterOverview:
         assert response.additional.spending.total_obligations == 45600000
 
     def test_sends_comma_joined_def_codes_not_a_list(self, monkeypatch):
-        # Confirmed live: requests' default list encoding (repeated ?def_codes=L&
-        # def_codes=M query params) silently returns results for only the LAST
-        # code - a real undercount bug, not just a style preference. See
-        # get_disaster_overview's own docstring.
+        # requests' default list encoding sends repeated params, which this endpoint mishandles.
         client = USASpendingClient()
         captured: dict = {}
 

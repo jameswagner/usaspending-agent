@@ -235,10 +235,7 @@ class ToolCitation(BaseModel):
 NEVER_CHART_TOOLS = {
     "search_guide", "lookup_agency", "search_awards", "get_agency_budget",
     "code_execution", "get_award_details",
-    # A single scoped total (plus a small per-DEFC funding list, at most
-    # ~40 rows), same "one profile, no real cardinality to chart" reasoning
-    # as get_agency_budget/get_award_details above, not a ranked/
-    # categorical breakdown like get_spending_by_category.
+    # A single scoped total, same reasoning as get_agency_budget above.
     "get_disaster_spending_overview",
     # search_recipients returns a ranked candidate list, plausibly
     # chart-worthy on its own merits (like get_spending_by_category) - but
@@ -561,10 +558,7 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             if def_codes else "Disaster spending overview, all DEFCs"
         )
         url = f"{BASE_URL}/api/v2/disaster/overview/"
-        # Comma-joined, matching the client's own wire format for this
-        # endpoint - see USASpendingClient.get_disaster_overview's
-        # docstring for why a plain repeated-param list silently drops
-        # all but the last code here.
+        # Comma-joined, matching USASpendingClient.get_disaster_overview's wire format.
         if def_codes:
             url += f"?def_codes={','.join(def_codes)}"
         return ToolCitation(tool_name=tool_name, parameters=params, description=description, url=url)

@@ -833,11 +833,8 @@ def search_awards_raw(
     # the requested range, not spending scoped to it - see the overlap-vs-action-date
     # caveat in search_awards's docstring and issue #118.
     #
-    # DISASTER_BREAKOUT_FIELDS (def_codes/COVID-19/Infrastructure Obligations-Outlays)
-    # are also fetched unconditionally, same reasoning: they're Base fields present on
-    # every award regardless of whether def_codes is filtered on (#26), and the model
-    # has no way to know ahead of time whether an unfiltered result happens to carry a
-    # disaster tag.
+    # DISASTER_BREAKOUT_FIELDS are also fetched unconditionally - Base fields present
+    # on every award regardless of whether def_codes is filtered on.
     fields = SEARCH_AWARDS_FIELDS_BASE + DISASTER_BREAKOUT_FIELDS + [amount_field, "Start Date"]
     if sort_field != amount_field:
         fields = fields + [sort_field]
@@ -1152,9 +1149,7 @@ def search_awards(
             flag_str = f" [PERIOD OF PERFORMANCE STARTED {start_date}, BEFORE FY{start_fiscal_year} - amount shown is this award's lifetime total, not spending scoped to this range]"
         disaster_str = ""
         result_def_codes = r.get("def_codes")
-        # Only shown when non-empty/non-zero (see DISASTER_BREAKOUT_FIELDS's own
-        # comment) - most awards have no disaster tag at all, and printing a
-        # "COVID-19 Obligations: $0.00" line on every one would just be noise.
+        # Only shown when non-empty - most awards carry no disaster tag at all.
         if result_def_codes:
             covid_obligations = r.get("COVID-19 Obligations") or 0
             covid_outlays = r.get("COVID-19 Outlays") or 0

@@ -1332,9 +1332,7 @@ class TestNormalizeDefCodes:
         assert _normalize_def_codes(["COVID"]) == ["L", "M", "N", "O", "P", "U", "V"]
 
     def test_unrecognized_literal_code_passes_through_uppercased(self):
-        # Not validated against the live ~40-code enum - same direct-passthrough
-        # reasoning as naics_code/psc_code (see _build_filters' own docstring);
-        # an unrecognized code is still forwarded, not rejected here.
+        # Not validated against the ~40-code enum, same as naics_code/psc_code.
         assert _normalize_def_codes(["zz"]) == ["ZZ"]
 
 
@@ -1508,10 +1506,7 @@ class TestBuildFilters:
         with pytest.raises(USASpendingAPIError, match="doesn't look like a federal account"):
             _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, federal_account="not-an-account")
 
-    # def_codes (#26) - exposing the already-modeled def_codes AdvancedFilters
-    # field, with group-alias expansion for the two groupings the issue itself
-    # named (COVID-19, infrastructure) rather than requiring every individual
-    # DEFC letter/number to be listed out.
+    # def_codes, with group-alias expansion for covid/infrastructure.
 
     def test_def_codes_literal_passthrough_is_uppercased(self):
         filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, def_codes=["l"])
@@ -2033,11 +2028,7 @@ class TestSearchAwardsMultiYearCaveat:
 
 
 class TestSearchAwardsDisasterBreakout:
-    # #26 - surfacing def_codes/COVID-19/Infrastructure Obligations-Outlays
-    # (Base fields per spending_by_award.md, present regardless of whether
-    # def_codes is filtered on) in search_awards's own formatted output,
-    # but only when an award actually carries a disaster tag - not as a
-    # "$0.00" line cluttering every ordinary, non-disaster result.
+    # Disaster fields shown only when an award actually carries a DEFC tag.
 
     def _mock_client(self, results, monkeypatch):
         response = SearchAwardsResponse(results=results, page_metadata=PageMetadata(page=1, hasNext=False))
@@ -2188,9 +2179,7 @@ class TestGetAwardTypeBreakdown:
 
 
 class TestGetDisasterSpendingOverview:
-    # #110: the headline disaster/COVID-19/infrastructure-relief spending
-    # number this app had zero coverage of before - GET /api/v2/disaster/
-    # overview/{?def_codes}.
+    # GET /api/v2/disaster/overview/{?def_codes}.
 
     def _mock_client(self, response, monkeypatch):
         client = SimpleNamespace(get_disaster_overview=lambda def_codes=None: response)
@@ -2228,8 +2217,7 @@ class TestGetDisasterSpendingOverview:
         assert "Scope: all disaster/relief DEFCs combined" in result
 
     def test_covid_alias_is_expanded_before_reaching_the_client(self, monkeypatch):
-        # The live API doesn't accept "covid_19"/"covid" itself (confirmed live -
-        # see get_disaster_overview's docstring) - the tool must expand it first.
+        # The live API doesn't accept "covid" itself - the tool must expand it first.
         captured = {}
 
         def fake_get_disaster_overview(def_codes=None):

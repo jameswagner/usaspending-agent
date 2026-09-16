@@ -435,15 +435,9 @@ def _validate_federal_account(federal_account: str) -> tuple[str, str]:
     return aid, main
 
 
-# Group memberships per the live reference list
-# (files.usaspending.gov/reference_data/def_codes.csv's "Group Name"
-# column, fetched 2026-09-15) - the two groups issue #26/#110 actually care
-# about, not all ~40 individual DEFC letters/numbers (those remain directly
-# passable as literal codes, e.g. def_codes=["L"]). Confirmed live these
-# alias strings are NOT accepted by the API itself
-# (?def_codes=covid_19 silently returns an all-zero response, same as any
-# other unrecognized code - it doesn't error) - expansion has to happen
-# here, before the request goes out.
+# Group aliases for the two groupings worth a plain word instead of listing
+# ~40 individual DEFC letters/numbers - the API itself doesn't accept these
+# alias strings, so expansion must happen here before the request goes out.
 DEFC_GROUP_ALIASES: dict[str, list[str]] = {
     "covid_19": ["L", "M", "N", "O", "P", "U", "V"],
     "covid-19": ["L", "M", "N", "O", "P", "U", "V"],
@@ -454,21 +448,12 @@ DEFC_GROUP_ALIASES: dict[str, list[str]] = {
 
 
 def _normalize_def_codes(def_codes: list[str]) -> list[str]:
-    """Expands any DEFC_GROUP_ALIASES entry (e.g. "covid_19", "infrastructure")
-    into its member codes, passes anything else through as a literal code
-    (upper-cased, e.g. "l" -> "L") - same direct-passthrough-for-real-codes
-    reasoning as naics_code/psc_code, since the ~40 individual codes are
-    already exactly what an analyst who knows one would type, but "covid"/
-    "infrastructure" are the two groupings actually named in issue #26/#110
-    and worth resolving from a plain word rather than making the model
-    enumerate 7 or 2 letters/numbers itself."""
+    """Expands a DEFC_GROUP_ALIASES entry to its member codes, else passes the code through upper-cased."""
     codes: list[str] = []
     for raw in def_codes:
         key = raw.strip().lower()
         codes.extend(DEFC_GROUP_ALIASES.get(key, [raw.strip().upper()]))
-    # dict.fromkeys dedupes while preserving order - a caller passing both
-    # "covid" and "L" shouldn't see "L" counted twice.
-    return list(dict.fromkeys(codes))
+    return list(dict.fromkeys(codes))  # dedupes while preserving order
 
 
 def _build_filters(
@@ -600,15 +585,10 @@ def _build_filters(
     NAICS/PSC description, etc.) - so a keywords hit doesn't imply a
     description hit or vice versa.
 
-    def_codes restricts to spending tagged with these Disaster Emergency
-    Fund Codes (DEFC) - real scope on its own (#26), the same "a specific
-    code an analyst already knows" reasoning as naics_code/psc_code/
-    tas_code above. Each entry is either a literal DEFC (e.g. "L") or one
-    of the two group aliases "covid"/"covid_19" or "infrastructure"/"iija"
-    (see DEFC_GROUP_ALIASES/_normalize_def_codes) - the live API does NOT
-    accept those alias strings itself (confirmed live: silently returns an
-    all-zero/empty response rather than erroring), so expansion happens
-    here before the request goes out.
+    def_codes restricts to spending tagged with these Disaster Emergency Fund
+    Codes (DEFC) - real scope on its own, same reasoning as naics_code/psc_code.
+    Runs through _normalize_def_codes first since the live API doesn't accept
+    the DEFC_GROUP_ALIASES shortcuts itself.
     """
     real_scoping_filters = (
         agency_name, recipient_name, recipient_id,
@@ -759,14 +739,8 @@ def _build_filters(
 # unconditionally, not just for the common cases.
 SEARCH_AWARDS_FIELDS_BASE = ["Award ID", "generated_internal_id", "Recipient Name", "Awarding Agency", "Description"]
 
-# Also Base fields per spending_by_award.md - present on every award
-# regardless of def_codes filter, not conditional on one being set (live-
-# verified 2026-09-15: a plain, non-disaster-related query still returns
-# "def_codes": [] and the four amount fields as 0). Requested unconditionally
-# alongside SEARCH_AWARDS_FIELDS_BASE (#26) but only surfaced in
-# search_awards's formatted output when non-empty/non-zero, so a normal
-# (non-disaster) query's results aren't cluttered with a "COVID-19
-# Obligations: $0.00" line on every award.
+# Also Base fields per spending_by_award.md, present on every award regardless
+# of def_codes filter - only surfaced in output when non-zero (see spending.py).
 DISASTER_BREAKOUT_FIELDS = [
     "def_codes",
     "COVID-19 Obligations",

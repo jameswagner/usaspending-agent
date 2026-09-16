@@ -1,16 +1,7 @@
-"""get_disaster_spending_overview - the headline disaster/COVID-19/
-infrastructure-relief number this app had zero coverage of before (#110):
-total disaster-relief budget authority and award obligations/outlays,
-optionally scoped to one or more Disaster Emergency Fund Codes (DEFC).
-
-Backed by GET /api/v2/disaster/overview/{?def_codes} (disaster/overview.md) -
-a genuinely different endpoint family from spending_by_category's
-category="defc" grouping: that breaks EXISTING spending down by DEFC after
-the fact, this reports the disaster-specific budget authority/obligation/
-outlay figures the real site's own COVID-19 landing page leads with, which
-aren't derivable from any of the other tools here. See #26 for def_codes as
-a search filter on the existing spending tools - this is the "entire
-reporting surface with no chat path at all" half of that pair of issues.
+"""get_disaster_spending_overview - total disaster-relief budget authority and
+award obligations/outlays via GET /api/v2/disaster/overview/{?def_codes}, distinct
+from spending_by_category's category="defc" grouping of ordinary award search
+results. def_codes filtering on the other spending tools lives in tool_filters.py.
 """
 from __future__ import annotations
 
@@ -37,19 +28,8 @@ logger = logging.getLogger(__name__)
 
 @traceable(run_type="tool", name="get_disaster_spending_overview_raw")
 def get_disaster_spending_overview_raw(def_codes: list[str] | None = None) -> DisasterOverviewResponse:
-    """Call the API once, return the structured response. Raises
-    USASpendingAPIError on failure.
-
-    No fiscal_year/agency/recipient scoping - the live endpoint takes none
-    (all-time totals only) and disaster relief legislation is inherently
-    government-wide, not agency-specific the way ordinary appropriations
-    are. def_codes is normalized the same way as every other
-    _build_filters-based tool's def_codes param (group aliases like
-    "covid"/"infrastructure" expanded to their real codes) even though
-    this tool doesn't go through _build_filters itself - there's no
-    fiscal-year range or agency/recipient scope check to share, just the
-    DEFC normalization.
-    """
+    """Call the API once, return the structured response. Raises USASpendingAPIError
+    on failure. No fiscal_year/agency/recipient scoping - the live endpoint takes none."""
     client = _get_usaspending_client()
     resolved_codes = _normalize_def_codes(def_codes) if def_codes else None
     return client.get_disaster_overview(resolved_codes)

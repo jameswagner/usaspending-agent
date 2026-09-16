@@ -172,7 +172,8 @@ backend/app/
                                 business_type_labels.py
                                 (its code->label table), naics.py/psc.py/cfda.py/
                                 location.py (the resolve_*_code / resolve_county_fips
-                                semantic code-lookup tools)
+                                semantic code-lookup tools). See docs/adding-a-tool.md
+                                for the tool registration checklist.
     tool_filters.py           Shared filter-building layer for the spending tools
     arithmetic_tools.py       The six deterministic arithmetic tools
     langgraph_tools.py        LangChain-compatible wrappers of the same tool

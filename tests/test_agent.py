@@ -4,6 +4,7 @@ from typing import Any, ClassVar, get_args
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
+from typing_extensions import Unpack
 
 from backend.app.agent.recipient_types import (
     RECIPIENT_TYPE_NAMES,
@@ -40,6 +41,7 @@ from backend.app.agent.tool_filters import (
     DateType,
     RecipientAwardType,
     Scope,
+    SpendingFilterParams,
     _amount_field_for_award_type,
     _build_filters,
     _build_location,
@@ -53,6 +55,7 @@ from backend.app.agent.tool_filters import (
     _normalize_scope,
     _normalize_state,
     _other_award_type_categories_to_try,
+    _record_optional_filter_context,
     _validate_cfda_program,
     _validate_naics_code,
     _validate_psc_code,
@@ -2991,6 +2994,44 @@ class TestLiteralTypesMatchVocabulary:
 
     def test_recipient_type_literal_matches_recipient_type_names(self):
         assert set(get_args(RecipientType)) == set(RECIPIENT_TYPE_NAMES)
+
+
+class TestSpendingFilterParamsMatchesActualSignatures:
+    """_build_filters/_record_optional_filter_context/_scope_label all take
+    **filters: Unpack[SpendingFilterParams] instead of duplicating a ~28-param
+    signature each - these tests catch the two ways that could silently drift:
+    a function's **filters annotation pointing at something other than
+    SpendingFilterParams, or a field added to SpendingFilterParams that
+    _build_filters's body never actually unpacks (so it would be silently
+    accepted and silently ignored)."""
+
+    def test_all_three_functions_share_the_same_filters_annotation(self):
+        # get_type_hints (not inspect.signature) resolves the string annotation
+        # `from __future__ import annotations` leaves on **filters back into the
+        # real Unpack[SpendingFilterParams] object.
+        import inspect
+        import typing
+        for fn in (_build_filters, _record_optional_filter_context, _scope_label):
+            sig = inspect.signature(fn)
+            var_keyword = [name for name, p in sig.parameters.items() if p.kind is p.VAR_KEYWORD]
+            assert var_keyword, f"{fn.__name__} has no **filters parameter"
+            hints = typing.get_type_hints(fn, include_extras=True)
+            assert hints[var_keyword[0]] == Unpack[SpendingFilterParams], (
+                f"{fn.__name__}'s **filters isn't typed as Unpack[SpendingFilterParams]"
+            )
+
+    def test_build_filters_unpacks_every_spending_filter_params_field(self):
+        # _build_filters can't rely on **filters alone to stay in sync - its body
+        # must explicitly pull each field via filters.get(...) before using it.
+        # A field present in SpendingFilterParams but never unpacked here would be
+        # accepted (no TypeError, since **filters takes anything) and silently
+        # dropped - this catches that specific failure mode.
+        import inspect
+        source = inspect.getsource(_build_filters)
+        for field in SpendingFilterParams.__annotations__:
+            assert f'filters.get("{field}")' in source, (
+                f"_build_filters never unpacks SpendingFilterParams field '{field}'"
+            )
 
 
 class TestClampLimit:

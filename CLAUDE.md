@@ -50,6 +50,21 @@ category, an endpoint choice), check:
   re-discovering it later and sets expectations correctly (caveat vs.
   fixable bug vs. wait-for-upstream).
 
+## Adding or modifying tools
+
+Before starting tool work, see [docs/adding-a-tool.md](docs/adding-a-tool.md) for
+the exact registration flow (four files, in order) and the chart/citation step
+that's easy to miss. Same checklist applies whether you're adding a new tool or
+modifying filter parameters on an existing one.
+
+The shared filter parameter list is defined once, in `SpendingFilterParams`
+TypedDict (`backend/app/agent/tool_filters.py`) — `_build_filters`,
+`_record_optional_filter_context`, and `_scope_label` all take
+`**filters: Unpack[SpendingFilterParams]` instead of redeclaring it each. Adding a
+filter still means threading it through each spending tool's own parameters (see
+docs/adding-a-tool.md) — the TypedDict only removed the three shared functions'
+own duplication, not that per-tool plumbing.
+
 ## Comments: default to none
 
 One line, max, and only when the *why* isn't obvious from the code itself.

@@ -62,7 +62,7 @@ __all__ = [
 ]
 ```
 
-The test `tests/test_agent.py::test_langgraph_tools_match_beta_tools` asserts that every tool in `__all__` has a corresponding LangChain wrapper in `langgraph_tools.py`.
+The tests `tests/test_langgraph_tools.py::test_langgraph_tools_is_nonempty` and `test_every_tool_schema_matches_its_own_signature` assert that every tool in `__all__` has a corresponding LangChain wrapper in `langgraph_tools.py` with matching signatures.
 
 ### 3. Register in `backend/app/agent/langgraph_tools.py`
 
@@ -131,7 +131,7 @@ Forgetting this step silently returns `None` from `build_tool_citation`, so the 
 
 If you're adding a new filter (e.g., `new_filter_code`) to a spending tool:
 
-1. Add the parameter to `SpendingFilterParams` in `backend/app/tool_filters.py`
+1. Add the parameter to `SpendingFilterParams` in `backend/app/agent/tool_filters.py`
 2. Add handling in `_build_filters` (where it becomes an API filter)
 3. Add handling in `_record_optional_filter_context` (where it gets recorded for citations)
 4. Add handling in `_scope_label` (where it appears in failure/no-results messages)
@@ -148,6 +148,6 @@ Run the full suite to catch registration misses:
 uv run pytest tests/test_agent.py -xvs
 ```
 
-The tool-count assertion (`test_langgraph_tools_match_beta_tools`) will fail if a tool is in `__all__` but missing from `_BETA_TOOLS`, or vice versa. The schema-vs-signature check will catch a mismatch between the `_raw` and `@beta_tool` function signatures.
+The tool-count and schema assertions will fail if a tool is in `__all__` but missing from `_BETA_TOOLS`, or if the `_raw` and `@beta_tool` signatures don't match.
 
 After the chart/citation step, manually test with the live agent to ensure charts render correctly and citations are present — there's no automated test for "citation was shown to the user," so visual inspection is the only gate.

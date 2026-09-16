@@ -173,8 +173,13 @@ def _scope_label(
     description: str | None = None,
     tas_code: str | None = None,
     federal_account: str | None = None,
+    def_codes: list[str] | None = None,
 ) -> str:
-    """Label for a failure/no-results message. See SpendingFilterParams in tool_filters.py."""
+    """Label for a failure/no-results message. _build_filters guarantees at
+    least one of these is set - EXCEPT on search_awards, where award_type
+    (not one of this function's params) can satisfy scope alone (#125), so
+    the "unknown scope" fallback below is real for that tool, not dead code.
+    See SpendingFilterParams in tool_filters.py for the full parameter list."""
     return (
         agency_name or recipient_name or recipient_id
         or performed_in_state or recipient_in_state
@@ -185,6 +190,7 @@ def _scope_label(
         or naics_code or psc_code or cfda_program or keywords
         or award_id or description
         or tas_code or federal_account
+        or (def_codes and ", ".join(def_codes))
         or "unknown scope"
     )
 

@@ -40,6 +40,7 @@ from backend.app.agent.tool_filters import (
     DateType,
     RecipientAwardType,
     Scope,
+    SpendingFilterParams,
     _amount_field_for_award_type,
     _build_filters,
     _build_location,
@@ -2786,6 +2787,30 @@ class TestLiteralTypesMatchVocabulary:
 
     def test_recipient_type_literal_matches_recipient_type_names(self):
         assert set(get_args(RecipientType)) == set(RECIPIENT_TYPE_NAMES)
+
+
+class TestSpendingFilterParamsMatchesActualSignatures:
+    """SpendingFilterParams TypedDict documents the optional filter parameters
+    used across _build_filters, _record_optional_filter_context, and _scope_label.
+    It stays in sync with the actual function signatures via this test, preventing
+    silent mismatches when filters are added or removed."""
+
+    def test_spending_filter_params_includes_all_filter_keywords(self):
+        # Extract the filter keywords from _build_filters signature (all params
+        # after the required positional ones: client, agency_name, start/end years).
+        import inspect
+        sig = inspect.signature(_build_filters)
+        params = list(sig.parameters.keys())
+        filter_keywords = params[4:]  # Skip: client, agency_name, start_fiscal_year, end_fiscal_year
+        # Remove the non-filter control flags
+        filter_keywords = [p for p in filter_keywords if p not in ('award_type_counts_as_scope', 'scope_required')]
+
+        spending_params = set(SpendingFilterParams.__annotations__.keys())
+        assert set(filter_keywords) == spending_params, (
+            f"SpendingFilterParams mismatch: "
+            f"_build_filters has {set(filter_keywords) - spending_params} not in TypedDict, "
+            f"TypedDict has {spending_params - set(filter_keywords)} not in _build_filters"
+        )
 
 
 class TestClampLimit:

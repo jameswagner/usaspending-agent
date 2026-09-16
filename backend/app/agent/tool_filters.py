@@ -507,10 +507,10 @@ def _build_filters(
     description: str | None = None,
     tas_code: str | None = None,
     federal_account: str | None = None,
+    def_codes: list[str] | None = None,
     award_type_counts_as_scope: bool = False,
     scope_required: bool = True,
 ) -> AdvancedFilters:
-    """See SpendingFilterParams for the optional filter parameter definitions."""
     """Resolve agency_name + fiscal-year range into an AdvancedFilters -
     the shared first step of all three spending tools, replacing what was
     three near-identical blocks (agency resolution, date-range math,
@@ -884,9 +884,12 @@ def _record_optional_filter_context(
     description: str | None = None,
     tas_code: str | None = None,
     federal_account: str | None = None,
+    def_codes: list[str] | None = None,
 ) -> dict:
-    """Adds each optional filter param to a citation context dict, but only the ones actually set.
-    See SpendingFilterParams for the full parameter list."""
+    """Adds each optional filter param to a citation context dict, but
+    only the ones actually set - so a citation reflects exactly which
+    filters were used for that call, not every filter this tool supports
+    in the abstract. See SpendingFilterParams for the full parameter list."""
     for key, value in (
         ("agency_name", agency_name),
         ("award_type", award_type),

@@ -173,6 +173,7 @@ def _scope_label(
     description: str | None = None,
     tas_code: str | None = None,
     federal_account: str | None = None,
+    def_codes: list[str] | None = None,
 ) -> str:
     """Label for a failure/no-results message. _build_filters guarantees at
     least one of these is set - EXCEPT on search_awards, where award_type
@@ -189,6 +190,7 @@ def _scope_label(
         or naics_code or psc_code or cfda_program or keywords
         or award_id or description
         or tas_code or federal_account
+        or (def_codes and ", ".join(def_codes))
         or "unknown scope"
     )
 

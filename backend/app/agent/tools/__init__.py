@@ -57,6 +57,11 @@ from .awards import (
 )
 from .business_type_labels import _format_business_type
 from .cfda import resolve_cfda_program
+from .disaster import (
+    _format_disaster_overview,
+    get_disaster_spending_overview,
+    get_disaster_spending_overview_raw,
+)
 from .location import _query_candidates, resolve_county_fips
 from .naics import resolve_naics_code
 from .psc import resolve_psc_code
@@ -116,6 +121,7 @@ __all__ = [
     "_format_business_type",
     "_format_child_recipient",
     "_format_contract_or_idv",
+    "_format_disaster_overview",
     "_format_financial_assistance",
     "_format_geography_result",
     "_format_period_breakdown",
@@ -150,6 +156,8 @@ __all__ = [
     "get_award_subawards",
     "get_award_type_breakdown",
     "get_award_type_breakdown_raw",
+    "get_disaster_spending_overview",
+    "get_disaster_spending_overview_raw",
     "get_idv_amounts_raw",
     "get_recipient_children",
     "get_recipient_details",

@@ -435,6 +435,42 @@ def _validate_federal_account(federal_account: str) -> tuple[str, str]:
     return aid, main
 
 
+# Group memberships per the live reference list
+# (files.usaspending.gov/reference_data/def_codes.csv's "Group Name"
+# column, fetched 2026-09-15) - the two groups issue #26/#110 actually care
+# about, not all ~40 individual DEFC letters/numbers (those remain directly
+# passable as literal codes, e.g. def_codes=["L"]). Confirmed live these
+# alias strings are NOT accepted by the API itself
+# (?def_codes=covid_19 silently returns an all-zero response, same as any
+# other unrecognized code - it doesn't error) - expansion has to happen
+# here, before the request goes out.
+DEFC_GROUP_ALIASES: dict[str, list[str]] = {
+    "covid_19": ["L", "M", "N", "O", "P", "U", "V"],
+    "covid-19": ["L", "M", "N", "O", "P", "U", "V"],
+    "covid": ["L", "M", "N", "O", "P", "U", "V"],
+    "infrastructure": ["Z", "1"],
+    "iija": ["Z", "1"],
+}
+
+
+def _normalize_def_codes(def_codes: list[str]) -> list[str]:
+    """Expands any DEFC_GROUP_ALIASES entry (e.g. "covid_19", "infrastructure")
+    into its member codes, passes anything else through as a literal code
+    (upper-cased, e.g. "l" -> "L") - same direct-passthrough-for-real-codes
+    reasoning as naics_code/psc_code, since the ~40 individual codes are
+    already exactly what an analyst who knows one would type, but "covid"/
+    "infrastructure" are the two groupings actually named in issue #26/#110
+    and worth resolving from a plain word rather than making the model
+    enumerate 7 or 2 letters/numbers itself."""
+    codes: list[str] = []
+    for raw in def_codes:
+        key = raw.strip().lower()
+        codes.extend(DEFC_GROUP_ALIASES.get(key, [raw.strip().upper()]))
+    # dict.fromkeys dedupes while preserving order - a caller passing both
+    # "covid" and "L" shouldn't see "L" counted twice.
+    return list(dict.fromkeys(codes))
+
+
 def _build_filters(
     client: USASpendingClient,
     agency_name: str | None,
@@ -468,6 +504,7 @@ def _build_filters(
     description: str | None = None,
     tas_code: str | None = None,
     federal_account: str | None = None,
+    def_codes: list[str] | None = None,
     award_type_counts_as_scope: bool = False,
     scope_required: bool = True,
 ) -> AdvancedFilters:
@@ -562,6 +599,16 @@ def _build_filters(
     matches PIID/FAIN/URI and several other text fields (recipient name,
     NAICS/PSC description, etc.) - so a keywords hit doesn't imply a
     description hit or vice versa.
+
+    def_codes restricts to spending tagged with these Disaster Emergency
+    Fund Codes (DEFC) - real scope on its own (#26), the same "a specific
+    code an analyst already knows" reasoning as naics_code/psc_code/
+    tas_code above. Each entry is either a literal DEFC (e.g. "L") or one
+    of the two group aliases "covid"/"covid_19" or "infrastructure"/"iija"
+    (see DEFC_GROUP_ALIASES/_normalize_def_codes) - the live API does NOT
+    accept those alias strings itself (confirmed live: silently returns an
+    all-zero/empty response rather than erroring), so expansion happens
+    here before the request goes out.
     """
     real_scoping_filters = (
         agency_name, recipient_name, recipient_id,
@@ -572,7 +619,7 @@ def _build_filters(
         performed_in_district, recipient_in_district,
         naics_code, psc_code, cfda_program, keywords,
         award_id, description, recipient_type,
-        tas_code, federal_account,
+        tas_code, federal_account, def_codes,
     )
     has_real_scope = any(f is not None for f in real_scoping_filters)
     if not has_real_scope and award_type_counts_as_scope and award_type is not None:
@@ -583,7 +630,7 @@ def _build_filters(
             "recipient_in_state, performed_in_county, recipient_in_county, performed_in_city, "
             "recipient_in_city, performed_in_zip, recipient_in_zip, performed_in_district, "
             "recipient_in_district, naics_code, psc_code, cfda_program, keywords, award_id, "
-            "description, recipient_type, tas_code, or federal_account must be given"
+            "description, recipient_type, tas_code, federal_account, or def_codes must be given"
         )
         if award_type_counts_as_scope:
             message += ", or award_type (browsing by award type + fiscal year alone is fine here)"
@@ -691,6 +738,9 @@ def _build_filters(
         aid, main = _validate_federal_account(federal_account)
         kwargs["treasury_account_components"] = [TreasuryAccountComponentsObject(aid=aid, main=main)]
 
+    if def_codes is not None:
+        kwargs["def_codes"] = _normalize_def_codes(def_codes)
+
     return AdvancedFilters(**kwargs)
 
 
@@ -708,6 +758,22 @@ def _build_filters(
 # payments, insurance/other) across 12 agencies - safe to rely on
 # unconditionally, not just for the common cases.
 SEARCH_AWARDS_FIELDS_BASE = ["Award ID", "generated_internal_id", "Recipient Name", "Awarding Agency", "Description"]
+
+# Also Base fields per spending_by_award.md - present on every award
+# regardless of def_codes filter, not conditional on one being set (live-
+# verified 2026-09-15: a plain, non-disaster-related query still returns
+# "def_codes": [] and the four amount fields as 0). Requested unconditionally
+# alongside SEARCH_AWARDS_FIELDS_BASE (#26) but only surfaced in
+# search_awards's formatted output when non-empty/non-zero, so a normal
+# (non-disaster) query's results aren't cluttered with a "COVID-19
+# Obligations: $0.00" line on every award.
+DISASTER_BREAKOUT_FIELDS = [
+    "def_codes",
+    "COVID-19 Obligations",
+    "COVID-19 Outlays",
+    "Infrastructure Obligations",
+    "Infrastructure Outlays",
+]
 
 # Common to both Contract Subawards and Grant Subawards field lists
 # (spending_by_award.md) - skips the type-specific extras (NAICS/PSC for
@@ -844,6 +910,7 @@ def _record_optional_filter_context(
     description: str | None = None,
     tas_code: str | None = None,
     federal_account: str | None = None,
+    def_codes: list[str] | None = None,
 ) -> dict:
     """Adds each optional filter param to a citation context dict, but
     only the ones actually set - so a citation reflects exactly which
@@ -878,6 +945,7 @@ def _record_optional_filter_context(
         ("description", description),
         ("tas_code", tas_code),
         ("federal_account", federal_account),
+        ("def_codes", def_codes),
     ):
         if value is not None:
             context[key] = value

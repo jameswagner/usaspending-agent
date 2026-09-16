@@ -11,6 +11,7 @@ import logging
 
 from anthropic import beta_tool
 from langsmith import traceable
+from typing_extensions import Unpack
 
 from backend.app.usaspending_client import (
     AgencySubAgencyResponse,
@@ -29,6 +30,7 @@ from ..singletons import (
 from ..tool_filters import (
     AWARD_TYPE_GROUPS,
     AwardType,
+    SpendingFilterParams,
     _clamp_limit,
     _normalize_award_type,
 )
@@ -150,47 +152,37 @@ def _format_api_messages(messages: list[str] | None) -> str:
     return "\n\n(API notice: " + " ".join(messages) + ")"
 
 
+# Priority order for _scope_label's fallback chain (excludes agency_name/
+# recipient_name/recipient_id, which stay explicit params - see below).
+# award_type/min_amount/max_amount/date_type/*_scope/recipient_type are
+# deliberately absent - they don't count as scope on their own (#16).
+_SCOPE_LABEL_KEYS: tuple[str, ...] = (
+    "performed_in_state", "recipient_in_state",
+    "performed_in_county", "recipient_in_county",
+    "performed_in_city", "recipient_in_city",
+    "performed_in_zip", "recipient_in_zip",
+    "performed_in_district", "recipient_in_district",
+    "naics_code", "psc_code", "cfda_program", "keywords",
+    "award_id", "description", "tas_code", "federal_account",
+)
+
+
 def _scope_label(
     agency_name: str | None,
     recipient_name: str | None,
     recipient_id: str | None,
-    *,
-    performed_in_state: str | None = None,
-    recipient_in_state: str | None = None,
-    performed_in_county: str | None = None,
-    recipient_in_county: str | None = None,
-    performed_in_city: str | None = None,
-    recipient_in_city: str | None = None,
-    performed_in_zip: str | None = None,
-    recipient_in_zip: str | None = None,
-    performed_in_district: str | None = None,
-    recipient_in_district: str | None = None,
-    naics_code: str | None = None,
-    psc_code: str | None = None,
-    cfda_program: str | None = None,
-    keywords: str | None = None,
-    award_id: str | None = None,
-    description: str | None = None,
-    tas_code: str | None = None,
-    federal_account: str | None = None,
+    **filters: Unpack[SpendingFilterParams],
 ) -> str:
     """Label for a failure/no-results message. _build_filters guarantees at
     least one of these is set - EXCEPT on search_awards, where award_type
     (not one of this function's params) can satisfy scope alone (#125), so
-    the "unknown scope" fallback below is real for that tool, not dead
-    code."""
-    return (
-        agency_name or recipient_name or recipient_id
-        or performed_in_state or recipient_in_state
-        or performed_in_county or recipient_in_county
-        or performed_in_city or recipient_in_city
-        or performed_in_zip or recipient_in_zip
-        or performed_in_district or recipient_in_district
-        or naics_code or psc_code or cfda_program or keywords
-        or award_id or description
-        or tas_code or federal_account
-        or "unknown scope"
-    )
+    the "unknown scope" fallback below is real for that tool, not dead code."""
+    if agency_name or recipient_name or recipient_id:
+        return agency_name or recipient_name or recipient_id
+    for key in _SCOPE_LABEL_KEYS:
+        if filters.get(key):
+            return filters[key]
+    return "unknown scope"
 
 
 def _record_code_execution_calls(message) -> None:

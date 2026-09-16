@@ -4532,6 +4532,7 @@ dependencies = [
     { name = "sentence-transformers" },
     { name = "slowapi" },
     { name = "transformers" },
+    { name = "typing-extensions" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "whoosh" },
 ]
@@ -4561,6 +4562,7 @@ requires-dist = [
     { name = "sentence-transformers", specifier = ">=6.0.1" },
     { name = "slowapi", specifier = ">=0.1.10" },
     { name = "transformers", specifier = ">=5.16.1" },
+    { name = "typing-extensions", specifier = ">=4.15.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.52.4" },
     { name = "whoosh", specifier = ">=2.7.4" },
 ]

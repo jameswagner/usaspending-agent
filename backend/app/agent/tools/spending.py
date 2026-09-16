@@ -323,12 +323,15 @@ def get_spending_by_category(
             Sufficient scope on its own. For a spending-by-DEFC breakdown instead of filtering
             to a specific one, use category="defc" instead.
         spending_level: Optional. The level of spending detail to aggregate by (default
-            "transactions"). "awards" aggregates at the award level, "subawards" aggregates
-            subaward totals (e.g. total subawards to a district), "award_financial" includes
-            award financial details. Use "subawards" to answer questions like "what total
-            subaward dollars went to district X" - the same aggregation as with "transactions",
-            but summing subaward amounts instead. "transactions" is the default and sums
-            individual transaction-level details.
+            "transactions"). Use "subawards" to answer "total subaward dollars to district X"
+            questions - confirmed live 2026-09-16 this returns an aggregate subaward total per
+            category value (e.g. IL-01 -> one dollar amount), not individual subaward records -
+            for that, use search_subawards instead. "award_financial" is confirmed live to only
+            work with category="defc" - any other category returns a clean API error ("Category
+            '<category>' is not implemented when 'spending_level' is 'award_financial'"), so
+            don't combine it with any other category. "awards" and "transactions" (the default)
+            both work with every category; the difference between them is not yet live-verified
+            here.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget

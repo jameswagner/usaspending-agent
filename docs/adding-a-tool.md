@@ -129,16 +129,31 @@ Forgetting this step silently returns `None` from `build_tool_citation`, so the 
 
 ## Adding or modifying filter parameters
 
+`_build_filters`, `_record_optional_filter_context`, and `_scope_label` (in
+`backend/app/agent/tool_filters.py`/`tools/_shared.py`) no longer each declare
+their own ~28-parameter signature - all three take `**filters:
+Unpack[SpendingFilterParams]` instead, so `SpendingFilterParams` is the single
+place that list is defined. `TestSpendingFilterParamsMatchesActualSignatures`
+(tests/test_agent.py) fails if any of the three drifts from it, or if
+`_build_filters`'s body stops unpacking a field it declares.
+
 If you're adding a new filter (e.g., `new_filter_code`) to a spending tool:
 
-1. Add the parameter to `SpendingFilterParams` in `backend/app/agent/tool_filters.py`
-2. Add handling in `_build_filters` (where it becomes an API filter)
-3. Add handling in `_record_optional_filter_context` (where it gets recorded for citations)
-4. Add handling in `_scope_label` (where it appears in failure/no-results messages)
-5. Add it to every spending tool's `_raw` and `@beta_tool` wrapper functions
-6. Add it to `_ALL_OPTIONAL_FILTER_KEYS` in `response_shaping.py`
+1. Add the field to `SpendingFilterParams` in `backend/app/agent/tool_filters.py`
+2. In `_build_filters`: add `new_filter_code = filters.get("new_filter_code")` near
+   the top, then the actual validation/transformation logic that turns it into an
+   `AdvancedFilters` field - `_record_optional_filter_context` and `_scope_label`
+   need **no changes** (they're fully generic over whatever's in `filters`), unless
+   the new filter should count as real scope on its own, in which case add it to
+   `real_scoping_filters` in `_build_filters` and to `_SCOPE_LABEL_KEYS` in `_shared.py`
+3. Add it to every spending tool's `_raw` and `@beta_tool` wrapper functions - this
+   part is inherent to exposing a new LLM-facing parameter on each tool and isn't
+   eliminated by the TypedDict, since each tool needs its own named parameter for
+   `@beta_tool`'s schema generation
+4. Add it to `_ALL_OPTIONAL_FILTER_KEYS` in `response_shaping.py`
 
-Currently all these edits are manual and easy to miss. The planned `SpendingFilterParams` TypedDict consolidation (see [issue #180](https://github.com/jameswagner/usaspending-agent/issues/180)) will reduce this to ~2 edits once complete.
+Steps 3-4 are still manual, per-tool edits - the TypedDict only removed the
+duplication across the three *shared* functions, not the tool-specific plumbing.
 
 ## Testing
 

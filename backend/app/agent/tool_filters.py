@@ -16,6 +16,8 @@ from __future__ import annotations
 import re
 from typing import Literal, TypedDict
 
+from typing_extensions import Unpack
+
 from backend.app.usaspending_client import (
     AdvancedFilters,
     AgencyFilter,
@@ -69,7 +71,7 @@ class SpendingFilterParams(TypedDict, total=False):
     description: str
     tas_code: str
     federal_account: str
-    def_codes: list[str]
+
 
 # Verified against USASpending's own award_types.md contract (checked
 # 2026-09-06), not guessed. The three broad buckets stay for general
@@ -480,36 +482,9 @@ def _build_filters(
     start_fiscal_year: int,
     end_fiscal_year: int,
     *,
-    award_type: str | None = None,
-    recipient_name: str | None = None,
-    recipient_id: str | None = None,
-    min_amount: float | None = None,
-    max_amount: float | None = None,
-    performed_in_state: str | None = None,
-    recipient_in_state: str | None = None,
-    performed_in_county: str | None = None,
-    recipient_in_county: str | None = None,
-    performed_in_city: str | None = None,
-    recipient_in_city: str | None = None,
-    performed_in_zip: str | None = None,
-    recipient_in_zip: str | None = None,
-    performed_in_district: str | None = None,
-    recipient_in_district: str | None = None,
-    keywords: str | None = None,
-    date_type: str | None = None,
-    place_of_performance_scope: str | None = None,
-    recipient_scope: str | None = None,
-    naics_code: str | None = None,
-    psc_code: str | None = None,
-    cfda_program: str | None = None,
-    award_id: str | None = None,
-    recipient_type: str | None = None,
-    description: str | None = None,
-    tas_code: str | None = None,
-    federal_account: str | None = None,
-    def_codes: list[str] | None = None,
     award_type_counts_as_scope: bool = False,
     scope_required: bool = True,
+    **filters: Unpack[SpendingFilterParams],
 ) -> AdvancedFilters:
     """Resolve agency_name + fiscal-year range into an AdvancedFilters -
     the shared first step of all three spending tools, replacing what was
@@ -603,6 +578,36 @@ def _build_filters(
     NAICS/PSC description, etc.) - so a keywords hit doesn't imply a
     description hit or vice versa.
     """
+    # Unpacked once here (mechanical, one line per SpendingFilterParams field) so the
+    # rest of this function's business logic is unchanged from before **filters existed.
+    award_type = filters.get("award_type")
+    recipient_name = filters.get("recipient_name")
+    recipient_id = filters.get("recipient_id")
+    min_amount = filters.get("min_amount")
+    max_amount = filters.get("max_amount")
+    performed_in_state = filters.get("performed_in_state")
+    recipient_in_state = filters.get("recipient_in_state")
+    performed_in_county = filters.get("performed_in_county")
+    recipient_in_county = filters.get("recipient_in_county")
+    performed_in_city = filters.get("performed_in_city")
+    recipient_in_city = filters.get("recipient_in_city")
+    performed_in_zip = filters.get("performed_in_zip")
+    recipient_in_zip = filters.get("recipient_in_zip")
+    performed_in_district = filters.get("performed_in_district")
+    recipient_in_district = filters.get("recipient_in_district")
+    keywords = filters.get("keywords")
+    date_type = filters.get("date_type")
+    place_of_performance_scope = filters.get("place_of_performance_scope")
+    recipient_scope = filters.get("recipient_scope")
+    naics_code = filters.get("naics_code")
+    psc_code = filters.get("psc_code")
+    cfda_program = filters.get("cfda_program")
+    award_id = filters.get("award_id")
+    recipient_type = filters.get("recipient_type")
+    description = filters.get("description")
+    tas_code = filters.get("tas_code")
+    federal_account = filters.get("federal_account")
+
     real_scoping_filters = (
         agency_name, recipient_name, recipient_id,
         performed_in_state, recipient_in_state,
@@ -857,69 +862,15 @@ def _record_optional_filter_context(
     context: dict,
     *,
     agency_name: str | None = None,
-    award_type: str | None = None,
-    recipient_name: str | None = None,
-    recipient_id: str | None = None,
-    min_amount: float | None = None,
-    max_amount: float | None = None,
-    performed_in_state: str | None = None,
-    recipient_in_state: str | None = None,
-    performed_in_county: str | None = None,
-    recipient_in_county: str | None = None,
-    performed_in_city: str | None = None,
-    recipient_in_city: str | None = None,
-    performed_in_zip: str | None = None,
-    recipient_in_zip: str | None = None,
-    performed_in_district: str | None = None,
-    recipient_in_district: str | None = None,
-    keywords: str | None = None,
-    date_type: str | None = None,
-    place_of_performance_scope: str | None = None,
-    recipient_scope: str | None = None,
-    naics_code: str | None = None,
-    psc_code: str | None = None,
-    cfda_program: str | None = None,
-    award_id: str | None = None,
-    recipient_type: str | None = None,
-    description: str | None = None,
-    tas_code: str | None = None,
-    federal_account: str | None = None,
-    def_codes: list[str] | None = None,
+    **filters: Unpack[SpendingFilterParams],
 ) -> dict:
-    """Adds each optional filter param to a citation context dict, but
-    only the ones actually set - so a citation reflects exactly which
-    filters were used for that call, not every filter this tool supports
-    in the abstract. See SpendingFilterParams for the full parameter list."""
-    for key, value in (
-        ("agency_name", agency_name),
-        ("award_type", award_type),
-        ("recipient_name", recipient_name),
-        ("recipient_id", recipient_id),
-        ("min_amount", min_amount),
-        ("max_amount", max_amount),
-        ("performed_in_state", performed_in_state),
-        ("recipient_in_state", recipient_in_state),
-        ("performed_in_county", performed_in_county),
-        ("recipient_in_county", recipient_in_county),
-        ("performed_in_city", performed_in_city),
-        ("recipient_in_city", recipient_in_city),
-        ("performed_in_zip", performed_in_zip),
-        ("recipient_in_zip", recipient_in_zip),
-        ("performed_in_district", performed_in_district),
-        ("recipient_in_district", recipient_in_district),
-        ("keywords", keywords),
-        ("date_type", date_type),
-        ("place_of_performance_scope", place_of_performance_scope),
-        ("recipient_scope", recipient_scope),
-        ("naics_code", naics_code),
-        ("psc_code", psc_code),
-        ("cfda_program", cfda_program),
-        ("award_id", award_id),
-        ("recipient_type", recipient_type),
-        ("description", description),
-        ("tas_code", tas_code),
-        ("federal_account", federal_account),
-    ):
+    """Adds each optional filter param to a citation context dict, but only the
+    ones actually set - so a citation reflects exactly which filters were used
+    for that call, not every filter this tool supports in the abstract. Fully
+    generic over SpendingFilterParams - a new filter needs no change here."""
+    if agency_name is not None:
+        context["agency_name"] = agency_name
+    for key, value in filters.items():
         if value is not None:
             context[key] = value
     return context

@@ -101,7 +101,7 @@ from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdow
 from backend.app.agent.tools.awards import get_award_funding_breakdown
 from backend.app.agent.tools.disaster import get_disaster_spending_overview
 from backend.app.agent.tools.location import resolve_county_fips
-from backend.app.agent.tools.spending import search_awards
+from backend.app.agent.tools.spending import get_spending_by_category, search_awards
 from backend.app.usaspending_client import (
     AgencySubAgencyResponse,
     AwardFundingResponse,
@@ -2028,6 +2028,68 @@ class TestSearchAwardsMultiYearCaveat:
             start_fiscal_year=2023, end_fiscal_year=2023, agency_name="National Science Foundation"
         )
         assert "CAVEAT" not in result
+
+
+class TestGetSpendingByCategorySpendingLevel:
+    # spending_level threads through to client.spending_by_category (issue
+    # #183 - the API's own spending_by_category.md contract documents
+    # "transactions"/"awards"/"subawards"/"award_financial" as the valid
+    # values; confirmed live 2026-09-16 that spending_level="subawards" on
+    # category="district" returns an aggregate subaward total in the same
+    # response shape as the default "transactions" mode, e.g. IL-01 ->
+    # amount=728235.0 - no separate formatting branch needed.
+
+    def _mock_client(self, response_or_error, monkeypatch, captured=None):
+        client = FakeClient(make_agency())
+
+        def fake_spending_by_category(*args, **kwargs):
+            if captured is not None:
+                captured["spending_level"] = kwargs.get("spending_level")
+            if isinstance(response_or_error, Exception):
+                raise response_or_error
+            return response_or_error
+
+        client.spending_by_category = fake_spending_by_category
+        monkeypatch.setattr("backend.app.agent.tools.spending._get_usaspending_client", lambda: client)
+
+    def test_spending_level_defaults_to_transactions(self, monkeypatch):
+        captured = {}
+        self._mock_client(make_category_response(1), monkeypatch, captured)
+        get_spending_by_category.func(
+            category="district", start_fiscal_year=2023, end_fiscal_year=2023,
+            agency_name="National Science Foundation",
+        )
+        assert captured["spending_level"] == "transactions"
+
+    def test_spending_level_subawards_is_passed_through(self, monkeypatch):
+        captured = {}
+        self._mock_client(make_category_response(1), monkeypatch, captured)
+        get_spending_by_category.func(
+            category="district", start_fiscal_year=2023, end_fiscal_year=2023,
+            agency_name="National Science Foundation", spending_level="subawards",
+        )
+        assert captured["spending_level"] == "subawards"
+
+    def test_award_financial_on_non_defc_category_fails_cleanly(self, monkeypatch):
+        # Live-confirmed 2026-09-16: the API itself returns 501 "Category
+        # 'district' is not implemented when 'spending_level' is
+        # 'award_financial'" - award_financial only works with
+        # category="defc". No client-side guard needed since
+        # USASpendingAPIError already surfaces the API's own detail message
+        # through the tool's existing except-clause - this test just pins
+        # that behavior instead of leaving it undocumented and untested.
+        self._mock_client(
+            USASpendingAPIError(
+                "Category 'district' is not implemented when 'spending_level' is 'award_financial'"
+            ),
+            monkeypatch,
+        )
+        result = get_spending_by_category.func(
+            category="district", start_fiscal_year=2023, end_fiscal_year=2023,
+            agency_name="National Science Foundation", spending_level="award_financial",
+        )
+        assert "not implemented" in result
+        assert "This query failed" in result
 
 
 class TestSearchAwardsDisasterBreakout:

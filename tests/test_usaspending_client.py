@@ -8,6 +8,7 @@ from backend.app.usaspending_client import (
     AdvancedFilters,
     AgencySubAgencyResponse,
     ChildRecipient,
+    DisasterOverviewResponse,
     RecipientOverview,
     SpendingByAwardCountResponse,
     ToptierAgency,
@@ -457,6 +458,101 @@ class TestSpendingByAwardCount:
         client.spending_by_award_count(AdvancedFilters())
         assert captured["path"] == "/api/v2/search/spending_by_award_count/"
         assert "filters" in captured["body"]
+
+
+class TestGetDisasterOverview:
+    # Real live response shape (def_codes=L), not synthetic.
+
+    def test_parses_real_response_shape(self, monkeypatch):
+        client = USASpendingClient()
+        body = {
+            "funding": [{"def_code": "L", "amount": 7707863149.53}],
+            "total_budget_authority": 7707863149.53,
+            "spending": {
+                "award_obligations": 4333842060.96,
+                "award_outlays": 6249313278.94,
+                "total_obligations": 7406214022.0,
+                "total_outlays": 7073955847.63,
+            },
+            "additional": None,
+        }
+        monkeypatch.setattr(client, "_get", lambda path, params=None: body)
+        response = client.get_disaster_overview(["L"])
+        assert isinstance(response, DisasterOverviewResponse)
+        assert response.funding[0].def_code == "L"
+        assert response.total_budget_authority == 7707863149.53
+        assert response.spending.award_obligations == 4333842060.96
+        assert response.additional is None
+
+    def test_parses_additional_block_when_present(self, monkeypatch):
+        # additional is real, not speculative - see disaster/overview.md's own example.
+        client = USASpendingClient()
+        body = {
+            "funding": [{"def_code": "Z", "amount": 11230000000}],
+            "total_budget_authority": 11230000000,
+            "spending": {
+                "award_obligations": 866700000000,
+                "award_outlays": 413100000000,
+                "total_obligations": 963000000000,
+                "total_outlays": 459000000000,
+            },
+            "additional": {
+                "total_budget_authority": 789000000,
+                "spending": {"total_obligations": 45600000, "total_outlays": 12300000},
+            },
+        }
+        monkeypatch.setattr(client, "_get", lambda path, params=None: body)
+        response = client.get_disaster_overview(["Z"])
+        assert response.additional is not None
+        assert response.additional.total_budget_authority == 789000000
+        assert response.additional.spending.total_obligations == 45600000
+
+    def test_sends_comma_joined_def_codes_not_a_list(self, monkeypatch):
+        # requests' default list encoding sends repeated params, which this endpoint mishandles.
+        client = USASpendingClient()
+        captured: dict = {}
+
+        def fake_get(path, params=None):
+            captured["path"] = path
+            captured["params"] = params
+            return {
+                "funding": [],
+                "total_budget_authority": 0.0,
+                "spending": {
+                    "award_obligations": 0.0,
+                    "award_outlays": 0.0,
+                    "total_obligations": 0.0,
+                    "total_outlays": 0.0,
+                },
+                "additional": None,
+            }
+
+        monkeypatch.setattr(client, "_get", fake_get)
+        client.get_disaster_overview(["L", "M"])
+        assert captured["path"] == "/api/v2/disaster/overview/"
+        assert captured["params"] == {"def_codes": "L,M"}
+
+    def test_no_def_codes_sends_no_params(self, monkeypatch):
+        client = USASpendingClient()
+        captured: dict = {}
+
+        def fake_get(path, params=None):
+            captured["params"] = params
+            return {
+                "funding": [],
+                "total_budget_authority": 0.0,
+                "spending": {
+                    "award_obligations": 0.0,
+                    "award_outlays": 0.0,
+                    "total_obligations": 0.0,
+                    "total_outlays": 0.0,
+                },
+                "additional": None,
+            }
+
+        monkeypatch.setattr(client, "_get", fake_get)
+        client.get_disaster_overview()
+        assert captured["params"] is None
 
 
 class TestGetAgencySubAgencyBreakdown:

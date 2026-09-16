@@ -182,6 +182,9 @@ def _scope_label(
     for key in _SCOPE_LABEL_KEYS:
         if filters.get(key):
             return filters[key]
+    def_codes = filters.get("def_codes")
+    if def_codes:
+        return ", ".join(def_codes)
     return "unknown scope"
 
 

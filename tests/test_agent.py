@@ -49,6 +49,7 @@ from backend.app.agent.tool_filters import (
     _normalize_award_type,
     _normalize_county_fips,
     _normalize_date_type,
+    _normalize_def_codes,
     _normalize_district,
     _normalize_recipient_award_type,
     _normalize_scope,
@@ -98,6 +99,7 @@ from backend.app.agent.tools import (
 )
 from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
 from backend.app.agent.tools.awards import get_award_funding_breakdown
+from backend.app.agent.tools.disaster import get_disaster_spending_overview
 from backend.app.agent.tools.location import resolve_county_fips
 from backend.app.agent.tools.spending import search_awards
 from backend.app.usaspending_client import (
@@ -107,6 +109,10 @@ from backend.app.usaspending_client import (
     AwardTypeCounts,
     CategoryResult,
     ChildRecipient,
+    DisasterAdditional,
+    DisasterFunding,
+    DisasterOverviewResponse,
+    DisasterSpending,
     GeographyTypeResult,
     IDVAmountsResponse,
     ObligationByPeriod,
@@ -1318,6 +1324,21 @@ class TestFormatTopAgenciesByBudget:
         assert "15,495,311,418,794" not in result
 
 
+class TestNormalizeDefCodes:
+    def test_iija_alias_is_a_synonym_for_infrastructure(self):
+        assert _normalize_def_codes(["iija"]) == ["Z", "1"]
+
+    def test_covid_19_hyphen_and_underscore_variants_both_work(self):
+        assert _normalize_def_codes(["covid-19"]) == _normalize_def_codes(["covid_19"])
+
+    def test_case_insensitive(self):
+        assert _normalize_def_codes(["COVID"]) == ["L", "M", "N", "O", "P", "U", "V"]
+
+    def test_unrecognized_literal_code_passes_through_uppercased(self):
+        # Not validated against the ~40-code enum, same as naics_code/psc_code.
+        assert _normalize_def_codes(["zz"]) == ["ZZ"]
+
+
 class TestBuildFilters:
     # Regression coverage for the real findings: no amount-based sort, no
     # award_amounts/recipient_search_text/location filters wired to any
@@ -1487,6 +1508,29 @@ class TestBuildFilters:
     def test_malformed_federal_account_raises(self):
         with pytest.raises(USASpendingAPIError, match="doesn't look like a federal account"):
             _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, federal_account="not-an-account")
+
+    # def_codes, with group-alias expansion for covid/infrastructure.
+
+    def test_def_codes_literal_passthrough_is_uppercased(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, def_codes=["l"])
+        assert filters.def_codes == ["L"]
+
+    def test_def_codes_covid_alias_expands_to_all_seven_codes(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, def_codes=["covid"])
+        assert filters.def_codes == ["L", "M", "N", "O", "P", "U", "V"]
+
+    def test_def_codes_infrastructure_alias_expands(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, def_codes=["infrastructure"])
+        assert filters.def_codes == ["Z", "1"]
+
+    def test_def_codes_dedupes_alias_and_literal_overlap(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, def_codes=["covid", "L"])
+        assert filters.def_codes == ["L", "M", "N", "O", "P", "U", "V"]
+
+    def test_def_codes_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, def_codes=["L"])
+        assert filters.agencies is None
+        assert filters.def_codes == ["L"]
 
     # award_id/recipient_type/description (2026-09-12, issue #28) - all
     # live-verified against the real API: award_ids/description matching
@@ -1986,6 +2030,89 @@ class TestSearchAwardsMultiYearCaveat:
         assert "CAVEAT" not in result
 
 
+class TestSearchAwardsDisasterBreakout:
+    # Disaster fields shown only when an award actually carries a DEFC tag.
+
+    def _mock_client(self, results, monkeypatch):
+        response = SearchAwardsResponse(results=results, page_metadata=PageMetadata(page=1, hasNext=False))
+        client = FakeClient(make_agency())
+        client.search_awards = lambda *a, **kw: response
+        monkeypatch.setattr("backend.app.agent.tools.spending._get_usaspending_client", lambda: client)
+
+    def test_disaster_tagged_award_shows_defc_and_covid_breakout(self, monkeypatch):
+        self._mock_client(
+            [
+                {
+                    "Award ID": "SNI01416C0014",
+                    "generated_internal_id": "CONT_AWD_SNI01416C0014_1900_-NONE-_-NONE-",
+                    "Recipient Name": "MISCELLANEOUS FOREIGN AWARDEES",
+                    "Award Amount": 50000.0,
+                    "def_codes": ["L"],
+                    "COVID-19 Obligations": 272.85,
+                    "COVID-19 Outlays": 341.79,
+                    "Infrastructure Obligations": 0,
+                    "Infrastructure Outlays": 0,
+                }
+            ],
+            monkeypatch,
+        )
+        result = search_awards.func(
+            start_fiscal_year=2020, end_fiscal_year=2020, agency_name="National Science Foundation"
+        )
+        assert "DEFC: L" in result
+        assert "COVID-19 Obligations: $272.85" in result
+        assert "COVID-19 Outlays: $341.79" in result
+        assert "Infrastructure Obligations" not in result
+
+    def test_ordinary_award_with_no_def_codes_has_no_disaster_line(self, monkeypatch):
+        self._mock_client(
+            [
+                {
+                    "Award ID": "SOMEAWARD",
+                    "generated_internal_id": "CONT_AWD_SOMEAWARD",
+                    "Recipient Name": "SOME RECIPIENT, INC.",
+                    "Award Amount": 500000.0,
+                    "def_codes": [],
+                    "COVID-19 Obligations": 0,
+                    "COVID-19 Outlays": 0,
+                    "Infrastructure Obligations": 0,
+                    "Infrastructure Outlays": 0,
+                }
+            ],
+            monkeypatch,
+        )
+        result = search_awards.func(
+            start_fiscal_year=2023, end_fiscal_year=2023, agency_name="National Science Foundation"
+        )
+        assert "DEFC" not in result
+        assert "COVID-19" not in result
+
+    def test_infrastructure_tagged_award_shows_infrastructure_breakout_only(self, monkeypatch):
+        self._mock_client(
+            [
+                {
+                    "Award ID": "IIJAAWARD",
+                    "generated_internal_id": "CONT_AWD_IIJAAWARD",
+                    "Recipient Name": "SOME RECIPIENT, INC.",
+                    "Award Amount": 1000000.0,
+                    "def_codes": ["Z"],
+                    "COVID-19 Obligations": 0,
+                    "COVID-19 Outlays": 0,
+                    "Infrastructure Obligations": 900000.0,
+                    "Infrastructure Outlays": 400000.0,
+                }
+            ],
+            monkeypatch,
+        )
+        result = search_awards.func(
+            start_fiscal_year=2022, end_fiscal_year=2022, agency_name="National Science Foundation"
+        )
+        assert "DEFC: Z" in result
+        assert "COVID-19" not in result
+        assert "Infrastructure Obligations: $900,000.00" in result
+        assert "Infrastructure Outlays: $400,000.00" in result
+
+
 class TestUnresolvedAwardIdHint:
     # Regression coverage for #146: get_award_details 404s on a plain
     # PIID/FAIN (most commonly an IDV's, since search_awards's own
@@ -2052,6 +2179,84 @@ class TestGetAwardTypeBreakdown:
         self._mock_client(response, monkeypatch)
         result = get_award_type_breakdown.func(start_fiscal_year=2024, end_fiscal_year=2024)
         assert "a live API notice" in result
+
+
+class TestGetDisasterSpendingOverview:
+    # GET /api/v2/disaster/overview/{?def_codes}.
+
+    def _mock_client(self, response, monkeypatch):
+        client = SimpleNamespace(get_disaster_overview=lambda def_codes=None: response)
+        monkeypatch.setattr("backend.app.agent.tools.disaster._get_usaspending_client", lambda: client)
+
+    def test_formats_totals_and_per_defc_funding(self, monkeypatch):
+        response = DisasterOverviewResponse(
+            funding=[DisasterFunding(def_code="L", amount=7707863149.53)],
+            total_budget_authority=7707863149.53,
+            spending=DisasterSpending(
+                award_obligations=4333842060.96,
+                award_outlays=6249313278.94,
+                total_obligations=7406214022.0,
+                total_outlays=7073955847.63,
+            ),
+        )
+        self._mock_client(response, monkeypatch)
+        result = get_disaster_spending_overview.func(def_codes=["L"])
+        assert "Scope: DEFC L" in result
+        assert "Total Budget Authority: $7,707,863,149.53" in result
+        assert "Total Obligations: $7,406,214,022.00" in result
+        assert "Total Outlays: $7,073,955,847.63" in result
+        assert "Award Obligations: $4,333,842,060.96" in result
+        assert "Award Outlays: $6,249,313,278.94" in result
+        assert "L: $7,707,863,149.53" in result
+
+    def test_no_def_codes_labels_scope_as_all_defcs_combined(self, monkeypatch):
+        response = DisasterOverviewResponse(
+            funding=[],
+            total_budget_authority=0.0,
+            spending=DisasterSpending(),
+        )
+        self._mock_client(response, monkeypatch)
+        result = get_disaster_spending_overview.func()
+        assert "Scope: all disaster/relief DEFCs combined" in result
+
+    def test_covid_alias_is_expanded_before_reaching_the_client(self, monkeypatch):
+        # The live API doesn't accept "covid" itself - the tool must expand it first.
+        captured = {}
+
+        def fake_get_disaster_overview(def_codes=None):
+            captured["def_codes"] = def_codes
+            return DisasterOverviewResponse(
+                funding=[], total_budget_authority=0.0, spending=DisasterSpending(),
+            )
+
+        client = SimpleNamespace(get_disaster_overview=fake_get_disaster_overview)
+        monkeypatch.setattr("backend.app.agent.tools.disaster._get_usaspending_client", lambda: client)
+        get_disaster_spending_overview.func(def_codes=["covid"])
+        assert captured["def_codes"] == ["L", "M", "N", "O", "P", "U", "V"]
+
+    def test_additional_block_note_is_surfaced_when_present(self, monkeypatch):
+        response = DisasterOverviewResponse(
+            funding=[DisasterFunding(def_code="Z", amount=11230000000)],
+            total_budget_authority=11230000000,
+            spending=DisasterSpending(total_obligations=963000000000, total_outlays=459000000000),
+            additional=DisasterAdditional(
+                total_budget_authority=789000000,
+                spending=DisasterSpending(total_obligations=45600000, total_outlays=12300000),
+            ),
+        )
+        self._mock_client(response, monkeypatch)
+        result = get_disaster_spending_overview.func(def_codes=["Z"])
+        assert "NOTE" in result
+        assert "$789,000,000.00" in result
+
+    def test_api_error_returns_message_not_a_crash(self, monkeypatch):
+        def raise_error(def_codes=None):
+            raise USASpendingAPIError("USASpending.gov is responding slowly")
+
+        client = SimpleNamespace(get_disaster_overview=raise_error)
+        monkeypatch.setattr("backend.app.agent.tools.disaster._get_usaspending_client", lambda: client)
+        result = get_disaster_spending_overview.func(def_codes=["L"])
+        assert "This query failed" in result
 
 
 class TestGetAwardFundingBreakdown:

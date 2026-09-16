@@ -71,6 +71,7 @@ class SpendingFilterParams(TypedDict, total=False):
     description: str
     tas_code: str
     federal_account: str
+    def_codes: list[str]
 
 
 # Verified against USASpending's own award_types.md contract (checked
@@ -476,6 +477,27 @@ def _validate_federal_account(federal_account: str) -> tuple[str, str]:
     return aid, main
 
 
+# Group aliases for the two groupings worth a plain word instead of listing
+# ~40 individual DEFC letters/numbers - the API itself doesn't accept these
+# alias strings, so expansion must happen here before the request goes out.
+DEFC_GROUP_ALIASES: dict[str, list[str]] = {
+    "covid_19": ["L", "M", "N", "O", "P", "U", "V"],
+    "covid-19": ["L", "M", "N", "O", "P", "U", "V"],
+    "covid": ["L", "M", "N", "O", "P", "U", "V"],
+    "infrastructure": ["Z", "1"],
+    "iija": ["Z", "1"],
+}
+
+
+def _normalize_def_codes(def_codes: list[str]) -> list[str]:
+    """Expands a DEFC_GROUP_ALIASES entry to its member codes, else passes the code through upper-cased."""
+    codes: list[str] = []
+    for raw in def_codes:
+        key = raw.strip().lower()
+        codes.extend(DEFC_GROUP_ALIASES.get(key, [raw.strip().upper()]))
+    return list(dict.fromkeys(codes))  # dedupes while preserving order
+
+
 def _build_filters(
     client: USASpendingClient,
     agency_name: str | None,
@@ -577,6 +599,11 @@ def _build_filters(
     matches PIID/FAIN/URI and several other text fields (recipient name,
     NAICS/PSC description, etc.) - so a keywords hit doesn't imply a
     description hit or vice versa.
+
+    def_codes restricts to spending tagged with these Disaster Emergency Fund
+    Codes (DEFC) - real scope on its own, same reasoning as naics_code/psc_code.
+    Runs through _normalize_def_codes first since the live API doesn't accept
+    the DEFC_GROUP_ALIASES shortcuts itself.
     """
     # Unpacked once here (mechanical, one line per SpendingFilterParams field) so the
     # rest of this function's business logic is unchanged from before **filters existed.
@@ -607,6 +634,7 @@ def _build_filters(
     description = filters.get("description")
     tas_code = filters.get("tas_code")
     federal_account = filters.get("federal_account")
+    def_codes = filters.get("def_codes")
 
     real_scoping_filters = (
         agency_name, recipient_name, recipient_id,
@@ -617,7 +645,7 @@ def _build_filters(
         performed_in_district, recipient_in_district,
         naics_code, psc_code, cfda_program, keywords,
         award_id, description, recipient_type,
-        tas_code, federal_account,
+        tas_code, federal_account, def_codes,
     )
     has_real_scope = any(f is not None for f in real_scoping_filters)
     if not has_real_scope and award_type_counts_as_scope and award_type is not None:
@@ -628,7 +656,7 @@ def _build_filters(
             "recipient_in_state, performed_in_county, recipient_in_county, performed_in_city, "
             "recipient_in_city, performed_in_zip, recipient_in_zip, performed_in_district, "
             "recipient_in_district, naics_code, psc_code, cfda_program, keywords, award_id, "
-            "description, recipient_type, tas_code, or federal_account must be given"
+            "description, recipient_type, tas_code, federal_account, or def_codes must be given"
         )
         if award_type_counts_as_scope:
             message += ", or award_type (browsing by award type + fiscal year alone is fine here)"
@@ -736,6 +764,9 @@ def _build_filters(
         aid, main = _validate_federal_account(federal_account)
         kwargs["treasury_account_components"] = [TreasuryAccountComponentsObject(aid=aid, main=main)]
 
+    if def_codes is not None:
+        kwargs["def_codes"] = _normalize_def_codes(def_codes)
+
     return AdvancedFilters(**kwargs)
 
 
@@ -753,6 +784,16 @@ def _build_filters(
 # payments, insurance/other) across 12 agencies - safe to rely on
 # unconditionally, not just for the common cases.
 SEARCH_AWARDS_FIELDS_BASE = ["Award ID", "generated_internal_id", "Recipient Name", "Awarding Agency", "Description"]
+
+# Also Base fields per spending_by_award.md, present on every award regardless
+# of def_codes filter - only surfaced in output when non-zero (see spending.py).
+DISASTER_BREAKOUT_FIELDS = [
+    "def_codes",
+    "COVID-19 Obligations",
+    "COVID-19 Outlays",
+    "Infrastructure Obligations",
+    "Infrastructure Outlays",
+]
 
 # Common to both Contract Subawards and Grant Subawards field lists
 # (spending_by_award.md) - skips the type-specific extras (NAICS/PSC for

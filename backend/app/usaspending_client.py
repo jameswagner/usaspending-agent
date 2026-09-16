@@ -281,7 +281,8 @@ ADVANCED_FILTER_FIELD_COVERAGE: dict[str, str] = {
     "object_classes": "modeled, not exposed",
     "object_class": "modeled, not exposed (older-contract name, see AdvancedFilters docstring)",
     "program_activity": "modeled, not exposed (older-contract name, see AdvancedFilters docstring)",
-    "def_codes": "modeled, not exposed",
+    "def_codes": "exposed (def_codes) - on get_spending_by_category/get_spending_over_time/search_awards, "
+                 "with client-side group-alias expansion (see tool_filters.DEFC_GROUP_ALIASES).",
     "award_unique_id": "modeled, not exposed",
 }
 
@@ -363,6 +364,38 @@ class AgencyOverview(BaseModel):
     website: str | None = None
     congressional_justification_url: str | None = None
     subtier_agency_count: int
+
+
+class DisasterFunding(BaseModel):
+    """One row of disaster/overview.md's `funding` array - budget authority under a single DEFC."""
+
+    def_code: str
+    amount: float
+
+
+class DisasterSpending(BaseModel):
+    """All four fields are nullable per the contract, not just optional."""
+
+    award_obligations: float | None = None
+    award_outlays: float | None = None
+    total_obligations: float | None = None
+    total_outlays: float | None = None
+
+
+class DisasterAdditional(BaseModel):
+    """Spending/budget authority not labeled with the searched DEFC but that should still count toward the total - modeled (not skipped) since it feeds get_disaster_spending_overview's own top-line total."""
+
+    total_budget_authority: float
+    spending: DisasterSpending
+
+
+class DisasterOverviewResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    funding: list[DisasterFunding]
+    total_budget_authority: float
+    spending: DisasterSpending
+    additional: DisasterAdditional | None = None
 
 
 class ObligationByPeriod(BaseModel):
@@ -1026,6 +1059,15 @@ class USASpendingClient:
         params = {"fiscal_year": fiscal_year} if fiscal_year else None
         data = self._get(f"/api/v2/agency/{toptier_code}/", params=params)
         return AgencyOverview(**data)
+
+    @traceable(run_type="tool", name="get_disaster_overview")
+    def get_disaster_overview(self, def_codes: list[str] | None = None) -> DisasterOverviewResponse:
+        """GET /api/v2/disaster/overview/{?def_codes} - all-time totals, no fiscal_year param.
+        def_codes must already be normalized (no group aliases) and is sent comma-joined,
+        not as a plain list - a repeated-param list silently keeps only the last code."""
+        params = {"def_codes": ",".join(def_codes)} if def_codes else None
+        data = self._get("/api/v2/disaster/overview/", params=params)
+        return DisasterOverviewResponse(**data)
 
     @traceable(run_type="tool", name="get_agency_budgetary_resources")
     def get_agency_budgetary_resources(self, toptier_code: str) -> AgencyBudgetaryResourcesResponse:

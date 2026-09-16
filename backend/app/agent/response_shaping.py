@@ -235,6 +235,8 @@ class ToolCitation(BaseModel):
 NEVER_CHART_TOOLS = {
     "search_guide", "lookup_agency", "search_awards", "get_agency_budget",
     "code_execution", "get_award_details",
+    # A single scoped total, same reasoning as get_agency_budget above.
+    "get_disaster_spending_overview",
     # search_recipients returns a ranked candidate list, plausibly
     # chart-worthy on its own merits (like get_spending_by_category) - but
     # its real purpose is disambiguation/resolution, not analysis, and
@@ -408,6 +410,7 @@ _ALL_OPTIONAL_FILTER_KEYS = {
     "cfda_program",
     "tas_code",
     "federal_account",
+    "def_codes",
 }
 
 
@@ -431,6 +434,7 @@ _SCOPE_LABEL_KEYS = (
     ("keywords", "keywords"),
     ("tas_code", "TAS"),
     ("federal_account", "federal account"),
+    ("def_codes", "DEFC"),
 )
 
 
@@ -442,7 +446,8 @@ def _citation_scope_label(context: dict) -> str:
     _build_filters' real accepted scope list had grown well past those
     three - see _ALL_OPTIONAL_FILTER_KEYS)."""
     parts = [
-        f"{label} {context[key]}" if label else str(context[key])
+        f"{label} {', '.join(context[key]) if isinstance(context[key], list) else context[key]}"
+        if label else str(context[key])
         for key, label in _SCOPE_LABEL_KEYS
         if key in context
     ]
@@ -544,6 +549,19 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             params["award_type"] = context["award_type"]
         description = f"Award breakdown by sub-agency, {params['agency_name']}, FY{params['fiscal_year']}"
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+
+    if tool_name == "get_disaster_spending_overview":
+        def_codes = context.get("def_codes")
+        params = {"def_codes": def_codes} if def_codes else {}
+        description = (
+            f"Disaster spending overview, DEFC {', '.join(def_codes)}"
+            if def_codes else "Disaster spending overview, all DEFCs"
+        )
+        url = f"{BASE_URL}/api/v2/disaster/overview/"
+        # Comma-joined, matching USASpendingClient.get_disaster_overview's wire format.
+        if def_codes:
+            url += f"?def_codes={','.join(def_codes)}"
+        return ToolCitation(tool_name=tool_name, parameters=params, description=description, url=url)
 
     if tool_name == "get_award_type_breakdown":
         params = {

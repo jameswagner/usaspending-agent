@@ -24,6 +24,7 @@ from ..recipient_types import RecipientType
 from ..response_shaping import _format_time_period, fiscal_year_to_date_range
 from ..singletons import _get_usaspending_client
 from ..tool_filters import (
+    DISASTER_BREAKOUT_FIELDS,
     SEARCH_AWARDS_FIELDS_BASE,
     SUBAWARD_FIELDS,
     AwardType,
@@ -127,6 +128,7 @@ def get_spending_by_category_raw(
     award_id: str | None = None,
     recipient_type: RecipientType | None = None,
     description: str | None = None,
+    def_codes: list[str] | None = None,
 ) -> SpendingByCategoryResponse:
     """Call the API once, return the structured response. Raises
     USASpendingAPIError on failure — the @beta_tool wrapper decides how to
@@ -180,6 +182,7 @@ def get_spending_by_category_raw(
         award_id=award_id,
         recipient_type=recipient_type,
         description=description,
+        def_codes=def_codes,
     )
     return client.spending_by_category(category, filters, limit=limit)
 
@@ -216,6 +219,7 @@ def get_spending_by_category(
     award_id: str | None = None,
     recipient_type: RecipientType | None = None,
     description: str | None = None,
+    def_codes: list[str] | None = None,
 ) -> str:
     """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for a fiscal year range, scoped by a real scoping filter, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions. Returns only the top `limit` categories, not a grand total - for "what is the total/how much funding" questions, use get_spending_over_time instead (grouped by fiscal_year), never this tool's top-N rows.
 
@@ -308,6 +312,12 @@ def get_spending_by_category(
             phrase, e.g. "vaccine research". Distinct from keywords - keywords also matches
             recipient name, PIID/FAIN/URI, and NAICS/PSC description text, so a keywords hit
             doesn't imply a description hit or vice versa.
+        def_codes: Optional. Restrict to spending tagged with these Disaster Emergency Fund
+            Codes (DEFC), e.g. ["L"] for a single code. Use the group alias "covid" (or
+            "covid_19") or "infrastructure" (or "iija") instead of listing every individual
+            code in that group - e.g. def_codes=["covid"] covers all 7 COVID-relief codes.
+            Sufficient scope on its own. For a spending-by-DEFC breakdown instead of filtering
+            to a specific one, use category="defc" instead.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -325,7 +335,7 @@ def get_spending_by_category(
         performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
         performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
-        award_id=award_id, description=description,
+        award_id=award_id, description=description, def_codes=def_codes,
     )
     try:
         response = get_spending_by_category_raw(
@@ -359,6 +369,7 @@ def get_spending_by_category(
             award_id=award_id,
             recipient_type=recipient_type,
             description=description,
+            def_codes=def_codes,
         )
     except USASpendingAPIError as e:
         logger.warning("get_spending_by_category failed for %s/%s: %s", scope, category, e)
@@ -396,6 +407,7 @@ def get_spending_by_category(
         award_id=award_id,
         recipient_type=recipient_type,
         description=description,
+        def_codes=def_codes,
     )
     _record_tool_call("get_spending_by_category", response, context)
 
@@ -460,6 +472,7 @@ def get_spending_over_time_raw(
     award_id: str | None = None,
     recipient_type: RecipientType | None = None,
     description: str | None = None,
+    def_codes: list[str] | None = None,
 ) -> SpendingOverTimeResponse:
     """Call the API once, return the structured response. Same filter
     resolution (via _build_filters) as get_spending_by_category_raw -
@@ -496,6 +509,7 @@ def get_spending_over_time_raw(
         award_id=award_id,
         recipient_type=recipient_type,
         description=description,
+        def_codes=def_codes,
     )
     return client.spending_over_time(filters, group=_normalize_group(group))
 
@@ -531,6 +545,7 @@ def get_spending_over_time(
     award_id: str | None = None,
     recipient_type: RecipientType | None = None,
     description: str | None = None,
+    def_codes: list[str] | None = None,
 ) -> str:
     """Get USASpending spending trends over time for a fiscal year range, scoped by a real scoping filter, grouped by period. Use this for "how much/what total funding went to X" questions (group by fiscal_year over the requested range - the response's aggregated_amount for a single-period range is the exact grand total, computed server-side, not a top-N slice) as well as "how has X's spending changed/trended over time" questions.
 
@@ -615,6 +630,12 @@ def get_spending_over_time(
             phrase, e.g. "vaccine research". Distinct from keywords - keywords also matches
             recipient name, PIID/FAIN/URI, and NAICS/PSC description text, so a keywords hit
             doesn't imply a description hit or vice versa.
+        def_codes: Optional. Restrict to spending tagged with these Disaster Emergency Fund
+            Codes (DEFC), e.g. ["L"] for a single code. Use the group alias "covid" (or
+            "covid_19") or "infrastructure" (or "iija") instead of listing every individual
+            code in that group - e.g. def_codes=["covid"] covers all 7 COVID-relief codes.
+            Sufficient scope on its own - use this for "how much has been spent on COVID-19
+            relief/infrastructure funding over time" trend questions.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -626,7 +647,7 @@ def get_spending_over_time(
         performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
         performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
-        award_id=award_id, description=description,
+        award_id=award_id, description=description, def_codes=def_codes,
     )
     try:
         response = get_spending_over_time_raw(
@@ -659,6 +680,7 @@ def get_spending_over_time(
             award_id=award_id,
             recipient_type=recipient_type,
             description=description,
+            def_codes=def_codes,
         )
     except USASpendingAPIError as e:
         logger.warning("get_spending_over_time failed for %s: %s", scope, e)
@@ -696,6 +718,7 @@ def get_spending_over_time(
         award_id=award_id,
         recipient_type=recipient_type,
         description=description,
+        def_codes=def_codes,
     )
     _record_tool_call("get_spending_over_time", response, context)
 
@@ -742,6 +765,7 @@ def search_awards_raw(
     description: str | None = None,
     tas_code: str | None = None,
     federal_account: str | None = None,
+    def_codes: list[str] | None = None,
 ) -> SearchAwardsResponse:
     """Call the API once, return the structured response (results +
     page_metadata), sorted largest-first by sort_by (default "amount":
@@ -799,6 +823,7 @@ def search_awards_raw(
         description=description,
         tas_code=tas_code,
         federal_account=federal_account,
+        def_codes=def_codes,
         award_type_counts_as_scope=True,
     )
     amount_field = _amount_field_for_award_type(award_type)
@@ -807,7 +832,10 @@ def search_awards_raw(
     # can flag when a result's shown amount is a multi-year lifetime total that predates
     # the requested range, not spending scoped to it - see the overlap-vs-action-date
     # caveat in search_awards's docstring and issue #118.
-    fields = SEARCH_AWARDS_FIELDS_BASE + [amount_field, "Start Date"]
+    #
+    # DISASTER_BREAKOUT_FIELDS are also fetched unconditionally - Base fields present
+    # on every award regardless of whether def_codes is filtered on.
+    fields = SEARCH_AWARDS_FIELDS_BASE + DISASTER_BREAKOUT_FIELDS + [amount_field, "Start Date"]
     if sort_field != amount_field:
         fields = fields + [sort_field]
     return client.search_awards(filters, fields=fields, limit=limit, sort=sort_field, order="desc")
@@ -846,6 +874,7 @@ def search_awards(
     description: str | None = None,
     tas_code: str | None = None,
     federal_account: str | None = None,
+    def_codes: list[str] | None = None,
 ) -> str:
     """Search for individual award records (specific contracts, grants, or loans) for a fiscal year range, scoped by an awarding agency and/or a recipient. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead. Results are ranked largest-first by sort_by (default "amount") — use this directly for "biggest"/"top N" questions, including "top N by outlay/subsidy cost" or "most recently modified" with sort_by set accordingly.
 
@@ -981,6 +1010,13 @@ def search_awards(
             (the AID-MAIN pair one level up from a full TAS), e.g. "028-8704" - the
             federal_account value shown on a get_award_funding_breakdown row. Different from
             tas_code: a federal account groups multiple TAS together.
+        def_codes: Optional. Restrict to awards tagged with these Disaster Emergency Fund
+            Codes (DEFC), e.g. ["L"] for a single code. Use the group alias "covid" (or
+            "covid_19") or "infrastructure" (or "iija") instead of listing every individual
+            code in that group - e.g. def_codes=["covid"] covers all 7 COVID-relief codes.
+            Sufficient scope on its own. Every result also reports its own def_codes plus
+            COVID-19/Infrastructure Obligations and Outlays when non-zero, regardless of
+            whether this filter is set.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -996,7 +1032,7 @@ def search_awards(
         performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
         award_id=award_id, description=description,
-        tas_code=tas_code, federal_account=federal_account,
+        tas_code=tas_code, federal_account=federal_account, def_codes=def_codes,
     )
     try:
         results = search_awards_raw(
@@ -1031,6 +1067,7 @@ def search_awards(
             description=description,
             tas_code=tas_code,
             federal_account=federal_account,
+            def_codes=def_codes,
         )
     except USASpendingAPIError as e:
         logger.warning("search_awards failed for %s: %s", scope, e)
@@ -1069,6 +1106,7 @@ def search_awards(
         description=description,
         tas_code=tas_code,
         federal_account=federal_account,
+        def_codes=def_codes,
     )
     _record_tool_call("search_awards", results, context)
 
@@ -1109,8 +1147,22 @@ def search_awards(
         if predates_range:
             any_predates_range = True
             flag_str = f" [PERIOD OF PERFORMANCE STARTED {start_date}, BEFORE FY{start_fiscal_year} - amount shown is this award's lifetime total, not spending scoped to this range]"
+        disaster_str = ""
+        result_def_codes = r.get("def_codes")
+        # Only shown when non-empty - most awards carry no disaster tag at all.
+        if result_def_codes:
+            covid_obligations = r.get("COVID-19 Obligations") or 0
+            covid_outlays = r.get("COVID-19 Outlays") or 0
+            infra_obligations = r.get("Infrastructure Obligations") or 0
+            infra_outlays = r.get("Infrastructure Outlays") or 0
+            disaster_str = f" [DEFC: {', '.join(result_def_codes)}"
+            if covid_obligations or covid_outlays:
+                disaster_str += f"; COVID-19 Obligations: ${covid_obligations:,.2f}, COVID-19 Outlays: ${covid_outlays:,.2f}"
+            if infra_obligations or infra_outlays:
+                disaster_str += f"; Infrastructure Obligations: ${infra_obligations:,.2f}, Infrastructure Outlays: ${infra_outlays:,.2f}"
+            disaster_str += "]"
         lines.append(
-            f"{result_award_id} — {recipient}: {amount_str}{sort_str} [internal_id: {internal_id}]{flag_str}"
+            f"{result_award_id} — {recipient}: {amount_str}{sort_str} [internal_id: {internal_id}]{flag_str}{disaster_str}"
         )
     has_next = results.page_metadata.hasNext if results.page_metadata else False
     note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)

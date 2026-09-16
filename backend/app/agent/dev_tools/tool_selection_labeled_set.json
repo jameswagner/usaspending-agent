@@ -93,12 +93,19 @@
     {"question": "Which agencies gave the most Medicaid grants to states in FY2023?", "expected_tools": ["resolve_cfda_program"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true},
     {"question": "How much federal spending went to Yavapai County, Arizona in FY2023?", "expected_tools": ["resolve_county_fips"], "then_one_of": ["search_awards", "get_spending_by_category", "get_spending_by_geography"], "check_hedge_language": true},
     {"question": "Find NSF's single largest FY2023 contract, then tell me which subcontractors it went to.", "expected_tools": ["search_awards", "get_award_subawards"], "confusable_with": ["search_subawards"]},
-    {"question": "What was federal spending on Medicare (budget function 570) broken down by sub-function in FY2023? Then break the largest sub-function down further into federal accounts.", "expected_tools": ["get_spending_explorer_breakdown"], "confusable_with": ["get_spending_by_category"]}
+    {"question": "What was federal spending on Medicare (budget function 570) broken down by sub-function in FY2023? Then break the largest sub-function down further into federal accounts.", "expected_tools": ["get_spending_explorer_breakdown"], "confusable_with": ["get_spending_by_category"]},
+    {"question": "Find NSF's single largest FY2023 contract, then tell me which federal account (TAS) actually funded it.", "expected_tools": ["search_awards", "get_award_funding_breakdown"], "confusable_with": ["get_award_details"]},
+    {"question": "Look up Boeing, then tell me which subsidiaries make up its total federal funding.", "expected_tools": ["search_recipients", "get_recipient_children"], "confusable_with": ["get_recipient_details"]}
   ],
   "award_type_breakdown": [
     {"question": "How many federal contracts vs. grants vs. loans were awarded government-wide in FY2024?", "expected_tool": "get_award_type_breakdown", "confusable_with": ["get_spending_by_category", "search_awards"]},
     {"question": "What's NSF's award-type mix for FY2023 - how many contracts, grants, and IDVs did it issue?", "expected_tool": "get_award_type_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_award_breakdown"]},
     {"question": "Break down NSF's FY2023 spending by award type.", "expected_tool": "get_award_type_breakdown", "confusable_with": ["get_spending_by_category", "search_awards", "get_spending_over_time"]}
+  ],
+  "disaster_spending": [
+    {"question": "How much has the federal government spent on COVID-19 relief overall?", "expected_tool": "get_disaster_spending_overview", "confusable_with": ["get_spending_by_category", "search_awards"]},
+    {"question": "What's the total infrastructure/IIJA budget authority, and how much of it has actually been obligated so far?", "expected_tool": "get_disaster_spending_overview", "confusable_with": ["get_spending_by_category"]},
+    {"question": "Break down NSF's FY2023 contract spending by Disaster Emergency Fund Code.", "expected_tool": "get_spending_by_category", "confusable_with": ["get_disaster_spending_overview"]}
   ],
   "ambiguous_intentional": [
     {"question": "How did NSF spend its money in FY2023?", "acceptable_tools": ["get_spending_by_category", "get_spending_over_time", "search_awards"]},

@@ -14,7 +14,7 @@ machinery those don't need.
 from __future__ import annotations
 
 import re
-from typing import Literal
+from typing import Literal, TypedDict
 
 from backend.app.usaspending_client import (
     AdvancedFilters,
@@ -31,6 +31,45 @@ from backend.app.usaspending_client import (
 
 from .recipient_types import _normalize_recipient_type
 from .response_shaping import fiscal_year_to_date_range
+
+
+class SpendingFilterParams(TypedDict, total=False):
+    """Optional filter parameters shared across all spending tools
+    (get_spending_by_category, get_spending_over_time, search_awards, etc.).
+    All fields are optional (total=False), and every field defaults to None.
+
+    Used by _build_filters, _record_optional_filter_context, and _scope_label
+    to eliminate the ~30-parameter duplication across these three functions
+    and every spending tool's _raw/_wrapper pair.
+    """
+    award_type: str
+    recipient_name: str
+    recipient_id: str
+    min_amount: float
+    max_amount: float
+    performed_in_state: str
+    recipient_in_state: str
+    performed_in_county: str
+    recipient_in_county: str
+    performed_in_city: str
+    recipient_in_city: str
+    performed_in_zip: str
+    recipient_in_zip: str
+    performed_in_district: str
+    recipient_in_district: str
+    keywords: str
+    date_type: str
+    place_of_performance_scope: str
+    recipient_scope: str
+    naics_code: str
+    psc_code: str
+    cfda_program: str
+    award_id: str
+    recipient_type: str
+    description: str
+    tas_code: str
+    federal_account: str
+    def_codes: list[str]
 
 # Verified against USASpending's own award_types.md contract (checked
 # 2026-09-06), not guessed. The three broad buckets stay for general
@@ -493,6 +532,7 @@ def _build_filters(
     award_type_counts_as_scope: bool = False,
     scope_required: bool = True,
 ) -> AdvancedFilters:
+    """See SpendingFilterParams for the optional filter parameter definitions."""
     """Resolve agency_name + fiscal-year range into an AdvancedFilters -
     the shared first step of all three spending tools, replacing what was
     three near-identical blocks (agency resolution, date-range math,
@@ -886,10 +926,8 @@ def _record_optional_filter_context(
     federal_account: str | None = None,
     def_codes: list[str] | None = None,
 ) -> dict:
-    """Adds each optional filter param to a citation context dict, but
-    only the ones actually set - so a citation reflects exactly which
-    filters were used for that call, not every filter this tool supports
-    in the abstract."""
+    """Adds each optional filter param to a citation context dict, but only the ones actually set.
+    See SpendingFilterParams for the full parameter list."""
     for key, value in (
         ("agency_name", agency_name),
         ("award_type", award_type),

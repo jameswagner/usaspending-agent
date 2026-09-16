@@ -61,11 +61,13 @@ from .location import _query_candidates, resolve_county_fips
 from .naics import resolve_naics_code
 from .psc import resolve_psc_code
 from .recipients import (
+    _format_child_recipient,
     _format_recipient_address,
     _format_recipient_level,
     _format_recipient_listing,
     _format_recipient_overview,
     _format_recipient_state_only,
+    get_recipient_children,
     get_recipient_details,
     search_recipients,
 )
@@ -112,6 +114,7 @@ __all__ = [
     "_format_award_details",
     "_format_award_type_counts",
     "_format_business_type",
+    "_format_child_recipient",
     "_format_contract_or_idv",
     "_format_financial_assistance",
     "_format_geography_result",
@@ -148,6 +151,7 @@ __all__ = [
     "get_award_type_breakdown",
     "get_award_type_breakdown_raw",
     "get_idv_amounts_raw",
+    "get_recipient_children",
     "get_recipient_details",
     "get_spending_by_category",
     "get_spending_by_category_raw",

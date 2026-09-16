@@ -9,6 +9,7 @@ import logging
 from anthropic import beta_tool
 
 from backend.app.usaspending_client import (
+    ChildRecipient,
     RecipientListing,
     RecipientLocation,
     RecipientOverview,
@@ -193,3 +194,58 @@ def get_recipient_details(recipient_id: str, year: str = "all") -> str:
 
     _record_tool_call("get_recipient_details", overview, {"recipient_id": recipient_id, "name": overview.name})
     return _wrap_untrusted(_format_recipient_overview(overview))
+
+
+def _format_child_recipient(child: ChildRecipient) -> str:
+    ids = [f"UEI {child.uei}" if child.uei else None, f"DUNS {child.duns}" if child.duns else None]
+    id_str = f" ({', '.join(i for i in ids if i)})" if any(ids) else ""
+    state = f", {child.state_province}" if child.state_province else ""
+    return (
+        f"{child.name or 'unknown'}{id_str}{state} - ${child.amount:,.2f} "
+        f"[recipient_id: {child.recipient_id}]"
+    )
+
+
+@beta_tool
+def get_recipient_children(recipient_id: str, year: str = "all", limit: int = 25) -> str:
+    """List the individual child recipients that roll up into one parent recipient's total, e.g. "which subsidiaries make up Boeing's total" or "break down this company's spending by subsidiary". Use this as a follow-up after search_recipients/get_recipient_details has resolved a "parent"-level recipient_id — a "standalone" or "child"-level recipient has no children of its own.
+
+    The live API keys this data by DUNS/UEI rather than recipient_id, a third identifier space from the recipient_id used elsewhere — this tool resolves that internally via get_recipient_details, so callers can keep passing the same recipient_id.
+
+    Args:
+        recipient_id: The exact recipient_id of a "parent"-level recipient from a prior
+            search_recipients or get_recipient_details result. Do not guess or construct one.
+        year: A specific fiscal year (e.g. "2023"), "all" (default — the recipient's entire
+            history), or "latest" (trailing 12 months).
+        limit: Max number of children to return, sorted by amount descending (default 25).
+    """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    limit = _clamp_limit(limit)
+    try:
+        client = _get_usaspending_client()
+        overview = client.get_recipient(recipient_id, year=year)
+    except USASpendingAPIError as e:
+        logger.warning("get_recipient_children failed to resolve %s: %s", recipient_id, e)
+        return f"This query failed: {e}."
+
+    duns_or_uei = overview.uei or overview.duns
+    if not duns_or_uei:
+        return f"'{overview.name or recipient_id}' has no UEI or DUNS on file, so its children can't be looked up."
+
+    try:
+        children = client.get_recipient_children(duns_or_uei, year=year)
+    except USASpendingAPIError as e:
+        logger.warning("get_recipient_children failed for %s: %s", duns_or_uei, e)
+        return f"This query failed: {e}."
+
+    _record_tool_call("get_recipient_children", children, {"recipient_id": recipient_id, "name": overview.name})
+
+    if not children:
+        return f"'{overview.name or recipient_id}' has no child recipients on file."
+
+    children = sorted(children, key=lambda c: c.amount, reverse=True)
+    shown = children[:limit]
+    lines = [_format_child_recipient(c) for c in shown]
+    note = _truncation_note(len(children) > limit, len(shown))
+    return _wrap_untrusted("\n".join(lines) + note)

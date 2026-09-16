@@ -728,6 +728,15 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             url=f"{BASE_URL}/api/v2/recipient/{recipient_id}/",
         )
 
+    if tool_name == "get_recipient_children":
+        recipient_id = context["recipient_id"]
+        label = context.get("name") or recipient_id
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"recipient_id": recipient_id},
+            description=f"Recipient children: {label}",
+        )
+
     if tool_name == "code_execution":
         # Cite the actual command that ran, not just "code was run" - a
         # user or auditor should be able to see what was computed and from

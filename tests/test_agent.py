@@ -18,6 +18,7 @@ from backend.app.agent.response_shaping import (
     _build_guide_citation,
     _extract_guide_question,
     build_tool_citation,
+    calendar_year_to_date_range,
     current_fiscal_year,
     fiscal_year_to_date_range,
     should_chart,
@@ -257,6 +258,35 @@ class TestFiscalYearToDateRange:
 
     def test_floor_year_itself_is_allowed(self):
         fiscal_year_to_date_range(2008, 2008)
+
+
+class TestCalendarYearToDateRange:
+    def test_single_calendar_year(self):
+        assert calendar_year_to_date_range(2021, 2021) == ("2021-01-01", "2021-12-31")
+
+    def test_multi_year_range(self):
+        start, end = calendar_year_to_date_range(2021, 2024)
+        assert start == "2021-01-01"
+        assert end == "2024-12-31"
+
+    def test_year_below_2007_rejected(self):
+        with pytest.raises(USASpendingAPIError, match="out of range"):
+            calendar_year_to_date_range(1776, 2024)
+
+    def test_year_beyond_current_rejected(self):
+        with pytest.raises(USASpendingAPIError, match="out of range"):
+            calendar_year_to_date_range(2021, 9999)
+
+    def test_current_year_is_allowed(self):
+        current_year = datetime.now(timezone.utc).date().year
+        calendar_year_to_date_range(current_year, current_year)
+
+    def test_start_after_end_rejected(self):
+        with pytest.raises(USASpendingAPIError, match="after end_calendar_year"):
+            calendar_year_to_date_range(2025, 2021)
+
+    def test_floor_year_itself_is_allowed(self):
+        calendar_year_to_date_range(2007, 2007)
 
 
 class TestSpendingOverTime:
@@ -812,21 +842,35 @@ class TestBuildToolCitation:
             {
                 "agency_name": "National Science Foundation",
                 "category": "naics",
-                "start_fiscal_year": 2023,
-                "end_fiscal_year": 2024,
+                "start_year": 2023,
+                "end_year": 2024,
             },
         )
         assert citation is not None
         assert citation.tool_name == "get_spending_by_category"
         assert citation.description == "naics breakdown, National Science Foundation, FY2023-FY2024"
 
+    def test_get_spending_by_category_calendar_year(self):
+        citation = build_tool_citation(
+            "get_spending_by_category",
+            {
+                "agency_name": "National Science Foundation",
+                "category": "naics",
+                "start_year": 2023,
+                "end_year": 2023,
+                "time_period_type": "calendar",
+            },
+        )
+        assert citation is not None
+        assert citation.description == "naics breakdown, National Science Foundation, CY2023-CY2023"
+
     def test_get_award_type_breakdown(self):
         citation = build_tool_citation(
             "get_award_type_breakdown",
             {
                 "agency_name": "National Science Foundation",
-                "start_fiscal_year": 2023,
-                "end_fiscal_year": 2024,
+                "start_year": 2023,
+                "end_year": 2024,
             },
         )
         assert citation is not None
@@ -836,7 +880,7 @@ class TestBuildToolCitation:
     def test_get_award_type_breakdown_unscoped(self):
         citation = build_tool_citation(
             "get_award_type_breakdown",
-            {"start_fiscal_year": 2023, "end_fiscal_year": 2024},
+            {"start_year": 2023, "end_year": 2024},
         )
         assert citation is not None
         assert citation.description == "Award type breakdown, unknown scope, FY2023-FY2024"
@@ -846,8 +890,8 @@ class TestBuildToolCitation:
             "get_spending_over_time",
             {
                 "agency_name": "National Science Foundation",
-                "start_fiscal_year": 2021,
-                "end_fiscal_year": 2024,
+                "start_year": 2021,
+                "end_year": 2024,
                 "group": "fiscal_year",
             },
         )
@@ -862,8 +906,8 @@ class TestBuildToolCitation:
             "search_awards",
             {
                 "agency_name": "National Science Foundation",
-                "start_fiscal_year": 2023,
-                "end_fiscal_year": 2023,
+                "start_year": 2023,
+                "end_year": 2023,
                 "award_type": "grants",
             },
         )
@@ -877,8 +921,8 @@ class TestBuildToolCitation:
             {
                 "agency_name": "National Science Foundation",
                 "category": "naics",
-                "start_fiscal_year": 2023,
-                "end_fiscal_year": 2024,
+                "start_year": 2023,
+                "end_year": 2024,
                 "award_type": "grants",
                 "min_amount": 1_000_000.0,
             },
@@ -894,8 +938,8 @@ class TestBuildToolCitation:
             {
                 "agency_name": "National Science Foundation",
                 "category": "naics",
-                "start_fiscal_year": 2023,
-                "end_fiscal_year": 2024,
+                "start_year": 2023,
+                "end_year": 2024,
             },
         )
         assert "award_type" not in citation.parameters
@@ -909,8 +953,8 @@ class TestBuildToolCitation:
             "search_awards",
             {
                 "agency_name": "National Science Foundation",
-                "start_fiscal_year": 2023,
-                "end_fiscal_year": 2023,
+                "start_year": 2023,
+                "end_year": 2023,
                 "award_type": "grants",
                 "recipient_name": "Leidos",
             },
@@ -1013,8 +1057,8 @@ class TestBuildToolCitation:
             "get_spending_by_category",
             {
                 "category": "awarding_agency",
-                "start_fiscal_year": 2008,
-                "end_fiscal_year": 2025,
+                "start_year": 2008,
+                "end_year": 2025,
                 "recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P",
             },
         )
@@ -1027,14 +1071,14 @@ class TestBuildToolCitation:
     def test_get_spending_over_time_with_recipient_name_no_agency_name(self):
         citation = build_tool_citation(
             "get_spending_over_time",
-            {"start_fiscal_year": 2020, "end_fiscal_year": 2024, "group": "fiscal_year", "recipient_name": "Boeing"},
+            {"start_year": 2020, "end_year": 2024, "group": "fiscal_year", "recipient_name": "Boeing"},
         )
         assert citation.description == "Spending over time (fiscal_year), Boeing, FY2020-FY2024"
 
     def test_search_awards_with_recipient_name_no_agency_name(self):
         citation = build_tool_citation(
             "search_awards",
-            {"start_fiscal_year": 2023, "end_fiscal_year": 2023, "award_type": "contracts", "recipient_name": "Boeing"},
+            {"start_year": 2023, "end_year": 2023, "award_type": "contracts", "recipient_name": "Boeing"},
         )
         assert citation.description == "contracts awards search, Boeing, FY2023-FY2023"
 
@@ -1043,7 +1087,7 @@ class TestBuildToolCitation:
             "get_spending_by_geography",
             {
                 "scope": "place_of_performance", "geo_layer": "state",
-                "start_fiscal_year": 2023, "end_fiscal_year": 2023,
+                "start_year": 2023, "end_year": 2023,
                 "agency_name": "National Science Foundation",
             },
         )
@@ -1053,7 +1097,7 @@ class TestBuildToolCitation:
     def test_get_spending_by_geography_with_recipient_no_agency(self):
         citation = build_tool_citation(
             "get_spending_by_geography",
-            {"scope": "place_of_performance", "geo_layer": "county", "start_fiscal_year": 2023, "end_fiscal_year": 2023, "recipient_name": "Boeing"},
+            {"scope": "place_of_performance", "geo_layer": "county", "start_year": 2023, "end_year": 2023, "recipient_name": "Boeing"},
         )
         assert "agency_name" not in citation.parameters
         assert citation.description == "Spending by county (place_of_performance), Boeing, FY2023-FY2023"
@@ -1067,8 +1111,8 @@ class TestBuildToolCitation:
             "get_spending_by_category",
             {
                 "category": "naics",
-                "start_fiscal_year": 2024,
-                "end_fiscal_year": 2024,
+                "start_year": 2024,
+                "end_year": 2024,
                 "naics_code": "541511",
             },
         )
@@ -1080,8 +1124,8 @@ class TestBuildToolCitation:
             "get_spending_by_category",
             {
                 "category": "naics",
-                "start_fiscal_year": 2024,
-                "end_fiscal_year": 2024,
+                "start_year": 2024,
+                "end_year": 2024,
                 "agency_name": "National Science Foundation",
                 "naics_code": "541511",
             },
@@ -1096,8 +1140,8 @@ class TestBuildToolCitation:
             {
                 "agency_name": "National Science Foundation",
                 "category": "naics",
-                "start_fiscal_year": 2023,
-                "end_fiscal_year": 2024,
+                "start_year": 2023,
+                "end_year": 2024,
                 "_requests": [("POST", "https://api.usaspending.gov/api/v2/search/spending_by_category/naics/", {"a": 1})],
             },
         )
@@ -1110,7 +1154,7 @@ class TestBuildToolCitation:
     def test_curl_is_none_without_captured_requests(self):
         citation = build_tool_citation(
             "get_spending_by_category",
-            {"agency_name": "NSF", "category": "naics", "start_fiscal_year": 2024, "end_fiscal_year": 2024},
+            {"agency_name": "NSF", "category": "naics", "start_year": 2024, "end_year": 2024},
         )
         assert citation.curl is None
 
@@ -1134,8 +1178,8 @@ class TestBuildToolCitation:
             "search_subawards",
             {
                 "agency_name": "National Science Foundation",
-                "start_fiscal_year": 2023,
-                "end_fiscal_year": 2023,
+                "start_year": 2023,
+                "end_year": 2023,
                 "award_type": "grants",
             },
         )
@@ -1353,41 +1397,41 @@ class TestBuildFilters:
         # Hard constraint: no new params set must be byte-for-byte
         # identical to what get_spending_by_category_raw etc. built before
         # this consolidation - agencies + time_period only.
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024)
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024)
         dumped = filters.model_dump(exclude_none=True)
         assert set(dumped.keys()) == {"agencies", "time_period"}
 
     def test_unresolved_agency_raises(self):
         with pytest.raises(USASpendingAPIError, match="No agency found"):
-            _build_filters(FakeClient(None), "Not A Real Agency", 2021, 2024)
+            _build_filters(FakeClient(None), "Not A Real Agency", "fiscal", 2021, 2024)
 
     def test_award_type_resolves_to_codes(self):
         filters = _build_filters(
-            FakeClient(make_agency()), "NSF", 2021, 2024, award_type="cooperative_agreement"
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, award_type="cooperative_agreement"
         )
         assert filters.award_type_codes == ["05"]
 
     def test_unknown_award_type_raises(self):
         with pytest.raises(USASpendingAPIError, match="Unknown award_type"):
-            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, award_type="not_a_type")
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, award_type="not_a_type")
 
     def test_recipient_name_becomes_single_item_list(self):
         # search_filters.md: recipient_search_text is capped at 1 item.
         filters = _build_filters(
-            FakeClient(make_agency()), "NSF", 2021, 2024, recipient_name="Leidos"
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, recipient_name="Leidos"
         )
         assert filters.recipient_search_text == ["Leidos"]
 
     def test_amount_bounds(self):
         filters = _build_filters(
-            FakeClient(make_agency()), "NSF", 2021, 2024, min_amount=1_000_000_000
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, min_amount=1_000_000_000
         )
         assert filters.award_amounts[0].lower_bound == 1_000_000_000
         assert filters.award_amounts[0].upper_bound is None
 
     def test_inverted_amount_bounds_raise(self):
         with pytest.raises(USASpendingAPIError, match="must not exceed"):
-            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, min_amount=100, max_amount=50)
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, min_amount=100, max_amount=50)
 
     def test_performed_and_recipient_state_are_independent_fields(self):
         # Regression for the real finding: these must map to different
@@ -1397,6 +1441,7 @@ class TestBuildFilters:
         filters = _build_filters(
             FakeClient(make_agency()),
             "NSF",
+            "fiscal",
             2021,
             2024,
             performed_in_state="Virginia",
@@ -1407,10 +1452,10 @@ class TestBuildFilters:
 
     def test_unrecognized_state_raises(self):
         with pytest.raises(USASpendingAPIError, match="Unrecognized state"):
-            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, performed_in_state="Narnia")
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, performed_in_state="Narnia")
 
     def test_keywords_becomes_single_item_list(self):
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, keywords="climate research")
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, keywords="climate research")
         assert filters.keywords == ["climate research"]
 
     @pytest.mark.parametrize(
@@ -1425,14 +1470,14 @@ class TestBuildFilters:
         # real #1 grant ($111.0B) entirely. This must be caught here, not
         # left to silently corrupt results.
         with pytest.raises(USASpendingAPIError, match="restates an award-type/category term"):
-            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, keywords=keywords)
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, keywords=keywords)
 
     def test_keywords_with_an_award_type_term_plus_a_real_topic_is_allowed(self):
         # Only a bare restatement is rejected - a genuine topic phrase
         # within the category (even one that contains "grants") must
         # still work.
         filters = _build_filters(
-            FakeClient(make_agency()), "NSF", 2021, 2024, keywords="grants for flood mitigation"
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, keywords="grants for flood mitigation"
         )
         assert filters.keywords == ["grants for flood mitigation"]
 
@@ -1442,21 +1487,21 @@ class TestBuildFilters:
         # default action_date matching - new_awards_only eliminates that,
         # verified live 2026-09-06 (see verify_shared_filters.py).
         filters = _build_filters(
-            FakeClient(make_agency()), "NSF", 2021, 2024, date_type="New Awards Only"
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, date_type="New Awards Only"
         )
         assert filters.time_period[0].date_type == "new_awards_only"
 
     def test_omitting_date_type_leaves_it_unset(self):
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024)
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024)
         assert filters.time_period[0].date_type is None
 
     def test_unrecognized_date_type_raises(self):
         with pytest.raises(USASpendingAPIError, match="Unrecognized date_type"):
-            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, date_type="whenever")
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, date_type="whenever")
 
     def test_place_of_performance_and_recipient_scope_are_independent(self):
         filters = _build_filters(
-            FakeClient(make_agency()), "NSF", 2021, 2024,
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
             place_of_performance_scope="domestic", recipient_scope="foreign",
         )
         assert filters.place_of_performance_scope == "domestic"
@@ -1464,46 +1509,46 @@ class TestBuildFilters:
 
     def test_unrecognized_scope_raises(self):
         with pytest.raises(USASpendingAPIError, match="Unrecognized place_of_performance_scope"):
-            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, place_of_performance_scope="martian")
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, place_of_performance_scope="martian")
 
     def test_naics_code_becomes_require_list(self):
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, naics_code="541511")
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, naics_code="541511")
         assert filters.naics_codes.require == ["541511"]
 
     def test_malformed_naics_code_raises(self):
         with pytest.raises(USASpendingAPIError, match="doesn't look like a NAICS code"):
-            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, naics_code="software development")
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, naics_code="software development")
 
     def test_psc_code_becomes_flat_list_not_hierarchical_object(self):
         # Verified live 2026-09-06: the flat list form (not the
         # require/exclude path object) is what actually filters correctly
         # for a single known code.
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, psc_code="7030")
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, psc_code="7030")
         assert filters.psc_codes == ["7030"]
 
     def test_malformed_psc_code_raises(self):
         with pytest.raises(USASpendingAPIError, match="doesn't look like a PSC code"):
-            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, psc_code="software")
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, psc_code="software")
 
     def test_cfda_program_becomes_program_numbers_list(self):
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, cfda_program="10.001")
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, cfda_program="10.001")
         assert filters.program_numbers == ["10.001"]
 
     def test_malformed_cfda_program_raises(self):
         with pytest.raises(USASpendingAPIError, match="doesn't look like a CFDA"):
-            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, cfda_program="research grants")
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, cfda_program="research grants")
 
     # tas_code/federal_account - exposing the already-modeled
     # tas_codes/treasury_account_components AdvancedFilters fields.
 
     def test_tas_code_becomes_single_path_require_list(self):
         filters = _build_filters(
-            FakeClient(make_agency()), "NSF", 2021, 2024, tas_code="020-2020/2021-1521"
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, tas_code="020-2020/2021-1521"
         )
         assert filters.tas_codes.require == [["020-2020/2021-1521"]]
 
     def test_federal_account_becomes_treasury_account_components(self):
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, federal_account="028-8704")
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, federal_account="028-8704")
         assert len(filters.treasury_account_components) == 1
         component = filters.treasury_account_components[0]
         assert component.aid == "028"
@@ -1511,28 +1556,28 @@ class TestBuildFilters:
 
     def test_malformed_federal_account_raises(self):
         with pytest.raises(USASpendingAPIError, match="doesn't look like a federal account"):
-            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, federal_account="not-an-account")
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, federal_account="not-an-account")
 
     # def_codes, with group-alias expansion for covid/infrastructure.
 
     def test_def_codes_literal_passthrough_is_uppercased(self):
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, def_codes=["l"])
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, def_codes=["l"])
         assert filters.def_codes == ["L"]
 
     def test_def_codes_covid_alias_expands_to_all_seven_codes(self):
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, def_codes=["covid"])
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, def_codes=["covid"])
         assert filters.def_codes == ["L", "M", "N", "O", "P", "U", "V"]
 
     def test_def_codes_infrastructure_alias_expands(self):
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, def_codes=["infrastructure"])
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, def_codes=["infrastructure"])
         assert filters.def_codes == ["Z", "1"]
 
     def test_def_codes_dedupes_alias_and_literal_overlap(self):
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, def_codes=["covid", "L"])
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, def_codes=["covid", "L"])
         assert filters.def_codes == ["L", "M", "N", "O", "P", "U", "V"]
 
     def test_def_codes_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, def_codes=["L"])
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, def_codes=["L"])
         assert filters.agencies is None
         assert filters.def_codes == ["L"]
 
@@ -1543,22 +1588,22 @@ class TestBuildFilters:
     # snake_case key, not search_filters.md's own display-name example.
 
     def test_award_id_becomes_single_item_award_ids_list(self):
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, award_id="1605SS17F00018")
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, award_id="1605SS17F00018")
         assert filters.award_ids == ["1605SS17F00018"]
 
     def test_recipient_type_becomes_normalized_single_item_list(self):
         filters = _build_filters(
-            FakeClient(make_agency()), "NSF", 2021, 2024, recipient_type="Small Business"
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, recipient_type="Small Business"
         )
         assert filters.recipient_type_names == ["small_business"]
 
     def test_unknown_recipient_type_raises(self):
         with pytest.raises(USASpendingAPIError, match="Unknown recipient_type"):
-            _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024, recipient_type="not_a_real_type")
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, recipient_type="not_a_real_type")
 
     def test_description_passes_through_as_a_plain_string(self):
         filters = _build_filters(
-            FakeClient(make_agency()), "NSF", 2021, 2024, description="vaccine research"
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, description="vaccine research"
         )
         assert filters.description == "vaccine research"
 
@@ -1569,98 +1614,98 @@ class TestBuildFilters:
     # recipient-profile entry and private/HUMAN_INTERVENTIONS.md #26.
 
     def test_agency_name_none_with_recipient_name_omits_agencies_filter(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, recipient_name="Boeing")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, recipient_name="Boeing")
         assert filters.agencies is None
         assert filters.recipient_search_text == ["Boeing"]
 
     def test_agency_name_none_with_recipient_id_omits_agencies_filter(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, recipient_id="abc-P")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, recipient_id="abc-P")
         assert filters.agencies is None
         assert filters.recipient_id == "abc-P"
 
     def test_all_scoping_params_none_raises(self):
         with pytest.raises(USASpendingAPIError, match="At least one of"):
-            _build_filters(FakeClient(make_agency()), None, 2021, 2024)
+            _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024)
 
     # Place/code/keyword filters are equally legitimate scoping on their
     # own, with no agency or recipient set (#16).
 
     def test_performed_in_state_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, performed_in_state="Louisiana")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, performed_in_state="Louisiana")
         assert filters.agencies is None
         assert filters.place_of_performance_locations[0].state == "LA"
 
     def test_recipient_in_state_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, recipient_in_state="Texas")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, recipient_in_state="Texas")
         assert filters.recipient_locations[0].state == "TX"
 
     def test_performed_in_county_alone_is_sufficient_scope(self):
         filters = _build_filters(
-            FakeClient(make_agency()), None, 2021, 2024, performed_in_state="AZ", performed_in_county="025"
+            FakeClient(make_agency()), None, "fiscal", 2021, 2024, performed_in_state="AZ", performed_in_county="025"
         )
         assert filters.place_of_performance_locations[0].county == "025"
 
     def test_performed_in_zip_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, performed_in_zip="94550")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, performed_in_zip="94550")
         assert filters.place_of_performance_locations[0].zip == "94550"
 
     def test_performed_in_city_and_county_are_independent_locations(self):
         performed = _build_filters(
-            FakeClient(make_agency()), None, 2021, 2024,
+            FakeClient(make_agency()), None, "fiscal", 2021, 2024,
             performed_in_state="AZ", performed_in_county="025", recipient_in_city="Livermore",
         )
         assert performed.place_of_performance_locations[0].county == "025"
         assert performed.recipient_locations[0].city == "Livermore"
 
     def test_naics_code_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, naics_code="541511")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, naics_code="541511")
         assert filters.naics_codes.require == ["541511"]
 
     def test_psc_code_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, psc_code="7030")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, psc_code="7030")
         assert filters.psc_codes == ["7030"]
 
     def test_cfda_program_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, cfda_program="93.778")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, cfda_program="93.778")
         assert filters.program_numbers == ["93.778"]
 
     def test_keywords_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, keywords="climate research")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, keywords="climate research")
         assert filters.keywords == ["climate research"]
 
     def test_tas_code_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, tas_code="020-2020/2021-1521")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, tas_code="020-2020/2021-1521")
         assert filters.tas_codes.require == [["020-2020/2021-1521"]]
 
     def test_federal_account_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, federal_account="028-8704")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, federal_account="028-8704")
         assert filters.treasury_account_components[0].aid == "028"
 
     def test_award_id_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, award_id="1605SS17F00018")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, award_id="1605SS17F00018")
         assert filters.award_ids == ["1605SS17F00018"]
 
     def test_description_alone_is_sufficient_scope(self):
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, description="vaccine research")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, description="vaccine research")
         assert filters.description == "vaccine research"
 
     def test_recipient_type_alone_is_sufficient_scope(self):
         # Recipient type (nonprofit, small_business, etc.) is a real
         # scoping dimension - the live site answers queries scoped only by
         # recipient_type, and the results are bounded (see #128).
-        filters = _build_filters(FakeClient(make_agency()), None, 2021, 2024, recipient_type="nonprofit")
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, recipient_type="nonprofit")
         assert filters.recipient_type_names == ["nonprofit"]
 
     def test_award_type_alone_is_not_sufficient_scope(self):
         with pytest.raises(USASpendingAPIError, match="At least one of"):
-            _build_filters(FakeClient(make_agency()), None, 2021, 2024, award_type="grants")
+            _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, award_type="grants")
 
     def test_recipient_type_plus_award_type_is_sufficient_scope(self):
         # Even though award_type alone doesn't count as scope, combining
         # it with recipient_type (which does count) is sufficient - answering
         # "top contracts to nonprofits" directly (#128).
         filters = _build_filters(
-            FakeClient(make_agency()), None, 2021, 2024,
+            FakeClient(make_agency()), None, "fiscal", 2021, 2024,
             recipient_type="nonprofit", award_type="contracts"
         )
         assert filters.recipient_type_names == ["nonprofit"]
@@ -1668,7 +1713,7 @@ class TestBuildFilters:
 
     def test_min_amount_alone_is_not_sufficient_scope(self):
         with pytest.raises(USASpendingAPIError, match="At least one of"):
-            _build_filters(FakeClient(make_agency()), None, 2021, 2024, min_amount=1_000_000)
+            _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, min_amount=1_000_000)
 
     # search_awards_raw passes award_type_counts_as_scope=True (#125): the
     # real site's Advanced Search answers "FY + award type alone" directly,
@@ -1677,7 +1722,7 @@ class TestBuildFilters:
 
     def test_award_type_counts_as_scope_when_opted_in(self):
         filters = _build_filters(
-            FakeClient(make_agency()), None, 2021, 2024,
+            FakeClient(make_agency()), None, "fiscal", 2021, 2024,
             award_type="grants", award_type_counts_as_scope=True,
         )
         assert filters.agencies is None
@@ -1687,12 +1732,12 @@ class TestBuildFilters:
         # Opting in doesn't help without award_type actually set - still
         # needs a real scoping filter or award_type itself.
         with pytest.raises(USASpendingAPIError, match="At least one of"):
-            _build_filters(FakeClient(make_agency()), None, 2021, 2024, award_type_counts_as_scope=True)
+            _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, award_type_counts_as_scope=True)
 
     def test_agency_name_given_still_resolves_normally(self):
         # Regression: the common case (agency_name alone) must be
         # unaffected by making it optional.
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024)
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024)
         assert filters.agencies[0].name == "National Science Foundation"
 
     # get_award_type_breakdown_raw passes scope_required=False (#123): its
@@ -1701,23 +1746,23 @@ class TestBuildFilters:
     # the timeout risk get_spending_by_category's group_by="recipient" has.
 
     def test_scope_required_false_allows_fully_unscoped(self):
-        filters = _build_filters(FakeClient(None), None, 2021, 2024, scope_required=False)
+        filters = _build_filters(FakeClient(None), None, "fiscal", 2021, 2024, scope_required=False)
         assert filters.model_dump(exclude_none=True) == {
             "time_period": [{"start_date": "2020-10-01", "end_date": "2024-09-30"}]
         }
 
     def test_scope_required_true_by_default_still_rejects_unscoped(self):
         with pytest.raises(USASpendingAPIError, match="At least one of"):
-            _build_filters(FakeClient(None), None, 2021, 2024)
+            _build_filters(FakeClient(None), None, "fiscal", 2021, 2024)
 
     def test_recipient_id_passthrough(self):
         filters = _build_filters(
-            FakeClient(make_agency()), "NSF", 2021, 2024, recipient_id="419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P"
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, recipient_id="419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P"
         )
         assert filters.recipient_id == "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P"
 
     def test_omitting_recipient_id_leaves_it_unset(self):
-        filters = _build_filters(FakeClient(make_agency()), "NSF", 2021, 2024)
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024)
         assert filters.recipient_id is None
 
 
@@ -2047,7 +2092,7 @@ class TestSearchAwardsMultiYearCaveat:
             monkeypatch,
         )
         result = search_awards.func(
-            start_fiscal_year=2023, end_fiscal_year=2023, agency_name="National Science Foundation"
+            start_year=2023, end_year=2023, agency_name="National Science Foundation"
         )
         assert "PERIOD OF PERFORMANCE STARTED 2011-12-23" in result
         assert "BEFORE FY2023" in result
@@ -2069,7 +2114,7 @@ class TestSearchAwardsMultiYearCaveat:
             monkeypatch,
         )
         result = search_awards.func(
-            start_fiscal_year=2023, end_fiscal_year=2023, agency_name="National Science Foundation"
+            start_year=2023, end_year=2023, agency_name="National Science Foundation"
         )
         assert "PERIOD OF PERFORMANCE STARTED" not in result
         assert "CAVEAT" not in result
@@ -2090,7 +2135,7 @@ class TestSearchAwardsMultiYearCaveat:
             monkeypatch,
         )
         result = search_awards.func(
-            start_fiscal_year=2023, end_fiscal_year=2023, agency_name="National Science Foundation"
+            start_year=2023, end_year=2023, agency_name="National Science Foundation"
         )
         assert "CAVEAT" not in result
 
@@ -2121,7 +2166,7 @@ class TestGetSpendingByCategorySpendingLevel:
         captured = {}
         self._mock_client(make_category_response(1), monkeypatch, captured)
         get_spending_by_category.func(
-            category="district", start_fiscal_year=2023, end_fiscal_year=2023,
+            category="district", start_year=2023, end_year=2023,
             agency_name="National Science Foundation",
         )
         assert captured["spending_level"] == "transactions"
@@ -2130,7 +2175,7 @@ class TestGetSpendingByCategorySpendingLevel:
         captured = {}
         self._mock_client(make_category_response(1), monkeypatch, captured)
         get_spending_by_category.func(
-            category="district", start_fiscal_year=2023, end_fiscal_year=2023,
+            category="district", start_year=2023, end_year=2023,
             agency_name="National Science Foundation", spending_level="subawards",
         )
         assert captured["spending_level"] == "subawards"
@@ -2150,11 +2195,49 @@ class TestGetSpendingByCategorySpendingLevel:
             monkeypatch,
         )
         result = get_spending_by_category.func(
-            category="district", start_fiscal_year=2023, end_fiscal_year=2023,
+            category="district", start_year=2023, end_year=2023,
             agency_name="National Science Foundation", spending_level="award_financial",
         )
         assert "not implemented" in result
         assert "This query failed" in result
+
+
+class TestCalendarYearTimePeriod:
+    # #121: time_period_type="calendar" must produce a calendar-year
+    # TimePeriod, not a fiscal-year one, in the actual request sent.
+
+    def _mock_client(self, response, monkeypatch, captured=None):
+        client = FakeClient(make_agency())
+
+        def fake_spending_by_category(*args, **kwargs):
+            if captured is not None:
+                captured["filters"] = args[1]
+            return response
+
+        client.spending_by_category = fake_spending_by_category
+        monkeypatch.setattr("backend.app.agent.tools.spending._get_usaspending_client", lambda: client)
+
+    def test_calendar_year_produces_calendar_date_range(self, monkeypatch):
+        captured = {}
+        self._mock_client(make_category_response(1), monkeypatch, captured)
+        get_spending_by_category.func(
+            category="district", time_period_type="calendar", start_year=2023, end_year=2023,
+            agency_name="National Science Foundation",
+        )
+        time_period = captured["filters"].time_period[0]
+        assert time_period.start_date == "2023-01-01"
+        assert time_period.end_date == "2023-12-31"
+
+    def test_fiscal_default_still_produces_fiscal_date_range(self, monkeypatch):
+        captured = {}
+        self._mock_client(make_category_response(1), monkeypatch, captured)
+        get_spending_by_category.func(
+            category="district", start_year=2023, end_year=2023,
+            agency_name="National Science Foundation",
+        )
+        time_period = captured["filters"].time_period[0]
+        assert time_period.start_date == "2022-10-01"
+        assert time_period.end_date == "2023-09-30"
 
 
 class TestSearchAwardsDisasterBreakout:
@@ -2184,7 +2267,7 @@ class TestSearchAwardsDisasterBreakout:
             monkeypatch,
         )
         result = search_awards.func(
-            start_fiscal_year=2020, end_fiscal_year=2020, agency_name="National Science Foundation"
+            start_year=2020, end_year=2020, agency_name="National Science Foundation"
         )
         assert "DEFC: L" in result
         assert "COVID-19 Obligations: $272.85" in result
@@ -2209,7 +2292,7 @@ class TestSearchAwardsDisasterBreakout:
             monkeypatch,
         )
         result = search_awards.func(
-            start_fiscal_year=2023, end_fiscal_year=2023, agency_name="National Science Foundation"
+            start_year=2023, end_year=2023, agency_name="National Science Foundation"
         )
         assert "DEFC" not in result
         assert "COVID-19" not in result
@@ -2232,7 +2315,7 @@ class TestSearchAwardsDisasterBreakout:
             monkeypatch,
         )
         result = search_awards.func(
-            start_fiscal_year=2022, end_fiscal_year=2022, agency_name="National Science Foundation"
+            start_year=2022, end_year=2022, agency_name="National Science Foundation"
         )
         assert "DEFC: Z" in result
         assert "COVID-19" not in result
@@ -2279,7 +2362,7 @@ class TestGetAwardTypeBreakdown:
             agency=make_agency(),
         )
         result = get_award_type_breakdown.func(
-            start_fiscal_year=2023, end_fiscal_year=2023, agency_name="National Science Foundation"
+            start_year=2023, end_year=2023, agency_name="National Science Foundation"
         )
         assert "Contracts: 810" in result
         assert "Contract IDVs: 37" in result
@@ -2296,7 +2379,7 @@ class TestGetAwardTypeBreakdown:
             make_award_type_count_response(contracts=5927129, grants=627607),
             monkeypatch,
         )
-        result = get_award_type_breakdown.func(start_fiscal_year=2024, end_fiscal_year=2024)
+        result = get_award_type_breakdown.func(start_year=2024, end_year=2024)
         assert "Contracts: 5,927,129" in result
         assert "Grants: 627,607" in result
 
@@ -2304,7 +2387,7 @@ class TestGetAwardTypeBreakdown:
         response = make_award_type_count_response(contracts=1)
         response.messages = ["a live API notice"]
         self._mock_client(response, monkeypatch)
-        result = get_award_type_breakdown.func(start_fiscal_year=2024, end_fiscal_year=2024)
+        result = get_award_type_breakdown.func(start_year=2024, end_year=2024)
         assert "a live API notice" in result
 
 

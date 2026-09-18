@@ -32,7 +32,7 @@ from backend.app.usaspending_client import (
 )
 
 from .recipient_types import _normalize_recipient_type
-from .response_shaping import fiscal_year_to_date_range
+from .response_shaping import year_range_to_date_range
 
 
 class SpendingFilterParams(TypedDict, total=False):
@@ -501,21 +501,22 @@ def _normalize_def_codes(def_codes: list[str]) -> list[str]:
 def _build_filters(
     client: USASpendingClient,
     agency_name: str | None,
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    time_period_type: Literal["fiscal", "calendar"],
+    start_year: int,
+    end_year: int,
     *,
     award_type_counts_as_scope: bool = False,
     scope_required: bool = True,
     **filters: Unpack[SpendingFilterParams],
 ) -> AdvancedFilters:
-    """Resolve agency_name + fiscal-year range into an AdvancedFilters -
+    """Resolve agency_name + time period range into an AdvancedFilters -
     the shared first step of all three spending tools, replacing what was
     three near-identical blocks (agency resolution, date-range math,
     AdvancedFilters construction) duplicated across
     get_spending_by_category_raw, get_spending_over_time_raw, and
     search_awards_raw.
 
-    Every parameter past end_fiscal_year is optional and defaults to
+    Every parameter past end_year is optional and defaults to
     None/unset. Omitting all of them reproduces exactly the original
     AdvancedFilters(agencies=..., time_period=...) shape - no
     award_type_codes, no recipient_search_text, no award_amounts, no
@@ -663,7 +664,7 @@ def _build_filters(
         message += " - a question scoped by none of them would mean all federal spending, ever."
         raise USASpendingAPIError(message)
 
-    start_date, end_date = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
+    start_date, end_date = year_range_to_date_range(time_period_type, start_year, end_year)
     kwargs: dict = {
         "time_period": [TimePeriod(start_date=start_date, end_date=end_date)],
     }

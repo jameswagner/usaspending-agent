@@ -75,6 +75,39 @@ def fiscal_year_to_date_range(start_fiscal_year: int, end_fiscal_year: int) -> t
     return start_date, end_date
 
 
+EARLIEST_SUPPORTED_CALENDAR_YEAR = 2007
+
+
+def calendar_year_to_date_range(start_calendar_year: int, end_calendar_year: int) -> tuple[str, str]:
+    """Convert a calendar year range to the API's YYYY-MM-DD date bounds.
+
+    Raises USASpendingAPIError for a year outside [EARLIEST_SUPPORTED_CALENDAR_YEAR, current].
+    """
+    ceiling = datetime.now(timezone.utc).date().year
+    for label, year in (("start_calendar_year", start_calendar_year), ("end_calendar_year", end_calendar_year)):
+        if not (EARLIEST_SUPPORTED_CALENDAR_YEAR <= year <= ceiling):
+            raise USASpendingAPIError(
+                f"{label}={year} is out of range - USASpending data only covers "
+                f"CY{EARLIEST_SUPPORTED_CALENDAR_YEAR} through CY{ceiling}."
+            )
+    if start_calendar_year > end_calendar_year:
+        raise USASpendingAPIError(
+            f"start_calendar_year={start_calendar_year} is after end_calendar_year={end_calendar_year}."
+        )
+
+    return f"{start_calendar_year}-01-01", f"{end_calendar_year}-12-31"
+
+
+def year_range_to_date_range(time_period_type: str, start_year: int, end_year: int) -> tuple[str, str]:
+    if time_period_type == "calendar":
+        return calendar_year_to_date_range(start_year, end_year)
+    return fiscal_year_to_date_range(start_year, end_year)
+
+
+def year_label(time_period_type: str, year: int) -> str:
+    return f"CY{year}" if time_period_type == "calendar" else f"FY{year}"
+
+
 def _format_time_period(period) -> str:
     # Labeled "FY"/"CY" explicitly (not a bare year number) so the label
     # unambiguously carries fiscal-vs-calendar-year meaning through to
@@ -565,14 +598,15 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
 
     if tool_name == "get_award_type_breakdown":
         params = {
-            "start_fiscal_year": context["start_fiscal_year"],
-            "end_fiscal_year": context["end_fiscal_year"],
+            "start_year": context["start_year"],
+            "end_year": context["end_year"],
         }
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
+        time_period_type = context.get("time_period_type", "fiscal")
         description = (
             f"Award type breakdown, {scope}, "
-            f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
@@ -581,14 +615,15 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
     if tool_name == "get_spending_by_category":
         params = {
             "category": context["category"],
-            "start_fiscal_year": context["start_fiscal_year"],
-            "end_fiscal_year": context["end_fiscal_year"],
+            "start_year": context["start_year"],
+            "end_year": context["end_year"],
         }
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
+        time_period_type = context.get("time_period_type", "fiscal")
         description = (
             f"{params['category']} breakdown, {scope}, "
-            f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
@@ -596,15 +631,16 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
 
     if tool_name == "get_spending_over_time":
         params = {
-            "start_fiscal_year": context["start_fiscal_year"],
-            "end_fiscal_year": context["end_fiscal_year"],
+            "start_year": context["start_year"],
+            "end_year": context["end_year"],
             "group": context["group"],
         }
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
+        time_period_type = context.get("time_period_type", "fiscal")
         description = (
             f"Spending over time ({params['group']}), {scope}, "
-            f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
@@ -613,13 +649,14 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
     if tool_name == "get_spending_by_geography":
         params = {
             "scope": context["scope"], "geo_layer": context["geo_layer"],
-            "start_fiscal_year": context["start_fiscal_year"], "end_fiscal_year": context["end_fiscal_year"],
+            "start_year": context["start_year"], "end_year": context["end_year"],
         }
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
+        time_period_type = context.get("time_period_type", "fiscal")
         description = (
             f"Spending by {params['geo_layer']} ({params['scope']}), {scope}, "
-            f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
@@ -627,8 +664,8 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
 
     if tool_name == "search_awards":
         params = {
-            "start_fiscal_year": context["start_fiscal_year"],
-            "end_fiscal_year": context["end_fiscal_year"],
+            "start_year": context["start_year"],
+            "end_year": context["end_year"],
             "award_type": context["award_type"],
         }
         # award_type is already set above (unconditionally, unlike every
@@ -637,9 +674,10 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         # else.
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
         scope = _citation_scope_label(context)
+        time_period_type = context.get("time_period_type", "fiscal")
         description = (
             f"{params['award_type']} awards search, {scope}, "
-            f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
@@ -647,15 +685,16 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
 
     if tool_name == "search_subawards":
         params = {
-            "start_fiscal_year": context["start_fiscal_year"],
-            "end_fiscal_year": context["end_fiscal_year"],
+            "start_year": context["start_year"],
+            "end_year": context["end_year"],
             "award_type": context["award_type"],
         }
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
         scope = _citation_scope_label(context)
+        time_period_type = context.get("time_period_type", "fiscal")
         description = (
             f"{params['award_type']} subawards search, {scope}, "
-            f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)

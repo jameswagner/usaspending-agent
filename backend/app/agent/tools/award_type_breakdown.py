@@ -13,6 +13,7 @@ total-count field at all).
 from __future__ import annotations
 
 import logging
+from typing import Literal
 
 from anthropic import beta_tool
 from langsmith import traceable
@@ -43,8 +44,9 @@ logger = logging.getLogger(__name__)
 
 @traceable(run_type="tool", name="get_award_type_breakdown_raw")
 def get_award_type_breakdown_raw(
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    time_period_type: Literal["fiscal", "calendar"],
+    start_year: int,
+    end_year: int,
     agency_name: str | None = None,
     recipient_name: str | None = None,
     recipient_id: str | None = None,
@@ -88,8 +90,9 @@ def get_award_type_breakdown_raw(
     filters = _build_filters(
         client,
         agency_name,
-        start_fiscal_year,
-        end_fiscal_year,
+        time_period_type,
+        start_year,
+        end_year,
         recipient_name=recipient_name,
         recipient_id=recipient_id,
         min_amount=min_amount,
@@ -139,8 +142,10 @@ def _format_award_type_counts(response: SpendingByAwardCountResponse) -> str:
 
 @beta_tool
 def get_award_type_breakdown(
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    *,
+    time_period_type: Literal["fiscal", "calendar"] = "fiscal",
+    start_year: int,
+    end_year: int,
     agency_name: str | None = None,
     recipient_name: str | None = None,
     recipient_id: str | None = None,
@@ -174,8 +179,14 @@ def get_award_type_breakdown(
     This tool has no award_type parameter — it answers "how many of each type," so filtering to one type first would defeat the point. For a single type's own detail (e.g. the actual list of grants, or grants' total dollar amount), use search_awards/get_spending_by_category/get_spending_over_time with award_type set instead.
 
     Args:
-        start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
-        end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
+        time_period_type: "fiscal" (default) for federal fiscal years (Oct-Sep, named by the
+            year they end in) or "calendar" for plain Jan-Dec calendar years. Use "calendar"
+            when the user explicitly says "calendar year"/"CY2023" or asks about a plain
+            Jan-Dec window; default to "fiscal" otherwise.
+        start_year: First year to include (fiscal or calendar per time_period_type above),
+            e.g. 2021 for FY2021 (Oct 2020-Sep 2021) or CY2021. Data is only available from
+            FY2008 (or CY2007) onward.
+        end_year: Last year to include, e.g. 2024 for FY2024 or CY2024.
         agency_name: Optional. The awarding agency's name, e.g. "National Science Foundation". Omit for a government-wide split.
         recipient_name: Optional. Restrict to awards whose recipient name contains this text, e.g. "Leidos". An approximate text match — prefer recipient_id when you have one.
         recipient_id: Optional. The exact recipient_id from a prior search_recipients or get_recipient_details call — an exact identifier, not a text match. Do not guess or construct one.
@@ -216,8 +227,9 @@ def get_award_type_breakdown(
     )
     try:
         response = get_award_type_breakdown_raw(
-            start_fiscal_year,
-            end_fiscal_year,
+            time_period_type,
+            start_year,
+            end_year,
             agency_name=agency_name,
             recipient_name=recipient_name,
             recipient_id=recipient_id,
@@ -249,7 +261,7 @@ def get_award_type_breakdown(
         return f"This query failed: {e}."
 
     context = _record_optional_filter_context(
-        {"start_fiscal_year": start_fiscal_year, "end_fiscal_year": end_fiscal_year},
+        {"start_year": start_year, "end_year": end_year, "time_period_type": time_period_type},
         agency_name=agency_name,
         recipient_name=recipient_name,
         recipient_id=recipient_id,

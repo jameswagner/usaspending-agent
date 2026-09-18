@@ -50,4 +50,9 @@ RUN python -m backend.app.retrieval.pipeline.ingest \
 # #71) - the SqliteSaver conversation-history checkpointer is one sqlite3
 # connection held by one process, not safe for --workers > 1 or multiple
 # replicas (see #72 for the Postgres swap that would allow that).
-CMD ["sh", "-c", "mkdir -p $(dirname \"$CONVERSATIONS_DB_PATH\") && uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+#
+# --forwarded-allow-ips='*': the container is only reachable through
+# Railway's edge proxy, never directly from the internet, so that proxy is
+# the sole trusted hop - this makes uvicorn's ProxyHeadersMiddleware trust
+# its X-Forwarded-For and rewrite request.client.host accordingly (see #3).
+CMD ["sh", "-c", "mkdir -p $(dirname \"$CONVERSATIONS_DB_PATH\") && uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]

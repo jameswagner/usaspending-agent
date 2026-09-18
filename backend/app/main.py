@@ -29,10 +29,10 @@ logger = logging.getLogger(__name__)
 # "Rate limiting on /ask" entry: without this, any caller could send
 # unlimited requests, each costing a real Claude call plus an uncapped
 # number of live USASpending API calls. Keyed on remote address (slowapi's
-# get_remote_address) - doesn't look at X-Forwarded-For, so behind a
-# reverse proxy every request would look like it comes from the proxy's
-# IP; not an issue for direct local/demo use, would need addressing before
-# deploying behind one.
+# get_remote_address) - correctly sees each real client's IP rather than
+# Railway's edge proxy IP because uvicorn's ProxyHeadersMiddleware rewrites
+# request.client.host from X-Forwarded-For (see the Dockerfile's
+# --forwarded-allow-ips flag and #3).
 ASK_RATE_LIMIT_PER_MINUTE = int(os.environ.get("ASK_RATE_LIMIT_PER_MINUTE", "20"))
 
 limiter = Limiter(key_func=get_remote_address, headers_enabled=True)

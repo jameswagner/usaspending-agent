@@ -74,7 +74,8 @@
     {"question": "What does the NAICS classification system measure, and how is it used in federal spending data?", "expected_tool": "search_guide", "confusable_with": ["resolve_naics_code"]},
     {"question": "What is the National Science Foundation and what does it do?", "expected_tool": "lookup_agency", "confusable_with": ["get_agency_budget", "get_agency_award_breakdown"]},
     {"question": "What is NASA's mission and when was it established?", "expected_tool": "lookup_agency", "confusable_with": ["get_agency_budget", "get_agency_award_breakdown"]},
-    {"question": "What is the Department of Energy's total budget for FY2023?", "expected_tool": "get_agency_budget", "confusable_with": ["lookup_agency", "get_spending_by_category", "get_agency_award_breakdown"]}
+    {"question": "What is the Department of Energy's total budget for FY2023?", "expected_tool": "get_agency_budget", "confusable_with": ["lookup_agency", "get_spending_by_category", "get_agency_award_breakdown"]},
+    {"question": "How much did NSF spend on cybersecurity contracts in FY2023?", "acceptable_tools": ["search_awards", "get_spending_by_category"], "confusable_with": ["lookup_agency"]}
   ],
   "search_vs_breakdown": [
     {"question": "Show me NSF's five biggest contracts in FY2023.", "expected_tool": "search_awards", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_spending_by_geography"]},

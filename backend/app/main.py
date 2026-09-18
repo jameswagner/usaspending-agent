@@ -9,7 +9,6 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -18,10 +17,10 @@ load_dotenv()
 
 from backend.app.agent import ask as agent_ask
 from backend.app.agent.orchestrator import NOT_FOUND_MESSAGE
-from backend.app.agent.response_shaping import Citation, ToolCitation
 from backend.app.agent.singletons import warm_up
 from backend.app.agent.streaming import sse_event_generator
 from backend.app.logging_config import configure_logging
+from backend.app.schemas import AskRequest, AskResponse
 
 logger = logging.getLogger(__name__)
 
@@ -49,20 +48,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="USASpending RAG", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-
-class AskRequest(BaseModel):
-    question: str
-    conversation_id: str | None = None
-
-
-class AskResponse(BaseModel):
-    answer_text: str
-    source_type: str
-    conversation_id: str
-    charts: list[dict] = []
-    citations: list[Citation] = []
-    tool_citations: list[ToolCitation] = []
 
 
 @app.get("/health")

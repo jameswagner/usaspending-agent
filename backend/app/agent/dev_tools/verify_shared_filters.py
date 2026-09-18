@@ -34,7 +34,7 @@ def case_search_awards_sorted_by_amount() -> None:
 def case_award_amount_filter() -> None:
     print("\n=== award_amounts filter: NSF contracts over $1 billion ===")
     response = search_awards_raw(
-        "National Science Foundation", 2023, 2023, award_type="contracts", min_amount=1_000_000_000
+        "National Science Foundation", time_period_type="fiscal", start_year=2023, end_year=2023, award_type="contracts", min_amount=1_000_000_000
     )
     print(f"Results: {response.results}")
     if len(response.results) == 1 and response.results[0].get("Award ID") == "NSFDACS1219442":
@@ -51,7 +51,7 @@ def case_truncation_note_when_more_results_exist() -> None:
     # the model presented that partial slice as the complete list. Same
     # min_amount, small limit, on purpose - should reproduce hasNext=true.
     response = search_awards_raw(
-        "National Science Foundation", 2023, 2023, award_type="contracts",
+        "National Science Foundation", time_period_type="fiscal", start_year=2023, end_year=2023, award_type="contracts",
         min_amount=10_000_000, limit=5,
     )
     has_next = response.page_metadata.hasNext if response.page_metadata else None
@@ -102,11 +102,11 @@ def case_location_filters_are_independent() -> None:
     # at once without proving anything about whether they're wired
     # correctly. limit=10 + comparing the full ID lists is a real test.
     dod_contracts_performed_in_va = search_awards_raw(
-        "Department of Defense", 2023, 2023, award_type="contracts",
+        "Department of Defense", time_period_type="fiscal", start_year=2023, end_year=2023, award_type="contracts",
         performed_in_state="Virginia", limit=10,
     )
     dod_contracts_recipient_in_va = search_awards_raw(
-        "Department of Defense", 2023, 2023, award_type="contracts",
+        "Department of Defense", time_period_type="fiscal", start_year=2023, end_year=2023, award_type="contracts",
         recipient_in_state="Virginia", limit=10,
     )
     performed_ids = [r.get("Award ID") for r in dod_contracts_performed_in_va.results]
@@ -128,7 +128,7 @@ def case_loan_amount_field_name() -> None:
     print("\n=== Open item: is 'Loan Value' really the field name for loan-type results? ===")
     # Small Business Administration issues direct/guaranteed loans - a
     # reliable agency to test the loan branch against.
-    response = search_awards_raw("Small Business Administration", 2023, 2023, award_type="direct_loan", limit=3)
+    response = search_awards_raw("Small Business Administration", time_period_type="fiscal", start_year=2023, end_year=2023, award_type="direct_loan", limit=3)
     print(f"Results: {response.results}")
     if response.results and "Loan Value" in response.results[0]:
         print("OK: 'Loan Value' is a real field on loan-type results, and sort didn't error.")
@@ -147,11 +147,11 @@ def case_new_awards_only_eliminates_cross_fiscal_year_duplication() -> None:
     # (action_date) matches on ANY transaction in the window, and Award
     # Amount is the award's cumulative total, not period-scoped.
     default_fy23 = search_awards_raw(
-        "National Science Foundation", 2023, 2023, award_type="contracts",
+        "National Science Foundation", time_period_type="fiscal", start_year=2023, end_year=2023, award_type="contracts",
         min_amount=10_000_000, limit=25,
     )
     default_fy24 = search_awards_raw(
-        "National Science Foundation", 2024, 2024, award_type="contracts",
+        "National Science Foundation", time_period_type="fiscal", start_year=2024, end_year=2024, award_type="contracts",
         min_amount=10_000_000, max_amount=50_000_000, limit=25,
     )
     default_overlap = {r["Award ID"] for r in default_fy23.results} & {r["Award ID"] for r in default_fy24.results}
@@ -159,11 +159,11 @@ def case_new_awards_only_eliminates_cross_fiscal_year_duplication() -> None:
           f"{len(default_overlap)}")
 
     new_only_fy23 = search_awards_raw(
-        "National Science Foundation", 2023, 2023, award_type="contracts",
+        "National Science Foundation", time_period_type="fiscal", start_year=2023, end_year=2023, award_type="contracts",
         min_amount=10_000_000, date_type="new_awards_only", limit=25,
     )
     new_only_fy24 = search_awards_raw(
-        "National Science Foundation", 2024, 2024, award_type="contracts",
+        "National Science Foundation", time_period_type="fiscal", start_year=2024, end_year=2024, award_type="contracts",
         min_amount=10_000_000, max_amount=50_000_000, date_type="new_awards_only", limit=25,
     )
     new_only_overlap = {r["Award ID"] for r in new_only_fy23.results} & {r["Award ID"] for r in new_only_fy24.results}
@@ -227,22 +227,22 @@ def case_sort_by_outlays_and_subsidy_cost_and_recency() -> None:
 
     _check_sort_field_present(
         "SBA direct loans sorted by subsidy_cost", "Subsidy Cost",
-        agency_name="Small Business Administration", start_fiscal_year=2023, end_fiscal_year=2023,
+        agency_name="Small Business Administration", time_period_type="fiscal", start_year=2023, end_year=2023,
         award_type="direct_loan", sort_by="subsidy_cost",
     )
     _check_sort_field_present(
         "NSF contracts sorted by recency", "Last Modified Date",
-        agency_name="National Science Foundation", start_fiscal_year=2023, end_fiscal_year=2023,
+        agency_name="National Science Foundation", time_period_type="fiscal", start_year=2023, end_year=2023,
         award_type="contracts", sort_by="recency",
     )
     _check_sort_by_rejected(
         "sort_by='outlays' on a loan award_type",
-        agency_name="Small Business Administration", start_fiscal_year=2023, end_fiscal_year=2023,
+        agency_name="Small Business Administration", time_period_type="fiscal", start_year=2023, end_year=2023,
         award_type="direct_loan", sort_by="outlays",
     )
     _check_sort_by_rejected(
         "sort_by='subsidy_cost' on a non-loan award_type",
-        agency_name="National Science Foundation", start_fiscal_year=2023, end_fiscal_year=2023,
+        agency_name="National Science Foundation", time_period_type="fiscal", start_year=2023, end_year=2023,
         award_type="contracts", sort_by="subsidy_cost",
     )
 

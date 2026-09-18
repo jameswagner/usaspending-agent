@@ -53,6 +53,7 @@ from .models import (
     SpendingOverTimeResponse,
     SubawardListingResponse,
     ToptierAgency,
+    TransactionHistoryResponse,
 )
 
 BASE_URL = "https://api.usaspending.gov"
@@ -437,6 +438,26 @@ class USASpendingClient:
         body = {"award_id": award_id, "limit": limit, "page": page, "sort": sort, "order": order}
         data = self._post("/api/v2/awards/funding/", body)
         return AwardFundingResponse(**data)
+
+    @traceable(run_type="tool", name="get_award_transaction_history")
+    def get_award_transaction_history(
+        self, award_id: str, limit: int = 10, page: int = 1, sort: str = "action_date", order: str = "desc"
+    ) -> TransactionHistoryResponse:
+        """POST /api/v2/transactions/ - the award-profile page's own
+        Transaction History tab: every individual modification/transaction
+        that built up to this award's current state (mod number, action
+        date, action type, amount, description). Same award_id format as
+        get_award (the hash-style generated_unique_award_id, not the plain
+        PIID/FAIN) - live-verified 2026-09-18 that a plain PIID doesn't 404
+        here like get_award does, it silently returns an empty results
+        list, so an empty response isn't on its own proof the award_id is
+        wrong. live-verified sort accepts more values than transactions.md
+        documents (also: id, type, type_description, action_type, is_fpds,
+        cfda_number), but this app only exposes the contract-documented
+        default (action_date)."""
+        body = {"award_id": award_id, "limit": limit, "page": page, "sort": sort, "order": order}
+        data = self._post("/api/v2/transactions/", body)
+        return TransactionHistoryResponse(**data)
 
     @traceable(run_type="tool", name="search_recipients")
     def search_recipients(

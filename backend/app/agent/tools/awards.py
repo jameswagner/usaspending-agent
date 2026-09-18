@@ -3,7 +3,8 @@ specific award (contract, IDV, grant, loan, or other financial
 assistance), as opposed to spending.py's aggregate/list tools. Also
 get_award_subawards, listing one award's own subawards. Also
 get_award_funding_breakdown, the Federal Account/TAS funding breakdown for
-one specific award.
+one specific award. Also get_award_transaction_history, the
+modification-by-modification transaction history for one specific award.
 """
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ from langsmith import traceable
 from backend.app.usaspending import (
     AwardFundingResponse,
     IDVAmountsResponse,
+    TransactionHistoryResponse,
     USASpendingAPIError,
 )
 
@@ -88,6 +90,16 @@ def get_award_funding_breakdown_raw(award_id: str, limit: int = 10) -> AwardFund
     separate call from get_award_details_raw rather than merged into it."""
     client = _get_usaspending_client()
     return client.get_award_funding(award_id, limit=limit)
+
+
+@traceable(run_type="tool", name="get_award_transaction_history_raw")
+def get_award_transaction_history_raw(award_id: str, limit: int = 10) -> TransactionHistoryResponse:
+    """Call the API once, return the structured transaction/modification
+    rows. Raises USASpendingAPIError on failure - see
+    USASpendingClient.get_award_transaction_history's docstring for the
+    plain-PIID-returns-empty-not-an-error gotcha."""
+    client = _get_usaspending_client()
+    return client.get_award_transaction_history(award_id, limit=limit)
 
 
 def _agency_label(agency: dict[str, Any] | None) -> str:
@@ -471,6 +483,59 @@ def get_award_funding_breakdown(award_id: str, limit: int = 10) -> str:
         return f"No federal account funding data found for award {award_id}."
 
     lines = [_format_funding_row(row) for row in response.results]
+    has_next = response.page_metadata.hasNext if response.page_metadata else False
+    note = _truncation_note(has_next, len(response.results))
+    return _wrap_untrusted("\n".join(lines) + note)
+
+
+def _format_transaction_row(row) -> str:
+    # federal_action_obligation is null for loans (face_value_loan_guarantee/
+    # original_loan_subsidy_cost carry the amount there instead) - per
+    # transactions.md, exactly one of the three is populated on any given row.
+    if row.federal_action_obligation is not None:
+        amount = f"${row.federal_action_obligation:,.2f}"
+    elif row.face_value_loan_guarantee is not None:
+        amount = f"${row.face_value_loan_guarantee:,.2f} (loan guarantee)"
+    elif row.original_loan_subsidy_cost is not None:
+        amount = f"${row.original_loan_subsidy_cost:,.2f} (loan subsidy cost)"
+    else:
+        amount = "amount unknown"
+    mod = row.modification_number or "N/A"
+    action = row.action_type_description or row.action_type or "unknown action"
+    line = f"Mod {mod} ({row.action_date}): {amount} - {action}"
+    if row.description:
+        line += f" - {row.description}"
+    return line
+
+
+@beta_tool
+def get_award_transaction_history(award_id: str, limit: int = 10) -> str:
+    """List the individual transactions/modifications that built up to one specific award's current state - the award-profile page's own Transaction History tab (mod number, action date, action type, amount, description per row). Use this for "what modifications has this award had" or "show the transaction/mod history for this contract/grant" questions about a SPECIFIC award already found via search_awards - it does not aggregate or search across awards.
+
+    Args:
+        award_id: The internal_id shown alongside a search_awards result (or get_award_details' own
+            award_id parameter) - the hash-style generated_unique_award_id, not the plain PIID/FAIN.
+            Do not guess or construct one. Note: unlike get_award_details, a wrong/plain award_id
+            does not error here - it silently returns no results, so an empty result on its own
+            isn't proof the award genuinely has no transactions.
+        limit: Max number of transactions to return, most recent action_date first (default 10).
+    """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    try:
+        response = get_award_transaction_history_raw(award_id, limit=limit)
+    except USASpendingAPIError as e:
+        logger.warning("get_award_transaction_history failed for %s: %s", award_id, e)
+        return f"This query failed: {e}."
+
+    _record_tool_call("get_award_transaction_history", response, {"award_id": award_id})
+
+    if not response.results:
+        return (
+            f"No transactions found for award {award_id}.{_unresolved_award_id_hint(award_id)}"
+        )
+
+    lines = [_format_transaction_row(row) for row in response.results]
     has_next = response.page_metadata.hasNext if response.page_metadata else False
     note = _truncation_note(has_next, len(response.results))
     return _wrap_untrusted("\n".join(lines) + note)

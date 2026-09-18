@@ -361,6 +361,37 @@ class AwardFundingResponse(BaseModel):
     page_metadata: PageMetadata | None = None
 
 
+class TransactionResult(BaseModel):
+    """One row of POST /api/v2/transactions/ (transactions.md) - a single
+    modification/transaction that built up to an award's current state, the
+    award-profile page's own Transaction History tab. cfda_number only
+    appears for financial-assistance awards (grants/loans/etc.), confirmed
+    absent on a live contract-transaction response - kept optional rather
+    than required to match."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    type: str
+    type_description: str | None = None
+    action_date: str
+    action_type: str | None = None
+    action_type_description: str | None = None
+    modification_number: str | None = None
+    description: str | None = None
+    federal_action_obligation: float | None = None
+    face_value_loan_guarantee: float | None = None
+    original_loan_subsidy_cost: float | None = None
+    cfda_number: str | None = None
+
+
+class TransactionHistoryResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    results: list[TransactionResult]
+    page_metadata: PageMetadata | None = None
+
+
 class IDVAmountsResponse(BaseModel):
     """GET /api/v2/idvs/amounts/{award_id}/ - the actual "how much has
     been ordered under this vehicle" rollup for an IDV. An IDV's own

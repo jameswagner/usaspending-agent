@@ -21,7 +21,7 @@ from backend.app.usaspending_client import (
 )
 
 from ..recipient_types import RecipientType
-from ..response_shaping import _format_time_period, fiscal_year_to_date_range
+from ..response_shaping import _format_time_period, year_label, year_range_to_date_range
 from ..singletons import _get_usaspending_client
 from ..tool_filters import (
     DISASTER_BREAKOUT_FIELDS,
@@ -102,8 +102,9 @@ def _normalize_category(category: str) -> str:
 def get_spending_by_category_raw(
     category: Category,
     agency_name: str | None,
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    time_period_type: Literal["fiscal", "calendar"],
+    start_year: int,
+    end_year: int,
     limit: int = 5,
     award_type: AwardType | None = None,
     recipient_name: str | None = None,
@@ -158,8 +159,9 @@ def get_spending_by_category_raw(
     filters = _build_filters(
         client,
         agency_name,
-        start_fiscal_year,
-        end_fiscal_year,
+        time_period_type,
+        start_year,
+        end_year,
         award_type=award_type,
         recipient_name=recipient_name,
         recipient_id=recipient_id,
@@ -193,8 +195,10 @@ def get_spending_by_category_raw(
 @beta_tool
 def get_spending_by_category(
     category: Category,
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    *,
+    time_period_type: Literal["fiscal", "calendar"] = "fiscal",
+    start_year: int,
+    end_year: int,
     limit: int = 5,
     agency_name: str | None = None,
     award_type: AwardType | None = None,
@@ -235,8 +239,14 @@ def get_spending_by_category(
 
     Args:
         category: One of: awarding_agency, awarding_subagency, cfda, country, county, defc, district, federal_account, funding_agency, funding_subagency, naics, psc, recipient, recipient_duns, state_territory. Enforced in code - any other value (including ones the API's own docs list, like object_class or tas, which 404 in practice) fails cleanly with this exact list rather than reaching the live API. recipient and recipient_duns return the same results for every case tested - either works for "top recipients" questions.
-        start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
-        end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
+        time_period_type: "fiscal" (default) for federal fiscal years (Oct-Sep, named by the
+            year they end in) or "calendar" for plain Jan-Dec calendar years. Use "calendar"
+            when the user explicitly says "calendar year"/"CY2023" or asks about a plain
+            Jan-Dec window; default to "fiscal" otherwise.
+        start_year: First year to include (fiscal or calendar per time_period_type above),
+            e.g. 2021 for FY2021 (Oct 2020-Sep 2021) or CY2021 (Jan-Dec 2021). Data is only
+            available from FY2008 (or CY2007) onward.
+        end_year: Last year to include, e.g. 2024 for FY2024 or CY2024.
         limit: Max number of results to return (default 5).
         agency_name: Optional. The awarding agency's name, e.g. "National Science Foundation".
             Omit for a cross-agency question about one recipient (e.g. "which agencies has X
@@ -355,8 +365,9 @@ def get_spending_by_category(
         response = get_spending_by_category_raw(
             category,
             agency_name,
-            start_fiscal_year,
-            end_fiscal_year,
+            time_period_type,
+            start_year,
+            end_year,
             limit,
             award_type=award_type,
             recipient_name=recipient_name,
@@ -393,8 +404,9 @@ def get_spending_by_category(
     context = _record_optional_filter_context(
         {
             "category": category,
-            "start_fiscal_year": start_fiscal_year,
-            "end_fiscal_year": end_fiscal_year,
+            "start_year": start_year,
+            "end_year": end_year,
+            "time_period_type": time_period_type,
             "spending_level": spending_level,
         },
         agency_name=agency_name,
@@ -428,7 +440,10 @@ def get_spending_by_category(
     _record_tool_call("get_spending_by_category", response, context)
 
     if not response.results:
-        return f"No {category} spending data found for {scope} between FY{start_fiscal_year} and FY{end_fiscal_year}."
+        return (
+            f"No {category} spending data found for {scope} between "
+            f"{year_label(time_period_type, start_year)} and {year_label(time_period_type, end_year)}."
+        )
 
     lines = [f"{r.name or r.code or 'unknown'}: ${r.amount:,.2f}" for r in response.results]
     has_next = response.page_metadata.hasNext if response.page_metadata else False
@@ -460,8 +475,9 @@ def _normalize_group(group: str) -> str:
 @traceable(run_type="tool", name="get_spending_over_time_raw")
 def get_spending_over_time_raw(
     agency_name: str | None,
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    time_period_type: Literal["fiscal", "calendar"],
+    start_year: int,
+    end_year: int,
     group: Group = "fiscal_year",
     award_type: AwardType | None = None,
     recipient_name: str | None = None,
@@ -498,8 +514,9 @@ def get_spending_over_time_raw(
     filters = _build_filters(
         client,
         agency_name,
-        start_fiscal_year,
-        end_fiscal_year,
+        time_period_type,
+        start_year,
+        end_year,
         award_type=award_type,
         recipient_name=recipient_name,
         recipient_id=recipient_id,
@@ -532,8 +549,10 @@ def get_spending_over_time_raw(
 
 @beta_tool
 def get_spending_over_time(
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    *,
+    time_period_type: Literal["fiscal", "calendar"] = "fiscal",
+    start_year: int,
+    end_year: int,
     group: Group = "fiscal_year",
     agency_name: str | None = None,
     award_type: AwardType | None = None,
@@ -572,9 +591,17 @@ def get_spending_over_time(
     silently running.
 
     Args:
-        start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
-        end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
-        group: One of: fiscal_year, calendar_year, quarter, month. Default fiscal_year.
+        time_period_type: "fiscal" (default) for federal fiscal years (Oct-Sep, named by the
+            year they end in) or "calendar" for plain Jan-Dec calendar years. Use "calendar"
+            when the user explicitly says "calendar year"/"CY2023" or asks about a plain
+            Jan-Dec window; default to "fiscal" otherwise.
+        start_year: First year to include (fiscal or calendar per time_period_type above),
+            e.g. 2021 for FY2021 (Oct 2020-Sep 2021) or CY2021 (Jan-Dec 2021). Data is only
+            available from FY2008 (or CY2007) onward.
+        end_year: Last year to include, e.g. 2024 for FY2024 or CY2024.
+        group: One of: fiscal_year, calendar_year, quarter, month. Default fiscal_year. This
+            controls how the OUTPUT time series is bucketed - independent of time_period_type,
+            which controls how start_year/end_year themselves are interpreted.
         agency_name: Optional. The awarding agency's name, e.g. "National Science Foundation".
             Omit for a cross-agency trend for one recipient - but then recipient_name or
             recipient_id must be set instead.
@@ -668,8 +695,9 @@ def get_spending_over_time(
     try:
         response = get_spending_over_time_raw(
             agency_name,
-            start_fiscal_year,
-            end_fiscal_year,
+            time_period_type,
+            start_year,
+            end_year,
             group,
             award_type=award_type,
             recipient_name=recipient_name,
@@ -704,8 +732,9 @@ def get_spending_over_time(
 
     context = _record_optional_filter_context(
         {
-            "start_fiscal_year": start_fiscal_year,
-            "end_fiscal_year": end_fiscal_year,
+            "start_year": start_year,
+            "end_year": end_year,
+            "time_period_type": time_period_type,
             "group": group,
         },
         agency_name=agency_name,
@@ -739,7 +768,10 @@ def get_spending_over_time(
     _record_tool_call("get_spending_over_time", response, context)
 
     if not response.results:
-        return f"No spending-over-time data found for {scope} between FY{start_fiscal_year} and FY{end_fiscal_year}."
+        return (
+            f"No spending-over-time data found for {scope} between "
+            f"{year_label(time_period_type, start_year)} and {year_label(time_period_type, end_year)}."
+        )
 
     lines = [
         f"{_format_time_period(r.time_period)}: ${r.aggregated_amount:,.2f}"
@@ -751,8 +783,9 @@ def get_spending_over_time(
 @traceable(run_type="tool", name="search_awards_raw")
 def search_awards_raw(
     agency_name: str | None,
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    time_period_type: Literal["fiscal", "calendar"],
+    start_year: int,
+    end_year: int,
     award_type: AwardType = "contracts",
     limit: int = 5,
     sort_by: SortBy = "amount",
@@ -811,8 +844,9 @@ def search_awards_raw(
     filters = _build_filters(
         client,
         agency_name,
-        start_fiscal_year,
-        end_fiscal_year,
+        time_period_type,
+        start_year,
+        end_year,
         award_type=award_type,
         recipient_name=recipient_name,
         min_amount=min_amount,
@@ -859,8 +893,10 @@ def search_awards_raw(
 
 @beta_tool
 def search_awards(
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    *,
+    time_period_type: Literal["fiscal", "calendar"] = "fiscal",
+    start_year: int,
+    end_year: int,
     award_type: AwardType = "contracts",
     limit: int = 5,
     sort_by: SortBy = "amount",
@@ -931,8 +967,14 @@ def search_awards(
     contracts).
 
     Args:
-        start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
-        end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
+        time_period_type: "fiscal" (default) for federal fiscal years (Oct-Sep, named by the
+            year they end in) or "calendar" for plain Jan-Dec calendar years. Use "calendar"
+            when the user explicitly says "calendar year"/"CY2023" or asks about a plain
+            Jan-Dec window; default to "fiscal" otherwise.
+        start_year: First year to include (fiscal or calendar per time_period_type above),
+            e.g. 2021 for FY2021 (Oct 2020-Sep 2021) or CY2021 (Jan-Dec 2021). Data is only
+            available from FY2008 (or CY2007) onward.
+        end_year: Last year to include, e.g. 2024 for FY2024 or CY2024.
         award_type: The broad buckets are contracts, grants, loans (default contracts) - use one
             of these for a general "show me X's contracts/grants" question. For a question asking
             about a SPECIFIC sub-type rather than the broad category, use the specific value
@@ -1053,8 +1095,9 @@ def search_awards(
     try:
         results = search_awards_raw(
             agency_name,
-            start_fiscal_year,
-            end_fiscal_year,
+            time_period_type,
+            start_year,
+            end_year,
             award_type,
             limit,
             sort_by=sort_by,
@@ -1091,8 +1134,9 @@ def search_awards(
 
     context = _record_optional_filter_context(
         {
-            "start_fiscal_year": start_fiscal_year,
-            "end_fiscal_year": end_fiscal_year,
+            "start_year": start_year,
+            "end_year": end_year,
+            "time_period_type": time_period_type,
             "award_type": award_type,
             "sort_by": sort_by,
         },
@@ -1129,7 +1173,8 @@ def search_awards(
     if not results.results:
         others = _other_award_type_categories_to_try(award_type)
         return (
-            f"No {award_type} awards found for {scope} between FY{start_fiscal_year} and FY{end_fiscal_year}. "
+            f"No {award_type} awards found for {scope} between "
+            f"{year_label(time_period_type, start_year)} and {year_label(time_period_type, end_year)}. "
             f"This does NOT mean no award records exist for this recipient/program - only that none are "
             f"of type '{award_type}'. Before concluding there are no individual award records, try one or "
             f"more of the other award type categories: {others}."
@@ -1139,10 +1184,10 @@ def search_awards(
     sort_field = _sort_field_for_award_type(award_type, sort_by)
     # Award-summary results OVERLAP the requested range rather than being scoped to it
     # (confirmed live, see #118 and fedspendingtransparency/usaspending-api#1707): an
-    # award that started before start_fiscal_year still shows its full lifetime amount,
+    # award that started before start_year still shows its full lifetime amount,
     # not spending specific to this range. Flag any result whose period of performance
     # started before the range so that isn't presented as if it were period-scoped.
-    range_start_date, _ = fiscal_year_to_date_range(start_fiscal_year, end_fiscal_year)
+    range_start_date, _ = year_range_to_date_range(time_period_type, start_year, end_year)
     any_predates_range = False
     lines = []
     for r in results.results:
@@ -1162,7 +1207,7 @@ def search_awards(
         flag_str = ""
         if predates_range:
             any_predates_range = True
-            flag_str = f" [PERIOD OF PERFORMANCE STARTED {start_date}, BEFORE FY{start_fiscal_year} - amount shown is this award's lifetime total, not spending scoped to this range]"
+            flag_str = f" [PERIOD OF PERFORMANCE STARTED {start_date}, BEFORE {year_label(time_period_type, start_year)} - amount shown is this award's lifetime total, not spending scoped to this range]"
         disaster_str = ""
         result_def_codes = r.get("def_codes")
         # Only shown when non-empty - most awards carry no disaster tag at all.
@@ -1196,8 +1241,9 @@ def search_awards(
 @traceable(run_type="tool", name="search_subawards_raw")
 def search_subawards_raw(
     agency_name: str | None,
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    time_period_type: Literal["fiscal", "calendar"],
+    start_year: int,
+    end_year: int,
     award_type: AwardType = "contracts",
     limit: int = 5,
     recipient_name: str | None = None,
@@ -1254,8 +1300,9 @@ def search_subawards_raw(
     filters = _build_filters(
         client,
         agency_name,
-        start_fiscal_year,
-        end_fiscal_year,
+        time_period_type,
+        start_year,
+        end_year,
         award_type=award_type,
         recipient_name=recipient_name,
         min_amount=min_amount,
@@ -1289,8 +1336,10 @@ def search_subawards_raw(
 
 @beta_tool
 def search_subawards(
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    *,
+    time_period_type: Literal["fiscal", "calendar"] = "fiscal",
+    start_year: int,
+    end_year: int,
     award_type: AwardType = "contracts",
     limit: int = 5,
     agency_name: str | None = None,
@@ -1329,8 +1378,14 @@ def search_subawards(
     rather than silently running.
 
     Args:
-        start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021 (Oct 2020-Sep 2021). Data is only available from FY2008 onward.
-        end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
+        time_period_type: "fiscal" (default) for federal fiscal years (Oct-Sep, named by the
+            year they end in) or "calendar" for plain Jan-Dec calendar years. Use "calendar"
+            when the user explicitly says "calendar year"/"CY2023" or asks about a plain
+            Jan-Dec window; default to "fiscal" otherwise.
+        start_year: First year to include (fiscal or calendar per time_period_type above),
+            e.g. 2021 for FY2021 (Oct 2020-Sep 2021) or CY2021 (Jan-Dec 2021). Data is only
+            available from FY2008 (or CY2007) onward.
+        end_year: Last year to include, e.g. 2024 for FY2024 or CY2024.
         award_type: The broad buckets are contracts, grants, loans (default contracts) - same
             vocabulary as search_awards's award_type, applied to the underlying prime award's type.
         limit: Max number of results to return (default 5).
@@ -1398,8 +1453,9 @@ def search_subawards(
     try:
         results = search_subawards_raw(
             agency_name,
-            start_fiscal_year,
-            end_fiscal_year,
+            time_period_type,
+            start_year,
+            end_year,
             award_type,
             limit,
             recipient_name=recipient_name,
@@ -1431,7 +1487,10 @@ def search_subawards(
         return f"This query failed: {e}."
 
     context = _record_optional_filter_context(
-        {"start_fiscal_year": start_fiscal_year, "end_fiscal_year": end_fiscal_year, "award_type": award_type},
+        {
+            "start_year": start_year, "end_year": end_year,
+            "time_period_type": time_period_type, "award_type": award_type,
+        },
         agency_name=agency_name,
         recipient_name=recipient_name,
         min_amount=min_amount,
@@ -1462,7 +1521,8 @@ def search_subawards(
     if not results.results:
         others = _other_award_type_categories_to_try(award_type)
         return (
-            f"No {award_type} subawards found for {scope} between FY{start_fiscal_year} and FY{end_fiscal_year}. "
+            f"No {award_type} subawards found for {scope} between "
+            f"{year_label(time_period_type, start_year)} and {year_label(time_period_type, end_year)}. "
             f"This does NOT mean no subaward records exist - only that none are under a '{award_type}'-type "
             f"prime award. Before concluding there are no subaward records, try one or more of the other "
             f"award type categories: {others}."
@@ -1496,8 +1556,9 @@ MAX_GEOGRAPHY_RESULTS = 20
 def get_spending_by_geography_raw(
     scope: GeoScope,
     geo_layer: GeoLayer,
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    time_period_type: Literal["fiscal", "calendar"],
+    start_year: int,
+    end_year: int,
     agency_name: str | None = None,
     geo_layer_filters: list[str] | None = None,
     award_type: AwardType | None = None,
@@ -1528,7 +1589,7 @@ def get_spending_by_geography_raw(
 ) -> SpendingByGeographyResponse:
     client = _get_usaspending_client()
     filters = _build_filters(
-        client, agency_name, start_fiscal_year, end_fiscal_year,
+        client, agency_name, time_period_type, start_year, end_year,
         award_type=award_type, recipient_name=recipient_name, recipient_id=recipient_id,
         min_amount=min_amount, max_amount=max_amount,
         performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
@@ -1556,8 +1617,10 @@ def _format_geography_result(result: GeographyTypeResult) -> str:
 def get_spending_by_geography(
     scope: GeoScope,
     geo_layer: GeoLayer,
-    start_fiscal_year: int,
-    end_fiscal_year: int,
+    *,
+    time_period_type: Literal["fiscal", "calendar"] = "fiscal",
+    start_year: int,
+    end_year: int,
     agency_name: str | None = None,
     geo_layer_filters: list[str] | None = None,
     award_type: AwardType | None = None,
@@ -1602,9 +1665,14 @@ def get_spending_by_geography(
             recipient is based) - these can differ substantially for the same query.
         geo_layer: "state", "county", "district" (congressional district), or "country" - the
             granularity to break results down by.
-        start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021. Data is only
-            available from FY2008 onward.
-        end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
+        time_period_type: "fiscal" (default) for federal fiscal years (Oct-Sep, named by the
+            year they end in) or "calendar" for plain Jan-Dec calendar years. Use "calendar"
+            when the user explicitly says "calendar year"/"CY2023" or asks about a plain
+            Jan-Dec window; default to "fiscal" otherwise.
+        start_year: First year to include (fiscal or calendar per time_period_type above),
+            e.g. 2021 for FY2021 or CY2021. Data is only available from FY2008 (or CY2007)
+            onward.
+        end_year: Last year to include, e.g. 2024 for FY2024 or CY2024.
         agency_name: Optional. The awarding agency's name, e.g. "National Science Foundation".
         geo_layer_filters: Optional. Restrict results to specific regions only - state codes (e.g.
             ["VA", "MD"]), county FIPS codes, congressional district codes, or ISO 3166-1 alpha-3
@@ -1670,7 +1738,7 @@ def get_spending_by_geography(
     )
     try:
         response = get_spending_by_geography_raw(
-            scope, geo_layer, start_fiscal_year, end_fiscal_year,
+            scope, geo_layer, time_period_type, start_year, end_year,
             agency_name=agency_name, geo_layer_filters=geo_layer_filters,
             award_type=award_type, recipient_name=recipient_name, recipient_id=recipient_id,
             min_amount=min_amount, max_amount=max_amount,
@@ -1691,7 +1759,7 @@ def get_spending_by_geography(
     context = _record_optional_filter_context(
         {
             "scope": scope, "geo_layer": geo_layer,
-            "start_fiscal_year": start_fiscal_year, "end_fiscal_year": end_fiscal_year,
+            "start_year": start_year, "end_year": end_year, "time_period_type": time_period_type,
         },
         agency_name=agency_name, award_type=award_type, recipient_name=recipient_name,
         recipient_id=recipient_id, min_amount=min_amount, max_amount=max_amount,
@@ -1708,7 +1776,10 @@ def get_spending_by_geography(
     _record_tool_call("get_spending_by_geography", response, context)
 
     if not response.results:
-        no_results = f"No spending-by-geography data found for {scope_label_str} between FY{start_fiscal_year} and FY{end_fiscal_year}."
+        no_results = (
+            f"No spending-by-geography data found for {scope_label_str} between "
+            f"{year_label(time_period_type, start_year)} and {year_label(time_period_type, end_year)}."
+        )
         if geo_layer in ("county", "district"):
             # county/district geocoding can lag/be incomplete even when state-level data exists.
             no_results += (" This does not necessarily mean there was no spending - "

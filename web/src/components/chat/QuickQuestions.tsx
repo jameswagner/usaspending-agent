@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sampleDemoQuestions } from "@/lib/demoQuestions";
 
 interface QuickQuestionsProps {
@@ -8,7 +8,13 @@ interface QuickQuestionsProps {
 }
 
 export function QuickQuestions({ onSend }: QuickQuestionsProps) {
-  const [questions] = useState(() => sampleDemoQuestions());
+  const [questions, setQuestions] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Client-only by design: Math.random() must not run during SSR, or hydration mismatches.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setQuestions(sampleDemoQuestions());
+  }, []);
 
   return (
     <div className="flex flex-wrap gap-2">

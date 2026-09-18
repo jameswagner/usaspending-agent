@@ -1,24 +1,14 @@
 """resolve_county_fips - resolve a county name to the 3-digit FIPS code
 search_awards/get_spending_by_category's performed_in_county/
-recipient_in_county filters want. See #8: unlike county name itself
-(which "Jefferson County, AL" style names work for), Louisiana parishes/
-Alaska boroughs/census areas need their local suffix stripped before the
-live autocomplete/location endpoint returns a county match at all -
-confirmed live "Orleans Parish" returns zero county matches while bare
-"Orleans" returns the correct one.
+recipient_in_county filters want. Louisiana parishes/Alaska boroughs/
+census areas need their local suffix stripped before the live
+autocomplete/location endpoint returns a county match at all - confirmed
+live "Orleans Parish" returns zero county matches while bare "Orleans"
+returns the correct one.
 
-See #201: the live endpoint also hard-caps county results at 10 with no
-state-scoping parameter (confirmed live: a `limit` field is silently
-ignored, and appending a state to search_text breaks county matching
-entirely rather than narrowing it) - a common name like "Jefferson" (20
-counties nationwide) can push the county actually being asked about out
-of that top 10, with no query this tool can send to get it back. The
-bundled data/us_counties.txt reference table (Census Bureau's national
-ANSI county codes, a fixed federal standard - not USASpending's own data,
-so no staleness risk the way live spending data would carry) fills that
-gap: matches missing from the live response are added, not used to
-replace it, since the live endpoint's own matching (typo tolerance, etc.)
-is still the first attempt.
+The live endpoint also hard-caps county results at 10 with no
+state-scoping param, so a common name can push the real match out of the
+response entirely. A bundled Census county reference table fills that gap.
 """
 from __future__ import annotations
 
@@ -35,15 +25,8 @@ from ..singletons import _get_usaspending_client
 from ..tool_filters import US_STATE_ABBREVIATIONS, _normalize_county_fips
 from ._shared import _check_tool_call_budget, _record_tool_call, _wrap_untrusted
 
-# Local county-equivalent terminology that breaks the live endpoint's county
-# match when included - confirmed live for "Parish" (LA); "Borough" and
-# "Census Area" (AK) are the same shape of gap per the Census FIPS scheme,
-# not individually live-tested.
 _COUNTY_EQUIVALENT_SUFFIX_RE = re.compile(r"\s+(Parish|Borough|Census Area)$", re.IGNORECASE)
 
-# Every county-equivalent suffix the Census reference file uses, for
-# name-equality comparisons only - display always keeps the original,
-# correctly-suffixed form from whichever source (live or static) it came from.
 _GENERIC_COUNTY_SUFFIX_RE = re.compile(
     r"\s+(County|Parish|Borough|Census Area|Municipality|Municipio|City and Borough)$", re.IGNORECASE
 )
@@ -58,10 +41,7 @@ def _bare_county_name(name: str) -> str:
 
 @lru_cache(maxsize=1)
 def _load_county_reference() -> list[tuple[str, str, str]]:
-    """(state_abbr, county_fips[3-digit], county_name) for every US county
-    and county-equivalent, from
-    www2.census.gov/geo/docs/reference/codes2020/national_county2020.txt
-    (fetched 2026-09-18), trimmed to the three columns this tool needs."""
+    # www2.census.gov/geo/docs/reference/codes2020/national_county2020.txt, trimmed to 3 columns.
     rows = []
     with _COUNTY_DATA_PATH.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="|")
@@ -71,10 +51,6 @@ def _load_county_reference() -> list[tuple[str, str, str]]:
 
 
 def _match_static_counties(description: str) -> list[tuple[str, str, str]]:
-    """Every (state_abbr, county_fips, county_name) row whose name matches
-    one of description's query candidates, ignoring the generic County/
-    Parish/Borough/etc. suffix - exhaustive, unlike the live endpoint's
-    capped result set."""
     bare_candidates = {_bare_county_name(c) for c in _query_candidates(description)}
     return [row for row in _load_county_reference() if _bare_county_name(row[2]) in bare_candidates]
 

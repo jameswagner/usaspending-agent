@@ -1852,11 +1852,6 @@ class TestQueryCandidates:
 
 
 class TestStaticCountyFallback:
-    # #201: the live autocomplete/location endpoint hard-caps county
-    # results at 10 with no state-scoping param, so a common name (20
-    # counties nationwide named "Jefferson") can push the real match out
-    # of the response entirely. The bundled Census reference table fills
-    # that gap.
     def test_bare_name_strips_every_known_suffix(self):
         assert _bare_county_name("Jefferson Parish") == "jefferson"
         assert _bare_county_name("Yavapai County") == "yavapai"
@@ -1868,9 +1863,6 @@ class TestStaticCountyFallback:
         assert ("LA", "051", "Jefferson Parish") in matches
 
     def test_match_static_counties_is_exhaustive_not_capped(self):
-        # Confirmed live: the API's own top-10 response for "Jefferson"
-        # never includes Louisiana - the static table isn't capped the
-        # same way.
         matches = _match_static_counties("Jefferson")
         assert len(matches) > 10
 
@@ -1878,8 +1870,6 @@ class TestStaticCountyFallback:
         assert _match_static_counties("Not A Real County At All") == []
 
     def test_resolve_county_fips_falls_back_when_live_response_misses_the_state(self, monkeypatch):
-        # Simulates the live bug directly: the top-10 "Jefferson" response
-        # never includes Louisiana.
         def fake_autocomplete(candidate):
             if candidate == "Jefferson":
                 counties = [
@@ -1895,7 +1885,6 @@ class TestStaticCountyFallback:
         )
         result = resolve_county_fips.func(description="Jefferson Parish")
         assert "Jefferson Parish, LOUISIANA - FIPS 051 (pair with state=LOUISIANA)" in result
-        # Live-sourced matches are kept too, not replaced.
         assert "JEFFERSON County, IOWA - FIPS 101" in result
 
     def test_resolve_county_fips_does_not_duplicate_a_live_match(self, monkeypatch):

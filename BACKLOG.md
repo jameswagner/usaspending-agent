@@ -332,10 +332,14 @@ initial in-memory-dict draft had a real bug (never evicted old client
 entries, an unbounded memory leak), which is exactly the kind of
 concurrency/cleanup subtlety a maintained library already handles.
 Default `ASK_RATE_LIMIT_PER_MINUTE=20`, configurable via env var without a
-code change. Keyed on `get_remote_address` (the raw connecting IP, not
-`X-Forwarded-For`) — fine for direct local/demo use, but every request
-would look like it comes from the proxy's IP if this ever runs behind a
-reverse proxy; would need addressing first. Exceeding the limit returns
+code change. Keyed on `get_remote_address` (the raw connecting IP). Now
+that this runs on Railway behind its edge proxy, `get_remote_address`
+still resolves to the real per-client IP because the Dockerfile's `CMD`
+passes uvicorn `--proxy-headers --forwarded-allow-ips='*'`, which enables
+uvicorn's `ProxyHeadersMiddleware` to rewrite `request.client.host` from
+`X-Forwarded-For` — trusting `*` is safe here specifically because the
+container is only reachable through Railway's proxy, never directly from
+the internet (see #3). Exceeding the limit returns
 `429` with a `Retry-After` header (`slowapi`'s `headers_enabled=True`,
 which requires the route to accept a `response: Response` param to write
 the header onto on the success path too — otherwise `_inject_headers`

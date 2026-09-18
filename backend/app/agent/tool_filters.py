@@ -567,9 +567,9 @@ def _build_filters(
     search_awards_raw passes (see #125): unlike the aggregate tools, where
     an unscoped whole-of-government breakdown can time out live (see
     get_spending_by_category's docstring), search_awards just returns a
-    ranked/paginated list - the same shape the real site's own Advanced
-    Search table handles fine with an award-type + fiscal-year filter
-    alone, so that combination is real scope for this tool specifically.
+    ranked/paginated list, which works fine with an award-type +
+    fiscal-year filter alone, so that combination is real scope for this
+    tool specifically.
 
     scope_required=False skips the mandatory-scope check entirely -
     for get_award_type_breakdown (#123), whose underlying

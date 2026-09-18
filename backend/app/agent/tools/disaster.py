@@ -68,7 +68,7 @@ def _format_disaster_overview(response: DisasterOverviewResponse, def_codes: lis
 def get_disaster_spending_overview(def_codes: list[str] | None = None) -> str:
     """Get the headline disaster/emergency-relief spending numbers: total budget authority, total obligations, total outlays, and the award-specific obligations/outlays subset of those totals — optionally scoped to specific Disaster Emergency Fund Codes (DEFC), e.g. COVID-19 or infrastructure relief. Use this for "how much has the government spent on COVID-19/pandemic relief," "how much infrastructure/IIJA funding has gone out," or "what's the total disaster relief budget" questions — these all-time, government-wide totals aren't answerable from search_awards/get_spending_by_category/get_spending_over_time, which only see individual award records, not the appropriation-level budget authority this tool reports.
 
-    This is a different kind of question from "break existing spending down by DEFC" (get_spending_by_category with category="defc") — this tool reports the disaster-relief-specific budget authority/obligation/outlay figures the real site's own COVID-19/disaster landing page leads with, not a category breakdown of ordinary award search results.
+    This is a different kind of question from "break existing spending down by DEFC" (get_spending_by_category with category="defc") — this tool reports headline disaster-relief-specific budget authority/obligation/outlay figures, not a category breakdown of ordinary award search results.
 
     No fiscal-year or agency/recipient scoping — the live endpoint reports all-time totals only, since disaster relief legislation is inherently government-wide rather than tied to one agency's annual appropriation.
 

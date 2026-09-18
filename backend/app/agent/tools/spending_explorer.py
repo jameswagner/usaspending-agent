@@ -1,6 +1,6 @@
 """get_spending_explorer_breakdown - whole-of-government obligated
-spending via usaspending.gov's own Explore the Data > Spending Explorer
-(POST /api/v2/spending/, api_contracts/v2/spending.md). See #30/#99.
+spending via the account-level Spending Explorer endpoint
+(POST /api/v2/spending/, api_contracts/v2/spending.md). See #30/#99/#196.
 
 A different data lineage from every other spending tool here: File A/B
 account data (treasury account/object class/budget classification), not
@@ -211,7 +211,7 @@ def get_spending_explorer_breakdown(
     program_activity: str | None = None,
     limit: int = 10,
 ) -> str:
-    """Whole-of-government obligated spending, grouped by budget_function/budget_subfunction/federal_account/program_activity/object_class/agency/recipient, for one fiscal year through one fiscal quarter — the same view as usaspending.gov's "Explore the Data > Spending Explorer". Use this for "spending by budget function," "spending by object class," "top agencies by whole-of-government obligations," or similar Explorer-style questions — NEVER get_spending_by_category, which has no budget_function/object_class category at all and reports a different, award-level number.
+    """Whole-of-government obligated spending, grouped by budget_function/budget_subfunction/federal_account/program_activity/object_class/agency/recipient, for one fiscal year through one fiscal quarter — account-level data from the Spending Explorer API. Use this for "spending by budget function," "spending by object class," "top agencies by whole-of-government obligations," or similar questions — NEVER get_spending_by_category, which has no budget_function/object_class category at all and reports a different, award-level number.
 
     IMPORTANT — a different data lineage from every other spending tool here: this is whole-of-government account-level data, not award-level data. Its totals will NOT match get_spending_by_category/get_spending_over_time/search_awards for the same period — that's expected, not a bug, since they answer different questions ("what did the government spend on Medicare overall" vs. "what awards did one agency make").
 

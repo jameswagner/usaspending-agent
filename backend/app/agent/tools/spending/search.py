@@ -196,9 +196,9 @@ def search_awards(
     No filter beyond the fiscal-year range and award_type is required - unlike
     get_spending_by_category/get_spending_over_time, which need a real scoping
     filter (agency, recipient, location, etc.) or they refuse to run at all, this
-    tool just returns a ranked/paginated list, the same shape the real site's own
-    Advanced Search table handles fine with an award-type + fiscal-year filter
-    alone. Add agency_name/recipient_name/a location/etc. to narrow further, but
+    tool just returns a ranked/paginated list, which works fine with an
+    award-type + fiscal-year filter alone. Add agency_name/recipient_name/a
+    location/etc. to narrow further, but
     don't invent a keywords value (e.g. restating award_type itself) just to
     satisfy a scope requirement this tool doesn't actually have.
 

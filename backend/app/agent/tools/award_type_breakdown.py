@@ -1,7 +1,6 @@
 """get_award_type_breakdown - the six-way award-type count split
-(contracts, contract IDVs, grants, direct payments, loans, other) the
-real Advanced Search results page shows first, above any other
-breakdown. See #123.
+(contracts, contract IDVs, grants, direct payments, loans, other).
+See #123.
 
 Backed by POST /api/v2/search/spending_by_award_count/
 (spending_by_award_count.md), a different endpoint from
@@ -172,9 +171,9 @@ def get_award_type_breakdown(
     recipient_type: RecipientType | None = None,
     description: str | None = None,
 ) -> str:
-    """Get the count of awards by award type (Contracts, Contract IDVs, Grants, Direct Payments, Loans, Other) for a fiscal year range — the first thing the real Advanced Search results page shows, before any other breakdown. Use this for "how many contracts vs. grants vs. loans," "what's the award-type mix," or any "count/total broken down by award type" question — do NOT reconstruct this by calling search_awards or get_spending_by_category once per award type and adding the results yourself; this tool returns the real, complete six-way split in one call.
+    """Get the count of awards by award type (Contracts, Contract IDVs, Grants, Direct Payments, Loans, Other) for a fiscal year range. Use this for "how many contracts vs. grants vs. loans," "what's the award-type mix," or any "count/total broken down by award type" question — do NOT reconstruct this by calling search_awards or get_spending_by_category once per award type and adding the results yourself; this tool returns the complete six-way split in one call.
 
-    Unlike every other spending tool here, no scoping filter is required — a fully unscoped call (just a fiscal year range) is valid and answers "how many awards of each type, government-wide" directly, matching the real site's own unscoped Advanced Search view. Pass agency_name/recipient_name/etc. only to narrow the split to one agency, recipient, location, industry, etc.
+    Unlike every other spending tool here, no scoping filter is required — a fully unscoped call (just a fiscal year range) is valid and answers "how many awards of each type, government-wide" directly. Pass agency_name/recipient_name/etc. only to narrow the split to one agency, recipient, location, industry, etc.
 
     This tool has no award_type parameter — it answers "how many of each type," so filtering to one type first would defeat the point. For a single type's own detail (e.g. the actual list of grants, or grants' total dollar amount), use search_awards/get_spending_by_category/get_spending_over_time with award_type set instead.
 

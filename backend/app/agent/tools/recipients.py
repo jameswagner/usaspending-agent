@@ -51,10 +51,10 @@ def _format_recipient_listing(listing: RecipientListing) -> str:
 
 
 def _format_recipient_address(location: RecipientLocation | None) -> str:
-    """Full street address - the real usaspending.gov recipient page shows
-    this in full for a normal business, unlike the award-side recipient/
-    place-of-performance trim (state/city only), which exists for a
-    different reason (redacting an individual's home address). Callers use
+    """Full street address - the live API returns this in full for a
+    normal business, unlike the award-side recipient/place-of-performance
+    trim (state/city only), which exists for a different reason
+    (redacting an individual's home address). Callers use
     _format_recipient_state_only instead of this specifically for the
     redacted/aggregate bucket case - see _format_recipient_overview."""
     if not location:
@@ -115,10 +115,8 @@ def _format_recipient_overview(overview: RecipientOverview) -> str:
         f"Total: ${overview.total_transaction_amount:,.2f} across {overview.total_transactions:,} transactions"
     )
     # Always shown, not suppressed at zero, unlike get_award_details's loan
-    # case - the real usaspending.gov page always shows this line ("$0
-    # from 0 transactions"), and there's no adjacent nonzero figure here to
-    # make a zero read as contradictory the way it did for a guaranteed
-    # loan.
+    # case - there's no adjacent nonzero figure here to make a zero read
+    # as contradictory the way it did for a guaranteed loan.
     lines.append(
         f"Face value of loans: ${overview.total_face_value_loan_amount:,.2f} across "
         f"{overview.total_face_value_loan_transactions:,} transactions"

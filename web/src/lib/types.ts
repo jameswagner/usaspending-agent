@@ -50,7 +50,8 @@ export type TurnStatus =
   | { kind: "tool_call"; toolName: string }
   | { kind: "tool_result"; toolName: string; summary: string }
   | { kind: "tool_error"; toolName: string; message: string }
-  | { kind: "done" };
+  | { kind: "done" }
+  | { kind: "cancelled" };
 
 // A UI-level turn - the question plus its response, as rendered in the
 // transcript. Not part of the backend API shape. response is null while

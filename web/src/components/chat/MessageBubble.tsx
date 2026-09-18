@@ -8,18 +8,22 @@ interface MessageBubbleProps {
   turn: ConversationTurn;
 }
 
-function statusLine(status: ConversationTurn["status"]): { text: string; isError: boolean } {
+type StatusTone = "normal" | "error" | "cancelled";
+
+function statusLine(status: ConversationTurn["status"]): { text: string; tone: StatusTone } {
   switch (status.kind) {
     case "tool_call":
-      return { text: `Calling ${status.toolName}…`, isError: false };
+      return { text: `Calling ${status.toolName}…`, tone: "normal" };
     case "tool_result":
-      return { text: `${status.toolName}: ${status.summary}`, isError: false };
+      return { text: `${status.toolName}: ${status.summary}`, tone: "normal" };
     case "tool_error":
-      return { text: `${status.toolName}: ${status.message}`, isError: true };
+      return { text: `${status.toolName}: ${status.message}`, tone: "error" };
+    case "cancelled":
+      return { text: "Cancelled", tone: "cancelled" };
     case "pending":
     case "done":
     default:
-      return { text: "Thinking…", isError: false };
+      return { text: "Thinking…", tone: "normal" };
   }
 }
 
@@ -27,13 +31,13 @@ export function MessageBubble({ turn }: MessageBubbleProps) {
   const { question, response, status } = turn;
 
   if (!response) {
-    const { text, isError } = statusLine(status);
+    const { text, tone } = statusLine(status);
     return (
       <div className="border-b border-black/10 pb-6 last:border-none dark:border-white/10">
         <p className="font-semibold">{question}</p>
         <p
           className={
-            isError
+            tone === "error"
               ? "mt-2 flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400"
               : "mt-2 flex items-start gap-2 text-sm text-black/50 dark:text-white/50"
           }
@@ -42,7 +46,7 @@ export function MessageBubble({ turn }: MessageBubbleProps) {
               pairs) can look enough like a finished answer that this dot
               is the only thing telling a user the turn isn't done yet -
               status text alone wasn't a strong enough signal in practice. */}
-          {!isError && (
+          {tone === "normal" && (
             <span className="mt-1 h-2 w-2 shrink-0 animate-pulse rounded-full bg-black/40 dark:bg-white/40" />
           )}
           <span className="font-mono text-xs leading-relaxed">{text}</span>

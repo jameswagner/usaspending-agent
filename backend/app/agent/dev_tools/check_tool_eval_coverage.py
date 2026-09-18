@@ -1,18 +1,11 @@
 """Opt-in coverage check: which tools have zero tool-selection eval cases?
 
-Not a monitoring service - a rerunnable version of the manual audit that
-found the search_guide/lookup_agency gap (#105) and the earlier
-get_spending_explorer_breakdown gap (#101) by hand. Run before starting
-new tool work, not on a schedule:
+Run before starting new tool work, not on a schedule:
     uv run python -m backend.app.agent.dev_tools.check_tool_eval_coverage
 
-"All tools" comes from langgraph_tools._BETA_TOOLS, the actual list
-singletons.py wires into the LangGraph agent - not tools/__init__.py's
-__all__ directly, since that also exports _raw variants, _format_*
-helpers, and even one accidentally @beta_tool-decorated formatter
-(_format_top_agencies_by_budget) that was never wired up as a callable
-tool. _BETA_TOOLS is already filtered to what the model can actually
-call, so it's the closer-to-ground-truth source.
+"All tools" comes from langgraph_tools._BETA_TOOLS rather than
+tools/__init__.py's __all__, since __all__ also exports _raw variants,
+_format_* helpers, and non-wired-up tools.
 
 "Covered" is any tool name appearing under expected_tool, expected_tools,
 acceptable_tools, then_one_of, or confusable_with anywhere in

@@ -90,6 +90,12 @@ export async function askQuestionStream(
     return finalResponse;
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
+      // A caller-initiated cancellation (Stop button, a superseding
+      // sendMessage call) isn't a timeout - only the idle timer firing
+      // on its own, with no external signal involved, is.
+      if (externalSignal?.aborted) {
+        throw err;
+      }
       throw new Error("Request timed out - the server may be unresponsive.");
     }
     throw err;

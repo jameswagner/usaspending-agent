@@ -64,9 +64,14 @@ export function useConversation() {
         );
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") {
-          // Superseded by a newer sendMessage call, or the component
-          // unmounted - not a real error, and the turn that triggered it
-          // is gone from state already (or about to be) either way.
+          // Superseded by a newer sendMessage call, the component
+          // unmounted, or the user hit Stop - not a real error. Marked
+          // cancelled rather than removed so the question stays visible
+          // and a follow-up like "please continue" has something to
+          // refer back to.
+          setTurns((prev) =>
+            prev.map((turn) => (turn.id === turnId ? { ...turn, status: { kind: "cancelled" } } : turn))
+          );
           return;
         }
         setError(err instanceof Error ? err.message : String(err));
@@ -89,5 +94,9 @@ export function useConversation() {
     setError(null);
   }, []);
 
-  return { conversationId, turns, loading, error, sendMessage, newConversation };
+  const abort = useCallback(() => {
+    activeControllerRef.current?.abort();
+  }, []);
+
+  return { conversationId, turns, loading, error, sendMessage, newConversation, abort };
 }

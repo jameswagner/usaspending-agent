@@ -1,9 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
 import type { ConversationTurn } from "@/lib/types";
 import { MessageBubble } from "./MessageBubble";
-import { QuickQuestions } from "./QuickQuestions";
+
+// QuickQuestions shuffles with Math.random() on every render - rendered
+// during SSR, that produces a different order than the client's hydration
+// pass, which is a guaranteed hydration mismatch (React can't reconcile
+// text content that legitimately differs between the two passes). ssr:
+// false skips the server render entirely for this component, so it only
+// ever renders client-side, after mount - no mismatch is possible because
+// there's no server-rendered version to compare against.
+const QuickQuestions = dynamic(() => import("./QuickQuestions").then((m) => m.QuickQuestions), { ssr: false });
 
 interface MessageListProps {
   turns: ConversationTurn[];

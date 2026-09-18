@@ -7,6 +7,10 @@ interface QuickQuestionsProps {
   onSend: (question: string) => Promise<void>;
 }
 
+// sampleDemoQuestions() shuffles with Math.random() - imported with
+// { ssr: false } (see MessageList.tsx) so this never renders during SSR,
+// only after mount, avoiding the hydration mismatch a random order would
+// otherwise cause between the server's render and the client's.
 export function QuickQuestions({ onSend }: QuickQuestionsProps) {
   const [questions] = useState(() => sampleDemoQuestions());
 

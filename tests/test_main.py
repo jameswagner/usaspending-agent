@@ -101,6 +101,24 @@ def test_ask_passes_question_through_to_agent(client, monkeypatch):
     assert received["conversation_id"] is None
 
 
+def test_guided_flow_step_returns_agent_result_shape(client, monkeypatch):
+    # Endpoint-level test only - guided_flow.py's own branching (collecting/
+    # result/aside_answered/escaped) is covered in tests/test_guided_flow.py.
+    # This just confirms main.py wires guided_flow.step() through correctly.
+    monkeypatch.setattr(
+        "backend.app.main.guided_flow.step",
+        lambda conversation_id, message: {"status": "collecting", "prompt": "Which state?", "fields": {}},
+    )
+
+    resp = client.post("/guided-flow/community-spending/step", json={"conversation_id": "conv-1", "message": None})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "collecting"
+    assert data["prompt"] == "Which state?"
+    assert data["fields"] == {}
+
+
 def test_ask_passes_conversation_id_through_to_agent(client, monkeypatch):
     received = {}
 

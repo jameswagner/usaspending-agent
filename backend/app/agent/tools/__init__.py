@@ -53,6 +53,8 @@ from .awards import (
     get_award_funding_breakdown,
     get_award_funding_breakdown_raw,
     get_award_subawards,
+    get_award_transaction_history,
+    get_award_transaction_history_raw,
     get_idv_amounts_raw,
 )
 from .business_type_labels import _format_business_type
@@ -154,6 +156,8 @@ __all__ = [
     "get_award_funding_breakdown",
     "get_award_funding_breakdown_raw",
     "get_award_subawards",
+    "get_award_transaction_history",
+    "get_award_transaction_history_raw",
     "get_award_type_breakdown",
     "get_award_type_breakdown_raw",
     "get_disaster_spending_overview",

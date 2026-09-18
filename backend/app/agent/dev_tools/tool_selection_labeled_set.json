@@ -96,6 +96,7 @@
     {"question": "Find NSF's single largest FY2023 contract, then tell me which subcontractors it went to.", "expected_tools": ["search_awards", "get_award_subawards"], "confusable_with": ["search_subawards"]},
     {"question": "What was federal spending on Medicare (budget function 570) broken down by sub-function in FY2023? Then break the largest sub-function down further into federal accounts.", "expected_tools": ["get_spending_explorer_breakdown"], "confusable_with": ["get_spending_by_category"]},
     {"question": "Find NSF's single largest FY2023 contract, then tell me which federal account (TAS) actually funded it.", "expected_tools": ["search_awards", "get_award_funding_breakdown"], "confusable_with": ["get_award_details"]},
+    {"question": "Find NSF's single largest FY2023 contract, then show me its full modification/transaction history.", "expected_tools": ["search_awards", "get_award_transaction_history"], "confusable_with": ["get_award_details", "get_award_subawards"]},
     {"question": "Look up Boeing, then tell me which subsidiaries make up its total federal funding.", "expected_tools": ["search_recipients", "get_recipient_children"], "confusable_with": ["get_recipient_details"]}
   ],
   "award_type_breakdown": [

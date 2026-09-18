@@ -59,6 +59,8 @@ from .models import (
     TimePeriodGroup,
     TimeResult,
     ToptierAgency,
+    TransactionHistoryResponse,
+    TransactionResult,
 )
 
 __all__ = [
@@ -116,6 +118,8 @@ __all__ = [
     "TimePeriodGroup",
     "TimeResult",
     "ToptierAgency",
+    "TransactionHistoryResponse",
+    "TransactionResult",
     "TreasuryAccountComponentsObject",
     "USASpendingAPIError",
     "USASpendingClient",

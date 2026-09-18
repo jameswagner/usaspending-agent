@@ -99,7 +99,10 @@ from backend.app.agent.tools import (
     get_spending_explorer_breakdown_raw,
 )
 from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
-from backend.app.agent.tools.awards import get_award_funding_breakdown
+from backend.app.agent.tools.awards import (
+    get_award_funding_breakdown,
+    get_award_transaction_history,
+)
 from backend.app.agent.tools.disaster import get_disaster_spending_overview
 from backend.app.agent.tools.location import (
     _bare_county_name,
@@ -137,6 +140,8 @@ from backend.app.usaspending import (
     TimePeriodGroup,
     TimeResult,
     ToptierAgency,
+    TransactionHistoryResponse,
+    TransactionResult,
     USASpendingAPIError,
     _record_request,
     drain_request_capture,
@@ -1200,6 +1205,13 @@ class TestBuildToolCitation:
         assert citation.tool_name == "get_award_funding_breakdown"
         assert citation.parameters == {"award_id": "CONT_AWD_X"}
         assert citation.description == "Federal account funding breakdown for award: CONT_AWD_X"
+
+    def test_get_award_transaction_history(self):
+        citation = build_tool_citation("get_award_transaction_history", {"award_id": "CONT_AWD_X"})
+        assert citation is not None
+        assert citation.tool_name == "get_award_transaction_history"
+        assert citation.parameters == {"award_id": "CONT_AWD_X"}
+        assert citation.description == "Transaction history for award: CONT_AWD_X"
 
     def test_resolve_county_fips(self):
         citation = build_tool_citation("resolve_county_fips", {"description": "Yavapai County"})
@@ -2531,6 +2543,89 @@ class TestGetAwardFundingBreakdown:
         )
         self._mock_client(response, monkeypatch)
         result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
+        assert "complete" in result.lower() or "exhaustive" in result.lower() or "more" in result.lower()
+
+
+class TestGetAwardTransactionHistory:
+    # Wraps POST /api/v2/transactions/ (issue #24) - the mod-by-mod
+    # transaction history get_award_details' current-state-only response
+    # can't provide.
+
+    def _mock_client(self, response, monkeypatch):
+        client = FakeClient(make_agency())
+        client.get_award_transaction_history = lambda *a, **kw: response
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+
+    def test_formats_transaction_rows(self, monkeypatch):
+        response = TransactionHistoryResponse(
+            results=[
+                TransactionResult(
+                    id="CONT_TX_1",
+                    type="D",
+                    action_date="2024-09-10",
+                    action_type="C",
+                    action_type_description="FUNDING ONLY ACTION",
+                    modification_number="P00167",
+                    description="DE-OBLIGATING OF FUNDS",
+                    federal_action_obligation=471668.41,
+                )
+            ],
+            page_metadata=PageMetadata(page=1, hasNext=False),
+        )
+        self._mock_client(response, monkeypatch)
+        result = get_award_transaction_history.func(award_id="CONT_AWD_X")
+        assert "Mod P00167" in result
+        assert "2024-09-10" in result
+        assert "$471,668.41" in result
+        assert "FUNDING ONLY ACTION" in result
+        assert "DE-OBLIGATING OF FUNDS" in result
+
+    def test_loan_row_falls_back_to_loan_amount(self, monkeypatch):
+        response = TransactionHistoryResponse(
+            results=[
+                TransactionResult(
+                    id="ASST_TX_1",
+                    type="08",
+                    action_date="2024-01-01",
+                    federal_action_obligation=None,
+                    face_value_loan_guarantee=50000.0,
+                )
+            ],
+        )
+        self._mock_client(response, monkeypatch)
+        result = get_award_transaction_history.func(award_id="ASST_NON_X")
+        assert "$50,000.00 (loan guarantee)" in result
+
+    def test_no_results_includes_unresolved_id_hint(self, monkeypatch):
+        self._mock_client(TransactionHistoryResponse(results=[]), monkeypatch)
+        result = get_award_transaction_history.func(award_id="HHSN261200800001E")
+        assert "No transactions found" in result
+        assert "internal_id" in result
+
+    def test_no_results_with_valid_prefix_has_no_hint(self, monkeypatch):
+        self._mock_client(TransactionHistoryResponse(results=[]), monkeypatch)
+        result = get_award_transaction_history.func(award_id="CONT_AWD_X")
+        assert "No transactions found" in result
+        assert "internal_id" not in result
+
+    def test_api_error_returns_failure_message(self, monkeypatch):
+        client = FakeClient(make_agency())
+
+        def raise_error(*a, **kw):
+            raise USASpendingAPIError("boom")
+
+        client.get_award_transaction_history = raise_error
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+        result = get_award_transaction_history.func(award_id="CONT_AWD_X")
+        assert "This query failed: boom." in result
+
+    def test_truncation_note_when_more_results_exist(self, monkeypatch):
+        response = TransactionHistoryResponse(
+            results=[TransactionResult(id="CONT_TX_1", type="D", action_date="2024-01-01")],
+            page_metadata=PageMetadata(page=1, hasNext=True),
+        )
+        self._mock_client(response, monkeypatch)
+        result = get_award_transaction_history.func(award_id="CONT_AWD_X")
         assert "complete" in result.lower() or "exhaustive" in result.lower() or "more" in result.lower()
 
 

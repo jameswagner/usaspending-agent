@@ -60,9 +60,10 @@ export function useConversation() {
         );
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") {
-          // Superseded by a newer sendMessage call, or the component
-          // unmounted - not a real error, and the turn that triggered it
-          // is gone from state already (or about to be) either way.
+          // Superseded by a newer sendMessage call, the component
+          // unmounted, or the user hit Stop - not a real error, but the
+          // pending turn this call created is now orphaned either way.
+          setTurns((prev) => prev.filter((turn) => turn.id !== turnId));
           return;
         }
         setError(err instanceof Error ? err.message : String(err));
@@ -84,5 +85,9 @@ export function useConversation() {
     setError(null);
   }, []);
 
-  return { conversationId, turns, loading, error, sendMessage, newConversation };
+  const abort = useCallback(() => {
+    activeControllerRef.current?.abort();
+  }, []);
+
+  return { conversationId, turns, loading, error, sendMessage, newConversation, abort };
 }

@@ -5,10 +5,11 @@ import { useRef, useState } from "react";
 interface MessageInputProps {
   onSend: (question: string) => Promise<void>;
   onNewConversation: () => void;
+  onAbort: () => void;
   loading: boolean;
 }
 
-export function MessageInput({ onSend, onNewConversation, loading }: MessageInputProps) {
+export function MessageInput({ onSend, onNewConversation, onAbort, loading }: MessageInputProps) {
   const [question, setQuestion] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -53,13 +54,23 @@ export function MessageInput({ onSend, onNewConversation, loading }: MessageInpu
         autoFocus
         className="max-h-40 flex-1 resize-none overflow-y-auto rounded-md border border-black/15 px-3 py-2 text-sm outline-none focus:border-black/40 dark:border-white/15 dark:focus:border-white/40"
       />
-      <button
-        type="submit"
-        disabled={loading || !question.trim()}
-        className="shrink-0 rounded-md bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
-      >
-        Ask
-      </button>
+      {loading ? (
+        <button
+          type="button"
+          onClick={onAbort}
+          className="shrink-0 rounded-md bg-black px-4 py-2 text-sm text-white dark:bg-white dark:text-black"
+        >
+          Stop
+        </button>
+      ) : (
+        <button
+          type="submit"
+          disabled={!question.trim()}
+          className="shrink-0 rounded-md bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
+        >
+          Ask
+        </button>
+      )}
       <button
         type="button"
         onClick={onNewConversation}

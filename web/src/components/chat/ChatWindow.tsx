@@ -5,7 +5,7 @@ import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 
 export function ChatWindow() {
-  const { turns, loading, error, sendMessage, newConversation } = useConversation();
+  const { turns, loading, error, sendMessage, newConversation, abort } = useConversation();
 
   return (
     <div className="flex h-dvh flex-col">
@@ -17,7 +17,7 @@ export function ChatWindow() {
         </p>
       </header>
       <MessageList turns={turns} error={error} onSend={sendMessage} />
-      <MessageInput onSend={sendMessage} onNewConversation={newConversation} loading={loading} />
+      <MessageInput onSend={sendMessage} onNewConversation={newConversation} onAbort={abort} loading={loading} />
     </div>
   );
 }

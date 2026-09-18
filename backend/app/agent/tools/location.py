@@ -1,29 +1,63 @@
 """resolve_county_fips - resolve a county name to the 3-digit FIPS code
 search_awards/get_spending_by_category's performed_in_county/
-recipient_in_county filters want. See #8: unlike county name itself
-(which "Jefferson County, AL" style names work for), Louisiana parishes/
-Alaska boroughs/census areas need their local suffix stripped before the
-live autocomplete/location endpoint returns a county match at all -
-confirmed live "Orleans Parish" returns zero county matches while bare
-"Orleans" returns the correct one.
+recipient_in_county filters want. Louisiana parishes/Alaska boroughs/
+census areas need their local suffix stripped before the live
+autocomplete/location endpoint returns a county match at all - confirmed
+live "Orleans Parish" returns zero county matches while bare "Orleans"
+returns the correct one.
+
+The live endpoint also hard-caps county results at 10 with no
+state-scoping param, so a common name can push the real match out of the
+response entirely. A bundled Census county reference table fills that gap.
 """
 from __future__ import annotations
 
+import csv
 import re
+from functools import lru_cache
+from pathlib import Path
 
 from anthropic import beta_tool
 
 from backend.app.usaspending_client import USASpendingAPIError
 
 from ..singletons import _get_usaspending_client
-from ..tool_filters import _normalize_county_fips
+from ..tool_filters import US_STATE_ABBREVIATIONS, _normalize_county_fips
 from ._shared import _check_tool_call_budget, _record_tool_call, _wrap_untrusted
 
-# Local county-equivalent terminology that breaks the live endpoint's county
-# match when included - confirmed live for "Parish" (LA); "Borough" and
-# "Census Area" (AK) are the same shape of gap per the Census FIPS scheme,
-# not individually live-tested.
 _COUNTY_EQUIVALENT_SUFFIX_RE = re.compile(r"\s+(Parish|Borough|Census Area)$", re.IGNORECASE)
+
+_GENERIC_COUNTY_SUFFIX_RE = re.compile(
+    r"\s+(County|Parish|Borough|Census Area|Municipality|Municipio|City and Borough)$", re.IGNORECASE
+)
+
+_COUNTY_DATA_PATH = Path(__file__).parent / "data" / "us_counties.txt"
+_STATE_NAME_BY_ABBR = {abbr: name.upper() for name, abbr in US_STATE_ABBREVIATIONS.items()}
+
+
+def _bare_county_name(name: str) -> str:
+    return _GENERIC_COUNTY_SUFFIX_RE.sub("", name).strip().lower()
+
+
+@lru_cache(maxsize=1)
+def _load_county_reference() -> list[tuple[str, str, str]]:
+    # www2.census.gov/geo/docs/reference/codes2020/national_county2020.txt, trimmed to 3 columns.
+    rows = []
+    with _COUNTY_DATA_PATH.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="|")
+        for row in reader:
+            rows.append((row["STATE"], row["COUNTYFP"], row["COUNTYNAME"]))
+    return rows
+
+
+def _match_static_counties(description: str) -> list[tuple[str, str, str]]:
+    bare_candidates = {_bare_county_name(c) for c in _query_candidates(description)}
+    return [row for row in _load_county_reference() if _bare_county_name(row[2]) in bare_candidates]
+
+
+def _live_county_key(county) -> tuple[str, str]:
+    abbr = US_STATE_ABBREVIATIONS.get(county.state_name.strip().lower(), county.state_name.strip().upper())
+    return (abbr, _normalize_county_fips(county.county_fips))
 
 
 def _query_candidates(description: str) -> list[str]:
@@ -66,14 +100,23 @@ def resolve_county_fips(description: str) -> str:
     except USASpendingAPIError as e:
         return f"This query failed: {e}."
 
-    if not counties:
-        return f"No county found matching '{description}'."
-
-    _record_tool_call("resolve_county_fips", counties, {"description": description})
-
     lines = [
         f"{c.county_name} County, {c.state_name} - FIPS {_normalize_county_fips(c.county_fips)} "
         f"(pair with state={c.state_name})"
         for c in counties
     ]
+    seen = {_live_county_key(c) for c in counties}
+
+    for state_abbr, fips, name in _match_static_counties(description):
+        if (state_abbr, fips) in seen:
+            continue
+        seen.add((state_abbr, fips))
+        state_name = _STATE_NAME_BY_ABBR.get(state_abbr, state_abbr)
+        lines.append(f"{name}, {state_name} - FIPS {fips} (pair with state={state_name})")
+
+    if not lines:
+        return f"No county found matching '{description}'."
+
+    _record_tool_call("resolve_county_fips", counties, {"description": description})
+
     return _wrap_untrusted("\n".join(lines))

@@ -2076,7 +2076,7 @@ class TestSearchAwardsMultiYearCaveat:
         )
         client = FakeClient(make_agency())
         client.search_awards = lambda *a, **kw: response
-        monkeypatch.setattr("backend.app.agent.tools.spending._get_usaspending_client", lambda: client)
+        monkeypatch.setattr("backend.app.agent.tools.spending.search._get_usaspending_client", lambda: client)
 
     def test_award_predating_range_is_flagged(self, monkeypatch):
         self._mock_client(
@@ -2160,7 +2160,7 @@ class TestGetSpendingByCategorySpendingLevel:
             return response_or_error
 
         client.spending_by_category = fake_spending_by_category
-        monkeypatch.setattr("backend.app.agent.tools.spending._get_usaspending_client", lambda: client)
+        monkeypatch.setattr("backend.app.agent.tools.spending.category._get_usaspending_client", lambda: client)
 
     def test_spending_level_defaults_to_transactions(self, monkeypatch):
         captured = {}
@@ -2215,7 +2215,7 @@ class TestCalendarYearTimePeriod:
             return response
 
         client.spending_by_category = fake_spending_by_category
-        monkeypatch.setattr("backend.app.agent.tools.spending._get_usaspending_client", lambda: client)
+        monkeypatch.setattr("backend.app.agent.tools.spending.category._get_usaspending_client", lambda: client)
 
     def test_calendar_year_produces_calendar_date_range(self, monkeypatch):
         captured = {}
@@ -2247,7 +2247,7 @@ class TestSearchAwardsDisasterBreakout:
         response = SearchAwardsResponse(results=results, page_metadata=PageMetadata(page=1, hasNext=False))
         client = FakeClient(make_agency())
         client.search_awards = lambda *a, **kw: response
-        monkeypatch.setattr("backend.app.agent.tools.spending._get_usaspending_client", lambda: client)
+        monkeypatch.setattr("backend.app.agent.tools.spending.search._get_usaspending_client", lambda: client)
 
     def test_disaster_tagged_award_shows_defc_and_covid_breakout(self, monkeypatch):
         self._mock_client(

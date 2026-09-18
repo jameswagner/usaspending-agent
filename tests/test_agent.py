@@ -101,7 +101,11 @@ from backend.app.agent.tools import (
 from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
 from backend.app.agent.tools.awards import get_award_funding_breakdown
 from backend.app.agent.tools.disaster import get_disaster_spending_overview
-from backend.app.agent.tools.location import resolve_county_fips
+from backend.app.agent.tools.location import (
+    _bare_county_name,
+    _match_static_counties,
+    resolve_county_fips,
+)
 from backend.app.agent.tools.spending import get_spending_by_category, search_awards
 from backend.app.usaspending_client import (
     AgencySubAgencyResponse,
@@ -1890,6 +1894,67 @@ class TestQueryCandidates:
     def test_borough_and_census_area_also_stripped(self):
         assert _query_candidates("Anchorage Borough")[-1] == "Anchorage"
         assert _query_candidates("Bethel Census Area")[-1] == "Bethel"
+
+
+class TestStaticCountyFallback:
+    def test_bare_name_strips_every_known_suffix(self):
+        assert _bare_county_name("Jefferson Parish") == "jefferson"
+        assert _bare_county_name("Yavapai County") == "yavapai"
+        assert _bare_county_name("Anchorage Borough") == "anchorage"
+        assert _bare_county_name("Bethel Census Area") == "bethel"
+
+    def test_match_static_counties_finds_jefferson_parish_louisiana(self):
+        matches = _match_static_counties("Jefferson Parish")
+        assert ("LA", "051", "Jefferson Parish") in matches
+
+    def test_match_static_counties_is_exhaustive_not_capped(self):
+        matches = _match_static_counties("Jefferson")
+        assert len(matches) > 10
+
+    def test_match_static_counties_no_match_returns_empty(self):
+        assert _match_static_counties("Not A Real County At All") == []
+
+    def test_resolve_county_fips_falls_back_when_live_response_misses_the_state(self, monkeypatch):
+        def fake_autocomplete(candidate):
+            if candidate == "Jefferson":
+                counties = [
+                    SimpleNamespace(county_name="JEFFERSON", county_fips="19101", state_name="IOWA"),
+                    SimpleNamespace(county_name="JEFFERSON", county_fips="39081", state_name="OHIO"),
+                ]
+                return SimpleNamespace(results=SimpleNamespace(counties=counties))
+            return SimpleNamespace(results=SimpleNamespace(counties=[]))
+
+        monkeypatch.setattr(
+            "backend.app.agent.tools.location._get_usaspending_client",
+            lambda: SimpleNamespace(autocomplete_location=fake_autocomplete),
+        )
+        result = resolve_county_fips.func(description="Jefferson Parish")
+        assert "Jefferson Parish, LOUISIANA - FIPS 051 (pair with state=LOUISIANA)" in result
+        assert "JEFFERSON County, IOWA - FIPS 101" in result
+
+    def test_resolve_county_fips_does_not_duplicate_a_live_match(self, monkeypatch):
+        def fake_autocomplete(candidate):
+            if candidate == "Yavapai County":
+                counties = [SimpleNamespace(county_name="YAVAPAI", county_fips="04025", state_name="ARIZONA")]
+                return SimpleNamespace(results=SimpleNamespace(counties=counties))
+            return SimpleNamespace(results=SimpleNamespace(counties=[]))
+
+        monkeypatch.setattr(
+            "backend.app.agent.tools.location._get_usaspending_client",
+            lambda: SimpleNamespace(autocomplete_location=fake_autocomplete),
+        )
+        result = resolve_county_fips.func(description="Yavapai County")
+        assert result.count("YAVAPAI") == 1
+
+    def test_resolve_county_fips_uses_static_fallback_alone_when_live_returns_nothing(self, monkeypatch):
+        monkeypatch.setattr(
+            "backend.app.agent.tools.location._get_usaspending_client",
+            lambda: SimpleNamespace(autocomplete_location=lambda candidate: SimpleNamespace(
+                results=SimpleNamespace(counties=[])
+            )),
+        )
+        result = resolve_county_fips.func(description="Plaquemines Parish")
+        assert "Plaquemines Parish, LOUISIANA - FIPS 075 (pair with state=LOUISIANA)" in result
 
 
 class TestResolveCountyFipsErrorHandling:

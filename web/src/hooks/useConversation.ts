@@ -24,6 +24,9 @@ export function useConversation() {
   // avoiding given the checkpointer's single sqlite connection (see
   // singletons.py), not just a UI nicety.
   const activeControllerRef = useRef<AbortController | null>(null);
+  // Mirrors conversationId so sendMessage can read the current value
+  // without depending on it, keeping the callback's identity stable.
+  const conversationIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -50,10 +53,11 @@ export function useConversation() {
       try {
         const response = await askQuestionStream(
           question,
-          conversationId,
+          conversationIdRef.current,
           (event) => updateStatus(statusFromToolEvent(event)),
           { signal: controller.signal }
         );
+        conversationIdRef.current = response.conversation_id;
         setConversationId(response.conversation_id);
         setTurns((prev) =>
           prev.map((turn) => (turn.id === turnId ? { id: turnId, question, response, status: { kind: "done" } } : turn))
@@ -74,11 +78,12 @@ export function useConversation() {
         }
       }
     },
-    [conversationId]
+    []
   );
 
   const newConversation = useCallback(() => {
     activeControllerRef.current?.abort();
+    conversationIdRef.current = null;
     setConversationId(null);
     setTurns([]);
     setError(null);

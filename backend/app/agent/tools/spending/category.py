@@ -9,7 +9,7 @@ from typing import Literal
 from anthropic import beta_tool
 from langsmith import traceable
 
-from backend.app.usaspending_client import (
+from backend.app.usaspending import (
     SpendingByCategoryResponse,
     USASpendingAPIError,
 )

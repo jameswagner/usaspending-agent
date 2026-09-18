@@ -9,7 +9,7 @@ from typing import Literal
 from anthropic import beta_tool
 from langsmith import traceable
 
-from backend.app.usaspending_client import SpendingOverTimeResponse, USASpendingAPIError
+from backend.app.usaspending import SpendingOverTimeResponse, USASpendingAPIError
 
 from ...recipient_types import RecipientType
 from ...response_shaping import _format_time_period, year_label

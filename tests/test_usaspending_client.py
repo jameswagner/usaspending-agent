@@ -4,7 +4,7 @@ from typing import Any, ClassVar
 import pytest
 import requests
 
-from backend.app.usaspending_client import (
+from backend.app.usaspending import (
     AdvancedFilters,
     AgencySubAgencyResponse,
     ChildRecipient,

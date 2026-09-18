@@ -2,7 +2,7 @@
 
 Five tools: search_guide (wraps HybridRetriever, for conceptual/definitional
 questions), lookup_agency, get_spending_by_category, get_spending_over_time,
-and search_awards (all four live-data tools backed by usaspending_client).
+and search_awards (all four live-data tools backed by the usaspending package).
 
 Usage:
   python -m backend.app.agent --question "What is a prime award?"

@@ -13,7 +13,7 @@ from anthropic import beta_tool
 from langsmith import traceable
 from typing_extensions import Unpack
 
-from backend.app.usaspending_client import (
+from backend.app.usaspending import (
     AgencySubAgencyResponse,
     AgencyYearBudget,
     ObligationByPeriod,
@@ -59,7 +59,7 @@ def _record_tool_call(tool_name: str, result: object, context: dict | None = Non
     filters it was queried with) - used for things like chart titles that
     need to distinguish multiple calls to the same tool in one turn.
 
-    Also drains the live-HTTP-request capture buffer (usaspending_client.py)
+    Also drains the live-HTTP-request capture buffer (usaspending/capture.py)
     into context["_requests"] - whatever this tool call actually sent over
     the wire, for building a reproducible citation. A tool with no live
     requests (e.g. an arithmetic tool, though those never reach here) just

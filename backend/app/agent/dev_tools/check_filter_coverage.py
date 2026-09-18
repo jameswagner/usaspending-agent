@@ -1,5 +1,5 @@
 """Opt-in coverage check: does the live USASpending API's AdvancedFilterObject
-have fields ADVANCED_FILTER_FIELD_COVERAGE (usaspending_client.py) doesn't
+have fields ADVANCED_FILTER_FIELD_COVERAGE (usaspending/filter_models.py) doesn't
 know about yet?
 
 Not a monitoring service - a rerunnable version of the manual process the
@@ -28,7 +28,7 @@ import re
 
 import requests
 
-from backend.app.usaspending_client import ADVANCED_FILTER_FIELD_COVERAGE
+from backend.app.usaspending import ADVANCED_FILTER_FIELD_COVERAGE
 
 CONTRACT_URL = (
     "https://raw.githubusercontent.com/fedspendingtransparency/usaspending-api/"

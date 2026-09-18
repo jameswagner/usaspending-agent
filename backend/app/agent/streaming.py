@@ -36,7 +36,7 @@ from .tools import _tool_call_log
 logger = logging.getLogger(__name__)
 
 # Well under typical proxy/load-balancer idle timeouts (30-60s) - a single
-# slow tool call (e.g. usaspending_client.py's Retry with backoff_factor=1.0
+# slow tool call (e.g. usaspending/client.py's Retry with backoff_factor=1.0
 # working through 3 retries) can itself take tens of seconds with no event
 # to send, so the connection needs its own liveness signal in that gap.
 _KEEPALIVE_INTERVAL_SECONDS = 15.0

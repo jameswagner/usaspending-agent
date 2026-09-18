@@ -201,7 +201,12 @@ backend/app/
     hybrid.py                 Dense+sparse retriever with cross-encoder reranking (used at request time)
     pipeline/                  One-off scripts: Guide PDF/Glossary API/NAICS/PSC/CFDA source data -> chunks -> indexes
     dev_tools/                 Manual scripts: sanity_check.py, calibrate_threshold.py
-  usaspending_client.py    Typed client for the live USASpending.gov API
+  usaspending/
+    client.py                 Typed client for the live USASpending.gov API
+    models.py                 Award/recipient/agency response models
+    filter_models.py          AdvancedFilterObject models + coverage tracking
+    capture.py                 ContextVar-based live-request capture
+    exceptions.py               USASpendingAPIError and HTTP error handling
 web/                         Next.js frontend (separate process; proxies to the
                                 FastAPI API through web/src/app/api/ask/route.ts)
 tests/                       Unit tests

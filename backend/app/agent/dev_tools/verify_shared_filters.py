@@ -15,7 +15,7 @@ from __future__ import annotations
 from backend.app.agent.orchestrator import ask
 from backend.app.agent.singletons import warm_up
 from backend.app.agent.tools import search_awards_raw
-from backend.app.usaspending_client import USASpendingAPIError
+from backend.app.usaspending import USASpendingAPIError
 
 
 def case_search_awards_sorted_by_amount() -> None:

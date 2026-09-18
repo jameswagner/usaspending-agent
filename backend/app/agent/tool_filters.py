@@ -18,7 +18,7 @@ from typing import Literal, TypedDict
 
 from typing_extensions import Unpack
 
-from backend.app.usaspending_client import (
+from backend.app.usaspending import (
     AdvancedFilters,
     AgencyFilter,
     AwardAmount,

@@ -11,7 +11,7 @@ from typing import Literal
 from anthropic import beta_tool
 from langsmith import traceable
 
-from backend.app.usaspending_client import SearchAwardsResponse, USASpendingAPIError
+from backend.app.usaspending import SearchAwardsResponse, USASpendingAPIError
 
 from ...recipient_types import RecipientType
 from ...response_shaping import year_label, year_range_to_date_range

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from backend.app.usaspending_client import USASpendingAPIError
+from backend.app.usaspending import USASpendingAPIError
 
 RECIPIENT_TYPE_NAMES: dict[str, str] = {
     "category_business": "Category Business",

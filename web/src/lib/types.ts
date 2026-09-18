@@ -65,3 +65,49 @@ export interface ConversationTurn {
   response: AskResponse | null;
   status: TurnStatus;
 }
+
+// Mirrors backend/app/main.py's GuidedFlowStepRequest/GuidedFlowStepResponse
+// and backend/app/agent/guided_flow.py's field names - same manual-sync
+// convention as the rest of this file.
+export interface GuidedFlowFields {
+  state?: string | null;
+  // Blank/omitted means "every district in the state" - see
+  // guided_flow.py's module docstring.
+  district?: string | null;
+  start_fiscal_year?: number | null;
+  end_fiscal_year?: number | null;
+}
+
+export interface GuidedFlowNamedAmount {
+  name: string;
+  amount: number;
+}
+
+export interface GuidedFlowDistrictRow {
+  code: string;
+  name: string;
+  prime_total: number;
+  subaward_total: number;
+}
+
+export interface GuidedFlowStepRequest {
+  conversation_id: string;
+  message: string | null;
+}
+
+export interface GuidedFlowStepResponse {
+  status: "collecting" | "result" | "breakdown" | "aside_answered" | "escaped";
+  prompt: string | null;
+  fields: GuidedFlowFields;
+  prime_total: number | null;
+  subaward_total: number | null;
+  top_recipients: GuidedFlowNamedAmount[];
+  top_subrecipients: GuidedFlowNamedAmount[];
+  districts: GuidedFlowDistrictRow[];
+  state_prime_total: number | null;
+  state_subaward_total: number | null;
+  note: string | null;
+  tool_citations: ToolCitation[];
+  answer: string | null;
+  forward_question: string | null;
+}

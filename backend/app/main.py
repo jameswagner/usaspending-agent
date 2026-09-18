@@ -17,6 +17,7 @@ from slowapi.util import get_remote_address
 load_dotenv()
 
 from backend.app.agent import ask as agent_ask
+from backend.app.agent import guided_flow
 from backend.app.agent.orchestrator import NOT_FOUND_MESSAGE
 from backend.app.agent.response_shaping import Citation, ToolCitation
 from backend.app.agent.singletons import warm_up
@@ -65,6 +66,33 @@ class AskResponse(BaseModel):
     tool_citations: list[ToolCitation] = []
 
 
+class GuidedFlowStepRequest(BaseModel):
+    conversation_id: str
+    message: str | None = None
+
+
+class GuidedFlowStepResponse(BaseModel):
+    # One shape covering all five outcomes (collecting/result/breakdown/
+    # aside_answered/escaped) rather than five response models - the
+    # frontend already has to branch on `status` either way, and this
+    # avoids a discriminated-union dance for what's a small, stable set of
+    # optional fields.
+    status: str
+    prompt: str | None = None
+    fields: dict = {}
+    prime_total: float | None = None
+    subaward_total: float | None = None
+    top_recipients: list[dict] = []
+    top_subrecipients: list[dict] = []
+    districts: list[dict] = []
+    state_prime_total: float | None = None
+    state_subaward_total: float | None = None
+    note: str | None = None
+    tool_citations: list[ToolCitation] = []
+    answer: str | None = None
+    forward_question: str | None = None
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
@@ -104,6 +132,17 @@ def ask(request: Request, response: Response, payload: AskRequest) -> AskRespons
         citations=result.citations,
         tool_citations=result.tool_citations,
     )
+
+
+@app.post("/guided-flow/community-spending/step", response_model=GuidedFlowStepResponse)
+@limiter.limit(f"{ASK_RATE_LIMIT_PER_MINUTE}/minute")
+def guided_flow_community_spending_step(
+    request: Request, response: Response, payload: GuidedFlowStepRequest
+) -> GuidedFlowStepResponse:
+    # Deterministic lookup, not an agent turn - no call into agent_ask/the
+    # tool-calling loop at all. See guided_flow.py's module docstring for why.
+    result = guided_flow.step(payload.conversation_id, payload.message)
+    return GuidedFlowStepResponse(**result)
 
 
 @app.post("/ask/stream")

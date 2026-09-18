@@ -1,5 +1,5 @@
 import { createParser } from "eventsource-parser";
-import type { AskResponse } from "./types";
+import type { AskResponse, GuidedFlowStepResponse } from "./types";
 
 // One tool-status event from POST /api/ask/stream's SSE body - see
 // backend/app/agent/streaming.py's event protocol. Named "tool_name" (not
@@ -133,4 +133,19 @@ export async function askQuestion(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+// Calls this Next.js app's own /api/guided-flow/community-spending/step
+// route (never FastAPI directly - same BFF pattern as askQuestion). A
+// deterministic, bounded lookup, not an agent turn - plain fetch, no SSE.
+export async function guidedFlowStep(conversationId: string, message: string | null): Promise<GuidedFlowStepResponse> {
+  const resp = await fetch("/api/guided-flow/community-spending/step", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ conversation_id: conversationId, message }),
+  });
+  if (!resp.ok) {
+    throw new Error(`Server error: ${resp.status}`);
+  }
+  return (await resp.json()) as GuidedFlowStepResponse;
 }

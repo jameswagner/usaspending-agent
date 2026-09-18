@@ -1,7 +1,4 @@
-"""get_spending_by_geography - spending broken down by state/county/district/
-etc. One of the five _build_filters-based tools split out of the old flat
-spending.py (#204).
-"""
+"""get_spending_by_geography - spending broken down by state/county/district/etc."""
 from __future__ import annotations
 
 import logging

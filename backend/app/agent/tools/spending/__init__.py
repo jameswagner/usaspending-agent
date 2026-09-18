@@ -1,12 +1,9 @@
 """The _build_filters-based cluster: get_spending_by_category,
 get_spending_over_time, search_awards, search_subawards,
 get_spending_by_geography. All five funnel their filter params through the
-shared tool_filters._build_filters.
-
-Split from a single flat spending.py (see #204) once it passed 1,800 lines -
-each tool now lives in its own module (category.py, over_time.py, search.py,
-geography.py); this file re-exports the same public surface the old flat
-module exposed, so every existing import site keeps working unchanged.
+shared tool_filters._build_filters. Each tool lives in its own module
+(category.py, over_time.py, search.py, geography.py); this file re-exports
+their public names so existing import sites don't need to change.
 """
 from __future__ import annotations
 

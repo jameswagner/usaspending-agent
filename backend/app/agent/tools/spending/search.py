@@ -1,9 +1,7 @@
 """search_awards / search_subawards - ranked, paginated award and subaward
-lists. Two of the five _build_filters-based tools split out of the old
-flat spending.py (#204). Kept in one module (not two) since they share the
-same date-range/award-type shape and are the natural pair to keep adjacent
-- see #204 for why this file isn't named awards.py (collides with the
-existing tools/awards.py, a different concern: award-detail/IDV lookups).
+lists, kept in one module since they share the same date-range/award-type
+shape. Named search.py, not awards.py, to avoid colliding with the
+existing tools/awards.py (award-detail/IDV lookups - a different concern).
 """
 from __future__ import annotations
 

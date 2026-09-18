@@ -1,6 +1,5 @@
 """get_spending_by_category - spending broken down by a category (agency,
-NAICS/PSC code, recipient, geography, ...), ranked by amount. One of the
-five _build_filters-based tools split out of the old flat spending.py (#204).
+NAICS/PSC code, recipient, geography, ...), ranked by amount.
 """
 from __future__ import annotations
 

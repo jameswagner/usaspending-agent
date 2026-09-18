@@ -1,6 +1,5 @@
 """get_spending_over_time - spending trends/grand totals grouped by period
-(fiscal_year, calendar_year, quarter, month). One of the five
-_build_filters-based tools split out of the old flat spending.py (#204).
+(fiscal_year, calendar_year, quarter, month).
 """
 from __future__ import annotations
 

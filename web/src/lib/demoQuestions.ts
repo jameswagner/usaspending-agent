@@ -14,6 +14,7 @@ const LOCATIONS = [
   "Maricopa County, Arizona",
   "Miami-Dade County, Florida",
   "Wayne County, Michigan",
+  "Jefferson Parish, Louisiana",
 ];
 
 // Phrases verified live to resolve to a real NAICS/PSC code (autocomplete is

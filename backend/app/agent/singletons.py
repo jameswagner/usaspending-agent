@@ -21,7 +21,7 @@ from langgraph.prebuilt import create_react_agent
 from langsmith.wrappers import wrap_anthropic
 
 from backend.app.retrieval.hybrid import HybridRetriever
-from backend.app.usaspending_client import USASpendingClient
+from backend.app.usaspending import USASpendingClient
 
 load_dotenv()
 

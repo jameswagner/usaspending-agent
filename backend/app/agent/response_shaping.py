@@ -14,7 +14,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from backend.app.usaspending_client import BASE_URL, USASpendingAPIError
+from backend.app.usaspending import BASE_URL, USASpendingAPIError
 
 
 def current_fiscal_year(today: date | None = None) -> int:
@@ -253,7 +253,7 @@ class ToolCitation(BaseModel):
     description: str
     url: str | None = None
     # A POST call has no browser-clickable url - curl holds the real,
-    # captured request(s) instead (see usaspending_client.py's
+    # captured request(s) instead (see usaspending/capture.py's
     # drain_request_capture), reproducible exactly as sent.
     curl: str | None = None
 
@@ -495,7 +495,7 @@ def _merge_optional_filter_params(params: dict, context: dict, keys: set[str]) -
 
 def _curl_from_context(context: dict) -> str | None:
     """Reproduces the real request(s) a POST-based tool call made, from
-    context["_requests"] (drained from usaspending_client.py's capture
+    context["_requests"] (drained from usaspending/capture.py's capture
     buffer by _record_tool_call) - the actual (method, url, body) sent,
     not a hand-reconstructed guess. A tool call that made more than one
     live request (e.g. get_award_details with include_child_orders) gets

@@ -19,7 +19,7 @@ from pathlib import Path
 
 from anthropic import beta_tool
 
-from backend.app.usaspending_client import USASpendingAPIError
+from backend.app.usaspending import USASpendingAPIError
 
 from ..singletons import _get_usaspending_client
 from ..tool_filters import US_STATE_ABBREVIATIONS, _normalize_county_fips

@@ -8,7 +8,7 @@ import logging
 
 from anthropic import beta_tool
 
-from backend.app.usaspending_client import (
+from backend.app.usaspending import (
     ChildRecipient,
     RecipientListing,
     RecipientLocation,

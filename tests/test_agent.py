@@ -107,7 +107,7 @@ from backend.app.agent.tools.location import (
     resolve_county_fips,
 )
 from backend.app.agent.tools.spending import get_spending_by_category, search_awards
-from backend.app.usaspending_client import (
+from backend.app.usaspending import (
     AgencySubAgencyResponse,
     AwardFundingResponse,
     AwardFundingRow,
@@ -1960,11 +1960,11 @@ class TestStaticCountyFallback:
 class TestResolveCountyFipsErrorHandling:
     # Unlike every other data tool, resolve_county_fips previously had no
     # try/except USASpendingAPIError around its live call - a failure (e.g.
-    # the timeout/connection-error wrapping added to usaspending_client.py)
+    # the timeout/connection-error wrapping added to usaspending/exceptions.py)
     # would raise straight out of the tool instead of degrading to the
     # same "This query failed: ..." string every other tool returns.
     def test_api_error_returns_failure_string_instead_of_raising(self, monkeypatch):
-        from backend.app.usaspending_client import USASpendingAPIError
+        from backend.app.usaspending import USASpendingAPIError
 
         def raise_error(description):
             raise USASpendingAPIError("USASpending.gov is responding slowly")

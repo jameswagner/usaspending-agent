@@ -509,19 +509,19 @@ def search_subawards_raw(
     end_year: int,
     award_type: AwardType = "contracts",
     limit: int = 5,
-    recipient_name: str | None = None,
+    subrecipient_name: str | None = None,
     min_amount: float | None = None,
     max_amount: float | None = None,
     performed_in_state: str | None = None,
-    recipient_in_state: str | None = None,
+    subrecipient_in_state: str | None = None,
     performed_in_county: str | None = None,
-    recipient_in_county: str | None = None,
+    subrecipient_in_county: str | None = None,
     performed_in_city: str | None = None,
-    recipient_in_city: str | None = None,
+    subrecipient_in_city: str | None = None,
     performed_in_zip: str | None = None,
-    recipient_in_zip: str | None = None,
+    subrecipient_in_zip: str | None = None,
     performed_in_district: str | None = None,
-    recipient_in_district: str | None = None,
+    subrecipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: DateType | None = None,
     place_of_performance_scope: Scope | None = None,
@@ -538,15 +538,14 @@ def search_subawards_raw(
     subaward records (not prime awards) from the same
     search/spending_by_award/ endpoint, not a separate one.
 
-    recipient_name/recipient_in_state/recipient_in_county/recipient_in_city/
-    recipient_in_zip/recipient_in_district all filter the SUB-recipient in
-    this mode - confirmed live ("Thermo Electron" as recipient_search_text
-    correctly matched subawards TO Thermo Electron, not FROM it) - the
-    opposite of what these same parameter names mean on search_awards
-    (where they filter the prime recipient). performed_in_* still means the
-    subaward's own place of performance, unchanged.
+    subrecipient_name/subrecipient_in_state/subrecipient_in_county/
+    subrecipient_in_city/subrecipient_in_zip/subrecipient_in_district all
+    filter the SUB-recipient - confirmed live ("Thermo Electron" as
+    recipient_search_text correctly matched subawards TO Thermo Electron,
+    not FROM it). performed_in_* still means the subaward's own place of
+    performance, unchanged.
 
-    recipient_type is NOT reversed the way recipient_name is - live-verified
+    recipient_type is NOT reversed the way subrecipient_name is - live-verified
     2026-09-12 that recipient_type_names still matches the PRIME recipient's
     business categories in subawards mode (e.g. recipient_type="veteran_
     owned_business" returned subawards whose Prime Recipient Name was a
@@ -567,19 +566,19 @@ def search_subawards_raw(
         start_year,
         end_year,
         award_type=award_type,
-        recipient_name=recipient_name,
+        recipient_name=subrecipient_name,
         min_amount=min_amount,
         max_amount=max_amount,
         performed_in_state=performed_in_state,
-        recipient_in_state=recipient_in_state,
+        recipient_in_state=subrecipient_in_state,
         performed_in_county=performed_in_county,
-        recipient_in_county=recipient_in_county,
+        recipient_in_county=subrecipient_in_county,
         performed_in_city=performed_in_city,
-        recipient_in_city=recipient_in_city,
+        recipient_in_city=subrecipient_in_city,
         performed_in_zip=performed_in_zip,
-        recipient_in_zip=recipient_in_zip,
+        recipient_in_zip=subrecipient_in_zip,
         performed_in_district=performed_in_district,
-        recipient_in_district=recipient_in_district,
+        recipient_in_district=subrecipient_in_district,
         keywords=keywords,
         date_type=date_type,
         place_of_performance_scope=place_of_performance_scope,
@@ -606,19 +605,19 @@ def search_subawards(
     award_type: AwardType = "contracts",
     limit: int = 5,
     agency_name: str | None = None,
-    recipient_name: str | None = None,
+    subrecipient_name: str | None = None,
     min_amount: float | None = None,
     max_amount: float | None = None,
     performed_in_state: str | None = None,
-    recipient_in_state: str | None = None,
+    subrecipient_in_state: str | None = None,
     performed_in_county: str | None = None,
-    recipient_in_county: str | None = None,
+    subrecipient_in_county: str | None = None,
     performed_in_city: str | None = None,
-    recipient_in_city: str | None = None,
+    subrecipient_in_city: str | None = None,
     performed_in_zip: str | None = None,
-    recipient_in_zip: str | None = None,
+    subrecipient_in_zip: str | None = None,
     performed_in_district: str | None = None,
-    recipient_in_district: str | None = None,
+    subrecipient_in_district: str | None = None,
     keywords: str | None = None,
     date_type: DateType | None = None,
     place_of_performance_scope: Scope | None = None,
@@ -632,11 +631,9 @@ def search_subawards(
 ) -> str:
     """Search for individual SUBAWARD records - money a prime awardee passed on to a sub-recipient to do part of the work. Use this for "who did X subcontract to" or "what subawards has agency Y's spending generated" questions about subawards in general, scoped by an awarding agency and/or a sub-recipient. For the subawards under one SPECIFIC prime award already found via search_awards, use get_award_subawards instead - this tool searches across many awards, not one award's own list.
 
-    CRITICAL, easy to get backwards: recipient_name (and every recipient_in_* location parameter below) filters the SUB-recipient here - the entity that received the subaward - NOT the prime awardee. This is the opposite of what these same parameter names mean on search_awards/get_spending_by_category/get_spending_over_time, where they filter the prime. There is no way to filter subawards by the PRIME recipient's name with this tool - use get_award_subawards on a specific prime award instead, or search_awards to find the prime award first.
-
     Each result's internal_id is the PRIME award's internal_id (not a subaward-specific id) - pass it to get_award_details or get_award_subawards for the prime award's own full detail or its complete subaward list.
 
-    At least one of agency_name or recipient_name must be given - a query scoped
+    At least one of agency_name or subrecipient_name must be given - a query scoped
     by neither would mean all federal subawards, ever, which this tool refuses
     rather than silently running.
 
@@ -653,30 +650,30 @@ def search_subawards(
             vocabulary as search_awards's award_type, applied to the underlying prime award's type.
         limit: Max number of results to return (default 5).
         agency_name: Optional. The awarding agency's name, e.g. "National Science Foundation".
-            Omit for a cross-agency question about one sub-recipient - but then recipient_name
+            Omit for a cross-agency question about one sub-recipient - but then subrecipient_name
             must be set instead.
-        recipient_name: Optional. Restrict to subawards received by a sub-recipient whose name
-            contains this text, e.g. "Thermo Electron" - an approximate text match. This is the
-            SUB-recipient, not the prime awardee - see the CRITICAL note above.
+        subrecipient_name: Optional. Restrict to subawards received by a sub-recipient whose name
+            contains this text, e.g. "Thermo Electron" - an approximate text match. This filters
+            the SUB-recipient, the entity that received the subaward, not the prime awardee.
         min_amount: Optional. Restrict to subawards worth at least this dollar amount.
         max_amount: Optional. Restrict to subawards worth at most this dollar amount.
         performed_in_state: Optional. Restrict to subawards for work performed in this US state.
-        recipient_in_state: Optional. Restrict to subawards whose SUB-recipient is
+        subrecipient_in_state: Optional. Restrict to subawards whose SUB-recipient is
             headquartered/located in this US state - not the prime.
         performed_in_county: Optional. A specific county where work was performed - a 3-digit
             FIPS code (e.g. "025" for Yavapai County, AZ), not a name. Requires
             performed_in_state also be set. Use resolve_county_fips to find the code from a
             county name - do not guess or construct one.
-        recipient_in_county: Optional. Same as performed_in_county, but for the SUB-recipient's
-            location. Requires recipient_in_state also be set.
+        subrecipient_in_county: Optional. Same as performed_in_county, but for the SUB-recipient's
+            location. Requires subrecipient_in_state also be set.
         performed_in_city: Optional. Restrict to work performed in this city, e.g. "Livermore".
-        recipient_in_city: Optional. Same as performed_in_city, but for the SUB-recipient's location.
+        subrecipient_in_city: Optional. Same as performed_in_city, but for the SUB-recipient's location.
         performed_in_zip: Optional. Restrict to work performed in this 5-digit zip code.
-        recipient_in_zip: Optional. Restrict to a SUB-recipient located in this 5-digit zip code.
+        subrecipient_in_zip: Optional. Restrict to a SUB-recipient located in this 5-digit zip code.
         performed_in_district: Optional. A specific congressional district where work was
             performed - a 2-digit number (e.g. "01"), paired with performed_in_state.
-        recipient_in_district: Optional. Same as performed_in_district, but for the SUB-recipient's
-            location, paired with recipient_in_state.
+        subrecipient_in_district: Optional. Same as performed_in_district, but for the SUB-recipient's
+            location, paired with subrecipient_in_state.
         keywords: Optional. Free-text search over subaward descriptions, e.g. "climate research".
             Do NOT restate the award_type/category itself here (e.g. "grant", "contracts",
             "cooperative agreement") - award_type already scopes that precisely, and doing so
@@ -694,7 +691,7 @@ def search_subawards(
             ID, not a subaward-specific id.
         recipient_type: Optional. Restrict to subawards whose PRIME recipient is tagged with this
             business/recipient type, e.g. "small_business", "veteran_owned_business" - unlike
-            recipient_name above, this is NOT reversed to the sub-recipient (live-verified). Not
+            subrecipient_name above, this is NOT reversed to the sub-recipient (live-verified). Not
             sufficient scope on its own (like award_type).
         description: Optional. Restrict to subawards whose own description text matches this
             phrase, e.g. "climate research" - this IS the sub-award's own description, unlike
@@ -704,12 +701,12 @@ def search_subawards(
         return over_budget
     limit = _clamp_limit(limit)
     scope = _scope_label(
-        agency_name, recipient_name, None,
-        performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
-        performed_in_county=performed_in_county, recipient_in_county=recipient_in_county,
-        performed_in_city=performed_in_city, recipient_in_city=recipient_in_city,
-        performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
-        performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
+        agency_name, subrecipient_name, None,
+        performed_in_state=performed_in_state, recipient_in_state=subrecipient_in_state,
+        performed_in_county=performed_in_county, recipient_in_county=subrecipient_in_county,
+        performed_in_city=performed_in_city, recipient_in_city=subrecipient_in_city,
+        performed_in_zip=performed_in_zip, recipient_in_zip=subrecipient_in_zip,
+        performed_in_district=performed_in_district, recipient_in_district=subrecipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
         award_id=award_id, description=description,
     )
@@ -721,19 +718,19 @@ def search_subawards(
             end_year,
             award_type,
             limit,
-            recipient_name=recipient_name,
+            subrecipient_name=subrecipient_name,
             min_amount=min_amount,
             max_amount=max_amount,
             performed_in_state=performed_in_state,
-            recipient_in_state=recipient_in_state,
+            subrecipient_in_state=subrecipient_in_state,
             performed_in_county=performed_in_county,
-            recipient_in_county=recipient_in_county,
+            subrecipient_in_county=subrecipient_in_county,
             performed_in_city=performed_in_city,
-            recipient_in_city=recipient_in_city,
+            subrecipient_in_city=subrecipient_in_city,
             performed_in_zip=performed_in_zip,
-            recipient_in_zip=recipient_in_zip,
+            subrecipient_in_zip=subrecipient_in_zip,
             performed_in_district=performed_in_district,
-            recipient_in_district=recipient_in_district,
+            subrecipient_in_district=subrecipient_in_district,
             keywords=keywords,
             date_type=date_type,
             place_of_performance_scope=place_of_performance_scope,
@@ -755,19 +752,19 @@ def search_subawards(
             "time_period_type": time_period_type, "award_type": award_type,
         },
         agency_name=agency_name,
-        recipient_name=recipient_name,
+        recipient_name=subrecipient_name,
         min_amount=min_amount,
         max_amount=max_amount,
         performed_in_state=performed_in_state,
-        recipient_in_state=recipient_in_state,
+        recipient_in_state=subrecipient_in_state,
         performed_in_county=performed_in_county,
-        recipient_in_county=recipient_in_county,
+        recipient_in_county=subrecipient_in_county,
         performed_in_city=performed_in_city,
-        recipient_in_city=recipient_in_city,
+        recipient_in_city=subrecipient_in_city,
         performed_in_zip=performed_in_zip,
-        recipient_in_zip=recipient_in_zip,
+        recipient_in_zip=subrecipient_in_zip,
         performed_in_district=performed_in_district,
-        recipient_in_district=recipient_in_district,
+        recipient_in_district=subrecipient_in_district,
         keywords=keywords,
         date_type=date_type,
         place_of_performance_scope=place_of_performance_scope,

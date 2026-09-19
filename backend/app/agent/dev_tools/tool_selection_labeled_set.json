@@ -96,8 +96,13 @@
     {"question": "Find NSF's single largest FY2023 contract, then tell me which subcontractors it went to.", "expected_tools": ["search_awards", "get_award_subawards"], "confusable_with": ["search_subawards"]},
     {"question": "What was federal spending on Medicare (budget function 570) broken down by sub-function in FY2023? Then break the largest sub-function down further into federal accounts.", "expected_tools": ["get_spending_explorer_breakdown"], "confusable_with": ["get_spending_by_category"]},
     {"question": "Find NSF's single largest FY2023 contract, then tell me which federal account (TAS) actually funded it.", "expected_tools": ["search_awards", "get_award_funding_breakdown"], "confusable_with": ["get_award_details"]},
-    {"question": "Find NSF's single largest FY2023 contract, then show me its full modification/transaction history.", "expected_tools": ["search_awards", "get_award_transaction_history"], "confusable_with": ["get_award_details", "get_award_subawards"]},
+    {"question": "Find NSF's single largest FY2023 contract, then show me its full modification/transaction history.", "expected_tools": ["search_awards", "get_award_transaction_history"], "confusable_with": ["get_award_details", "get_award_subawards", "search_transactions"]},
     {"question": "Look up Boeing, then tell me which subsidiaries make up its total federal funding.", "expected_tools": ["search_recipients", "get_recipient_children"], "confusable_with": ["get_recipient_details"]}
+  ],
+  "transaction_tools": [
+    {"question": "Show me every individual transaction matching \"ventilators\" in FY2020 contracts, with each one's date and amount.", "expected_tool": "search_transactions", "confusable_with": ["search_awards"]},
+    {"question": "List the modifications HHS made to its COVID-19 relief contracts in FY2020, one row per modification.", "expected_tool": "search_transactions", "confusable_with": ["search_awards", "get_award_transaction_history"]},
+    {"question": "Show me NSF's five biggest contracts in FY2023.", "expected_tool": "search_awards", "confusable_with": ["search_transactions"]}
   ],
   "award_type_breakdown": [
     {"question": "How many federal contracts vs. grants vs. loans were awarded government-wide in FY2024?", "expected_tool": "get_award_type_breakdown", "confusable_with": ["get_spending_by_category", "search_awards"]},

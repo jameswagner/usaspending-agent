@@ -266,7 +266,7 @@ class ToolCitation(BaseModel):
 # real design question deferred for now - excluded here rather than
 # guessing which one the model would want.
 NEVER_CHART_TOOLS = {
-    "search_guide", "lookup_agency", "search_awards", "get_agency_budget",
+    "search_guide", "lookup_agency", "search_awards", "search_transactions", "get_agency_budget",
     "code_execution", "get_award_details",
     # A single scoped total, same reasoning as get_agency_budget above.
     "get_disaster_spending_overview",
@@ -698,6 +698,23 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         time_period_type = context.get("time_period_type", "fiscal")
         description = (
             f"{params['award_type']} subawards search, {scope}, "
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
+        )
+        return ToolCitation(
+            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+        )
+
+    if tool_name == "search_transactions":
+        params = {
+            "start_year": context["start_year"],
+            "end_year": context["end_year"],
+            "award_type": context["award_type"],
+        }
+        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
+        scope = _citation_scope_label(context)
+        time_period_type = context.get("time_period_type", "fiscal")
+        description = (
+            f"{params['award_type']} transactions search, {scope}, "
             f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
         )
         return ToolCitation(

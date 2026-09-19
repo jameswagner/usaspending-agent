@@ -138,9 +138,7 @@ def _location_label(location: dict[str, Any] | None, *, full: bool = True) -> st
 
 
 def _congressional_district_label(location: dict[str, Any] | None) -> str | None:
-    """"CD-##" from a location's state_code + congressional_code (live-
-    verified 2026-09-19, #25) - None when either half is missing, since a
-    bare "-06" or "MD-" is worse than omitting the line."""
+    """"CD-##" from state_code + congressional_code - None when either half is missing, since a bare "-06" or "MD-" is worse than omitting the line."""
     if not location:
         return None
     state = location.get("state_code")
@@ -179,11 +177,8 @@ def _format_contract_or_idv(
     arrays), which come from a different, separately-timed DATA Act
     submission (File C) than this award's own total_obligation (File D2)
     and would confuse if mixed into one answer unlabeled. total_outlay is
-    the one File-C-sourced figure shown here (#25) - it's award-scoped
-    (usaspending-api's fetch_total_outlays, not the DEFC-bucketed
-    total_account_outlay), matching the "Outlayed Amount" figure on
-    usaspending.gov's own Award Summary page, so it's labeled Outlayed
-    rather than folded into Total obligated.
+    shown despite also being File-C-sourced - it's award-scoped, not the
+    DEFC-bucketed total_account_outlay excluded above.
 
     child_order_rollup is only ever passed for category == "idv"
     (get_award_details only fetches it when include_child_orders is set
@@ -309,9 +304,8 @@ def _format_financial_assistance(data: dict[str, Any]) -> str:
     File D2 (award/transaction) source (only best-effort matched per
     usaspending-api's own C_to_D_Linkage.md, not guaranteed to agree) -
     same reasoning as excluding total_account_obligation for contracts/
-    IDVs above. total_outlay is shown despite also being File-C-sourced -
-    see _format_contract_or_idv's docstring (#25) for why that one field
-    is the exception."""
+    IDVs above. total_outlay is shown despite the same File-C caveat -
+    see _format_contract_or_idv's docstring for why."""
     award_number = data.get("fain") or data.get("uri") or "unknown"
     lines = [f"{data.get('type_description', 'Unknown type')} ({award_number})"]
     if data.get("description"):

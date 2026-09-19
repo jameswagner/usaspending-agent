@@ -2722,11 +2722,6 @@ class TestFormatContractOrIdv:
         assert "ANTARCTICA" in result
 
     def test_current_award_amount_and_outlay_shown_when_present(self):
-        # #25: base_exercised_options ("Current Award Amount" on
-        # usaspending.gov's own Award Summary page) and total_outlay
-        # ("Outlayed Amount") are distinct figures from total_obligation/
-        # base_and_all_options - live-verified 2026-09-19 on a real
-        # contract (CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-).
         data = {**self.CONTRACT, "base_exercised_options": 3172812973.39, "total_outlay": 1163783350.21}
         result = _format_contract_or_idv(data)
         assert "Current award amount (base + exercised options): $3,172,812,973.39" in result
@@ -2908,9 +2903,6 @@ class TestFormatFinancialAssistance:
         assert "42.0" not in _format_financial_assistance(data)
 
     def test_total_outlay_shown_when_present(self):
-        # #25: total_outlay (award-scoped, distinct from the excluded
-        # total_account_outlay) is a real field on FinancialAssistanceResponse
-        # too - live-verified 2026-09-19 (ASST_NON_PRF20200001_075).
         data = {**self.GRANT, "total_outlay": 160747353410.45}
         assert "Outlayed: $160,747,353,410.45" in _format_financial_assistance(data)
 
@@ -2925,9 +2917,7 @@ class TestFormatFinancialAssistance:
         assert "Recipient congressional district: CO-02" in _format_financial_assistance(data)
 
     def test_aggregate_recipient_never_shows_congressional_district(self):
-        # record_type 1/3 narrows location to state-only to protect PII -
-        # a congressional district would leak more granular location than
-        # the redaction intends.
+        # record_type 1/3 narrows location to state-only - a district would leak more than the redaction intends.
         data = {**self.GRANT, "record_type": 1, "recipient": {
             "recipient_name": "MULTIPLE RECIPIENTS",
             "location": {"city_name": "ZUNI", "state_name": "VIRGINIA", "state_code": "VA", "congressional_code": "02"},

@@ -280,6 +280,10 @@ NEVER_CHART_TOOLS = {
     "search_recipients", "get_recipient_details",
     # Same disambiguation-not-analysis reasoning as search_recipients above.
     "resolve_naics_code", "resolve_psc_code", "resolve_cfda_program",
+    # A list of individual mod/transaction rows for one award, same shape as
+    # get_award_subawards/get_award_funding_breakdown (also uncharted) - a
+    # per-row read, not an aggregate worth visualizing.
+    "get_award_transaction_history",
 }
 
 
@@ -729,6 +733,15 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             tool_name=tool_name,
             parameters={"award_id": award_id},
             description=f"Federal account funding breakdown for award: {award_id}",
+            curl=_curl_from_context(context),
+        )
+
+    if tool_name == "get_award_transaction_history":
+        award_id = context["award_id"]
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"award_id": award_id},
+            description=f"Transaction history for award: {award_id}",
             curl=_curl_from_context(context),
         )
 

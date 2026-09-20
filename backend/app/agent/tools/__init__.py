@@ -96,6 +96,8 @@ from .spending import (
     search_awards_raw,
     search_subawards,
     search_subawards_raw,
+    search_transactions,
+    search_transactions_raw,
 )
 from .spending_explorer import (
     GroupBy,
@@ -186,4 +188,6 @@ __all__ = [
     "search_recipients",
     "search_subawards",
     "search_subawards_raw",
+    "search_transactions",
+    "search_transactions_raw",
 ]

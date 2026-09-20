@@ -70,6 +70,7 @@ from backend.app.agent.tools import (
     _agency_label,
     _check_tool_call_budget,
     _format_agency_award_breakdown,
+    _format_agency_sub_components,
     _format_api_messages,
     _format_award_details,
     _format_business_type,
@@ -96,6 +97,7 @@ from backend.app.agent.tools import (
     _tool_call_log,
     _truncation_note,
     _unresolved_award_id_hint,
+    get_agency_budget_by_subcomponent,
     get_spending_explorer_breakdown_raw,
 )
 from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
@@ -112,6 +114,7 @@ from backend.app.agent.tools.location import (
 from backend.app.agent.tools.spending import get_spending_by_category, search_awards
 from backend.app.usaspending import (
     AgencySubAgencyResponse,
+    AgencySubComponentsResponse,
     AwardFundingResponse,
     AwardFundingRow,
     AwardTypeCounts,
@@ -137,6 +140,7 @@ from backend.app.usaspending import (
     SpendingOverTimeResponse,
     SubAgencyBreakdown,
     SubAgencyOffice,
+    SubComponentBreakdown,
     TimePeriodGroup,
     TimeResult,
     ToptierAgency,
@@ -407,6 +411,102 @@ class TestFormatAgencyAwardBreakdown:
         )
         result = _format_agency_award_breakdown(response)
         assert "Solo Office:" in result
+
+
+def make_sub_components_response(n: int) -> AgencySubComponentsResponse:
+    return AgencySubComponentsResponse(
+        toptier_code="075",
+        fiscal_year=2024,
+        results=[
+            SubComponentBreakdown(
+                name=f"Sub-Component {i}",
+                id=f"sub-component-{i}",
+                total_budgetary_resources=float(i * 300),
+                total_obligations=float(i * 200),
+                total_outlays=float(i * 100),
+            )
+            for i in range(n)
+        ],
+    )
+
+
+class TestGetAgencyBudgetBySubcomponentChart:
+    def test_multi_subcomponent_produces_bar_spec(self):
+        spec = should_chart("get_agency_budget_by_subcomponent", make_sub_components_response(3))
+        assert spec is not None
+        assert spec.chart_type == "bar"
+        assert spec.labels == ["Sub-Component 0", "Sub-Component 1", "Sub-Component 2"]
+        assert spec.values == [0.0, 300.0, 600.0]
+
+    def test_single_subcomponent_returns_none(self):
+        assert should_chart("get_agency_budget_by_subcomponent", make_sub_components_response(1)) is None
+
+
+class TestFormatAgencySubComponents:
+    def test_formats_all_three_figures(self):
+        result = _format_agency_sub_components(make_sub_components_response(1))
+        assert "Sub-Component 0" in result
+        assert "budgetary resources $0.00" in result
+        assert "obligated $0.00" in result
+        assert "outlayed $0.00" in result
+
+    def test_sorts_by_budgetary_resources_descending_regardless_of_input_order(self):
+        response = AgencySubComponentsResponse(
+            toptier_code="075",
+            fiscal_year=2024,
+            results=[
+                SubComponentBreakdown(
+                    name="Small", id="small", total_budgetary_resources=10.0,
+                    total_obligations=5.0, total_outlays=1.0,
+                ),
+                SubComponentBreakdown(
+                    name="Big", id="big", total_budgetary_resources=1000.0,
+                    total_obligations=500.0, total_outlays=100.0,
+                ),
+            ],
+        )
+        result = _format_agency_sub_components(response)
+        assert result.index("Big") < result.index("Small")
+
+
+_UNSET = object()
+
+
+class TestGetAgencyBudgetBySubcomponent:
+    def _mock_client(self, response_or_error, monkeypatch, agency=_UNSET):
+        resolved_agency = make_agency("Department of Health and Human Services") if agency is _UNSET else agency
+        client = FakeClient(resolved_agency)
+        if isinstance(response_or_error, Exception):
+            def _raise(*a, **kw):
+                raise response_or_error
+            client.get_agency_sub_components = _raise
+        else:
+            client.get_agency_sub_components = lambda *a, **kw: response_or_error
+        monkeypatch.setattr("backend.app.agent.tools._shared._get_usaspending_client", lambda: client)
+        return client
+
+    def test_successful_call_formats_output(self, monkeypatch):
+        self._mock_client(make_sub_components_response(2), monkeypatch)
+        result = get_agency_budget_by_subcomponent.func(
+            agency_name="Department of Health and Human Services", fiscal_year=2024
+        )
+        assert "Sub-Component 0" in result
+        assert "Sub-Component 1" in result
+        assert "budgetary resources" in result
+
+    def test_agency_not_found_returns_failure_string(self, monkeypatch):
+        self._mock_client(make_sub_components_response(1), monkeypatch, agency=None)
+        result = get_agency_budget_by_subcomponent.func(agency_name="Not A Real Agency", fiscal_year=2024)
+        assert "This query failed" in result
+        assert "Not A Real Agency" in result
+
+    def test_empty_results_returns_plain_message(self, monkeypatch):
+        empty = AgencySubComponentsResponse(toptier_code="075", fiscal_year=2024, results=[])
+        self._mock_client(empty, monkeypatch)
+        result = get_agency_budget_by_subcomponent.func(
+            agency_name="Department of Health and Human Services", fiscal_year=2024
+        )
+        assert "No sub-component budget data found" in result
         assert "()" not in result
 
     def test_children_are_not_shown_by_default(self):
@@ -790,6 +890,21 @@ class TestBuildToolCitation:
             {"agency_name": "National Science Foundation", "fiscal_year": 2024, "award_type": None},
         )
         assert "award_type" not in citation.parameters
+
+    def test_get_agency_budget_by_subcomponent(self):
+        citation = build_tool_citation(
+            "get_agency_budget_by_subcomponent",
+            {"agency_name": "Department of Health and Human Services", "fiscal_year": 2024, "toptier_code": "075"},
+        )
+        assert citation is not None
+        assert citation.tool_name == "get_agency_budget_by_subcomponent"
+        assert citation.parameters == {
+            "agency_name": "Department of Health and Human Services",
+            "fiscal_year": 2024,
+        }
+        assert citation.description == (
+            "Budgetary resources by sub-component, Department of Health and Human Services, FY2024"
+        )
 
     def test_lookup_agency(self):
         citation = build_tool_citation("lookup_agency", {"name": "National Science Foundation"})

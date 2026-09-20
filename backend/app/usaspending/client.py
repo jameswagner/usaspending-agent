@@ -39,6 +39,7 @@ from .models import (
     AgencyOfficeAutocompleteResponse,
     AgencyOverview,
     AgencySubAgencyResponse,
+    AgencySubComponentsResponse,
     AwardFundingResponse,
     ChildRecipient,
     DisasterOverviewResponse,
@@ -281,6 +282,25 @@ class USASpendingClient:
             params={k: v for k, v in params.items() if v is not None},
         )
         return AgencySubAgencyResponse(**data)
+
+    @traceable(run_type="tool", name="get_agency_sub_components")
+    def get_agency_sub_components(
+        self,
+        toptier_code: str,
+        fiscal_year: int | None = None,
+        limit: int = 50,
+        page: int = 1,
+    ) -> AgencySubComponentsResponse:
+        """Single fiscal_year, not a range - same shape as
+        get_agency_sub_agency_breakdown. agency_type/sort/order are left at
+        the endpoint's own defaults (awarding, total_budgetary_resources
+        desc) rather than exposed as params."""
+        params = {"fiscal_year": fiscal_year, "limit": limit, "page": page}
+        data = self._get(
+            f"/api/v2/agency/{toptier_code}/sub_components/",
+            params={k: v for k, v in params.items() if v is not None},
+        )
+        return AgencySubComponentsResponse(**data)
 
     @traceable(run_type="tool", name="spending_by_category")
     def spending_by_category(

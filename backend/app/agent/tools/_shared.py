@@ -2,7 +2,7 @@
 budget, untrusted-data wrapping, API-message surfacing, scope labeling)
 plus the tools that don't funnel through _build_filters: search_guide,
 lookup_agency, get_agency_budget, get_agency_award_breakdown,
-list_top_agencies_by_budget.
+get_agency_budget_by_subcomponent, list_top_agencies_by_budget.
 """
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from typing_extensions import Unpack
 
 from backend.app.usaspending import (
     AgencySubAgencyResponse,
+    AgencySubComponentsResponse,
     AgencyYearBudget,
     ObligationByPeriod,
     ToptierAgency,
@@ -493,3 +494,56 @@ def get_agency_award_breakdown(
     has_next = response.page_metadata.hasNext if response.page_metadata else False
     note = _truncation_note(has_next, len(response.results)) + _format_api_messages(response.messages)
     return _wrap_untrusted(_format_agency_award_breakdown(response, include_offices) + note)
+
+
+@traceable(run_type="tool", name="get_agency_budget_by_subcomponent_raw")
+def get_agency_budget_by_subcomponent_raw(agency_name: str, fiscal_year: int) -> AgencySubComponentsResponse:
+    """Call the API once, return the structured response. Raises
+    USASpendingAPIError if agency_name doesn't resolve."""
+    client = _get_usaspending_client()
+    agency = client.find_agency_by_name(agency_name)
+    if agency is None:
+        raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
+    return client.get_agency_sub_components(agency.toptier_code, fiscal_year=fiscal_year, limit=50)
+
+
+def _format_agency_sub_components(response: AgencySubComponentsResponse) -> str:
+    ranked = sorted(response.results, key=lambda r: r.total_budgetary_resources, reverse=True)
+    return "\n".join(
+        f"{r.name}: budgetary resources ${r.total_budgetary_resources:,.2f}, "
+        f"obligated ${r.total_obligations:,.2f}, outlayed ${r.total_outlays:,.2f}"
+        for r in ranked
+    )
+
+
+@beta_tool
+def get_agency_budget_by_subcomponent(agency_name: str, fiscal_year: int) -> str:
+    """Get one agency's budgetary resources, obligations, and outlays broken down by sub-component/bureau (e.g. NIH or CDC within HHS) for a single fiscal year. Use this specifically for "which part of X has the most funding" or "how much has [bureau] obligated this year" questions.
+
+    This is a genuinely different endpoint from both other agency tools, not a formatting variant of either. get_agency_budget gives ONE set of these same figures (budgetary resources, obligated, outlayed) for the WHOLE agency per fiscal year — this tool breaks that same concept down by sub-component instead. get_agency_award_breakdown breaks down AWARD spending activity (obligations from contracts/grants, with transaction/new-award counts) by sub-AGENCY — a different endpoint reporting a different number (award-level obligations, not appropriated budget authority) at a different level of the agency's structure. Use get_agency_budget for a single whole-agency figure, get_agency_award_breakdown for award activity by sub-agency with counts, and this tool for budgetary resources/obligated/outlayed by sub-component/bureau.
+
+    Args:
+        agency_name: The agency's name, e.g. "Department of Health and Human Services".
+        fiscal_year: A single fiscal year, e.g. 2024 for FY2024 — this endpoint does not accept a
+            range; call again for each year if a multi-year breakdown is needed.
+    """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    try:
+        response = get_agency_budget_by_subcomponent_raw(agency_name, fiscal_year)
+    except USASpendingAPIError as e:
+        logger.warning("get_agency_budget_by_subcomponent failed for %s: %s", agency_name, e)
+        return f"This query failed: {e}."
+
+    _record_tool_call(
+        "get_agency_budget_by_subcomponent",
+        response,
+        {"agency_name": agency_name, "fiscal_year": fiscal_year, "toptier_code": response.toptier_code},
+    )
+
+    if not response.results:
+        return f"No sub-component budget data found for {agency_name} in FY{fiscal_year}."
+
+    has_next = response.page_metadata.hasNext if response.page_metadata else False
+    note = _truncation_note(has_next, len(response.results)) + _format_api_messages(response.messages)
+    return _wrap_untrusted(_format_agency_sub_components(response) + note)

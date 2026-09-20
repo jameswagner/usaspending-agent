@@ -330,6 +330,19 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
             values=[r.total_obligations for r in structured_result.results],
         )
 
+    if tool_name == "get_agency_budget_by_subcomponent":
+        if len(structured_result.results) < 2:
+            return None
+        title = "Budgetary resources by sub-component"
+        if agency_name:
+            title += f" — {agency_name}"
+        return ChartSpec(
+            chart_type="bar",
+            title=title,
+            labels=[r.name for r in structured_result.results],
+            values=[r.total_budgetary_resources for r in structured_result.results],
+        )
+
     if tool_name == "get_award_type_breakdown":
         counts = structured_result.results
         labeled = [
@@ -585,6 +598,11 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         if context.get("award_type"):
             params["award_type"] = context["award_type"]
         description = f"Award breakdown by sub-agency, {params['agency_name']}, FY{params['fiscal_year']}"
+        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+
+    if tool_name == "get_agency_budget_by_subcomponent":
+        params = {"agency_name": context["agency_name"], "fiscal_year": context["fiscal_year"]}
+        description = f"Budgetary resources by sub-component, {params['agency_name']}, FY{params['fiscal_year']}"
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
 
     if tool_name == "get_disaster_spending_overview":

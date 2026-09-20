@@ -186,6 +186,26 @@ class AgencySubAgencyResponse(BaseModel):
     messages: list[str] | None = None
 
 
+class SubComponentBreakdown(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    name: str
+    id: str
+    total_budgetary_resources: float
+    total_obligations: float
+    total_outlays: float
+
+
+class AgencySubComponentsResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    toptier_code: str
+    fiscal_year: int
+    page_metadata: PageMetadata | None = None
+    results: list[SubComponentBreakdown]
+    messages: list[str] | None = None
+
+
 class CategoryResult(BaseModel):
     model_config = ConfigDict(extra="allow")
 

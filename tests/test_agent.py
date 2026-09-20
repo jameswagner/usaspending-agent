@@ -2721,6 +2721,27 @@ class TestFormatContractOrIdv:
         assert "LEIDOS, INC. (GAITHERSBURG, MARYLAND)" in result
         assert "ANTARCTICA" in result
 
+    def test_current_award_amount_and_outlay_shown_when_present(self):
+        data = {**self.CONTRACT, "base_exercised_options": 3172812973.39, "total_outlay": 1163783350.21}
+        result = _format_contract_or_idv(data)
+        assert "Current award amount (base + exercised options): $3,172,812,973.39" in result
+        assert "Outlayed: $1,163,783,350.21" in result
+
+    def test_current_award_amount_and_outlay_omitted_when_absent(self):
+        result = _format_contract_or_idv(self.CONTRACT)
+        assert "Current award amount" not in result
+        assert "Outlayed" not in result
+
+    def test_recipient_congressional_district_shown_when_present(self):
+        data = {**self.CONTRACT, "recipient": {
+            "recipient_name": "LEIDOS, INC.",
+            "location": {"city_name": "GAITHERSBURG", "state_name": "MARYLAND", "state_code": "MD", "congressional_code": "06"},
+        }}
+        assert "Recipient congressional district: MD-06" in _format_contract_or_idv(data)
+
+    def test_recipient_congressional_district_omitted_when_absent(self):
+        assert "congressional district" not in _format_contract_or_idv(self.CONTRACT).lower()
+
     def test_competition_detail_fields_included(self):
         result = _format_contract_or_idv(self.CONTRACT)
         assert "FULL AND OPEN COMPETITION" in result
@@ -2880,6 +2901,28 @@ class TestFormatFinancialAssistance:
     def test_account_level_totals_never_shown(self):
         data = {**self.GRANT, "total_account_obligation": 42.0, "total_account_outlay": 42.0}
         assert "42.0" not in _format_financial_assistance(data)
+
+    def test_total_outlay_shown_when_present(self):
+        data = {**self.GRANT, "total_outlay": 160747353410.45}
+        assert "Outlayed: $160,747,353,410.45" in _format_financial_assistance(data)
+
+    def test_total_outlay_omitted_when_absent(self):
+        assert "Outlayed" not in _format_financial_assistance(self.GRANT)
+
+    def test_recipient_congressional_district_shown_when_present(self):
+        data = {**self.GRANT, "recipient": {
+            "recipient_name": "UNIVERSITY CORPORATION FOR ATMOSPHERIC RESEARCH",
+            "location": {"city_name": "BOULDER", "state_name": "COLORADO", "state_code": "CO", "congressional_code": "02"},
+        }}
+        assert "Recipient congressional district: CO-02" in _format_financial_assistance(data)
+
+    def test_aggregate_recipient_never_shows_congressional_district(self):
+        # record_type 1/3 narrows location to state-only - a district would leak more than the redaction intends.
+        data = {**self.GRANT, "record_type": 1, "recipient": {
+            "recipient_name": "MULTIPLE RECIPIENTS",
+            "location": {"city_name": "ZUNI", "state_name": "VIRGINIA", "state_code": "VA", "congressional_code": "02"},
+        }}
+        assert "congressional district" not in _format_financial_assistance(data).lower()
 
     def test_loan_shows_loan_value_not_total_funding(self):
         loan = {**self.GRANT, "category": "loans", "total_loan_value": 98400000.0, "total_subsidy_cost": 0.0,

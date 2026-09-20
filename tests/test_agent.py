@@ -1641,6 +1641,45 @@ class TestBuildFilters:
         assert filters.agencies is None
         assert filters.contract_pricing_type_codes == ["J"]
 
+    def test_set_aside_type_codes_not_scraped_from_website_source(self):
+        # Regression coverage: contract_type_codes.py's set-aside vocabulary was
+        # first built from usaspending-website's own contractFields.js, which
+        # turned out to have wrong/stale code spellings ("ISEE" instead of the
+        # real "IEE", a "Civ" suffix on codes that don't have one). These three
+        # keys (drawn from the live Data Dictionary instead) only resolve
+        # correctly once that mistake is fixed.
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+            set_aside_type=["indian_economic_enterprise", "very_small_business", "reserved_for_small_business"],
+        )
+        assert filters.set_aside_type_codes == ["IEE", "VSB", "RSB"]
+
+    def test_extent_competed_type_codes_not_scraped_from_website_source(self):
+        # Same regression as above, for extent_competed_type: the website
+        # source's "E Civ"/"CDOCiv"/"NDOCiv" were wrong - the real codes (from
+        # the live Data Dictionary) have no "Civ" suffix at all.
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+            extent_competed_type=["follow_on_to_competed_action", "competitive_delivery_order",
+                                   "non_competitive_delivery_order"],
+        )
+        assert filters.extent_competed_type_codes == ["E", "CDO", "NDO"]
+
+    def test_deprecated_set_aside_codes_are_not_in_the_vocabulary(self):
+        # 8AC/HS2 are real Data Dictionary codes but live-verified to return
+        # zero results (matching the Data Dictionary's own deprecation notes) -
+        # deliberately excluded, not an oversight.
+        with pytest.raises(USASpendingAPIError, match="Unknown set_aside_type"):
+            _build_filters(
+                FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+                set_aside_type=["8ac"],
+            )
+        with pytest.raises(USASpendingAPIError, match="Unknown set_aside_type"):
+            _build_filters(
+                FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+                set_aside_type=["hs2"],
+            )
+
     # award_id/recipient_type/description (2026-09-12, issue #28) - all
     # live-verified against the real API: award_ids/description matching
     # confirmed on search_awards, spending_by_category, and

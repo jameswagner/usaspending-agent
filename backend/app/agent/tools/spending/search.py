@@ -370,17 +370,20 @@ def search_awards(
             economically_disadvantaged_women_owned_small_business,
             economically_disadvantaged_women_owned_small_business_sole_source,
             emerging_small_business, hbcu_mi_partial, hbcu_mi_total, hubzone_set_aside,
-            hubzone_sole_source, indian_small_business_economic_enterprise, no_set_aside,
-            sdvosb_sole_source, sdvosb_set_aside, small_business_set_aside_partial,
-            small_business_set_aside_total, veteran_set_aside, veteran_sole_source,
+            hubzone_sole_source, indian_economic_enterprise,
+            indian_small_business_economic_enterprise, no_set_aside,
+            reserved_for_small_business, sdvosb_sole_source, sdvosb_set_aside,
+            small_business_set_aside_partial, small_business_set_aside_total,
+            veteran_set_aside, veteran_sole_source, very_small_business,
             women_owned_small_business, women_owned_small_business_sole_source.
             Sufficient scope on its own.
         extent_competed_type: Optional. Restrict to contracts with one or more of these
             Extent Competed values, e.g. ["full_and_open_competition"] (multiple values
             are OR'd together). Contract-only. Valid values: competed_under_sap,
+            competitive_delivery_order, follow_on_to_competed_action,
             full_and_open_competition, full_and_open_competition_after_exclusion_of_sources,
-            not_available_for_competition, not_competed, not_competed_under_sap.
-            Sufficient scope on its own.
+            non_competitive_delivery_order, not_available_for_competition, not_competed,
+            not_competed_under_sap. Sufficient scope on its own.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget

@@ -7,18 +7,24 @@ model states "firm_fixed_price" rather than needing to know "J" is the real
 FPDS code, the same normalize-then-look-up pattern as AWARD_TYPE_GROUPS/
 RECIPIENT_TYPE_NAMES.
 
-Source of the code->label pairs: usaspending-website's own
-src/js/dataMapping/search/contractFields.js (pricingTypeDefinitions/
-setAsideDefinitions/extentCompetedDefinitions) - the same dicts that
-usaspending.gov's own Advanced Search checkboxes use to build these exact
-filter requests. Not every code in that source is included here: five
-set-aside codes (ISEE, HS2Civ, RSBCiv, 8ACCiv, VSBCiv) and three
-extent-competed codes (CDOCiv, NDOCiv, "E Civ") were live-verified
-2026-09-19 against /api/v2/search/spending_by_award/ to return zero results
-across the entire FY2008-present data history (every other code in each
-list returned real results in the same check) - stale/legacy values not
-worth exposing as a selectable filter that would always silently come back
-empty.
+Source of the code->label pairs: the live Data Dictionary
+(GET https://api.usaspending.gov/api/v2/references/data_dictionary/,
+TypeOfContractPricing/ExtentCompeted/TypeSetAside rows) - the authoritative
+FPDS domain values, not usaspending-website's own
+src/js/dataMapping/search/contractFields.js, which was tried first and
+found to have several wrong/stale code spellings for extent-competed
+("E Civ", "CDOCiv", "NDOCiv" instead of the real "E", "CDO", "NDO") and
+set-aside ("ISEE" instead of "IEE", plus a "Civ" suffix on "RSBCiv"/
+"8ACCiv"/"HS2Civ" that doesn't exist in the real "RSB"/"8AC"/"HS2" codes) -
+caught only by live-verifying every code against
+/api/v2/search/spending_by_award/ rather than trusting that source as-is.
+
+Every code below is live-verified (2026-09-19) to return real results over
+the FY2008-present data history. Two set-aside codes from the Data
+Dictionary's own TypeSetAside list are deliberately excluded - 8AC (SDB
+Set-Aside 8(a)) and HS2 (Combination HUBZone and 8(a)) - both confirmed
+live to return zero results, matching the Data Dictionary's own notes that
+neither is valid for documents signed after 2005/2008 respectively.
 """
 from __future__ import annotations
 
@@ -53,9 +59,8 @@ ContractPricingType = Literal[
     "time_and_materials",
 ]
 
-# Excludes ISEE (Indian Economic Enterprise), HS2Civ (Combination HUBZone and
-# 8(a)), RSBCiv (Reserved for Small Business $2,501-$100K), 8ACCiv (SDB Set
-# Aside 8(a)), VSBCiv (Very Small Business Set Aside) - see module docstring.
+# Excludes 8AC (SDB Set-Aside 8(a)) and HS2 (Combination HUBZone and 8(a)) -
+# see module docstring.
 SET_ASIDE_TYPE_CODES: dict[str, str] = {
     "8a_sole_source": "8AN",
     "8a_with_hubzone_preference": "HS3",
@@ -68,14 +73,17 @@ SET_ASIDE_TYPE_CODES: dict[str, str] = {
     "hbcu_mi_total": "HMT",
     "hubzone_set_aside": "HZC",
     "hubzone_sole_source": "HZS",
+    "indian_economic_enterprise": "IEE",
     "indian_small_business_economic_enterprise": "ISBEE",
     "no_set_aside": "NONE",
+    "reserved_for_small_business": "RSB",
     "sdvosb_sole_source": "SDVOSBS",
     "sdvosb_set_aside": "SDVOSBC",
     "small_business_set_aside_partial": "SBP",
     "small_business_set_aside_total": "SBA",
     "veteran_set_aside": "VSA",
     "veteran_sole_source": "VSS",
+    "very_small_business": "VSB",
     "women_owned_small_business": "WOSB",
     "women_owned_small_business_sole_source": "WOSBSS",
 }
@@ -85,28 +93,31 @@ SetAsideType = Literal[
     "economically_disadvantaged_women_owned_small_business",
     "economically_disadvantaged_women_owned_small_business_sole_source",
     "emerging_small_business", "hbcu_mi_partial", "hbcu_mi_total", "hubzone_set_aside",
-    "hubzone_sole_source", "indian_small_business_economic_enterprise", "no_set_aside",
+    "hubzone_sole_source", "indian_economic_enterprise",
+    "indian_small_business_economic_enterprise", "no_set_aside", "reserved_for_small_business",
     "sdvosb_sole_source", "sdvosb_set_aside", "small_business_set_aside_partial",
     "small_business_set_aside_total", "veteran_set_aside", "veteran_sole_source",
-    "women_owned_small_business", "women_owned_small_business_sole_source",
+    "very_small_business", "women_owned_small_business",
+    "women_owned_small_business_sole_source",
 ]
 
-# Excludes CDOCiv (Competitive Delivery Order), NDOCiv (Non-Competitive
-# Delivery Order), "E Civ" (Follow On to Competed Action) - see module
-# docstring.
 EXTENT_COMPETED_TYPE_CODES: dict[str, str] = {
     "competed_under_sap": "F",
+    "competitive_delivery_order": "CDO",
+    "follow_on_to_competed_action": "E",
     "full_and_open_competition": "A",
     "full_and_open_competition_after_exclusion_of_sources": "D",
+    "non_competitive_delivery_order": "NDO",
     "not_available_for_competition": "B",
     "not_competed": "C",
     "not_competed_under_sap": "G",
 }
 
 ExtentCompetedType = Literal[
-    "competed_under_sap", "full_and_open_competition",
-    "full_and_open_competition_after_exclusion_of_sources", "not_available_for_competition",
-    "not_competed", "not_competed_under_sap",
+    "competed_under_sap", "competitive_delivery_order", "follow_on_to_competed_action",
+    "full_and_open_competition", "full_and_open_competition_after_exclusion_of_sources",
+    "non_competitive_delivery_order", "not_available_for_competition", "not_competed",
+    "not_competed_under_sap",
 ]
 
 

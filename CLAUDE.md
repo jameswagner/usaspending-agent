@@ -49,6 +49,18 @@ category, an endpoint choice), check:
   2019). Citing that context in an issue/PR write-up saves someone
   re-discovering it later and sets expectations correctly (caveat vs.
   fixable bug vs. wait-for-upstream).
+- **The Data Dictionary** (`GET
+  https://api.usaspending.gov/api/v2/references/data_dictionary/`, same
+  content as https://files.usaspending.gov/docs/Data_Dictionary_Crosswalk.xlsx)
+  for what an ambiguous field actually means when two look similar — e.g.
+  `base_exercised_options` ("Current Award Amount") vs.
+  `base_and_all_options` ("Potential Award Amount"/ceiling), resolved this
+  way for #25. Its own `Element` column names don't match the live v2 API's
+  JSON keys (it documents bulk-download CSV columns and FPDS/internal ORM
+  table names instead) — match by definition text, not by key name. Not
+  ingested into `search_guide` (see #111): its rows aren't prose the way
+  the Glossary's are, and the key-name mismatch means it's more useful as
+  reference during tool development than as a citable live-chat source.
 
 ## Adding or modifying tools
 

@@ -137,6 +137,17 @@ def _location_label(location: dict[str, Any] | None, *, full: bool = True) -> st
     return state or location.get("country_name") or "N/A"
 
 
+def _congressional_district_label(location: dict[str, Any] | None) -> str | None:
+    """"CD-##" from state_code + congressional_code - None when either half is missing, since a bare "-06" or "MD-" is worse than omitting the line."""
+    if not location:
+        return None
+    state = location.get("state_code")
+    district = location.get("congressional_code")
+    if not state or not district:
+        return None
+    return f"{state}-{district}"
+
+
 def _format_period_of_performance(pop: dict[str, Any] | None) -> str | None:
     """None (not a placeholder string) when neither date is present - a
     bare "? to ?" fallback would just be noise, so callers skip the line
@@ -162,10 +173,12 @@ def _format_contract_or_idv(
     to money, dates, parties, parent-award linkage, and the handful of
     procurement-detail fields an analyst actually asks about - not the FAR
     policy-code fields, not executive compensation, and not the
-    Treasury-account-level totals (total_account_obligation/outlay, the
-    *_by_defc arrays), which come from a different, separately-timed DATA
-    Act submission (File C) than this award's own total_obligation (File
-    D2) and would confuse if mixed into one answer unlabeled.
+    Treasury-account-level totals (total_account_obligation, the *_by_defc
+    arrays), which come from a different, separately-timed DATA Act
+    submission (File C) than this award's own total_obligation (File D2)
+    and would confuse if mixed into one answer unlabeled. total_outlay is
+    shown despite also being File-C-sourced - it's award-scoped, not the
+    DEFC-bucketed total_account_outlay excluded above.
 
     child_order_rollup is only ever passed for category == "idv"
     (get_award_details only fetches it when include_child_orders is set
@@ -178,6 +191,12 @@ def _format_contract_or_idv(
     total_obligation = data.get("total_obligation") or 0
     ceiling = data.get("base_and_all_options") or 0
     lines.append(f"Total obligated: ${total_obligation:,.2f}, ceiling (base + all options): ${ceiling:,.2f}")
+    current_award_amount = data.get("base_exercised_options")
+    if current_award_amount is not None:
+        lines.append(f"Current award amount (base + exercised options): ${current_award_amount:,.2f}")
+    outlay = data.get("total_outlay")
+    if outlay is not None:
+        lines.append(f"Outlayed: ${outlay:,.2f}")
     if data.get("date_signed"):
         lines.append(f"Date signed: {data['date_signed']}")
     pop_label = _format_period_of_performance(data.get('period_of_performance'))
@@ -188,9 +207,13 @@ def _format_contract_or_idv(
         lines.append(f"Funding agency: {_agency_label(data['funding_agency'])}")
 
     recipient = data.get("recipient") or {}
+    recipient_location = recipient.get("location")
     lines.append(
-        f"Recipient: {recipient.get('recipient_name', 'unknown')} ({_location_label(recipient.get('location'))})"
+        f"Recipient: {recipient.get('recipient_name', 'unknown')} ({_location_label(recipient_location)})"
     )
+    district = _congressional_district_label(recipient_location)
+    if district:
+        lines.append(f"Recipient congressional district: {district}")
     lines.append(f"Place of performance: {_location_label(data.get('place_of_performance'))}")
 
     subaward_count = data.get("subaward_count") or 0
@@ -280,8 +303,9 @@ def _format_financial_assistance(data: dict[str, Any]) -> str:
     different, separately-timed DATA Act submission from total_obligation's
     File D2 (award/transaction) source (only best-effort matched per
     usaspending-api's own C_to_D_Linkage.md, not guaranteed to agree) -
-    same reasoning as excluding total_account_obligation/outlay for
-    contracts/IDVs above."""
+    same reasoning as excluding total_account_obligation for contracts/
+    IDVs above. total_outlay is shown despite the same File-C caveat -
+    see _format_contract_or_idv's docstring for why."""
     award_number = data.get("fain") or data.get("uri") or "unknown"
     lines = [f"{data.get('type_description', 'Unknown type')} ({award_number})"]
     if data.get("description"):
@@ -305,6 +329,10 @@ def _format_financial_assistance(data: dict[str, Any]) -> str:
         suffix = f" (of which ${non_federal:,.2f} non-federal)" if non_federal else ""
         lines.append(f"Total funding: ${data['total_funding']:,.2f}{suffix}")
 
+    outlay = data.get("total_outlay")
+    if outlay is not None:
+        lines.append(f"Outlayed: ${outlay:,.2f}")
+
     if data.get("date_signed"):
         lines.append(f"Date signed: {data['date_signed']}")
     pop_label = _format_period_of_performance(data.get('period_of_performance'))
@@ -315,14 +343,18 @@ def _format_financial_assistance(data: dict[str, Any]) -> str:
         lines.append(f"Funding agency: {_agency_label(data['funding_agency'])}")
 
     recipient = data.get("recipient") or {}
+    recipient_location = recipient.get("location")
     record_type = data.get("record_type")
     if record_type in _AGGREGATE_RECIPIENT_LABELS:
-        location = _location_label(recipient.get("location"), full=False)
+        location = _location_label(recipient_location, full=False)
         lines.append(f"Recipient: {_AGGREGATE_RECIPIENT_LABELS[record_type]} ({location})")
     else:
         lines.append(
-            f"Recipient: {recipient.get('recipient_name', 'unknown')} ({_location_label(recipient.get('location'))})"
+            f"Recipient: {recipient.get('recipient_name', 'unknown')} ({_location_label(recipient_location)})"
         )
+        district = _congressional_district_label(recipient_location)
+        if district:
+            lines.append(f"Recipient congressional district: {district}")
 
     lines.append(f"Place of performance: {_location_label(data.get('place_of_performance'))}")
 

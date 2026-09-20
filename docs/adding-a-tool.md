@@ -6,6 +6,13 @@ This document walks through the exact files and steps needed to add a new tool t
 
 ### 1. Create the tool module: `backend/app/agent/tools/<name>.py`
 
+If you're unsure what a field means or which of two similarly-named fields
+(e.g. `base_exercised_options` vs. `base_and_all_options`) to surface, check
+the [Data Dictionary](https://api.usaspending.gov/api/v2/references/data_dictionary/)
+before guessing — see CLAUDE.md's "Verify against the live API" section for
+why its `Element` names don't match the live JSON keys and how to match by
+definition text instead.
+
 Write a `_raw` function (decorated with `@traceable(run_type="tool", name="<name>_raw")`) that takes a `USASpendingClient` and calls the real API. This stays pure and unit-testable — no logging, no tool-call recording, no error presentation. It's where the actual API call happens:
 
 ```python

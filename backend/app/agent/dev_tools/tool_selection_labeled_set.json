@@ -65,7 +65,10 @@
   "subaward_tools": [
     {"question": "Who did Electric Boat subcontract work to on their submarine contract?", "acceptable_tools": ["search_subawards", "get_award_subawards"], "confusable_with": ["search_awards"]},
     {"question": "Show me subawards where Thermo Electron was the subcontractor on Department of Energy prime contracts.", "expected_tool": "search_subawards", "confusable_with": ["search_awards", "get_award_subawards"]},
-    {"question": "Which sub-recipients received subawards funded by NASA's prime contracts in FY2023?", "expected_tool": "search_subawards", "confusable_with": ["search_awards"]}
+    {"question": "Which sub-recipients received subawards funded by NASA's prime contracts in FY2023?", "expected_tool": "search_subawards", "confusable_with": ["search_awards"]},
+    {"question": "Find subawards where Boeing is the sub-recipient.", "expected_tool": "search_subawards", "confusable_with": ["search_awards"]},
+    {"question": "What subawards has Lockheed Martin received as a subcontractor located in Texas?", "expected_tool": "search_subawards", "confusable_with": ["search_awards"]},
+    {"question": "Show subawards under Department of Defense prime contracts where the sub-recipient is headquartered in California.", "expected_tool": "search_subawards", "confusable_with": ["search_awards"]}
   ],
   "guide_and_lookup_tools": [
     {"question": "What does 'obligation' mean in USASpending data?", "expected_tool": "search_guide"},

@@ -242,8 +242,10 @@ def get_spending_explorer_breakdown(
             toptier_code is rejected outright ("Agency ID provided does not correspond to a toptier
             agency"). To scope by an agency you don't already have this id for, call this tool once
             with group_by="agency" (no filters) first to look it up.
-        budget_function: A budget function's code (e.g. "570"), from a prior call's result.
-        budget_subfunction: A budget sub-function's code, from a prior call's result.
+        budget_function: A budget function's code (e.g. "570"). Call resolve_budget_function first if
+            you only have a plain-English category name (e.g. "Medicare") rather than a code.
+        budget_subfunction: A budget sub-function's code. Call resolve_budget_function first if you
+            only have a plain-English name rather than a code.
         federal_account: A federal account's code, from a prior call's result.
         object_class: An object class's code, from a prior call's result.
         recipient: A recipient's id, from a prior call's result with group_by="recipient" — see the

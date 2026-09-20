@@ -31,6 +31,11 @@ from backend.app.usaspending import (
     USASpendingClient,
 )
 
+from .contract_type_codes import (
+    _normalize_contract_pricing_types,
+    _normalize_extent_competed_types,
+    _normalize_set_aside_types,
+)
 from .recipient_types import _normalize_recipient_type
 from .response_shaping import year_range_to_date_range
 
@@ -72,6 +77,9 @@ class SpendingFilterParams(TypedDict, total=False):
     tas_code: str
     federal_account: str
     def_codes: list[str]
+    contract_pricing_type: list[str]
+    set_aside_type: list[str]
+    extent_competed_type: list[str]
 
 
 # Verified against USASpending's own award_types.md contract (checked
@@ -605,6 +613,14 @@ def _build_filters(
     Codes (DEFC) - real scope on its own, same reasoning as naics_code/psc_code.
     Runs through _normalize_def_codes first since the live API doesn't accept
     the DEFC_GROUP_ALIASES shortcuts itself.
+
+    contract_pricing_type/set_aside_type/extent_competed_type are contract-only
+    filters (issue #27) - real scope on their own, same reasoning as naics_code/
+    psc_code/def_codes. Each is a list of human-readable keys (e.g.
+    "firm_fixed_price"), normalized against contract_type_codes.py's own
+    vocabulary into the real FPDS codes (e.g. "J") the live API wants - see
+    that module's docstring for why a handful of codes from the same source
+    upstream (usaspending-website) aren't in the vocabulary at all.
     """
     # Unpacked once here (mechanical, one line per SpendingFilterParams field) so the
     # rest of this function's business logic is unchanged from before **filters existed.
@@ -636,6 +652,9 @@ def _build_filters(
     tas_code = filters.get("tas_code")
     federal_account = filters.get("federal_account")
     def_codes = filters.get("def_codes")
+    contract_pricing_type = filters.get("contract_pricing_type")
+    set_aside_type = filters.get("set_aside_type")
+    extent_competed_type = filters.get("extent_competed_type")
 
     real_scoping_filters = (
         agency_name, recipient_name, recipient_id,
@@ -647,6 +666,7 @@ def _build_filters(
         naics_code, psc_code, cfda_program, keywords,
         award_id, description, recipient_type,
         tas_code, federal_account, def_codes,
+        contract_pricing_type, set_aside_type, extent_competed_type,
     )
     has_real_scope = any(f is not None for f in real_scoping_filters)
     if not has_real_scope and award_type_counts_as_scope and award_type is not None:
@@ -657,7 +677,8 @@ def _build_filters(
             "recipient_in_state, performed_in_county, recipient_in_county, performed_in_city, "
             "recipient_in_city, performed_in_zip, recipient_in_zip, performed_in_district, "
             "recipient_in_district, naics_code, psc_code, cfda_program, keywords, award_id, "
-            "description, recipient_type, tas_code, federal_account, or def_codes must be given"
+            "description, recipient_type, tas_code, federal_account, def_codes, "
+            "contract_pricing_type, set_aside_type, or extent_competed_type must be given"
         )
         if award_type_counts_as_scope:
             message += ", or award_type (browsing by award type + fiscal year alone is fine here)"
@@ -767,6 +788,15 @@ def _build_filters(
 
     if def_codes is not None:
         kwargs["def_codes"] = _normalize_def_codes(def_codes)
+
+    if contract_pricing_type is not None:
+        kwargs["contract_pricing_type_codes"] = _normalize_contract_pricing_types(contract_pricing_type)
+
+    if set_aside_type is not None:
+        kwargs["set_aside_type_codes"] = _normalize_set_aside_types(set_aside_type)
+
+    if extent_competed_type is not None:
+        kwargs["extent_competed_type_codes"] = _normalize_extent_competed_types(extent_competed_type)
 
     return AdvancedFilters(**kwargs)
 

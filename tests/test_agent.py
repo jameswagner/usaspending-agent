@@ -687,6 +687,9 @@ class TestGetSpendingExplorerBreakdownRaw:
             self.calls.append((group_by, dict(filters)))
             return SpendingExplorerResponse(total=1.0, end_date="2026-06-30", results=[])
 
+        def resolve_spending_explorer_agency_id(self, agency):
+            return agency
+
     def test_no_filters_sends_only_fy_and_quarter(self, monkeypatch):
         fake = self._FakeClient()
         monkeypatch.setattr("backend.app.agent.tools.spending_explorer._get_usaspending_client", lambda: fake)
@@ -720,6 +723,22 @@ class TestGetSpendingExplorerBreakdownRaw:
             "budget_subfunction": "571", "federal_account": "5598", "object_class": "40",
             "recipient": "abc", "program_activity": "1",
         }
+
+    def test_agency_is_resolved_through_the_client_before_sending(self, monkeypatch):
+        fake = self._FakeClient()
+        monkeypatch.setattr(fake, "resolve_spending_explorer_agency_id", lambda agency: "806" if agency == "075" else None)
+        monkeypatch.setattr("backend.app.agent.tools.spending_explorer._get_usaspending_client", lambda: fake)
+        get_spending_explorer_breakdown_raw("object_class", 2026, "3", agency="075")
+        _, filters = fake.calls[0]
+        assert filters["agency"] == "806"
+
+    def test_unresolvable_agency_raises_before_any_live_call(self, monkeypatch):
+        fake = self._FakeClient()
+        monkeypatch.setattr(fake, "resolve_spending_explorer_agency_id", lambda agency: None)
+        monkeypatch.setattr("backend.app.agent.tools.spending_explorer._get_usaspending_client", lambda: fake)
+        with pytest.raises(USASpendingAPIError, match="No agency found"):
+            get_spending_explorer_breakdown_raw("object_class", 2026, "3", agency="not-a-real-agency")
+        assert fake.calls == []
 
     def test_unscoped_recipient_raises_before_any_live_call(self, monkeypatch):
         fake = self._FakeClient()

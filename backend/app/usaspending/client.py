@@ -194,6 +194,23 @@ class USASpendingClient:
                 return match
         return None
 
+    def resolve_spending_explorer_agency_id(self, agency: str) -> str | None:
+        """Resolve a CGAC toptier_code (e.g. "075") or agency name/abbreviation
+        (e.g. "HHS") to the internal id the Spending Explorer endpoint's
+        `agency` filter actually expects (e.g. "806") - a different id space
+        from toptier_code, confirmed live (see spending_explorer.py's module
+        docstring). Tries an exact toptier_code match first, since a code
+        could otherwise spuriously match find_agency_by_name's substring
+        fallback; falls back to find_agency_by_name for a name/abbreviation.
+        Returns None if nothing matches.
+        """
+        agencies = self.list_toptier_agencies()
+        exact_code = next((a for a in agencies if a.toptier_code == agency), None)
+        if exact_code is not None:
+            return str(exact_code.agency_id)
+        match = self.find_agency_by_name(agency)
+        return str(match.agency_id) if match is not None else None
+
     def _candidate_autocomplete_toptier_codes(self, name_lower: str):
         """Yields toptier_code candidates from the autocomplete response,
         best guess first. Two things to guard against, both live-verified

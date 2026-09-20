@@ -29,22 +29,23 @@ is excluded for the same reason: confirmed live 2026-09-18 to time out at
 returned in 0.3s in the same test - ruling out general API flakiness as
 the cause.
 
-The `agency` filter is the one exception to "get an id from a prior
-result": it does NOT accept lookup_agency's toptier_code, only this
-endpoint's own internal agency id (a group_by="agency" result's `id`
-field - not its `code` field, which IS the toptier code and is rejected
-outright). Confirmed live: HHS is toptier_code "075" but Spending
-Explorer agency id "806" - passing "075" 400s with "Agency ID provided
-does not correspond to a toptier agency". Found live 2026-09-11 after
-the model, asked for HHS's spending by object class, correctly called
-lookup_agency first (this tool's own docstring said to, at the time),
-got HHS's toptier_code, passed it as the agency filter, got a clean
-rejection from the live API, and gave up on object_class entirely -
-falling back to a PSC breakdown from a completely different tool instead
-(disclosed to the user, but not actually answering the question asked) -
-rather than resolving the right id. See get_spending_explorer_breakdown's
-own Args docstring for the agency param, which now tells the model to
-resolve this via group_by="agency" instead of lookup_agency.
+The `agency` filter used to be the one exception to "get an id from a
+prior result": the live API's own internal agency id (a group_by="agency"
+result's `id` field) is a different id space from lookup_agency's
+toptier_code (e.g. HHS: toptier_code "075", Spending Explorer agency id
+"806") and rejects the toptier_code outright ("Agency ID provided does
+not correspond to a toptier agency"). Found live 2026-09-11 after the
+model, asked for HHS's spending by object class, correctly called
+lookup_agency first (this tool's own docstring said to, at the time), got
+HHS's toptier_code, passed it as the agency filter, got a clean rejection
+from the live API, and gave up on object_class entirely - falling back to
+a PSC breakdown from a completely different tool instead (disclosed to
+the user, but not actually answering the question asked) - rather than
+resolving the right id. Fixed properly (#229) by resolving `agency`
+through client.resolve_spending_explorer_agency_id() before the request
+goes out - it accepts a toptier_code or name/abbreviation directly now,
+using the agency_id already present on list_toptier_agencies()'s cached
+results, so the model no longer needs the group_by="agency" workaround.
 """
 from __future__ import annotations
 
@@ -145,6 +146,12 @@ def get_spending_explorer_breakdown_raw(
         )
 
     client = _get_usaspending_client()
+    if agency is not None:
+        resolved_agency = client.resolve_spending_explorer_agency_id(agency)
+        if resolved_agency is None:
+            raise USASpendingAPIError(f"No agency found matching '{agency}'")
+        filter_kwargs["agency"] = resolved_agency
+
     filters: dict[str, str] = {"fy": str(fiscal_year), "quarter": quarter}
     for name in _FILTER_PARAM_NAMES:
         value = filter_kwargs[name]
@@ -235,13 +242,11 @@ def get_spending_explorer_breakdown(
             roughly 45 days after it closes either. There's no "current period" to fall back to —
             if a call fails for this reason, try an earlier fiscal_year/quarter rather than
             guessing forward.
-        agency: An agency's Spending Explorer id from a prior call's result with group_by="agency"
-            (its `id` field) — NOT lookup_agency's toptier_code, and NOT the `code` field on a
-            group_by="agency" result either (that IS the toptier code). Confirmed live these are
-            different id spaces (e.g. HHS: Spending Explorer id "806", toptier_code "075") and the
-            toptier_code is rejected outright ("Agency ID provided does not correspond to a toptier
-            agency"). To scope by an agency you don't already have this id for, call this tool once
-            with group_by="agency" (no filters) first to look it up.
+        agency: A CGAC toptier_code (e.g. "075") or agency name/abbreviation (e.g. "HHS",
+            "Department of Health and Human Services") — resolved internally to the Spending
+            Explorer's own internal agency id before the request is sent, since that id space
+            (e.g. HHS: "806") is different from toptier_code and rejects it outright if sent
+            directly. Raises if nothing matches.
         budget_function: A budget function's code (e.g. "570"), from a prior call's result.
         budget_subfunction: A budget sub-function's code, from a prior call's result.
         federal_account: A federal account's code, from a prior call's result.

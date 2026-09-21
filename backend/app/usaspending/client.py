@@ -195,6 +195,19 @@ class USASpendingClient:
                 return match
         return None
 
+    def resolve_spending_explorer_agency_id(self, agency: str) -> str | None:
+        """Resolves a toptier_code or name/abbreviation to the Spending Explorer
+        endpoint's own internal agency id (see spending_explorer.py's module
+        docstring) - tries an exact toptier_code match first so a code can't
+        spuriously hit find_agency_by_name's substring fallback.
+        """
+        agencies = self.list_toptier_agencies()
+        exact_code = next((a for a in agencies if a.toptier_code == agency), None)
+        if exact_code is not None:
+            return str(exact_code.agency_id)
+        match = self.find_agency_by_name(agency)
+        return str(match.agency_id) if match is not None else None
+
     def _candidate_autocomplete_toptier_codes(self, name_lower: str):
         """Yields toptier_code candidates from the autocomplete response,
         best guess first. Two things to guard against, both live-verified

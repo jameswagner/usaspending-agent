@@ -279,7 +279,7 @@ NEVER_CHART_TOOLS = {
     # cardinality to chart, same as get_award_details.
     "search_recipients", "get_recipient_details",
     # Same disambiguation-not-analysis reasoning as search_recipients above.
-    "resolve_naics_code", "resolve_psc_code", "resolve_cfda_program",
+    "resolve_naics_code", "resolve_psc_code", "resolve_cfda_program", "resolve_budget_function",
     # A list of individual mod/transaction rows for one award, same shape as
     # get_award_subawards/get_award_funding_breakdown (also uncharted) - a
     # per-row read, not an aggregate worth visualizing.
@@ -395,15 +395,22 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
     if tool_name == "get_spending_by_geography":
         if len(structured_result.results) < 2:
             return None
-        top = sorted(structured_result.results, key=lambda r: -r.aggregated_amount)[:20]
+        sort_by = (context or {}).get("sort_by", "amount")
+        sort_field = "per_capita" if sort_by == "per_capita" else "aggregated_amount"
+        top = sorted(
+            structured_result.results,
+            key=lambda r: (getattr(r, sort_field) is None, -(getattr(r, sort_field) or 0)),
+        )[:20]
         title = f"Spending by {_label_category(structured_result.geo_layer)}"
+        if sort_by == "per_capita":
+            title += " (per capita)"
         if agency_name:
             title += f" — {agency_name}"
         return ChartSpec(
             chart_type="bar",
             title=title,
             labels=[r.display_name or r.shape_code or "Unknown" for r in top],
-            values=[r.aggregated_amount for r in top],
+            values=[getattr(r, sort_field) or 0 for r in top],
         )
 
     if tool_name == "get_spending_explorer_breakdown":
@@ -587,6 +594,14 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             url=url,
         )
 
+    if tool_name == "resolve_budget_function":
+        description = context["description"]
+        return ToolCitation(
+            tool_name=tool_name,
+            parameters={"description": description},
+            description=f"Budget function/subfunction lookup: {description}",
+        )
+
     if tool_name == "resolve_county_fips":
         description = context["description"]
         return ToolCitation(
@@ -691,6 +706,8 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             "scope": context["scope"], "geo_layer": context["geo_layer"],
             "start_year": context["start_year"], "end_year": context["end_year"],
         }
+        if "sort_by" in context:
+            params["sort_by"] = context["sort_by"]
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
         time_period_type = context.get("time_period_type", "fiscal")

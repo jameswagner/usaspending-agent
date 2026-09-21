@@ -60,6 +60,7 @@ from .awards import (
     get_award_transaction_history_raw,
     get_idv_amounts_raw,
 )
+from .budget_function import resolve_budget_function
 from .business_type_labels import _format_business_type
 from .cfda import resolve_cfda_program
 from .disaster import (
@@ -184,6 +185,7 @@ __all__ = [
     "list_top_agencies_by_budget",
     "logger",
     "lookup_agency",
+    "resolve_budget_function",
     "resolve_cfda_program",
     "resolve_county_fips",
     "resolve_naics_code",

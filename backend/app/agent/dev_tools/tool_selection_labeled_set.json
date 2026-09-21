@@ -60,7 +60,8 @@
     {"question": "I'm researching federal spending on software - what code should I filter by?", "acceptable_tools": ["resolve_naics_code", "resolve_psc_code"], "check_hedge_language": true},
     {"question": "What NAICS code covers computer services, broadly?", "expected_tool": "resolve_naics_code", "confusable_with": ["resolve_psc_code"]},
     {"question": "What's the FIPS code for Jefferson Parish, Louisiana?", "expected_tool": "resolve_county_fips", "confusable_with": ["resolve_naics_code", "resolve_psc_code", "resolve_cfda_program"]},
-    {"question": "What county code do I need to look up spending in Orleans Parish?", "expected_tool": "resolve_county_fips", "confusable_with": ["resolve_naics_code", "resolve_psc_code", "resolve_cfda_program"]}
+    {"question": "What county code do I need to look up spending in Orleans Parish?", "expected_tool": "resolve_county_fips", "confusable_with": ["resolve_naics_code", "resolve_psc_code", "resolve_cfda_program"]},
+    {"question": "What budget function code should I use to look up whole-of-government spending on Health?", "expected_tool": "resolve_budget_function", "confusable_with": ["resolve_naics_code", "resolve_psc_code", "resolve_cfda_program", "resolve_county_fips"]}
   ],
   "agency_budget_ranking": [
     {"question": "Which federal agency has the biggest budget?", "expected_tool": "list_top_agencies_by_budget", "confusable_with": ["get_agency_budget", "get_agency_award_breakdown", "lookup_agency"]},
@@ -100,6 +101,7 @@
     {"question": "Look up Leidos and tell me its parent company and total transactions all-time.", "expected_tools": ["search_recipients", "get_recipient_details"]},
     {"question": "How much did NSF spend on custom software development contracts in FY2023?", "expected_tools": ["resolve_naics_code"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true},
     {"question": "How much federal spending went toward office furniture purchases in FY2023?", "expected_tools": ["resolve_psc_code"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true},
+    {"question": "Break down whole-of-government spending on National Defense by sub-function for FY2023.", "expected_tools": ["resolve_budget_function", "get_spending_explorer_breakdown"], "confusable_with": ["get_spending_by_category"]},
     {"question": "Which agencies gave the most Medicaid grants to states in FY2023?", "expected_tools": ["resolve_cfda_program"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true},
     {"question": "How much federal spending went to Yavapai County, Arizona in FY2023?", "expected_tools": ["resolve_county_fips"], "then_one_of": ["search_awards", "get_spending_by_category", "get_spending_by_geography"], "check_hedge_language": true},
     {"question": "How much did NSF spend on ship building contracts in FY2023?", "acceptable_tools": ["resolve_naics_code", "search_awards", "get_spending_by_category", "get_spending_over_time"], "check_hedge_language": true},

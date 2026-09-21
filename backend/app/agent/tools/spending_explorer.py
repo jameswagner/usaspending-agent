@@ -234,8 +234,10 @@ def get_spending_explorer_breakdown(
             Explorer's own internal agency id before the request is sent, since that id space
             (e.g. HHS: "806") is different from toptier_code and rejects it outright if sent
             directly. Raises if nothing matches.
-        budget_function: A budget function's code (e.g. "570"), from a prior call's result.
-        budget_subfunction: A budget sub-function's code, from a prior call's result.
+        budget_function: A budget function's code (e.g. "570"). Call resolve_budget_function first if
+            you only have a plain-English category name (e.g. "Medicare") rather than a code.
+        budget_subfunction: A budget sub-function's code. Call resolve_budget_function first if you
+            only have a plain-English name rather than a code.
         federal_account: A federal account's code, from a prior call's result.
         object_class: An object class's code, from a prior call's result.
         recipient: A recipient's id, from a prior call's result with group_by="recipient" — see the

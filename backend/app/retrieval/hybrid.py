@@ -29,6 +29,12 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+# Caps torch's default os.cpu_count()-sized thread pool (48 on this host - the
+# shared host's core count, not this container's actual allocation) - #235's
+# wall-vs-thread-cpu logging showed that oversubscription as 5-6x scheduling
+# contention on every encode()/predict() call, not slower computation.
+torch.set_num_threads(int(os.environ.get("TORCH_NUM_THREADS", "4")))
+
 CHROMA_DB_DIR = os.environ.get("CHROMA_DB_DIR", "./data/chroma")
 WHOOSH_INDEX_DIR = os.environ.get("WHOOSH_INDEX_DIR", "./data/whoosh")
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")

@@ -23,6 +23,7 @@ from ...tool_filters import (
     GeoScope,
     Scope,
     _build_filters,
+    _pop_naics_disclosure,
     _record_optional_filter_context,
 )
 from .._shared import (
@@ -201,7 +202,10 @@ def get_spending_by_geography(
             action_date (default), date_signed, last_modified_date, or new_awards_only.
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
         recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
-        naics_code: Optional. Restrict to this exact NAICS industry code.
+        naics_code: Optional. Restrict to this exact NAICS industry code - or a plain-English
+            industry description, which auto-resolves to a code on a single confident semantic
+            match (disclosed in the result when it happens); call resolve_naics_code first if
+            the description is ambiguous.
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code.
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number, format NN.NNN.
         award_id: Optional. Restrict to a single known award by its plain Award ID (PIID/FAIN/URI) -
@@ -242,9 +246,11 @@ def get_spending_by_geography(
             award_id=award_id, recipient_type=recipient_type, description=description,
         )
     except USASpendingAPIError as e:
+        _pop_naics_disclosure()
         logger.warning("get_spending_by_geography failed for %s: %s", scope_label_str, e)
         return f"This query failed: {e}."
 
+    naics_note = _pop_naics_disclosure()
     context = _record_optional_filter_context(
         {
             "scope": scope, "geo_layer": geo_layer,
@@ -262,6 +268,8 @@ def get_spending_by_geography(
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program,
         award_id=award_id, recipient_type=recipient_type, description=description,
     )
+    if naics_note:
+        context["naics_auto_resolved"] = naics_note
     _record_tool_call("get_spending_by_geography", response, context)
 
     if not response.results:
@@ -273,6 +281,8 @@ def get_spending_by_geography(
             # county/district geocoding can lag/be incomplete even when state-level data exists.
             no_results += (" This does not necessarily mean there was no spending - "
                             "try geo_layer=\"state\" or search_awards to confirm before concluding there was none.")
+        if naics_note:
+            no_results += f" ({naics_note})"
         return no_results
 
     results_sorted = sorted(response.results, key=lambda r: -r.aggregated_amount)
@@ -293,5 +303,7 @@ def get_spending_by_geography(
         note_parts.append("congressional district boundaries reflect the current map, not the "
                            "boundaries in effect during the queried period")
     note = f"\n\n(Note: {'; '.join(note_parts)}.)" if note_parts else ""
+    if naics_note:
+        note += f"\n\n({naics_note})"
 
     return _wrap_untrusted("\n".join(lines) + note + _format_api_messages(response.messages))

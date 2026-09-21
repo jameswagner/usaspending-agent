@@ -40,6 +40,11 @@
     {"question": "Break down NSF's FY2023 contract obligations by sub-agency, and tell me how many new contracts each one signed.", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category"]},
     {"question": "How many new awards has EPA issued per sub-agency in FY2022?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_budget"]}
   ],
+  "agency_budget_by_subcomponent": [
+    {"question": "Which part of HHS has the most funding?", "expected_tool": "get_agency_budget_by_subcomponent", "confusable_with": ["get_agency_budget", "get_agency_award_breakdown"]},
+    {"question": "How much has NIH obligated this fiscal year, specifically within HHS?", "expected_tool": "get_agency_budget_by_subcomponent", "confusable_with": ["get_agency_budget", "get_agency_award_breakdown"]},
+    {"question": "Break down HHS's FY2024 budgetary resources and outlays by sub-component or bureau.", "expected_tool": "get_agency_budget_by_subcomponent", "confusable_with": ["get_agency_budget", "get_agency_award_breakdown"]}
+  ],
   "spending_explorer_breakdown": [
     {"question": "How was federal spending broken down by budget function in FY2023?", "expected_tool": "get_spending_explorer_breakdown", "confusable_with": ["get_spending_by_category"]},
     {"question": "Show whole-of-government spending broken down by object class for FY2022.", "expected_tool": "get_spending_explorer_breakdown", "confusable_with": ["get_spending_by_category"]},

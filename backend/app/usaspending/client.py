@@ -39,6 +39,7 @@ from .models import (
     AgencyOfficeAutocompleteResponse,
     AgencyOverview,
     AgencySubAgencyResponse,
+    AgencySubComponentsResponse,
     AwardFundingResponse,
     ChildRecipient,
     DisasterOverviewResponse,
@@ -194,6 +195,19 @@ class USASpendingClient:
                 return match
         return None
 
+    def resolve_spending_explorer_agency_id(self, agency: str) -> str | None:
+        """Resolves a toptier_code or name/abbreviation to the Spending Explorer
+        endpoint's own internal agency id (see spending_explorer.py's module
+        docstring) - tries an exact toptier_code match first so a code can't
+        spuriously hit find_agency_by_name's substring fallback.
+        """
+        agencies = self.list_toptier_agencies()
+        exact_code = next((a for a in agencies if a.toptier_code == agency), None)
+        if exact_code is not None:
+            return str(exact_code.agency_id)
+        match = self.find_agency_by_name(agency)
+        return str(match.agency_id) if match is not None else None
+
     def _candidate_autocomplete_toptier_codes(self, name_lower: str):
         """Yields toptier_code candidates from the autocomplete response,
         best guess first. Two things to guard against, both live-verified
@@ -281,6 +295,25 @@ class USASpendingClient:
             params={k: v for k, v in params.items() if v is not None},
         )
         return AgencySubAgencyResponse(**data)
+
+    @traceable(run_type="tool", name="get_agency_sub_components")
+    def get_agency_sub_components(
+        self,
+        toptier_code: str,
+        fiscal_year: int | None = None,
+        limit: int = 50,
+        page: int = 1,
+    ) -> AgencySubComponentsResponse:
+        """Single fiscal_year, not a range - same shape as
+        get_agency_sub_agency_breakdown. agency_type/sort/order are left at
+        the endpoint's own defaults (awarding, total_budgetary_resources
+        desc) rather than exposed as params."""
+        params = {"fiscal_year": fiscal_year, "limit": limit, "page": page}
+        data = self._get(
+            f"/api/v2/agency/{toptier_code}/sub_components/",
+            params={k: v for k, v in params.items() if v is not None},
+        )
+        return AgencySubComponentsResponse(**data)
 
     @traceable(run_type="tool", name="spending_by_category")
     def spending_by_category(

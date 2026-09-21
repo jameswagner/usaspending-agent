@@ -6,6 +6,14 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 from typing_extensions import Unpack
 
+from backend.app.agent.contract_type_codes import (
+    CONTRACT_PRICING_TYPE_CODES,
+    EXTENT_COMPETED_TYPE_CODES,
+    SET_ASIDE_TYPE_CODES,
+    ContractPricingType,
+    ExtentCompetedType,
+    SetAsideType,
+)
 from backend.app.agent.recipient_types import (
     RECIPIENT_TYPE_NAMES,
     RecipientType,
@@ -71,6 +79,7 @@ from backend.app.agent.tools import (
     _agency_label,
     _check_tool_call_budget,
     _format_agency_award_breakdown,
+    _format_agency_sub_components,
     _format_api_messages,
     _format_award_details,
     _format_business_type,
@@ -97,6 +106,7 @@ from backend.app.agent.tools import (
     _tool_call_log,
     _truncation_note,
     _unresolved_award_id_hint,
+    get_agency_budget_by_subcomponent,
     get_spending_explorer_breakdown_raw,
 )
 from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
@@ -113,6 +123,7 @@ from backend.app.agent.tools.location import (
 from backend.app.agent.tools.spending import get_spending_by_category, search_awards
 from backend.app.usaspending import (
     AgencySubAgencyResponse,
+    AgencySubComponentsResponse,
     AwardFundingResponse,
     AwardFundingRow,
     AwardTypeCounts,
@@ -138,6 +149,7 @@ from backend.app.usaspending import (
     SpendingOverTimeResponse,
     SubAgencyBreakdown,
     SubAgencyOffice,
+    SubComponentBreakdown,
     TimePeriodGroup,
     TimeResult,
     ToptierAgency,
@@ -408,6 +420,102 @@ class TestFormatAgencyAwardBreakdown:
         )
         result = _format_agency_award_breakdown(response)
         assert "Solo Office:" in result
+
+
+def make_sub_components_response(n: int) -> AgencySubComponentsResponse:
+    return AgencySubComponentsResponse(
+        toptier_code="075",
+        fiscal_year=2024,
+        results=[
+            SubComponentBreakdown(
+                name=f"Sub-Component {i}",
+                id=f"sub-component-{i}",
+                total_budgetary_resources=float(i * 300),
+                total_obligations=float(i * 200),
+                total_outlays=float(i * 100),
+            )
+            for i in range(n)
+        ],
+    )
+
+
+class TestGetAgencyBudgetBySubcomponentChart:
+    def test_multi_subcomponent_produces_bar_spec(self):
+        spec = should_chart("get_agency_budget_by_subcomponent", make_sub_components_response(3))
+        assert spec is not None
+        assert spec.chart_type == "bar"
+        assert spec.labels == ["Sub-Component 0", "Sub-Component 1", "Sub-Component 2"]
+        assert spec.values == [0.0, 300.0, 600.0]
+
+    def test_single_subcomponent_returns_none(self):
+        assert should_chart("get_agency_budget_by_subcomponent", make_sub_components_response(1)) is None
+
+
+class TestFormatAgencySubComponents:
+    def test_formats_all_three_figures(self):
+        result = _format_agency_sub_components(make_sub_components_response(1))
+        assert "Sub-Component 0" in result
+        assert "budgetary resources $0.00" in result
+        assert "obligated $0.00" in result
+        assert "outlayed $0.00" in result
+
+    def test_sorts_by_budgetary_resources_descending_regardless_of_input_order(self):
+        response = AgencySubComponentsResponse(
+            toptier_code="075",
+            fiscal_year=2024,
+            results=[
+                SubComponentBreakdown(
+                    name="Small", id="small", total_budgetary_resources=10.0,
+                    total_obligations=5.0, total_outlays=1.0,
+                ),
+                SubComponentBreakdown(
+                    name="Big", id="big", total_budgetary_resources=1000.0,
+                    total_obligations=500.0, total_outlays=100.0,
+                ),
+            ],
+        )
+        result = _format_agency_sub_components(response)
+        assert result.index("Big") < result.index("Small")
+
+
+_UNSET = object()
+
+
+class TestGetAgencyBudgetBySubcomponent:
+    def _mock_client(self, response_or_error, monkeypatch, agency=_UNSET):
+        resolved_agency = make_agency("Department of Health and Human Services") if agency is _UNSET else agency
+        client = FakeClient(resolved_agency)
+        if isinstance(response_or_error, Exception):
+            def _raise(*a, **kw):
+                raise response_or_error
+            client.get_agency_sub_components = _raise
+        else:
+            client.get_agency_sub_components = lambda *a, **kw: response_or_error
+        monkeypatch.setattr("backend.app.agent.tools._shared._get_usaspending_client", lambda: client)
+        return client
+
+    def test_successful_call_formats_output(self, monkeypatch):
+        self._mock_client(make_sub_components_response(2), monkeypatch)
+        result = get_agency_budget_by_subcomponent.func(
+            agency_name="Department of Health and Human Services", fiscal_year=2024
+        )
+        assert "Sub-Component 0" in result
+        assert "Sub-Component 1" in result
+        assert "budgetary resources" in result
+
+    def test_agency_not_found_returns_failure_string(self, monkeypatch):
+        self._mock_client(make_sub_components_response(1), monkeypatch, agency=None)
+        result = get_agency_budget_by_subcomponent.func(agency_name="Not A Real Agency", fiscal_year=2024)
+        assert "This query failed" in result
+        assert "Not A Real Agency" in result
+
+    def test_empty_results_returns_plain_message(self, monkeypatch):
+        empty = AgencySubComponentsResponse(toptier_code="075", fiscal_year=2024, results=[])
+        self._mock_client(empty, monkeypatch)
+        result = get_agency_budget_by_subcomponent.func(
+            agency_name="Department of Health and Human Services", fiscal_year=2024
+        )
+        assert "No sub-component budget data found" in result
         assert "()" not in result
 
     def test_children_are_not_shown_by_default(self):
@@ -688,6 +796,9 @@ class TestGetSpendingExplorerBreakdownRaw:
             self.calls.append((group_by, dict(filters)))
             return SpendingExplorerResponse(total=1.0, end_date="2026-06-30", results=[])
 
+        def resolve_spending_explorer_agency_id(self, agency):
+            return agency
+
     def test_no_filters_sends_only_fy_and_quarter(self, monkeypatch):
         fake = self._FakeClient()
         monkeypatch.setattr("backend.app.agent.tools.spending_explorer._get_usaspending_client", lambda: fake)
@@ -721,6 +832,22 @@ class TestGetSpendingExplorerBreakdownRaw:
             "budget_subfunction": "571", "federal_account": "5598", "object_class": "40",
             "recipient": "abc", "program_activity": "1",
         }
+
+    def test_agency_is_resolved_through_the_client_before_sending(self, monkeypatch):
+        fake = self._FakeClient()
+        monkeypatch.setattr(fake, "resolve_spending_explorer_agency_id", lambda agency: "806" if agency == "075" else None)
+        monkeypatch.setattr("backend.app.agent.tools.spending_explorer._get_usaspending_client", lambda: fake)
+        get_spending_explorer_breakdown_raw("object_class", 2026, "3", agency="075")
+        _, filters = fake.calls[0]
+        assert filters["agency"] == "806"
+
+    def test_unresolvable_agency_raises_before_any_live_call(self, monkeypatch):
+        fake = self._FakeClient()
+        monkeypatch.setattr(fake, "resolve_spending_explorer_agency_id", lambda agency: None)
+        monkeypatch.setattr("backend.app.agent.tools.spending_explorer._get_usaspending_client", lambda: fake)
+        with pytest.raises(USASpendingAPIError, match="No agency found"):
+            get_spending_explorer_breakdown_raw("object_class", 2026, "3", agency="not-a-real-agency")
+        assert fake.calls == []
 
     def test_unscoped_recipient_raises_before_any_live_call(self, monkeypatch):
         fake = self._FakeClient()
@@ -791,6 +918,21 @@ class TestBuildToolCitation:
             {"agency_name": "National Science Foundation", "fiscal_year": 2024, "award_type": None},
         )
         assert "award_type" not in citation.parameters
+
+    def test_get_agency_budget_by_subcomponent(self):
+        citation = build_tool_citation(
+            "get_agency_budget_by_subcomponent",
+            {"agency_name": "Department of Health and Human Services", "fiscal_year": 2024, "toptier_code": "075"},
+        )
+        assert citation is not None
+        assert citation.tool_name == "get_agency_budget_by_subcomponent"
+        assert citation.parameters == {
+            "agency_name": "Department of Health and Human Services",
+            "fiscal_year": 2024,
+        }
+        assert citation.description == (
+            "Budgetary resources by sub-component, Department of Health and Human Services, FY2024"
+        )
 
     def test_lookup_agency(self):
         citation = build_tool_citation("lookup_agency", {"name": "National Science Foundation"})
@@ -1613,6 +1755,85 @@ class TestBuildFilters:
         filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, def_codes=["L"])
         assert filters.agencies is None
         assert filters.def_codes == ["L"]
+
+    # contract_pricing_type/set_aside_type/extent_competed_type (issue #27) -
+    # human-key -> real FPDS code lookup, same normalize-then-validate shape
+    # as def_codes/award_type.
+
+    def test_contract_pricing_type_resolves_to_real_codes(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+            contract_pricing_type=["firm_fixed_price", "time_and_materials"],
+        )
+        assert filters.contract_pricing_type_codes == ["J", "Y"]
+
+    def test_set_aside_type_resolves_to_real_codes(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+            set_aside_type=["Small Business Set Aside Total"],
+        )
+        assert filters.set_aside_type_codes == ["SBA"]
+
+    def test_extent_competed_type_resolves_to_real_codes(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+            extent_competed_type=["full-and-open-competition"],
+        )
+        assert filters.extent_competed_type_codes == ["A"]
+
+    def test_unknown_contract_pricing_type_raises(self):
+        with pytest.raises(USASpendingAPIError, match="Unknown contract_pricing_type"):
+            _build_filters(
+                FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+                contract_pricing_type=["not_a_real_pricing_type"],
+            )
+
+    def test_contract_pricing_type_alone_is_sufficient_scope(self):
+        filters = _build_filters(
+            FakeClient(make_agency()), None, "fiscal", 2021, 2024,
+            contract_pricing_type=["firm_fixed_price"],
+        )
+        assert filters.agencies is None
+        assert filters.contract_pricing_type_codes == ["J"]
+
+    def test_set_aside_type_codes_not_scraped_from_website_source(self):
+        # Regression coverage: contract_type_codes.py's set-aside vocabulary was
+        # first built from usaspending-website's own contractFields.js, which
+        # turned out to have wrong/stale code spellings ("ISEE" instead of the
+        # real "IEE", a "Civ" suffix on codes that don't have one). These three
+        # keys (drawn from the live Data Dictionary instead) only resolve
+        # correctly once that mistake is fixed.
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+            set_aside_type=["indian_economic_enterprise", "very_small_business", "reserved_for_small_business"],
+        )
+        assert filters.set_aside_type_codes == ["IEE", "VSB", "RSB"]
+
+    def test_extent_competed_type_codes_not_scraped_from_website_source(self):
+        # Same regression as above, for extent_competed_type: the website
+        # source's "E Civ"/"CDOCiv"/"NDOCiv" were wrong - the real codes (from
+        # the live Data Dictionary) have no "Civ" suffix at all.
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+            extent_competed_type=["follow_on_to_competed_action", "competitive_delivery_order",
+                                   "non_competitive_delivery_order"],
+        )
+        assert filters.extent_competed_type_codes == ["E", "CDO", "NDO"]
+
+    def test_deprecated_set_aside_codes_are_not_in_the_vocabulary(self):
+        # 8AC/HS2 are real Data Dictionary codes but live-verified to return
+        # zero results (matching the Data Dictionary's own deprecation notes) -
+        # deliberately excluded, not an oversight.
+        with pytest.raises(USASpendingAPIError, match="Unknown set_aside_type"):
+            _build_filters(
+                FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+                set_aside_type=["8ac"],
+            )
+        with pytest.raises(USASpendingAPIError, match="Unknown set_aside_type"):
+            _build_filters(
+                FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024,
+                set_aside_type=["hs2"],
+            )
 
     # award_id/recipient_type/description (2026-09-12, issue #28) - all
     # live-verified against the real API: award_ids/description matching
@@ -3408,6 +3629,15 @@ class TestLiteralTypesMatchVocabulary:
 
     def test_recipient_type_literal_matches_recipient_type_names(self):
         assert set(get_args(RecipientType)) == set(RECIPIENT_TYPE_NAMES)
+
+    def test_contract_pricing_type_literal_matches_contract_pricing_type_codes(self):
+        assert set(get_args(ContractPricingType)) == set(CONTRACT_PRICING_TYPE_CODES)
+
+    def test_set_aside_type_literal_matches_set_aside_type_codes(self):
+        assert set(get_args(SetAsideType)) == set(SET_ASIDE_TYPE_CODES)
+
+    def test_extent_competed_type_literal_matches_extent_competed_type_codes(self):
+        assert set(get_args(ExtentCompetedType)) == set(EXTENT_COMPETED_TYPE_CODES)
 
 
 class TestSpendingFilterParamsMatchesActualSignatures:

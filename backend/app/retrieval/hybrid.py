@@ -9,9 +9,13 @@ Usage:
 """
 from __future__ import annotations
 
+import logging
 import os
+import threading
+import time
 
 import chromadb
+import torch
 from dotenv import load_dotenv
 from langsmith import traceable
 from sentence_transformers import CrossEncoder, SentenceTransformer
@@ -23,11 +27,33 @@ from whoosh.qparser import QueryParser
 # sanity_check.py) rather than only inside the FastAPI server.
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 CHROMA_DB_DIR = os.environ.get("CHROMA_DB_DIR", "./data/chroma")
 WHOOSH_INDEX_DIR = os.environ.get("WHOOSH_INDEX_DIR", "./data/whoosh")
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 CROSS_ENCODER_MODEL = os.environ.get("CROSS_ENCODER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
 COLLECTION_NAME = "analysts_guide"
+
+
+def _timed_op(name: str, fn):
+    """Runs fn(), logging wall vs. thread-cpu time when slow - the gap between them tells scheduling delay apart from genuinely slower computation."""
+    thread_id = threading.get_ident()
+    wall_start = time.perf_counter()
+    cpu_start = time.thread_time()
+    result = fn()
+    wall_elapsed = time.perf_counter() - wall_start
+    cpu_elapsed = time.thread_time() - cpu_start
+    if wall_elapsed > 0.5:
+        logger.warning(
+            "%s took %.2fs wall / %.2fs thread-cpu (thread=%s, torch_threads=%s)",
+            name,
+            wall_elapsed,
+            cpu_elapsed,
+            thread_id,
+            torch.get_num_threads(),
+        )
+    return result
 
 
 def merge_candidates(dense: dict[str, dict], sparse: dict[str, dict]) -> list[dict]:
@@ -73,8 +99,10 @@ class HybridRetriever:
 
     @traceable(run_type="retriever", name="dense_search_chroma")
     def _dense_search(self, query: str) -> dict[str, dict]:
-        embedding = self.embedding_model.encode([query]).tolist()
-        results = self.collection.query(query_embeddings=embedding, n_results=self.dense_k)
+        embedding = _timed_op("embedding_model.encode", lambda: self.embedding_model.encode([query])).tolist()
+        results = _timed_op(
+            "collection.query", lambda: self.collection.query(query_embeddings=embedding, n_results=self.dense_k)
+        )
 
         candidates = {}
         for rank, (chunk_id, text, meta, distance) in enumerate(
@@ -120,7 +148,7 @@ class HybridRetriever:
     @traceable(run_type="chain", name="cross_encoder_rerank")
     def _rerank(self, query: str, candidates: list[dict]) -> list[dict]:
         pairs = [(query, c["text"]) for c in candidates]
-        scores = self.cross_encoder.predict(pairs)
+        scores = _timed_op("cross_encoder.predict", lambda: self.cross_encoder.predict(pairs))
         for c, score in zip(candidates, scores):
             c["rerank_score"] = float(score)
 

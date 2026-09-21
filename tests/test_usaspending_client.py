@@ -51,9 +51,9 @@ class TestRaiseWithDetail:
         assert "500" in str(exc_info.value)
 
 
-def make_agency(name: str, abbreviation: str, code: str = "000") -> ToptierAgency:
+def make_agency(name: str, abbreviation: str, code: str = "000", agency_id: int = 1) -> ToptierAgency:
     return ToptierAgency(
-        agency_id=1,
+        agency_id=agency_id,
         agency_name=name,
         toptier_code=code,
         abbreviation=abbreviation,
@@ -176,6 +176,35 @@ class TestFindAgencyByName:
         # agency, so this only resolves via the autocomplete fallback
         result = client.find_agency_by_name("Health & Human Svcs")
         assert result is hhs
+
+
+class TestResolveSpendingExplorerAgencyId:
+    @pytest.fixture
+    def client(self):
+        return USASpendingClient()
+
+    @pytest.fixture
+    def agencies(self):
+        return [
+            make_agency("Department of Health and Human Services", "HHS", code="075", agency_id=806),
+            make_agency("National Science Foundation", "NSF", code="049", agency_id=1601),
+        ]
+
+    def test_resolves_toptier_code_to_spending_explorer_id(self, client, agencies, monkeypatch):
+        monkeypatch.setattr(client, "list_toptier_agencies", lambda: agencies)
+        assert client.resolve_spending_explorer_agency_id("075") == "806"
+
+    def test_resolves_abbreviation_to_spending_explorer_id(self, client, agencies, monkeypatch):
+        monkeypatch.setattr(client, "list_toptier_agencies", lambda: agencies)
+        assert client.resolve_spending_explorer_agency_id("HHS") == "806"
+
+    def test_resolves_name_to_spending_explorer_id(self, client, agencies, monkeypatch):
+        monkeypatch.setattr(client, "list_toptier_agencies", lambda: agencies)
+        assert client.resolve_spending_explorer_agency_id("National Science Foundation") == "1601"
+
+    def test_no_match_returns_none(self, client, agencies, monkeypatch):
+        monkeypatch.setattr(client, "list_toptier_agencies", lambda: agencies)
+        assert client.resolve_spending_explorer_agency_id("Department of Pizza") is None
 
 
 class TestListToptierAgenciesCaching:

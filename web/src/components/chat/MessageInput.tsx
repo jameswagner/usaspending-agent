@@ -6,9 +6,10 @@ interface MessageInputProps {
   onSend: (question: string) => Promise<void>;
   onNewConversation: () => void;
   loading: boolean;
+  disabled: boolean;
 }
 
-export function MessageInput({ onSend, onNewConversation, loading }: MessageInputProps) {
+export function MessageInput({ onSend, onNewConversation, loading, disabled }: MessageInputProps) {
   const [question, setQuestion] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -21,7 +22,7 @@ export function MessageInput({ onSend, onNewConversation, loading }: MessageInpu
 
   async function submit() {
     const trimmed = question.trim();
-    if (!trimmed || loading) return;
+    if (!trimmed || loading || disabled) return;
     setQuestion("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     await onSend(trimmed);
@@ -55,7 +56,7 @@ export function MessageInput({ onSend, onNewConversation, loading }: MessageInpu
       />
       <button
         type="submit"
-        disabled={loading || !question.trim()}
+        disabled={loading || disabled || !question.trim()}
         className="shrink-0 rounded-md bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
       >
         Ask

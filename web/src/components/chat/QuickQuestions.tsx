@@ -5,9 +5,10 @@ import { sampleDemoQuestions } from "@/lib/demoQuestions";
 
 interface QuickQuestionsProps {
   onSend: (question: string) => Promise<void>;
+  disabled: boolean;
 }
 
-export function QuickQuestions({ onSend }: QuickQuestionsProps) {
+export function QuickQuestions({ onSend, disabled }: QuickQuestionsProps) {
   const [questions, setQuestions] = useState<string[]>([]);
 
   useEffect(() => {
@@ -22,8 +23,9 @@ export function QuickQuestions({ onSend }: QuickQuestionsProps) {
         <button
           key={question}
           type="button"
+          disabled={disabled}
           onClick={() => void onSend(question)}
-          className="rounded-md border border-black/15 px-3 py-1.5 text-left text-sm text-black/70 hover:bg-black/5 dark:border-white/15 dark:text-white/70 dark:hover:bg-white/10"
+          className="rounded-md border border-black/15 px-3 py-1.5 text-left text-sm text-black/70 hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:text-white/70 dark:hover:bg-white/10"
         >
           {question}
         </button>

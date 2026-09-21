@@ -210,9 +210,13 @@ ADVANCED_FILTER_FIELD_COVERAGE: dict[str, str] = {
     "tas_codes": "exposed (tas_codes) - direct code-path passthrough (require-list of "
                  "[ATA, AID, ...] component lists), same reasoning as naics_codes/psc_codes above",
     "psc_codes": "exposed (psc_code) - direct code passthrough, same reasoning as program_numbers/naics_codes above",
-    "contract_pricing_type_codes": "modeled, not exposed",
-    "set_aside_type_codes": "modeled, not exposed",
-    "extent_competed_type_codes": "modeled, not exposed",
+    "contract_pricing_type_codes": "exposed (contract_pricing_type) - search_awards only (#27), human-key "
+                                    "lookup via backend/app/agent/contract_type_codes.py, same reasoning as "
+                                    "recipient_type_names",
+    "set_aside_type_codes": "exposed (set_aside_type) - search_awards only (#27), same reasoning as "
+                             "contract_pricing_type_codes above",
+    "extent_competed_type_codes": "exposed (extent_competed_type) - search_awards only (#27), same reasoning "
+                                   "as contract_pricing_type_codes above",
     "treasury_account_components": "exposed (federal_account) - only the aid/main pair (the federal "
                                     "account itself, e.g. '028-8704'), not the full TAS "
                                     "ata/bpoa/epoa/sub sub-components - no analyst demand observed for "

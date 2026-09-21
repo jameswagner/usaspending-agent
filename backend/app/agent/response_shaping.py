@@ -448,6 +448,9 @@ _ALL_OPTIONAL_FILTER_KEYS = {
     "tas_code",
     "federal_account",
     "def_codes",
+    "contract_pricing_type",
+    "set_aside_type",
+    "extent_competed_type",
 }
 
 
@@ -472,6 +475,9 @@ _SCOPE_LABEL_KEYS = (
     ("tas_code", "TAS"),
     ("federal_account", "federal account"),
     ("def_codes", "DEFC"),
+    ("contract_pricing_type", "contract pricing"),
+    ("set_aside_type", "set-aside"),
+    ("extent_competed_type", "extent competed"),
 )
 
 

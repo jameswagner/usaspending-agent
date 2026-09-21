@@ -19,6 +19,7 @@ from ...tool_filters import (
     DateType,
     Scope,
     _build_filters,
+    _pop_naics_disclosure,
     _record_optional_filter_context,
 )
 from .._shared import (
@@ -238,9 +239,12 @@ def get_spending_over_time(
             or new_awards_only (only awards that originated in this window).
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
         recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
-        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511". Must be
-            the real code - if you only have a description, use get_spending_by_category with
-            category="naics" to browse the actual breakdown instead of guessing a code.
+        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511" - or a
+            plain-English industry description, e.g. "custom software development", which
+            auto-resolves to a code on a single confident semantic match (the result discloses
+            when this happened). If the description is ambiguous, call resolve_naics_code first
+            to see the candidates, or use get_spending_by_category with category="naics" to
+            browse the actual breakdown instead of guessing.
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".
@@ -307,9 +311,11 @@ def get_spending_over_time(
             def_codes=def_codes,
         )
     except USASpendingAPIError as e:
+        _pop_naics_disclosure()
         logger.warning("get_spending_over_time failed for %s: %s", scope, e)
         return f"This query failed: {e}."
 
+    naics_note = _pop_naics_disclosure()
     context = _record_optional_filter_context(
         {
             "start_year": start_year,
@@ -345,16 +351,23 @@ def get_spending_over_time(
         description=description,
         def_codes=def_codes,
     )
+    if naics_note:
+        context["naics_auto_resolved"] = naics_note
     _record_tool_call("get_spending_over_time", response, context)
 
     if not response.results:
+        no_results_note = f" ({naics_note})" if naics_note else ""
         return (
             f"No spending-over-time data found for {scope} between "
             f"{year_label(time_period_type, start_year)} and {year_label(time_period_type, end_year)}."
+            f"{no_results_note}"
         )
 
     lines = [
         f"{_format_time_period(r.time_period)}: ${r.aggregated_amount:,.2f}"
         for r in response.results
     ]
-    return _wrap_untrusted("\n".join(lines) + _format_api_messages(response.messages))
+    note = _format_api_messages(response.messages)
+    if naics_note:
+        note += f"\n\n({naics_note})"
+    return _wrap_untrusted("\n".join(lines) + note)

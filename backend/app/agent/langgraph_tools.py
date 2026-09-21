@@ -24,6 +24,7 @@ from .arithmetic_tools import (
 from .tools import (
     get_agency_award_breakdown,
     get_agency_budget,
+    get_agency_budget_by_subcomponent,
     get_award_details,
     get_award_funding_breakdown,
     get_award_subawards,
@@ -53,6 +54,7 @@ from .tools import (
 _BETA_TOOLS = [
     get_agency_award_breakdown,
     get_agency_budget,
+    get_agency_budget_by_subcomponent,
     get_award_details,
     get_award_funding_breakdown,
     get_award_subawards,

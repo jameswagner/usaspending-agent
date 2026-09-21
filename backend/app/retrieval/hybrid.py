@@ -29,6 +29,9 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+# os.cpu_count() reports the shared host's cores (48), not this container's allocation - caps it.
+torch.set_num_threads(int(os.environ.get("TORCH_NUM_THREADS", "4")))
+
 CHROMA_DB_DIR = os.environ.get("CHROMA_DB_DIR", "./data/chroma")
 WHOOSH_INDEX_DIR = os.environ.get("WHOOSH_INDEX_DIR", "./data/whoosh")
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")

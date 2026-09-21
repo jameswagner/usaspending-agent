@@ -47,6 +47,7 @@ from .tools import (
     search_guide,
     search_recipients,
     search_subawards,
+    search_transactions,
 )
 
 _BETA_TOOLS = [
@@ -75,6 +76,7 @@ _BETA_TOOLS = [
     search_guide,
     search_recipients,
     search_subawards,
+    search_transactions,
 ]
 _ARITHMETIC_TOOLS = [average, delta, percentage_of, rank_values, ratio, sum_values]
 

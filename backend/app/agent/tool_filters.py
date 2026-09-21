@@ -842,6 +842,15 @@ SUBAWARD_FIELDS = [
     "prime_award_generated_internal_id",
 ]
 
+# search/spending_by_transaction's own field list (transactions.md), base
+# fields present regardless of award_type - generated_internal_id/internal_id
+# come back automatically on every row (live-verified 2026-09-19), so unlike
+# SEARCH_AWARDS_FIELDS_BASE they don't need to be requested explicitly.
+TRANSACTION_FIELDS_BASE = [
+    "Award ID", "Mod", "Recipient Name", "Action Date",
+    "Awarding Agency", "Awarding Sub Agency", "Award Type", "Transaction Description",
+]
+
 LOAN_AWARD_TYPE_CODES = {"07", "08"}
 
 
@@ -871,6 +880,22 @@ def _is_loan_award_type(award_type: str) -> bool:
     codes = AWARD_TYPE_GROUPS.get(_normalize_award_type(award_type), [])
     return any(c in LOAN_AWARD_TYPE_CODES for c in codes)
 
+
+def _transaction_amount_field_for_award_type(award_type: str) -> str:
+    """search/spending_by_transaction's own per-row amount field: "Loan
+    Value" for loan award types (same split as _amount_field_for_award_type),
+    "Transaction Amount" otherwise - live-verified 2026-09-19 as a valid
+    sort/result field there. NOT "Award Amount" - that's the award-level
+    cumulative total search_awards uses, not a per-transaction figure."""
+    return "Loan Value" if _is_loan_award_type(award_type) else "Transaction Amount"
+
+
+# search_transactions's own sort_by vocabulary - narrower than SortBy below:
+# "outlays"/"subsidy_cost" are lifetime-award fields, not meaningful per
+# transaction, and "Total Outlays" isn't even in spending_by_transaction's
+# own valid-sort-field list (live-verified 2026-09-19, unlike "Transaction
+# Amount"/"Loan Value"/"Action Date" which are).
+TransactionSortBy = Literal["amount", "recency"]
 
 # A static Literal mirror of SORT_BY_FIELD_NAMES.keys() - same
 # schema-enum-generation reasoning as AwardType above.

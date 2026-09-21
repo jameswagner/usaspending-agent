@@ -9,9 +9,10 @@ interface MessageListProps {
   turns: ConversationTurn[];
   error: string | null;
   onSend: (question: string) => Promise<void>;
+  disabled: boolean;
 }
 
-export function MessageList({ turns, error, onSend }: MessageListProps) {
+export function MessageList({ turns, error, onSend, disabled }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Ref-based bottom scroll, not flex-direction: column-reverse - reverse
@@ -29,7 +30,7 @@ export function MessageList({ turns, error, onSend }: MessageListProps) {
             <p className="text-sm text-black/50 dark:text-white/50">
               e.g. What is a sub-award? / How is NSF spending broken down by NAICS code for FY2024?
             </p>
-            <QuickQuestions onSend={onSend} />
+            <QuickQuestions onSend={onSend} disabled={disabled} />
           </div>
         )}
         {turns.map((turn) => (

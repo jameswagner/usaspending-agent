@@ -1,6 +1,6 @@
 """The _build_filters-based cluster: get_spending_by_category,
-get_spending_over_time, search_awards, search_subawards,
-get_spending_by_geography. All five funnel their filter params through the
+get_spending_over_time, search_awards, search_subawards, search_transactions,
+get_spending_by_geography. All six funnel their filter params through the
 shared tool_filters._build_filters. Each tool lives in its own module
 (category.py, over_time.py, search.py, geography.py); this file re-exports
 their public names so existing import sites don't need to change.
@@ -31,6 +31,8 @@ from .search import (
     search_awards_raw,
     search_subawards,
     search_subawards_raw,
+    search_transactions,
+    search_transactions_raw,
 )
 
 __all__ = [
@@ -51,4 +53,6 @@ __all__ = [
     "search_awards_raw",
     "search_subawards",
     "search_subawards_raw",
+    "search_transactions",
+    "search_transactions_raw",
 ]

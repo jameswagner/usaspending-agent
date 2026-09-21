@@ -1,11 +1,13 @@
 "use client";
 
 import { useConversation } from "@/hooks/useConversation";
+import { useBackendHealth } from "@/hooks/useBackendHealth";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 
 export function ChatWindow() {
   const { turns, loading, error, sendMessage, newConversation } = useConversation();
+  const backendReady = useBackendHealth();
 
   return (
     <div className="flex h-dvh flex-col">
@@ -15,9 +17,12 @@ export function ChatWindow() {
           Ask about federal spending: definitions from the Analyst&apos;s Guide or Glossary, or live numbers from
           USASpending.gov.
         </p>
+        {!backendReady && (
+          <p className="text-sm text-amber-600 dark:text-amber-400">Waking up the server, this may take a moment…</p>
+        )}
       </header>
-      <MessageList turns={turns} error={error} onSend={sendMessage} />
-      <MessageInput onSend={sendMessage} onNewConversation={newConversation} loading={loading} />
+      <MessageList turns={turns} error={error} onSend={sendMessage} disabled={!backendReady} />
+      <MessageInput onSend={sendMessage} onNewConversation={newConversation} loading={loading} disabled={!backendReady} />
     </div>
   );
 }

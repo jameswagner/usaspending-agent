@@ -13,6 +13,7 @@ machinery those don't need.
 """
 from __future__ import annotations
 
+import contextvars
 import re
 from typing import Literal, TypedDict
 
@@ -33,6 +34,7 @@ from backend.app.usaspending import (
 
 from .recipient_types import _normalize_recipient_type
 from .response_shaping import year_range_to_date_range
+from .singletons import RERANK_CONFIDENCE_THRESHOLD, _get_naics_retriever
 
 
 class SpendingFilterParams(TypedDict, total=False):
@@ -421,6 +423,25 @@ GeoScope = Literal["place_of_performance", "recipient_location"]
 GeoLayer = Literal["state", "county", "district", "country"]
 
 
+# Set by _validate_naics_code when it silently auto-substitutes a resolved
+# code for a plain-English description (see #214) - drained by the calling
+# tool wrapper (_pop_naics_disclosure) and surfaced in that call's return
+# text/citation, so the substitution is visible rather than a silent guess.
+# Cleared at the top of every _build_filters call (not just on drain) so a
+# stale note from an earlier, unrelated tool call in the same turn can never
+# leak into this one - see _build_filters.
+_naics_disclosure: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "naics_disclosure", default=None
+)
+
+
+def _pop_naics_disclosure() -> str | None:
+    note = _naics_disclosure.get()
+    if note is not None:
+        _naics_disclosure.set(None)
+    return note
+
+
 # Format-only validation for the three code passthroughs below - these are
 # large government classification systems (thousands of NAICS/PSC codes,
 # hundreds of CFDA programs) with no small closed vocabulary to validate
@@ -431,12 +452,34 @@ GeoLayer = Literal["state", "county", "district", "country"]
 # API itself, the same graceful-decline shape as an unknown category.
 def _validate_naics_code(naics_code: str) -> str:
     code = naics_code.strip()
-    if not code.isdigit() or not (2 <= len(code) <= 6):
-        raise USASpendingAPIError(
-            f"'{naics_code}' doesn't look like a NAICS code (expected 2-6 digits, e.g. '541511'). "
-            "If you don't have the exact code, ask for a category breakdown by naics instead."
+    if code.isdigit() and 2 <= len(code) <= 6:
+        return code
+
+    # Not code-shaped - the model likely passed a plain description
+    # (e.g. "ship building") instead of skipping straight to
+    # resolve_naics_code first, as the system prompt used to require for
+    # every case. Resolve it the same way resolve_naics_code itself does
+    # (#214's pilot), and only auto-substitute on a single confident match -
+    # the same RERANK_CONFIDENCE_THRESHOLD bar that tool already uses, not a
+    # looser one. Ambiguous (multiple confident matches) or no-match still
+    # raises, so the model sees candidates via resolve_naics_code rather
+    # than a guess being made for it.
+    results = _get_naics_retriever().retrieve(naics_code, top_k=5)
+    matches = [r for r in results if r["rerank_score"] > RERANK_CONFIDENCE_THRESHOLD]
+    if len(matches) == 1:
+        match = matches[0]
+        _naics_disclosure.set(
+            f"'{naics_code}' isn't a NAICS code - auto-resolved to the closest confident semantic "
+            f"match, NAICS {match['slug']} ({match['term']}). Not a confirmed exact match; if this "
+            "doesn't look right, call resolve_naics_code to see other candidates."
         )
-    return code
+        return match["slug"]
+
+    raise USASpendingAPIError(
+        f"'{naics_code}' doesn't look like a NAICS code (expected 2-6 digits, e.g. '541511'), and no "
+        "single confident semantic match was found for it either. Call resolve_naics_code to see "
+        "candidate codes, or ask for a category breakdown by naics instead."
+    )
 
 
 def _validate_psc_code(psc_code: str) -> str:
@@ -547,16 +590,20 @@ def _build_filters(
     to different AdvancedFilters fields (place_of_performance_locations
     vs. recipient_locations) and can both be set at once.
 
-    naics_code/psc_code/cfda_program are direct code passthroughs (format-
-    validated only, not looked up against a vocabulary) - unlike
+    naics_code/psc_code/cfda_program are direct code passthroughs - unlike
     award_type/state, these codes are already the exact value the API
     wants once an analyst states them (e.g. "NAICS 541511"), the same way
     a stock ticker doesn't need translating. No mapping table exists for
     them the way AWARD_TYPE_GROUPS/US_STATE_ABBREVIATIONS do, because
     there's no small closed vocabulary to hardcode - NAICS/PSC/CFDA are
-    each thousands of entries. A keyword->code lookup (the live
-    autocomplete/naics/psc/cfda endpoints) was considered and deliberately
-    not built - see ADVANCED_FILTER_FIELD_COVERAGE's naics_codes entry.
+    each thousands of entries; psc_code/cfda_program stay format-validated
+    only, not looked up against a vocabulary (see ADVANCED_FILTER_FIELD_
+    COVERAGE's naics_codes entry). naics_code is the #214 pilot exception:
+    a value that isn't code-shaped now falls back to the same semantic
+    resolver resolve_naics_code itself uses, auto-substituting on a single
+    confident match (see _validate_naics_code) rather than staying a pure
+    passthrough - see its own docstring for the ambiguous/no-match case,
+    which still raises rather than guessing.
 
     agency_name is optional - a recipient-only, cross-agency question needs
     to work too. At least one of agency_name/recipient_name/recipient_id/
@@ -606,6 +653,12 @@ def _build_filters(
     Runs through _normalize_def_codes first since the live API doesn't accept
     the DEFC_GROUP_ALIASES shortcuts itself.
     """
+    # Cleared unconditionally at the very top of every call - see
+    # _naics_disclosure's own comment for why this, not just draining on
+    # read, is what actually prevents a stale note leaking into an
+    # unrelated later tool call.
+    _naics_disclosure.set(None)
+
     # Unpacked once here (mechanical, one line per SpendingFilterParams field) so the
     # rest of this function's business logic is unchanged from before **filters existed.
     award_type = filters.get("award_type")

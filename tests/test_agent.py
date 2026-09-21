@@ -56,6 +56,7 @@ from backend.app.agent.tool_filters import (
     _normalize_scope,
     _normalize_state,
     _other_award_type_categories_to_try,
+    _pop_naics_disclosure,
     _record_optional_filter_context,
     _validate_cfda_program,
     _validate_naics_code,
@@ -1642,9 +1643,29 @@ class TestBuildFilters:
         filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, naics_code="541511")
         assert filters.naics_codes.require == ["541511"]
 
-    def test_malformed_naics_code_raises(self):
+    def test_malformed_naics_code_with_no_confident_match_raises(self, monkeypatch):
+        # #214: naics_code now attempts semantic resolution for a non-code
+        # value before giving up - this only still raises because the fake
+        # retriever below returns no matches.
+        monkeypatch.setattr(
+            "backend.app.agent.tool_filters._get_naics_retriever", lambda: _FakeRetriever([])
+        )
         with pytest.raises(USASpendingAPIError, match="doesn't look like a NAICS code"):
-            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, naics_code="software development")
+            _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, naics_code="asdkjfhqwoeiruty")
+
+    def test_naics_code_description_auto_resolves_in_build_filters(self, monkeypatch):
+        above = RERANK_CONFIDENCE_THRESHOLD + 1
+        monkeypatch.setattr(
+            "backend.app.agent.tool_filters._get_naics_retriever",
+            lambda: _FakeRetriever(
+                [{"rerank_score": above, "slug": "541511", "term": "Custom Computer Programming Services"}]
+            ),
+        )
+        filters = _build_filters(
+            FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, naics_code="custom software development"
+        )
+        assert filters.naics_codes.require == ["541511"]
+        assert _pop_naics_disclosure() is not None
 
     def test_psc_code_becomes_flat_list_not_hierarchical_object(self):
         # Verified live 2026-09-06: the flat list form (not the
@@ -3323,9 +3344,54 @@ class TestCodeValidation:
         assert _validate_naics_code("54") == "54"
         assert _validate_naics_code("541511") == "541511"
 
-    def test_naics_code_rejects_non_numeric(self):
+    def test_naics_code_rejects_non_numeric_with_no_confident_match(self, monkeypatch):
+        # #214: a non-code value now attempts semantic resolution first -
+        # this only still raises because the fake retriever below returns
+        # no matches at all, not because the value is non-numeric per se.
+        monkeypatch.setattr(
+            "backend.app.agent.tool_filters._get_naics_retriever", lambda: _FakeRetriever([])
+        )
         with pytest.raises(USASpendingAPIError, match="doesn't look like a NAICS code"):
-            _validate_naics_code("information technology")
+            _validate_naics_code("asdkjfhqwoeiruty")
+
+    def test_naics_code_auto_resolves_on_single_confident_match(self, monkeypatch):
+        above = RERANK_CONFIDENCE_THRESHOLD + 1
+        monkeypatch.setattr(
+            "backend.app.agent.tool_filters._get_naics_retriever",
+            lambda: _FakeRetriever(
+                [{"rerank_score": above, "slug": "541511", "term": "Custom Computer Programming Services"}]
+            ),
+        )
+        assert _validate_naics_code("custom software development") == "541511"
+        note = _pop_naics_disclosure()
+        assert note is not None
+        assert "541511" in note
+        assert "custom software development" in note
+
+    def test_naics_code_ambiguous_match_still_raises(self, monkeypatch):
+        above = RERANK_CONFIDENCE_THRESHOLD + 1
+        monkeypatch.setattr(
+            "backend.app.agent.tool_filters._get_naics_retriever",
+            lambda: _FakeRetriever(
+                [
+                    {"rerank_score": above, "slug": "541511", "term": "Custom Computer Programming Services"},
+                    {"rerank_score": above, "slug": "541512", "term": "Computer Systems Design Services"},
+                ]
+            ),
+        )
+        with pytest.raises(USASpendingAPIError, match="resolve_naics_code"):
+            _validate_naics_code("computer services")
+        assert _pop_naics_disclosure() is None
+
+    def test_naics_code_below_threshold_match_still_raises(self, monkeypatch):
+        below = RERANK_CONFIDENCE_THRESHOLD - 1
+        monkeypatch.setattr(
+            "backend.app.agent.tool_filters._get_naics_retriever",
+            lambda: _FakeRetriever([{"rerank_score": below, "slug": "541511", "term": "not a real match"}]),
+        )
+        with pytest.raises(USASpendingAPIError, match="doesn't look like a NAICS code"):
+            _validate_naics_code("gibberish")
+        assert _pop_naics_disclosure() is None
 
     def test_valid_psc_code(self):
         assert _validate_psc_code("7030") == "7030"

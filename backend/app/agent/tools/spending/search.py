@@ -14,6 +14,7 @@ from langsmith import traceable
 
 from backend.app.usaspending import SearchAwardsResponse, USASpendingAPIError
 
+from ...contract_type_codes import ContractPricingType, ExtentCompetedType, SetAsideType
 from ...recipient_types import RecipientType
 from ...response_shaping import year_label, year_range_to_date_range
 from ...singletons import _get_usaspending_client
@@ -31,6 +32,7 @@ from ...tool_filters import (
     _build_filters,
     _clamp_limit,
     _other_award_type_categories_to_try,
+    _pop_naics_disclosure,
     _record_optional_filter_context,
     _sort_field_for_award_type,
     _transaction_amount_field_for_award_type,
@@ -82,6 +84,9 @@ def search_awards_raw(
     tas_code: str | None = None,
     federal_account: str | None = None,
     def_codes: list[str] | None = None,
+    contract_pricing_type: list[ContractPricingType] | None = None,
+    set_aside_type: list[SetAsideType] | None = None,
+    extent_competed_type: list[ExtentCompetedType] | None = None,
 ) -> SearchAwardsResponse:
     """Call the API once, return the structured response (results +
     page_metadata), sorted largest-first by sort_by (default "amount":
@@ -106,6 +111,11 @@ def search_awards_raw(
     (award_type_counts_as_scope=True), so this never raises for missing
     scope the way get_spending_by_category/get_spending_over_time can -
     see _build_filters' docstring and #125.
+
+    contract_pricing_type/set_aside_type/extent_competed_type (issue #27)
+    are only wired here, not on get_spending_by_category/get_spending_over_time/
+    search_subawards - the three fields exist generically on AdvancedFilters,
+    but this issue's own scope is search_awards specifically.
     """
     client = _get_usaspending_client()
     filters = _build_filters(
@@ -141,6 +151,9 @@ def search_awards_raw(
         tas_code=tas_code,
         federal_account=federal_account,
         def_codes=def_codes,
+        contract_pricing_type=contract_pricing_type,
+        set_aside_type=set_aside_type,
+        extent_competed_type=extent_competed_type,
         award_type_counts_as_scope=True,
     )
     amount_field = _amount_field_for_award_type(award_type)
@@ -194,6 +207,9 @@ def search_awards(
     tas_code: str | None = None,
     federal_account: str | None = None,
     def_codes: list[str] | None = None,
+    contract_pricing_type: list[ContractPricingType] | None = None,
+    set_aside_type: list[SetAsideType] | None = None,
+    extent_competed_type: list[ExtentCompetedType] | None = None,
 ) -> str:
     """Search for individual award records (specific contracts, grants, or loans) for a fiscal year range, scoped by an awarding agency and/or a recipient. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead. Results are ranked largest-first by sort_by (default "amount") — use this directly for "biggest"/"top N" questions, including "top N by outlay/subsidy cost" or "most recently modified" with sort_by set accordingly.
 
@@ -310,9 +326,12 @@ def search_awards(
             date_signed, last_modified_date, or new_awards_only.
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
         recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
-        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511". Must be
-            the real code - if you only have a description, browse via get_spending_by_category
-            (category="naics") instead of guessing a code.
+        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511" - or a
+            plain-English industry description, e.g. "custom software development", which
+            auto-resolves to a code on a single confident semantic match (the result discloses
+            when this happened). If the description is ambiguous (multiple plausible codes),
+            call resolve_naics_code first to see the candidates and pick one, or browse via
+            get_spending_by_category (category="naics") instead of guessing.
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".
@@ -342,6 +361,37 @@ def search_awards(
             Sufficient scope on its own. Every result also reports its own def_codes plus
             COVID-19/Infrastructure Obligations and Outlays when non-zero, regardless of
             whether this filter is set.
+        contract_pricing_type: Optional. Restrict to contracts with one or more of these
+            Type of Contract Pricing values, e.g. ["firm_fixed_price"] or
+            ["cost_plus_fixed_fee", "cost_plus_award_fee"] (multiple values are OR'd
+            together). Contract-only - meaningless for grants/loans/other assistance.
+            Valid values: combination, cost_no_fee, cost_plus_award_fee,
+            cost_plus_fixed_fee, cost_plus_incentive_fee, cost_sharing, firm_fixed_price,
+            fixed_price_award_fee, fixed_price_incentive, fixed_price_level_of_effort,
+            fixed_price_redetermination, fixed_price_economic_price_adjustment,
+            labor_hours, order_dependent, other, time_and_materials. Sufficient scope on
+            its own.
+        set_aside_type: Optional. Restrict to contracts with one or more of these Type of
+            Set Aside values, e.g. ["small_business_set_aside_total"] (multiple values are
+            OR'd together). Contract-only. Valid values: 8a_sole_source,
+            8a_with_hubzone_preference, 8a_competed, buy_indian,
+            economically_disadvantaged_women_owned_small_business,
+            economically_disadvantaged_women_owned_small_business_sole_source,
+            emerging_small_business, hbcu_mi_partial, hbcu_mi_total, hubzone_set_aside,
+            hubzone_sole_source, indian_economic_enterprise,
+            indian_small_business_economic_enterprise, no_set_aside,
+            reserved_for_small_business, sdvosb_sole_source, sdvosb_set_aside,
+            small_business_set_aside_partial, small_business_set_aside_total,
+            veteran_set_aside, veteran_sole_source, very_small_business,
+            women_owned_small_business, women_owned_small_business_sole_source.
+            Sufficient scope on its own.
+        extent_competed_type: Optional. Restrict to contracts with one or more of these
+            Extent Competed values, e.g. ["full_and_open_competition"] (multiple values
+            are OR'd together). Contract-only. Valid values: competed_under_sap,
+            competitive_delivery_order, follow_on_to_competed_action,
+            full_and_open_competition, full_and_open_competition_after_exclusion_of_sources,
+            non_competitive_delivery_order, not_available_for_competition, not_competed,
+            not_competed_under_sap. Sufficient scope on its own.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -358,6 +408,8 @@ def search_awards(
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
         award_id=award_id, description=description,
         tas_code=tas_code, federal_account=federal_account, def_codes=def_codes,
+        contract_pricing_type=contract_pricing_type, set_aside_type=set_aside_type,
+        extent_competed_type=extent_competed_type,
     )
     try:
         results = search_awards_raw(
@@ -394,11 +446,16 @@ def search_awards(
             tas_code=tas_code,
             federal_account=federal_account,
             def_codes=def_codes,
+            contract_pricing_type=contract_pricing_type,
+            set_aside_type=set_aside_type,
+            extent_competed_type=extent_competed_type,
         )
     except USASpendingAPIError as e:
+        _pop_naics_disclosure()
         logger.warning("search_awards failed for %s: %s", scope, e)
         return f"This query failed: {e}."
 
+    naics_note = _pop_naics_disclosure()
     context = _record_optional_filter_context(
         {
             "start_year": start_year,
@@ -434,17 +491,24 @@ def search_awards(
         tas_code=tas_code,
         federal_account=federal_account,
         def_codes=def_codes,
+        contract_pricing_type=contract_pricing_type,
+        set_aside_type=set_aside_type,
+        extent_competed_type=extent_competed_type,
     )
+    if naics_note:
+        context["naics_auto_resolved"] = naics_note
     _record_tool_call("search_awards", results, context)
 
     if not results.results:
         others = _other_award_type_categories_to_try(award_type)
+        no_results_note = f"\n\n({naics_note})" if naics_note else ""
         return (
             f"No {award_type} awards found for {scope} between "
             f"{year_label(time_period_type, start_year)} and {year_label(time_period_type, end_year)}. "
             f"This does NOT mean no award records exist for this recipient/program - only that none are "
             f"of type '{award_type}'. Before concluding there are no individual award records, try one or "
             f"more of the other award type categories: {others}."
+            f"{no_results_note}"
         )
 
     amount_field = _amount_field_for_award_type(award_type)
@@ -502,6 +566,8 @@ def search_awards(
             "State this distinction explicitly if reporting these figures as this period's spending; "
             "use get_spending_over_time instead for a genuinely period-scoped, non-duplicative total."
         )
+    if naics_note:
+        note += f"\n\n({naics_note})"
     return _wrap_untrusted("\n".join(lines) + note)
 
 
@@ -687,7 +753,10 @@ def search_subawards(
             action_date (default), date_signed, last_modified_date, or new_awards_only.
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
         recipient_scope: Optional. "domestic" or "foreign" - where the SUB-recipient is located.
-        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511".
+        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511" - or a
+            plain-English industry description, which auto-resolves to a code on a single
+            confident semantic match (disclosed in the result when it happens); call
+            resolve_naics_code first if the description is ambiguous.
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number, format NN.NNN.
         award_id: Optional. Restrict to subawards under a single known award by its plain Award ID
@@ -747,9 +816,11 @@ def search_subawards(
             description=description,
         )
     except USASpendingAPIError as e:
+        _pop_naics_disclosure()
         logger.warning("search_subawards failed for %s: %s", scope, e)
         return f"This query failed: {e}."
 
+    naics_note = _pop_naics_disclosure()
     context = _record_optional_filter_context(
         {
             "start_year": start_year, "end_year": end_year,
@@ -780,16 +851,20 @@ def search_subawards(
         recipient_type=recipient_type,
         description=description,
     )
+    if naics_note:
+        context["naics_auto_resolved"] = naics_note
     _record_tool_call("search_subawards", results, context)
 
     if not results.results:
         others = _other_award_type_categories_to_try(award_type)
+        no_results_note = f"\n\n({naics_note})" if naics_note else ""
         return (
             f"No {award_type} subawards found for {scope} between "
             f"{year_label(time_period_type, start_year)} and {year_label(time_period_type, end_year)}. "
             f"This does NOT mean no subaward records exist - only that none are under a '{award_type}'-type "
             f"prime award. Before concluding there are no subaward records, try one or more of the other "
             f"award type categories: {others}."
+            f"{no_results_note}"
         )
 
     lines = []
@@ -807,6 +882,8 @@ def search_subawards(
         )
     has_next = results.page_metadata.hasNext if results.page_metadata else False
     note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)
+    if naics_note:
+        note += f"\n\n({naics_note})"
     return _wrap_untrusted("\n".join(lines) + note)
 
 
@@ -981,7 +1058,10 @@ def search_transactions(
             action_date (default), date_signed, last_modified_date, or new_awards_only.
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
         recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
-        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511".
+        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511" - or a
+            plain-English industry description, which auto-resolves to a code on a single
+            confident semantic match (disclosed in the result when it happens); call
+            resolve_naics_code first if the description is ambiguous.
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".
@@ -1052,9 +1132,11 @@ def search_transactions(
             def_codes=def_codes,
         )
     except USASpendingAPIError as e:
+        _pop_naics_disclosure()
         logger.warning("search_transactions failed for %s: %s", scope, e)
         return f"This query failed: {e}."
 
+    naics_note = _pop_naics_disclosure()
     context = _record_optional_filter_context(
         {
             "start_year": start_year,
@@ -1091,16 +1173,20 @@ def search_transactions(
         federal_account=federal_account,
         def_codes=def_codes,
     )
+    if naics_note:
+        context["naics_auto_resolved"] = naics_note
     _record_tool_call("search_transactions", results, context)
 
     if not results.results:
         others = _other_award_type_categories_to_try(award_type)
+        no_results_note = f"\n\n({naics_note})" if naics_note else ""
         return (
             f"No {award_type} transactions found for {scope} between "
             f"{year_label(time_period_type, start_year)} and {year_label(time_period_type, end_year)}. "
             f"This does NOT mean no transaction records exist for this recipient/program - only that none are "
             f"of type '{award_type}'. Before concluding there are no transaction records, try one or "
             f"more of the other award type categories: {others}."
+            f"{no_results_note}"
         )
 
     amount_field = _transaction_amount_field_for_award_type(award_type)
@@ -1118,4 +1204,6 @@ def search_transactions(
         )
     has_next = results.page_metadata.hasNext if results.page_metadata else False
     note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)
+    if naics_note:
+        note += f"\n\n({naics_note})"
     return _wrap_untrusted("\n".join(lines) + note)

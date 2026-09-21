@@ -330,6 +330,19 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
             values=[r.total_obligations for r in structured_result.results],
         )
 
+    if tool_name == "get_agency_budget_by_subcomponent":
+        if len(structured_result.results) < 2:
+            return None
+        title = "Budgetary resources by sub-component"
+        if agency_name:
+            title += f" — {agency_name}"
+        return ChartSpec(
+            chart_type="bar",
+            title=title,
+            labels=[r.name for r in structured_result.results],
+            values=[r.total_budgetary_resources for r in structured_result.results],
+        )
+
     if tool_name == "get_award_type_breakdown":
         counts = structured_result.results
         labeled = [
@@ -448,6 +461,9 @@ _ALL_OPTIONAL_FILTER_KEYS = {
     "tas_code",
     "federal_account",
     "def_codes",
+    "contract_pricing_type",
+    "set_aside_type",
+    "extent_competed_type",
 }
 
 
@@ -472,6 +488,9 @@ _SCOPE_LABEL_KEYS = (
     ("tas_code", "TAS"),
     ("federal_account", "federal account"),
     ("def_codes", "DEFC"),
+    ("contract_pricing_type", "contract pricing"),
+    ("set_aside_type", "set-aside"),
+    ("extent_competed_type", "extent competed"),
 )
 
 
@@ -514,6 +533,16 @@ def _curl_from_context(context: dict) -> str | None:
         else:
             lines.append(f"curl -X {method} '{url}' -H 'Content-Type: application/json' -d '{json.dumps(body)}'")
     return "\n".join(lines)
+
+
+def _with_naics_disclosure(description: str, context: dict) -> str:
+    """Appends #214's naics_code auto-substitution note to a citation's
+    description, when the call context carries one (naics_code was a plain
+    description, not a code, and auto-resolved to a single confident
+    match) - so a citation reviewer sees the substitution, not just the
+    resolved code as if it had been passed in literally."""
+    note = context.get("naics_auto_resolved")
+    return f"{description} ({note})" if note else description
 
 
 def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitation | None:
@@ -587,6 +616,11 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         description = f"Award breakdown by sub-agency, {params['agency_name']}, FY{params['fiscal_year']}"
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
 
+    if tool_name == "get_agency_budget_by_subcomponent":
+        params = {"agency_name": context["agency_name"], "fiscal_year": context["fiscal_year"]}
+        description = f"Budgetary resources by sub-component, {params['agency_name']}, FY{params['fiscal_year']}"
+        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+
     if tool_name == "get_disaster_spending_overview":
         def_codes = context.get("def_codes")
         params = {"def_codes": def_codes} if def_codes else {}
@@ -625,9 +659,10 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
         time_period_type = context.get("time_period_type", "fiscal")
-        description = (
+        description = _with_naics_disclosure(
             f"{params['category']} breakdown, {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
+            context,
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
@@ -642,9 +677,10 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
         time_period_type = context.get("time_period_type", "fiscal")
-        description = (
+        description = _with_naics_disclosure(
             f"Spending over time ({params['group']}), {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
+            context,
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
@@ -658,9 +694,10 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
         time_period_type = context.get("time_period_type", "fiscal")
-        description = (
+        description = _with_naics_disclosure(
             f"Spending by {params['geo_layer']} ({params['scope']}), {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
+            context,
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
@@ -679,9 +716,10 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
         scope = _citation_scope_label(context)
         time_period_type = context.get("time_period_type", "fiscal")
-        description = (
+        description = _with_naics_disclosure(
             f"{params['award_type']} awards search, {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
+            context,
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
@@ -696,9 +734,10 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
         scope = _citation_scope_label(context)
         time_period_type = context.get("time_period_type", "fiscal")
-        description = (
+        description = _with_naics_disclosure(
             f"{params['award_type']} subawards search, {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
+            context,
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
@@ -713,9 +752,10 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
         scope = _citation_scope_label(context)
         time_period_type = context.get("time_period_type", "fiscal")
-        description = (
+        description = _with_naics_disclosure(
             f"{params['award_type']} transactions search, {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
+            context,
         )
         return ToolCitation(
             tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)

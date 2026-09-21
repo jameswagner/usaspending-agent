@@ -23,6 +23,7 @@ from ...tool_filters import (
     Scope,
     _build_filters,
     _clamp_limit,
+    _pop_naics_disclosure,
     _record_optional_filter_context,
 )
 from .._shared import (
@@ -280,9 +281,11 @@ def get_spending_by_category(
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
         recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
         naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511" for
-            Custom Computer Programming Services. Must be the real code (2-6 digits) - if you
-            only have a description, use category="naics" to browse the actual breakdown instead
-            of guessing a code.
+            Custom Computer Programming Services - or a plain-English industry description, e.g.
+            "custom software development", which auto-resolves to a code on a single confident
+            semantic match (the result discloses when this happened). If the description is
+            ambiguous, call resolve_naics_code first to see the candidates, or use category="naics"
+            to browse the actual breakdown instead of guessing.
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030"
             for Information Technology Software. Same guidance as naics_code: use category="psc"
             to browse if you don't have the exact code.
@@ -371,9 +374,11 @@ def get_spending_by_category(
             spending_level=spending_level,
         )
     except USASpendingAPIError as e:
+        _pop_naics_disclosure()
         logger.warning("get_spending_by_category failed for %s/%s: %s", scope, category, e)
         return f"This query failed: {e}. Do not substitute a different category and present it as answering the original question — tell the user this specific breakdown isn't available."
 
+    naics_note = _pop_naics_disclosure()
     context = _record_optional_filter_context(
         {
             "category": category,
@@ -410,15 +415,21 @@ def get_spending_by_category(
         description=description,
         def_codes=def_codes,
     )
+    if naics_note:
+        context["naics_auto_resolved"] = naics_note
     _record_tool_call("get_spending_by_category", response, context)
 
     if not response.results:
+        no_results_note = f" ({naics_note})" if naics_note else ""
         return (
             f"No {category} spending data found for {scope} between "
             f"{year_label(time_period_type, start_year)} and {year_label(time_period_type, end_year)}."
+            f"{no_results_note}"
         )
 
     lines = [f"{r.name or r.code or 'unknown'}: ${r.amount:,.2f}" for r in response.results]
     has_next = response.page_metadata.hasNext if response.page_metadata else False
     note = _truncation_note(has_next, len(response.results)) + _format_api_messages(response.messages)
+    if naics_note:
+        note += f"\n\n({naics_note})"
     return _wrap_untrusted("\n".join(lines) + note)

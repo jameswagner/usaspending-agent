@@ -122,6 +122,7 @@ __all__ = [
     "_agency_label",
     "_check_tool_call_budget",
     "_format_agency_award_breakdown",
+    "_format_agency_sub_components",
     "_format_api_messages",
     "_format_award_details",
     "_format_award_type_counts",

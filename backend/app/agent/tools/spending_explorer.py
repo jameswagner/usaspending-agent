@@ -29,23 +29,10 @@ is excluded for the same reason: confirmed live 2026-09-18 to time out at
 returned in 0.3s in the same test - ruling out general API flakiness as
 the cause.
 
-The `agency` filter used to be the one exception to "get an id from a
-prior result": the live API's own internal agency id (a group_by="agency"
-result's `id` field) is a different id space from lookup_agency's
-toptier_code (e.g. HHS: toptier_code "075", Spending Explorer agency id
-"806") and rejects the toptier_code outright ("Agency ID provided does
-not correspond to a toptier agency"). Found live 2026-09-11 after the
-model, asked for HHS's spending by object class, correctly called
-lookup_agency first (this tool's own docstring said to, at the time), got
-HHS's toptier_code, passed it as the agency filter, got a clean rejection
-from the live API, and gave up on object_class entirely - falling back to
-a PSC breakdown from a completely different tool instead (disclosed to
-the user, but not actually answering the question asked) - rather than
-resolving the right id. Fixed properly (#229) by resolving `agency`
-through client.resolve_spending_explorer_agency_id() before the request
-goes out - it accepts a toptier_code or name/abbreviation directly now,
-using the agency_id already present on list_toptier_agencies()'s cached
-results, so the model no longer needs the group_by="agency" workaround.
+The `agency` filter takes a toptier_code or name/abbreviation, resolved
+internally via client.resolve_spending_explorer_agency_id() - this
+endpoint's own internal agency id (e.g. HHS: "806") is a different id
+space from toptier_code (e.g. "075") and rejects the toptier_code outright.
 """
 from __future__ import annotations
 

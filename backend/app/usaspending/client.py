@@ -195,14 +195,10 @@ class USASpendingClient:
         return None
 
     def resolve_spending_explorer_agency_id(self, agency: str) -> str | None:
-        """Resolve a CGAC toptier_code (e.g. "075") or agency name/abbreviation
-        (e.g. "HHS") to the internal id the Spending Explorer endpoint's
-        `agency` filter actually expects (e.g. "806") - a different id space
-        from toptier_code, confirmed live (see spending_explorer.py's module
-        docstring). Tries an exact toptier_code match first, since a code
-        could otherwise spuriously match find_agency_by_name's substring
-        fallback; falls back to find_agency_by_name for a name/abbreviation.
-        Returns None if nothing matches.
+        """Resolves a toptier_code or name/abbreviation to the Spending Explorer
+        endpoint's own internal agency id (see spending_explorer.py's module
+        docstring) - tries an exact toptier_code match first so a code can't
+        spuriously hit find_agency_by_name's substring fallback.
         """
         agencies = self.list_toptier_agencies()
         exact_code = next((a for a in agencies if a.toptier_code == agency), None)

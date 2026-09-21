@@ -10,6 +10,7 @@ https://github.com/fedspendingtransparency/usaspending-api/tree/master/usaspendi
   - POST /api/v2/search/spending_over_time/
   - POST /api/v2/search/spending_by_award/
   - POST /api/v2/search/spending_by_award_count/
+  - POST /api/v2/search/spending_by_transaction/
   - POST /api/v2/autocomplete/{naics,psc,cfda}/          (verified live, not currently called by any tool)
   - POST /api/v2/autocomplete/awarding_agency_office/    (sub-tier agency resolution fallback for find_agency_by_name)
 
@@ -373,6 +374,44 @@ class USASpendingClient:
         if sort:
             body["sort"] = sort
         data = self._post("/api/v2/search/spending_by_award/", body)
+        return SearchAwardsResponse(**data)
+
+    @traceable(run_type="tool", name="search_transactions_api")
+    def search_transactions(
+        self,
+        filters: AdvancedFilters,
+        fields: list[str],
+        limit: int = 10,
+        order: str = "desc",
+        sort: str | None = None,
+        page: int = 1,
+    ) -> SearchAwardsResponse:
+        """POST /api/v2/search/spending_by_transaction/ - the transaction-
+        level counterpart to search_awards: one row per transaction/
+        modification (Award ID, Mod, Recipient Name, Action Date,
+        Transaction Amount, ...) rather than one row per award with a
+        cumulative lifetime total. This is what USASpending.gov's own
+        "Keyword Search" results page shows, distinct from Advanced
+        Search's award-rollup shape search_awards returns (issue #23).
+
+        Reuses SearchAwardsResponse - live-verified 2026-09-19 the response
+        shape (results: list[dict], page_metadata, messages) is identical
+        to search_awards's own. Same required-award_type_codes contract as
+        search_awards.
+        """
+        if not filters.award_type_codes:
+            raise ValueError("search_transactions requires filters.award_type_codes to be set")
+
+        body: dict[str, Any] = {
+            "filters": filters.model_dump(exclude_none=True),
+            "fields": fields,
+            "limit": limit,
+            "order": order,
+            "page": page,
+        }
+        if sort:
+            body["sort"] = sort
+        data = self._post("/api/v2/search/spending_by_transaction/", body)
         return SearchAwardsResponse(**data)
 
     @traceable(run_type="tool", name="get_award")

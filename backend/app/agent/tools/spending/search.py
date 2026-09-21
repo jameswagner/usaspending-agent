@@ -1,7 +1,8 @@
-"""search_awards / search_subawards - ranked, paginated award and subaward
-lists, kept in one module since they share the same date-range/award-type
-shape. Named search.py, not awards.py, to avoid colliding with the
-existing tools/awards.py (award-detail/IDV lookups - a different concern).
+"""search_awards / search_subawards / search_transactions - ranked, paginated
+award, subaward, and transaction lists, kept in one module since they share
+the same date-range/award-type shape. Named search.py, not awards.py, to
+avoid colliding with the existing tools/awards.py (award-detail/IDV lookups -
+a different concern).
 """
 from __future__ import annotations
 
@@ -21,16 +22,19 @@ from ...tool_filters import (
     DISASTER_BREAKOUT_FIELDS,
     SEARCH_AWARDS_FIELDS_BASE,
     SUBAWARD_FIELDS,
+    TRANSACTION_FIELDS_BASE,
     AwardType,
     DateType,
     Scope,
     SortBy,
+    TransactionSortBy,
     _amount_field_for_award_type,
     _build_filters,
     _clamp_limit,
     _other_award_type_categories_to_try,
     _record_optional_filter_context,
     _sort_field_for_award_type,
+    _transaction_amount_field_for_award_type,
 )
 from .._shared import (
     _check_tool_call_budget,
@@ -854,6 +858,317 @@ def search_subawards(
         lines.append(
             f"{sub_id} — {sub_recipient}: {amount_str} (subaward under prime {prime_award_id} "
             f"from {prime_recipient}) [internal_id: {prime_internal_id}]"
+        )
+    has_next = results.page_metadata.hasNext if results.page_metadata else False
+    note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)
+    return _wrap_untrusted("\n".join(lines) + note)
+
+
+@traceable(run_type="tool", name="search_transactions_raw")
+def search_transactions_raw(
+    agency_name: str | None,
+    time_period_type: Literal["fiscal", "calendar"],
+    start_year: int,
+    end_year: int,
+    award_type: AwardType = "contracts",
+    limit: int = 5,
+    sort_by: TransactionSortBy = "amount",
+    recipient_name: str | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    performed_in_state: str | None = None,
+    recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
+    keywords: str | None = None,
+    date_type: DateType | None = None,
+    place_of_performance_scope: Scope | None = None,
+    recipient_scope: Scope | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
+    def_codes: list[str] | None = None,
+) -> SearchAwardsResponse:
+    """Call the API once, return the structured response - same filter
+    resolution (_build_filters, award_type_counts_as_scope=True) as
+    search_awards_raw, but hits search/spending_by_transaction/ instead of
+    search/spending_by_award/, so each result is one transaction/
+    modification rather than one award's cumulative lifetime total (issue
+    #23). See client.search_transactions's docstring for the endpoint
+    contract."""
+    client = _get_usaspending_client()
+    filters = _build_filters(
+        client,
+        agency_name,
+        time_period_type,
+        start_year,
+        end_year,
+        award_type=award_type,
+        recipient_name=recipient_name,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        performed_in_state=performed_in_state,
+        recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county,
+        recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city,
+        recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip,
+        recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district,
+        recipient_in_district=recipient_in_district,
+        keywords=keywords,
+        date_type=date_type,
+        place_of_performance_scope=place_of_performance_scope,
+        recipient_scope=recipient_scope,
+        naics_code=naics_code,
+        psc_code=psc_code,
+        cfda_program=cfda_program,
+        award_id=award_id,
+        recipient_type=recipient_type,
+        description=description,
+        tas_code=tas_code,
+        federal_account=federal_account,
+        def_codes=def_codes,
+        award_type_counts_as_scope=True,
+    )
+    amount_field = _transaction_amount_field_for_award_type(award_type)
+    sort_field = amount_field if sort_by == "amount" else "Action Date"
+    fields = TRANSACTION_FIELDS_BASE + [amount_field]
+    return client.search_transactions(filters, fields=fields, limit=limit, sort=sort_field, order="desc")
+
+
+@beta_tool
+def search_transactions(
+    *,
+    time_period_type: Literal["fiscal", "calendar"] = "fiscal",
+    start_year: int,
+    end_year: int,
+    award_type: AwardType = "contracts",
+    limit: int = 5,
+    sort_by: TransactionSortBy = "amount",
+    agency_name: str | None = None,
+    recipient_name: str | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    performed_in_state: str | None = None,
+    recipient_in_state: str | None = None,
+    performed_in_county: str | None = None,
+    recipient_in_county: str | None = None,
+    performed_in_city: str | None = None,
+    recipient_in_city: str | None = None,
+    performed_in_zip: str | None = None,
+    recipient_in_zip: str | None = None,
+    performed_in_district: str | None = None,
+    recipient_in_district: str | None = None,
+    keywords: str | None = None,
+    date_type: DateType | None = None,
+    place_of_performance_scope: Scope | None = None,
+    recipient_scope: Scope | None = None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+    cfda_program: str | None = None,
+    award_id: str | None = None,
+    recipient_type: RecipientType | None = None,
+    description: str | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
+    def_codes: list[str] | None = None,
+) -> str:
+    """Search for individual transaction/modification records - one row per transaction (not per award), matching USASpending.gov's own "Keyword Search" results page. Use this for "show me each modification/transaction for X" or "what individual transactions match keyword Y" questions where the user wants the mod-by-mod history across many awards, as opposed to search_awards, which returns one row per award with that award's cumulative lifetime total - a single multi-year award with 10 modifications appears as ONE row there but up to 10 separate rows here, each with its own action date and amount.
+
+    Same filter set as search_awards (agency/recipient/location/amount/etc.), and the same fiscal-year overlap caveat applies: an award's transactions/mods are matched by date_type (action_date by default), not by whether the award itself started in the requested range.
+
+    Args:
+        time_period_type: "fiscal" (default) for federal fiscal years (Oct-Sep, named by the
+            year they end in) or "calendar" for plain Jan-Dec calendar years. Use "calendar"
+            when the user explicitly says "calendar year"/"CY2023" or asks about a plain
+            Jan-Dec window; default to "fiscal" otherwise.
+        start_year: First year to include (fiscal or calendar per time_period_type above),
+            e.g. 2021 for FY2021 (Oct 2020-Sep 2021) or CY2021 (Jan-Dec 2021). Data is only
+            available from FY2008 (or CY2007) onward.
+        end_year: Last year to include, e.g. 2024 for FY2024 or CY2024.
+        award_type: The broad buckets are contracts, grants, loans (default contracts) - same
+            vocabulary as search_awards's award_type; see search_awards's own docstring for
+            the full list of specific sub-types (bpa_call, idv, cooperative_agreement, etc.).
+        limit: Max number of transaction rows to return (default 5) - a single award can
+            contribute more than one row if it has multiple mods in range.
+        sort_by: "amount" (default - Transaction Amount, or Loan Value for loan award types)
+            or "recency" (Action Date, most recent first).
+        agency_name: Optional. The awarding agency's name, e.g. "National Science Foundation".
+        recipient_name: Optional. Restrict to transactions whose recipient name contains this
+            text, e.g. "Leidos" - an approximate text match, same as search_awards.
+        min_amount: Optional. Restrict to transactions worth at least this dollar amount -
+            a per-transaction amount, not an award's lifetime total.
+        max_amount: Optional. Restrict to transactions worth at most this dollar amount.
+        performed_in_state: Optional. Restrict to work performed in this US state.
+        recipient_in_state: Optional. Restrict to a recipient headquartered/located in this
+            US state - different from performed_in_state.
+        performed_in_county: Optional. A specific county where work was performed - a 3-digit
+            FIPS code (e.g. "025" for Yavapai County, AZ), not a name. Requires
+            performed_in_state also be set. Use resolve_county_fips to find the code from a
+            county name - do not guess or construct one.
+        recipient_in_county: Optional. Same as performed_in_county, but for the recipient's
+            location. Requires recipient_in_state also be set.
+        performed_in_city: Optional. Restrict to work performed in this city, e.g. "Livermore".
+        recipient_in_city: Optional. Same as performed_in_city, but for the recipient's location.
+        performed_in_zip: Optional. Restrict to work performed in this 5-digit zip code.
+        recipient_in_zip: Optional. Restrict to a recipient located in this 5-digit zip code.
+        performed_in_district: Optional. A specific congressional district where work was
+            performed - a 2-digit number (e.g. "01"), paired with performed_in_state.
+        recipient_in_district: Optional. Same as performed_in_district, but for the recipient's
+            location, paired with recipient_in_state.
+        keywords: Optional. Free-text search over transaction descriptions, e.g. "ventilators" -
+            this is the parameter that matches USASpending.gov's own Keyword Search box.
+        date_type: Optional. Which date the fiscal-year range is matched against - one of
+            action_date (default), date_signed, last_modified_date, or new_awards_only.
+        place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
+        recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
+        naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511".
+        psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
+        cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
+            only), format NN.NNN, e.g. "10.001".
+        award_id: Optional. Restrict to transactions under a single known award by its plain
+            Award ID (PIID/FAIN/URI) - a fuzzy text match. For the FULL mod-by-mod history of
+            one SPECIFIC award already resolved to its internal_id, get_award_transaction_history
+            is more direct than filtering this tool by award_id.
+        recipient_type: Optional. Restrict to recipients tagged with this business/recipient
+            type, e.g. "small_business", "woman_owned_business", "nonprofit", "higher_education".
+        description: Optional. Restrict to transactions whose own description text matches this
+            phrase - distinct from keywords, which also matches recipient name/PIID/FAIN/NAICS/PSC.
+        tas_code: Optional. Restrict to transactions funded by this exact Treasury Account
+            Symbol, e.g. "020-2020/2021-1521".
+        federal_account: Optional. Restrict to transactions funded by this exact federal
+            account (the AID-MAIN pair one level up from a full TAS), e.g. "028-8704".
+        def_codes: Optional. Restrict to transactions tagged with these Disaster Emergency
+            Fund Codes (DEFC), e.g. ["L"]. Use the group alias "covid" or "infrastructure"
+            instead of listing every individual code in that group.
+    """
+    if (over_budget := _check_tool_call_budget()) is not None:
+        return over_budget
+    limit = _clamp_limit(limit)
+    scope = _scope_label(
+        agency_name, recipient_name, None,
+        performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county, recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city, recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip, recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
+        naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
+        award_id=award_id, description=description,
+        tas_code=tas_code, federal_account=federal_account, def_codes=def_codes,
+    )
+    try:
+        results = search_transactions_raw(
+            agency_name,
+            time_period_type,
+            start_year,
+            end_year,
+            award_type,
+            limit,
+            sort_by=sort_by,
+            recipient_name=recipient_name,
+            min_amount=min_amount,
+            max_amount=max_amount,
+            performed_in_state=performed_in_state,
+            recipient_in_state=recipient_in_state,
+            performed_in_county=performed_in_county,
+            recipient_in_county=recipient_in_county,
+            performed_in_city=performed_in_city,
+            recipient_in_city=recipient_in_city,
+            performed_in_zip=performed_in_zip,
+            recipient_in_zip=recipient_in_zip,
+            performed_in_district=performed_in_district,
+            recipient_in_district=recipient_in_district,
+            keywords=keywords,
+            date_type=date_type,
+            place_of_performance_scope=place_of_performance_scope,
+            recipient_scope=recipient_scope,
+            naics_code=naics_code,
+            psc_code=psc_code,
+            cfda_program=cfda_program,
+            award_id=award_id,
+            recipient_type=recipient_type,
+            description=description,
+            tas_code=tas_code,
+            federal_account=federal_account,
+            def_codes=def_codes,
+        )
+    except USASpendingAPIError as e:
+        logger.warning("search_transactions failed for %s: %s", scope, e)
+        return f"This query failed: {e}."
+
+    context = _record_optional_filter_context(
+        {
+            "start_year": start_year,
+            "end_year": end_year,
+            "time_period_type": time_period_type,
+            "award_type": award_type,
+            "sort_by": sort_by,
+        },
+        agency_name=agency_name,
+        recipient_name=recipient_name,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        performed_in_state=performed_in_state,
+        recipient_in_state=recipient_in_state,
+        performed_in_county=performed_in_county,
+        recipient_in_county=recipient_in_county,
+        performed_in_city=performed_in_city,
+        recipient_in_city=recipient_in_city,
+        performed_in_zip=performed_in_zip,
+        recipient_in_zip=recipient_in_zip,
+        performed_in_district=performed_in_district,
+        recipient_in_district=recipient_in_district,
+        keywords=keywords,
+        date_type=date_type,
+        place_of_performance_scope=place_of_performance_scope,
+        recipient_scope=recipient_scope,
+        naics_code=naics_code,
+        psc_code=psc_code,
+        cfda_program=cfda_program,
+        award_id=award_id,
+        recipient_type=recipient_type,
+        description=description,
+        tas_code=tas_code,
+        federal_account=federal_account,
+        def_codes=def_codes,
+    )
+    _record_tool_call("search_transactions", results, context)
+
+    if not results.results:
+        others = _other_award_type_categories_to_try(award_type)
+        return (
+            f"No {award_type} transactions found for {scope} between "
+            f"{year_label(time_period_type, start_year)} and {year_label(time_period_type, end_year)}. "
+            f"This does NOT mean no transaction records exist for this recipient/program - only that none are "
+            f"of type '{award_type}'. Before concluding there are no transaction records, try one or "
+            f"more of the other award type categories: {others}."
+        )
+
+    amount_field = _transaction_amount_field_for_award_type(award_type)
+    lines = []
+    for r in results.results:
+        award_id_val = r.get("Award ID", "unknown")
+        mod = r.get("Mod", "?")
+        internal_id = r.get("generated_internal_id", "unknown")
+        recipient = r.get("Recipient Name", "unknown")
+        action_date = r.get("Action Date", "unknown")
+        amount = r.get(amount_field)
+        amount_str = f"${amount:,.2f}" if isinstance(amount, (int, float)) else "unknown amount"
+        lines.append(
+            f"{award_id_val} Mod {mod} — {recipient}: {amount_str} on {action_date} [internal_id: {internal_id}]"
         )
     has_next = results.page_metadata.hasNext if results.page_metadata else False
     note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)

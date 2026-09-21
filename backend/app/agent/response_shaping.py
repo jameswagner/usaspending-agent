@@ -638,7 +638,7 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
 
     if tool_name == "get_disaster_spending_overview":
         def_codes = context.get("def_codes")
-        params = {"def_codes": def_codes} if def_codes else {}
+        params = {"def_codes": ", ".join(def_codes)} if def_codes else {}
         description = (
             f"Disaster spending overview, DEFC {', '.join(def_codes)}"
             if def_codes else "Disaster spending overview, all DEFCs"

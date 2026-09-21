@@ -934,6 +934,24 @@ class TestBuildToolCitation:
             "Budgetary resources by sub-component, Department of Health and Human Services, FY2024"
         )
 
+    def test_get_disaster_spending_overview_def_codes_is_a_string_not_a_list(self):
+        citation = build_tool_citation(
+            "get_disaster_spending_overview",
+            {"def_codes": ["L", "M", "N", "O", "P", "U", "V"]},
+        )
+        assert citation is not None
+        assert citation.parameters == {"def_codes": "L, M, N, O, P, U, V"}
+        assert citation.description == "Disaster spending overview, DEFC L, M, N, O, P, U, V"
+        assert citation.url == (
+            "https://api.usaspending.gov/api/v2/disaster/overview/?def_codes=L,M,N,O,P,U,V"
+        )
+
+    def test_get_disaster_spending_overview_no_def_codes(self):
+        citation = build_tool_citation("get_disaster_spending_overview", {"def_codes": []})
+        assert citation is not None
+        assert citation.parameters == {}
+        assert citation.description == "Disaster spending overview, all DEFCs"
+
     def test_lookup_agency(self):
         citation = build_tool_citation("lookup_agency", {"name": "National Science Foundation"})
         assert citation is not None

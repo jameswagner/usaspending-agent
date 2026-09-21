@@ -60,7 +60,10 @@ category, an endpoint choice), check:
   table names instead) — match by definition text, not by key name. Not
   ingested into `search_guide` (see #111): its rows aren't prose the way
   the Glossary's are, and the key-name mismatch means it's more useful as
-  reference during tool development than as a citable live-chat source.
+  reference during tool development than as a citable live-chat source. Its
+  `federal_account_code` element ("agency identifier concatenated with the
+  main account code") is why the unimplemented `/sub_components/<bureau>/`
+  drill-down's federal account `id`s look like `"075-0849"` (AID + MAIN).
 
 ## Adding or modifying tools
 

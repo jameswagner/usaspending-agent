@@ -31,6 +31,11 @@ from collections.abc import AsyncIterator
 from .orchestrator import NOT_FOUND_MESSAGE, AgentResult, _build_result
 from .scope import _is_in_scope
 from .singletons import _get_conversation_graph
+from .spending_by_agency_fy_pilot import (
+    _looks_like_agency_fy_spending_request,
+    handle_agency_fy_spending_request,
+    pilot_enabled,
+)
 from .tools import _tool_call_log
 
 logger = logging.getLogger(__name__)
@@ -98,6 +103,12 @@ def _run_graph_stream(question: str, conversation_id: str, event_queue: queue.Qu
             result = AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
             event_queue.put(("done", _build_done_payload(result)))
             return
+
+        if pilot_enabled() and _looks_like_agency_fy_spending_request(question):
+            pilot_result = handle_agency_fy_spending_request(question, conversation_id)
+            if pilot_result is not None:
+                event_queue.put(("done", _build_done_payload(pilot_result)))
+                return
 
         _tool_call_log.set([])
         last_ai_message = None

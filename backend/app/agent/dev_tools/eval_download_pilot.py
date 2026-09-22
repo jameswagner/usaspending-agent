@@ -1,12 +1,4 @@
-"""Download-pilot eval (issue #238) - does the deterministic download
-pipeline (agent/download_pilot.py) do the right thing, checked against
-download_labeled_set.json (schema documented there) via a LangSmith
-Dataset + evaluate() experiment. Same shape as eval_tool_selection.py.
-
-Real, billed API calls (Anthropic + live USASpending downloads). Not part
-of CI:
-    uv run python -m backend.app.agent.dev_tools.eval_download_pilot
-"""
+"""Download-pilot eval, same shape as eval_tool_selection.py. Real billed calls - not part of CI."""
 from __future__ import annotations
 
 import json
@@ -47,7 +39,7 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
     if not client.has_dataset(dataset_name=DATASET_NAME):
         client.create_dataset(
             DATASET_NAME,
-            description="Download-pilot eval for issue #238 - synced from "
+            description="Download-pilot eval - synced from "
             "download_labeled_set.json, do not hand-edit examples here.",
         )
     dataset = client.read_dataset(dataset_name=DATASET_NAME)

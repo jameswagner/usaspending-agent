@@ -1,16 +1,4 @@
-"""Deterministic download-request pipeline (issue #238, child of #228's
-"move work out of the tool-calling loop" epic). Intercepts a "download
-this as a CSV" question before the tool loop starts - see
-_ask_langgraph/_run_graph_stream, which both check
-_looks_like_download_request(question) right after their existing
-_is_in_scope gate - rather than adding another @beta_tool the model has
-to be prompted into choosing correctly.
-
-Narrowly scoped to POST /api/v2/download/awards/ only, per #238. Every
-other download endpoint (transactions, accounts, contract, IDV, disaster,
-search, bulk_download) gets a fixed "not yet supported" answer instead of
-best-effort handling - see _UNSUPPORTED_DOWNLOAD_PATTERN.
-"""
+"""Deterministic pre-tool-loop download-request pipeline, scoped to POST /api/v2/download/awards/ only."""
 from __future__ import annotations
 
 import logging
@@ -32,10 +20,7 @@ _DOWNLOAD_INTENT_PATTERN = (
     "raw data", "data file",
 )
 
-# Endpoints #238 explicitly defers - matched before intent extraction runs,
-# so an unsupported request never reaches (and never burns) the extraction
-# call. Deliberately keyword-based, same "cheap, no LLM call" reasoning as
-# _looks_like_download_request below.
+# Endpoints this pilot defers - matched before the extraction call runs, so an unsupported request never burns one.
 _UNSUPPORTED_DOWNLOAD_PATTERN = {
     "transaction": "transaction-level data",
     "account": "account-level data",
@@ -49,8 +34,7 @@ _UNSUPPORTED_DOWNLOAD_PATTERN = {
 _POLL_INTERVAL_SECONDS = 2
 _POLL_TIMEOUT_SECONDS = 45
 
-# Small, fixed set - #238 explicitly rules out free-form column selection
-# for this pilot.
+# Fixed - this pilot rules out free-form column selection.
 _DOWNLOAD_COLUMNS = [
     "award_id_piid",
     "award_id_fain",

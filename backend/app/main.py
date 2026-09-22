@@ -88,6 +88,7 @@ def ask(request: Request, response: Response, payload: AskRequest) -> AskRespons
         charts=[c.model_dump() for c in result.charts],
         citations=result.citations,
         tool_citations=result.tool_citations,
+        downloads=result.downloads,
     )
 
 

@@ -43,6 +43,8 @@ from .models import (
     AwardFundingResponse,
     ChildRecipient,
     DisasterOverviewResponse,
+    DownloadJobResponse,
+    DownloadStatusResponse,
     IDVAmountsResponse,
     LocationAutocompleteResponse,
     RecipientOverview,
@@ -256,6 +258,26 @@ class USASpendingClient:
         params = {"def_codes": ",".join(def_codes)} if def_codes else None
         data = self._get("/api/v2/disaster/overview/", params=params)
         return DisasterOverviewResponse(**data)
+
+    @traceable(run_type="tool", name="download_awards")
+    def download_awards(
+        self, filters: AdvancedFilters, columns: list[str], file_format: str = "csv"
+    ) -> DownloadJobResponse:
+        """POST /api/v2/download/awards/ - queues an async zip-generation
+        job and returns immediately; file_url isn't live yet, poll
+        get_download_status(file_name) until status == "finished"."""
+        body = {
+            "filters": filters.model_dump(exclude_none=True),
+            "columns": columns,
+            "file_format": file_format,
+        }
+        data = self._post("/api/v2/download/awards/", body)
+        return DownloadJobResponse(**data)
+
+    @traceable(run_type="tool", name="get_download_status")
+    def get_download_status(self, file_name: str) -> DownloadStatusResponse:
+        data = self._get("/api/v2/download/status", params={"file_name": file_name})
+        return DownloadStatusResponse(**data)
 
     @traceable(run_type="tool", name="get_agency_budgetary_resources")
     def get_agency_budgetary_resources(self, toptier_code: str) -> AgencyBudgetaryResourcesResponse:

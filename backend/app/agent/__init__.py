@@ -12,6 +12,7 @@ Submodules:
   tools.py              - the five @beta_tool functions and their _raw variants
   response_shaping.py  - pure post-processing: charts, citations, fiscal-year math
   scope.py              - the in-scope pre-filter gate
+  download_pilot.py     - deterministic pre-tool-loop download-request pipeline (#238)
   orchestrator.py       - the system prompt, AgentResult, and ask()
   cli.py                - the --question CLI entry point
 

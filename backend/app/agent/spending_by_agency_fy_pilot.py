@@ -54,6 +54,7 @@ def pilot_enabled() -> bool:
 
 
 class AgencyFYSpendingIntent(BaseModel):
+    other_filters_present: bool = True
     agency_raw: str | None = None
     fiscal_year: int | None = None
     group_by: Literal["object_class"] | None = None
@@ -64,23 +65,29 @@ _EXTRACT_TOOL = {
     "name": _EXTRACT_TOOL_NAME,
     "description": (
         "Extract the agency and single fiscal year for a 'how much did [agency] spend in "
-        "FY[year]?' style question, and whether it asks for an object-class breakdown. Only "
-        "fill agency_raw/fiscal_year when the question names exactly ONE agency, ONE fiscal "
-        "year, and no other filter (no recipient, NAICS/PSC code, location, award type, "
-        "min/max amount, or date range narrower than a full fiscal year). Omit fields you "
-        "aren't confident about rather than guessing - a second agency, a second year, or any "
-        "other filter means you should omit agency_raw and fiscal_year entirely."
+        "FY[year]?' style question, and whether it asks for an object-class breakdown."
     ),
     "input_schema": {
         "type": "object",
         "properties": {
+            "other_filters_present": {
+                "type": "boolean",
+                "description": (
+                    "True if the question mentions more than one agency (including any "
+                    "comparison between agencies), more than one fiscal year, or any filter "
+                    "beyond a single agency + single fiscal year - a recipient, NAICS/PSC code, "
+                    "location, award type, a dollar-amount threshold, or a date range narrower "
+                    "than a full fiscal year. False only for a clean single-agency, "
+                    "single-fiscal-year question with no other filter."
+                ),
+            },
             "agency_raw": {
                 "type": "string",
-                "description": "Agency name/abbreviation as stated, or omitted if not a single clean match.",
+                "description": "Agency name/abbreviation as stated. Required even if other_filters_present is true.",
             },
             "fiscal_year": {
                 "type": "integer",
-                "description": "The single fiscal year asked about, or omitted if unclear or more than one.",
+                "description": "The fiscal year asked about (or the first one, if other_filters_present is true).",
             },
             "group_by": {
                 "type": "string",
@@ -88,6 +95,7 @@ _EXTRACT_TOOL = {
                 "description": "Only set if the question explicitly asks for a breakdown by object class.",
             },
         },
+        "required": ["other_filters_present", "agency_raw", "fiscal_year"],
     },
 }
 
@@ -122,7 +130,7 @@ def _extract_agency_fy_spending_intent(question: str) -> AgencyFYSpendingIntent 
     except Exception:
         logger.exception("Agency/FY spending intent extraction returned unparseable input: %r", tool_use.input)
         return None
-    if intent.agency_raw is None or intent.fiscal_year is None:
+    if intent.other_filters_present or intent.agency_raw is None or intent.fiscal_year is None:
         return None
     return intent
 

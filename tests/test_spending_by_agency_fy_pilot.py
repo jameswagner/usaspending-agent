@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from backend.app.agent.spending_by_agency_fy_pilot import (
     AgencyFYSpendingIntent,
+    _extract_agency_fy_spending_intent,
     _looks_like_agency_fy_spending_request,
     handle_agency_fy_spending_request,
 )
@@ -31,6 +32,36 @@ class TestLooksLikeAgencyFYSpendingRequest:
 
     def test_no_spend_verb_does_not_match(self):
         assert not _looks_like_agency_fy_spending_request("What awards did NSF make in FY2024?")
+
+
+def make_tool_use_response(**intent_fields):
+    return SimpleNamespace(
+        content=[SimpleNamespace(type="tool_use", input=intent_fields)]
+    )
+
+
+class TestExtractAgencyFYSpendingIntent:
+    """Regression coverage for a live eval finding (issue #233's before/after
+    eval run): the model reliably filled agency_raw/fiscal_year even on
+    multi-agency/other-filter questions when the schema only asked it to
+    *omit* those fields, so other_filters_present is a required, explicit
+    judgment call instead."""
+
+    def test_other_filters_present_true_falls_through(self):
+        response = make_tool_use_response(other_filters_present=True, agency_raw="NASA", fiscal_year=2023)
+        with patch(f"{_MODULE}._get_client") as get_client:
+            get_client.return_value.messages.create.return_value = response
+            intent = _extract_agency_fy_spending_intent("Compare NASA's and DOE's spending in FY2023.")
+        assert intent is None
+
+    def test_other_filters_present_false_returns_intent(self):
+        response = make_tool_use_response(other_filters_present=False, agency_raw="NSF", fiscal_year=2024)
+        with patch(f"{_MODULE}._get_client") as get_client:
+            get_client.return_value.messages.create.return_value = response
+            intent = _extract_agency_fy_spending_intent("How much did NSF spend in FY2024?")
+        assert intent is not None
+        assert intent.agency_raw == "NSF"
+        assert intent.fiscal_year == 2024
 
 
 class TestHandleAgencyFYSpendingRequest:

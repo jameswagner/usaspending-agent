@@ -1,12 +1,4 @@
-"""Download-pilot eval (issue #238) - does the deterministic download
-pipeline (agent/download_pilot.py) do the right thing, checked against
-download_labeled_set.json (schema documented there) via a LangSmith
-Dataset + evaluate() experiment. Same shape as eval_tool_selection.py.
-
-Real, billed API calls (Anthropic + live USASpending downloads). Not part
-of CI:
-    uv run python -m backend.app.agent.dev_tools.eval_download_pilot
-"""
+"""Download-pilot eval (issue #238), same shape as eval_tool_selection.py. Real billed calls - not part of CI."""
 from __future__ import annotations
 
 import json

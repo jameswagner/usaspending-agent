@@ -3,6 +3,7 @@ import remarkGfm from "remark-gfm";
 import type { ConversationTurn } from "@/lib/types";
 import { Citations } from "./Citations";
 import { ChartBlock } from "./ChartBlock";
+import { DownloadBlock } from "./DownloadBlock";
 
 interface MessageBubbleProps {
   turn: ConversationTurn;
@@ -66,6 +67,13 @@ export function MessageBubble({ turn }: MessageBubbleProps) {
         <div className="mt-4 flex flex-wrap gap-6">
           {response.charts.map((chart, i) => (
             <ChartBlock key={i} chart={chart} />
+          ))}
+        </div>
+      )}
+      {response.downloads.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-3">
+          {response.downloads.map((download, i) => (
+            <DownloadBlock key={i} download={download} />
           ))}
         </div>
       )}

@@ -26,6 +26,15 @@ export interface ToolCitation {
   curl: string | null;
 }
 
+// One in-flight or finished CSV export job from the download pilot (#238) - url is live once status is "finished".
+export interface DownloadSpec {
+  file_name: string;
+  url: string;
+  status_url: string;
+  status: string;
+  total_rows: number | null;
+}
+
 export interface AskRequest {
   question: string;
   conversation_id: string | null;
@@ -38,6 +47,7 @@ export interface AskResponse {
   charts: ChartSpec[];
   citations: Citation[];
   tool_citations: ToolCitation[];
+  downloads: DownloadSpec[];
 }
 
 // The in-flight status of a turn being streamed from POST /ask/stream

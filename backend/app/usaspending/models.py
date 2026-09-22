@@ -625,9 +625,7 @@ class SpendingExplorerResponse(BaseModel):
 
 
 class DownloadJobResponse(BaseModel):
-    """POST /api/v2/download/awards/'s immediate response - the job has
-    only just been queued, so file_url points at a zip that doesn't exist
-    yet (poll status_url/get_download_status until status == "finished")."""
+    """The job has only just been queued - file_url isn't live until status == "finished"."""
 
     model_config = ConfigDict(extra="allow")
 
@@ -637,11 +635,7 @@ class DownloadJobResponse(BaseModel):
 
 
 class DownloadStatusResponse(BaseModel):
-    """GET /api/v2/download/status response. status moves "ready" ->
-    "running" -> "finished" (or "failed") per the upstream contract -
-    confirmed live that a freshly queued job answers "ready" for the first
-    several seconds, not "running" immediately. total_rows and
-    seconds_elapsed are only populated once the job has made progress."""
+    """status moves "ready" -> "running" -> "finished"/"failed" - confirmed live, not just running->finished."""
 
     model_config = ConfigDict(extra="allow")
 

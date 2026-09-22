@@ -10,6 +10,7 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 - **Live-data questions** ("how much did NSF spend on X?") are answered by calling the real USASpending.gov API.
 - A tool-calling agent decides which tool(s) a question needs, including questions that need more than one. It runs on LangGraph (`create_react_agent`, via `langgraph_tools.py`'s LangChain-compatible wrappers of the same tool functions), with a SQLite checkpointer keyed by `conversation_id` giving real multi-turn memory — a follow-up like "what about last year?" resolves against the prior turn's history.
 - A cheap classifier gates obviously out-of-scope questions before the (more expensive) agent loop runs at all — a first-turn version (bare question + best retrieval passage) and a separate follow-up version that folds in prior conversation turns, so a continuation like "was that a lot?" isn't misjudged as off-topic just because it has no keywords of its own.
+- **Download requests** ("can I download NSF's January 2024 awards as a CSV?") are handled by a deterministic pipeline (`download_pilot.py`) that runs before the tool-calling loop even starts, rather than as another tool the model has to be prompted into choosing — a keyword gate, a forced-tool-choice extraction call, then a direct `POST /api/v2/download/awards/` + status poll. Narrowly scoped to the awards endpoint; every other download shape (transactions, accounts, IDV, disaster, sub-awards) gets a fixed "not yet supported" answer instead of best-effort handling.
 - The model never does multi-number math (totals, percentages, ratios, before/after change, rankings) in its own prose — it calls one of six typed arithmetic tools, or `code_execution` as a fallback for calculations those six don't cover.
 
 ### Tools available to the agent
@@ -22,15 +23,22 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 | `resolve_psc_code` | Same idea for a product/service description → PSC (Product and Service Code) code(s), for the `psc_code` filter |
 | `resolve_cfda_program` | Same idea for a federal grant/loan/assistance program description → CFDA/Assistance Listing program number(s), for the `cfda_program` filter |
 | `resolve_county_fips` | A county name → its 3-digit FIPS code, for the `performed_in_county`/`recipient_in_county` filters — strips local suffixes (Louisiana parishes, Alaska boroughs/census areas) the live endpoint's own match otherwise fails on |
+| `resolve_budget_function` | A plain-English budget category (e.g. "National Defense", "Medicare") → matching `budget_function`/`budget_subfunction` code(s), for `get_spending_explorer_breakdown`'s filters |
 | `list_top_agencies_by_budget` | Agencies ranked by budget authority, largest first, with each one's share of the total federal budget — always the current fiscal year/quarter, no historical range |
 | `get_agency_budget` | An agency's actual appropriated budgetary resources, obligations, and outlays for a fiscal year range — the real answer to "what is X's budget," as opposed to the spending tools below, which report award-level spending (a different, non-interchangeable number) |
+| `get_agency_budget_by_subcomponent` | Same figures as `get_agency_budget` (budgetary resources, obligated, outlayed), but broken down by sub-component/bureau (e.g. NIH or CDC within HHS) instead of one whole-agency total |
 | `get_agency_award_breakdown` | One agency's award obligations *and* transaction/new-award counts, broken down by sub-agency, for a single fiscal year — `get_spending_by_category` has no count fields at all |
 | `get_award_type_breakdown` | The count of awards by type — Contracts, Contract IDVs, Grants, Direct Payments, Loans, Other. The only tool here with no scoping filter required at all (a bounded six-number answer even fully unscoped); optional filters narrow it to one agency/recipient/location/etc. |
+| `get_disaster_spending_overview` | Headline disaster/emergency-relief totals — budget authority, obligations, outlays — optionally scoped to specific Disaster Emergency Fund Codes (e.g. COVID-19, infrastructure relief). All-time, government-wide only; a different data source from every award-level spending tool here |
+| `get_spending_explorer_breakdown` | Whole-of-government obligated spending grouped by budget function/subfunction/federal account/program activity/object class/agency/recipient — account-level data, a different lineage from every award-level spending tool below; totals won't match them and that's expected |
 | `get_spending_by_category` | Spending broken down by NAICS/PSC/sub-agency/etc. for a fiscal year range, scoped by an awarding agency and/or a recipient (at least one required) — optionally filtered further by award type, recipient name/id, amount range, US state (place of performance or recipient location), keywords, `date_type` (action_date/date_signed/last_modified_date/new_awards_only), domestic/foreign scope, or an exact NAICS/PSC/CFDA code — charts when 2+ categories come back |
 | `get_spending_over_time` | A spending trend across fiscal years/quarters/months, same agency-and/or-recipient scoping and optional filters as `get_spending_by_category` — charts when 2+ periods come back |
 | `get_spending_by_geography` | Spending ranked by state, county, congressional district, or country in one call, instead of checking one place at a time — population and per-capita figures reflect current data, not the queried period |
 | `search_awards` | Individual contract/grant/loan records for a fiscal year range, scoped by an awarding agency and/or a recipient, ranked largest-amount-first by default, with the same optional filters as `get_spending_by_category` (except `recipient_id`, confirmed silently ignored by the live API on this endpoint). Each result includes an `internal_id` for a follow-up `get_award_details` call. Flags when a result list is truncated (more matches than shown) rather than presenting a partial list as complete |
+| `search_transactions` | Individual transaction/modification records — one row per transaction, not per award — matching USASpending's own Keyword Search results. A multi-year award with 10 mods is one row under `search_awards` but up to 10 rows here |
 | `get_award_details` | Full details for one specific award (contract, IDV, grant, loan, or other financial assistance) found via `search_awards` — description, dates, competition data, recipient, funding breakdown, and parent-vehicle linkage. `include_child_orders=True` fetches the real child/grandchild-order rollup for an IDV (contract vehicle), since an IDV's own reported total can show $0 even when it's an active, heavily-used vehicle |
+| `get_award_funding_breakdown` | The Federal Account Funding breakdown for one specific award — which Treasury Account Symbol/object class/program activity/DEFC combinations funded it, and how much each contributed. A separate, later-timed data source from `get_award_details`' own total, only best-effort linked to it |
+| `get_award_transaction_history` | The individual transactions/modifications that built up to one specific award's current state — mod number, action date, action type, amount, description per row |
 | `search_subawards` | Individual subaward records — money a prime awardee passed on to a sub-recipient — scoped by an awarding agency and/or a sub-recipient. `recipient_name` and every `recipient_in_*` location parameter filter the *sub*-recipient here, the opposite of what those same names mean on every other spending tool above, which filter the prime |
 | `get_award_subawards` | The complete subaward list for one specific prime award already found via `search_awards`, given its `internal_id` — the award-profile page's own Sub-Awards tab, as opposed to `search_subawards`' cross-award search |
 | `search_recipients` | Find a company/organization/individual's exact `recipient_id` by name, UEI, or DUNS — a name alone is often genuinely ambiguous (e.g. "Boeing" resolves to 6+ distinct recipients sharing the same display name), so this shows every real candidate rather than silently picking one, for a precise follow-up via `get_recipient_details` or the `recipient_id` filter above |
@@ -96,7 +104,7 @@ npm run dev
   quick-question buttons (from `web/src/lib/demoQuestions.ts`'s hand-vetted set of 20,
   each verified live to trigger its expected tool call) for a fast first-touch demo
 - API: `POST /ask` with `{"question": "...", "conversation_id": "..."}`, returns
-  `{answer_text, source_type, conversation_id, charts, citations, tool_citations}` —
+  `{answer_text, source_type, conversation_id, charts, citations, tool_citations, downloads}` —
   omit `conversation_id` on the first call, then pass back the one returned to continue
   the same multi-turn thread
 - Rate limited to `ASK_RATE_LIMIT_PER_MINUTE` (default 20) requests/minute per client IP
@@ -156,22 +164,31 @@ backend/app/
                                 models, the Guide+Glossary and NAICS/PSC/CFDA
                                 retrievers, the USASpending API client, and the
                                 LangGraph checkpointer + conversation graph
-    tools/                   The 18 @beta_tool data tools, split by concern:
+    tools/                   The 26 @beta_tool data tools, split by concern:
                                 _shared.py (call recording, per-turn budget,
                                 untrusted-data wrapping, + search_guide/
                                 lookup_agency/get_agency_budget/
+                                get_agency_budget_by_subcomponent/
                                 list_top_agencies_by_budget/
-                                get_agency_award_breakdown), spending.py
-                                (get_spending_by_category/get_spending_over_time/
-                                search_awards/search_subawards/
+                                get_agency_award_breakdown), spending/
+                                (category.py/over_time.py/search.py/geography.py -
+                                get_spending_by_category/get_spending_over_time/
+                                search_awards/search_transactions/search_subawards/
                                 get_spending_by_geography, all funneled through
                                 tool_filters._build_filters), awards.py
-                                (get_award_details/get_award_subawards),
-                                recipients.py (search_recipients/
-                                get_recipient_details/get_recipient_children) +
+                                (get_award_details/get_award_subawards/
+                                get_award_funding_breakdown/
+                                get_award_transaction_history), recipients.py
+                                (search_recipients/get_recipient_details/
+                                get_recipient_children), award_type_breakdown.py
+                                (get_award_type_breakdown), disaster.py
+                                (get_disaster_spending_overview),
+                                spending_explorer.py
+                                (get_spending_explorer_breakdown) +
                                 business_type_labels.py
                                 (its code->label table), naics.py/psc.py/cfda.py/
-                                location.py (the resolve_*_code / resolve_county_fips
+                                budget_function.py/location.py (the resolve_*_code /
+                                resolve_budget_function / resolve_county_fips
                                 semantic code-lookup tools). See docs/adding-a-tool.md
                                 for the tool registration checklist.
     tool_filters.py           Shared filter-building layer for the spending tools
@@ -181,16 +198,18 @@ backend/app/
     scope.py                  In-scope gate: a first-turn classifier plus a
                                 separate follow-up classifier that folds in prior
                                 conversation turns
-    response_shaping.py       Chart/citation logic, fiscal-year math
+    download_pilot.py         Deterministic pre-tool-loop CSV download pipeline
+                                (awards endpoint only - see Architecture above)
+    response_shaping.py       Chart/citation/download-spec logic, fiscal-year math
     orchestrator.py           System prompt, AgentResult, ask() - runs the
                                 LangGraph conversation path
     cli.py                    The --question CLI entry point
     dev_tools/                Manual, opt-in scripts (real billed LLM calls unless
                                 noted, not in CI): red-team checks (data-injection,
                                 jailbreak, prompt-extraction, resource-abuse),
-                                tool-selection and code-lookup accuracy evals
-                                (LangSmith Dataset + evaluate()), scope-classifier
-                                calibration, live 3-turn conversation-path
+                                tool-selection, code-lookup, and download-pilot
+                                accuracy evals (LangSmith Dataset + evaluate()),
+                                scope-classifier calibration, live 3-turn conversation-path
                                 verification, a code_execution wiring check, live
                                 verification of the spending-tool filters
                                 (verify_shared_filters.py), a free/local

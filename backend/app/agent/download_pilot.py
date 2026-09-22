@@ -1,4 +1,4 @@
-"""Deterministic pre-tool-loop download-request pipeline (issue #238), scoped to POST /api/v2/download/awards/ only."""
+"""Deterministic pre-tool-loop download-request pipeline, scoped to POST /api/v2/download/awards/ only."""
 from __future__ import annotations
 
 import json
@@ -33,7 +33,7 @@ _DOWNLOAD_INTENT_PATTERN = (
     "raw data", "data file",
 )
 
-# Endpoints #238 defers - matched before the extraction call runs, so an unsupported request never burns one.
+# Endpoints this pilot defers - matched before the extraction call runs, so an unsupported request never burns one.
 _UNSUPPORTED_DOWNLOAD_PATTERN = {
     "transaction": "transaction-level data",
     "account": "account-level data",
@@ -47,7 +47,7 @@ _UNSUPPORTED_DOWNLOAD_PATTERN = {
 _POLL_INTERVAL_SECONDS = 4
 _POLL_TIMEOUT_SECONDS = 90
 
-# Fixed - #238 rules out free-form column selection for this pilot.
+# Fixed - this pilot rules out free-form column selection.
 _DOWNLOAD_COLUMNS = [
     "award_id_piid",
     "award_id_fain",

@@ -1,6 +1,6 @@
 {
   "_notes": [
-    "Labeled set for eval_download_pilot.py (issue #238). Each entry has a 'question' plus exactly one of: 'expect_download' (bool - a real AgentResult.downloads entry should come back, status finished or still-generating), 'expect_not_supported' (bool - a fixed 'isn't supported yet' answer for a download endpoint this pilot doesn't cover), or 'expect_fallback_to_loop' (bool - the download gate should NOT short-circuit; the question should reach the normal tool-calling loop unchanged, e.g. it doesn't actually name a download-shaped request, or the agency/year range is too ambiguous to extract confidently).",
+    "Labeled set for eval_download_pilot.py. Each entry has a 'question' plus exactly one of: 'expect_download' (bool - a real AgentResult.downloads entry should come back, status finished or still-generating), 'expect_not_supported' (bool - a fixed 'isn't supported yet' answer for a download endpoint this pilot doesn't cover), or 'expect_fallback_to_loop' (bool - the download gate should NOT short-circuit; the question should reach the normal tool-calling loop unchanged, e.g. it doesn't actually name a download-shaped request, or the agency/year range is too ambiguous to extract confidently).",
     "category is filled in by eval_download_pilot.py from the top-level key, not stored per-entry."
   ],
   "clean_download_request": [

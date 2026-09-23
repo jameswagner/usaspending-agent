@@ -26,6 +26,7 @@ import asyncio
 import json
 import logging
 import queue
+import time
 from collections.abc import AsyncIterator
 
 from .download_pilot import (
@@ -37,11 +38,13 @@ from .orchestrator import (
     NOT_FOUND_MESSAGE,
     AgentResult,
     _build_result,
+    _human_turn_count,
     _persist_download_turn,
 )
 from .scope import _is_in_scope
 from .singletons import _get_conversation_graph
-from .tools import _tool_call_log
+from .tools import MAX_TOOL_CALLS_PER_TURN, _tool_call_log
+from .turn_metrics import ModelToolTimingCallback, log_turn
 
 logger = logging.getLogger(__name__)
 
@@ -99,30 +102,51 @@ def _run_graph_stream(question: str, conversation_id: str, event_queue: queue.Qu
     """Runs on a worker thread - see module docstring. Always ends with a
     single None sentinel so the consumer knows to stop, even on failure.
     """
+    turn_start = time.perf_counter()
     try:
         graph = _get_conversation_graph()
         config = {"configurable": {"thread_id": conversation_id}}
         recent_messages = graph.get_state(config).values.get("messages", [])
+        human_turn_count = _human_turn_count(recent_messages)
 
-        if not _is_in_scope(question, recent_messages):
+        scope_timing: dict[str, float] = {}
+        in_scope = _is_in_scope(question, recent_messages, timing=scope_timing)
+        if not in_scope:
             logger.info("Scope gate rejected question: %r", question)
             result = AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
+            log_turn(
+                outcome="scope_rejected",
+                total_ms=round((time.perf_counter() - turn_start) * 1000, 1),
+                human_turn_count=human_turn_count,
+                scope_timing=scope_timing,
+            )
             event_queue.put(("done", _build_done_payload(result)))
             return
 
         if _looks_like_download_request(question) or _is_download_followup(recent_messages):
             event_queue.put(("tool_call_start", {"tool_name": "download_awards", "args": {}}))
-            download_result = handle_download_request(question, conversation_id, recent_messages)
+            download_timing: dict[str, float] = {}
+            download_result = handle_download_request(question, conversation_id, recent_messages, timing=download_timing)
             if download_result is not None:
                 _persist_download_turn(graph, config, question, download_result.answer_text)
+                log_turn(
+                    outcome="download_handled",
+                    total_ms=round((time.perf_counter() - turn_start) * 1000, 1),
+                    human_turn_count=human_turn_count,
+                    scope_timing=scope_timing,
+                    download_timing=download_timing,
+                )
                 event_queue.put(("done", _build_done_payload(download_result)))
                 return
 
         _tool_call_log.set([])
+        metrics = ModelToolTimingCallback()
         last_ai_message = None
 
         for update in graph.stream(
-            {"messages": [{"role": "user", "content": question}]}, config=config, stream_mode="updates"
+            {"messages": [{"role": "user", "content": question}]},
+            config={**config, "callbacks": [metrics]},
+            stream_mode="updates",
         ):
             for node, data in update.items():
                 messages = (data or {}).get("messages")
@@ -146,6 +170,16 @@ def _run_graph_stream(question: str, conversation_id: str, event_queue: queue.Qu
 
         answer_text = last_ai_message.content if last_ai_message is not None else ""
         result = _build_result(answer_text, conversation_id)
+        tool_call_count = len(_tool_call_log.get() or [])
+        log_turn(
+            outcome="answered",
+            total_ms=round((time.perf_counter() - turn_start) * 1000, 1),
+            human_turn_count=human_turn_count,
+            scope_timing=scope_timing,
+            metrics=metrics,
+            tool_call_count=tool_call_count,
+            tool_call_budget_hit=tool_call_count >= MAX_TOOL_CALLS_PER_TURN,
+        )
         event_queue.put(("done", _build_done_payload(result)))
     except Exception as e:
         logger.exception("Streaming agent turn failed for question: %r", question)

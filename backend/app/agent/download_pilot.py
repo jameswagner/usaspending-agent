@@ -25,6 +25,7 @@ from .response_shaping import (
 from .scope import _render_recent_exchanges
 from .singletons import MODEL, _get_client, _get_usaspending_client
 from .tool_filters import _build_filters
+from .turn_metrics import timed
 
 logger = logging.getLogger(__name__)
 
@@ -227,7 +228,9 @@ def _build_download_citation(agency_name: str | None, intent: DownloadIntent, fi
     return ToolCitation(tool_name="download_awards", parameters=params, description=description, curl=curl)
 
 
-def handle_download_request(question: str, conversation_id: str, recent_messages: list | None = None):
+def handle_download_request(
+    question: str, conversation_id: str, recent_messages: list | None = None, timing: dict[str, float] | None = None
+):
     """Returns None to signal "fall through to the normal tool loop unchanged"."""
     from .orchestrator import AgentResult
 
@@ -242,7 +245,8 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         )
 
     history_block = _render_recent_exchanges(recent_messages) if recent_messages else ""
-    intent = _extract_download_intent(question, history_block)
+    with timed(timing, "extraction_ms"):
+        intent = _extract_download_intent(question, history_block)
     if intent is None:
         return None
 
@@ -268,9 +272,10 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         )
         if intent.start_date and intent.end_date:
             filters.time_period = [TimePeriod(start_date=intent.start_date, end_date=intent.end_date)]
-        job = client.download_awards(filters, _DOWNLOAD_COLUMNS)
-        citation = _build_download_citation(agency_name, intent, filters)
-        status = _poll_until_finished(client, job.file_name)
+        with timed(timing, "download_ms"):
+            job = client.download_awards(filters, _DOWNLOAD_COLUMNS)
+            citation = _build_download_citation(agency_name, intent, filters)
+            status = _poll_until_finished(client, job.file_name)
     except USASpendingAPIError as e:
         logger.warning("Download pipeline failed for question %r: %s", question, e)
         return AgentResult(answer_text=f"This download failed: {e}.", conversation_id=conversation_id)

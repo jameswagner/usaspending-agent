@@ -6,6 +6,7 @@ from __future__ import annotations
 from langsmith import traceable
 
 from .singletons import MODEL, RERANK_CONFIDENCE_THRESHOLD, _get_client, _get_retriever
+from .turn_metrics import timed
 
 SCOPE_CLASSIFIER_PROMPT = (
     "You classify whether a user question is in scope for a USASpending.gov "
@@ -105,7 +106,7 @@ def _render_recent_exchanges(recent_messages: list, max_exchanges: int = 2) -> s
 
 
 @traceable(run_type="llm", name="scope_classifier")
-def _is_in_scope(question: str, recent_messages: list | None = None) -> bool:
+def _is_in_scope(question: str, recent_messages: list | None = None, timing: dict[str, float] | None = None) -> bool:
     """Cheap pre-filter gate: only start the (much more expensive) tool-
     calling loop if the question is plausibly in-scope for this app's whole
     domain, instead of relying on the system prompt alone to stop the model
@@ -157,21 +158,24 @@ def _is_in_scope(question: str, recent_messages: list | None = None) -> bool:
     if recent_messages:
         history_block = _render_recent_exchanges(recent_messages)
         if history_block:
-            response = _get_client().messages.create(
-                model=MODEL,
-                max_tokens=5,
-                system=FOLLOWUP_SCOPE_CLASSIFIER_PROMPT,
-                messages=[{"role": "user", "content": f"{history_block}\n\nNew question: {question}"}],
-            )
+            with timed(timing, "classifier_ms"):
+                response = _get_client().messages.create(
+                    model=MODEL,
+                    max_tokens=5,
+                    system=FOLLOWUP_SCOPE_CLASSIFIER_PROMPT,
+                    messages=[{"role": "user", "content": f"{history_block}\n\nNew question: {question}"}],
+                )
             text = next((b.text for b in response.content if b.type == "text"), "")
             return text.strip().upper().startswith("YES")
 
-    context = _get_top_passage(question)
-    response = _get_client().messages.create(
-        model=MODEL,
-        max_tokens=5,
-        system=SCOPE_CLASSIFIER_PROMPT,
-        messages=[{"role": "user", "content": f"Question: {question}\n\n{context}"}],
-    )
+    with timed(timing, "retrieval_ms"):
+        context = _get_top_passage(question)
+    with timed(timing, "classifier_ms"):
+        response = _get_client().messages.create(
+            model=MODEL,
+            max_tokens=5,
+            system=SCOPE_CLASSIFIER_PROMPT,
+            messages=[{"role": "user", "content": f"Question: {question}\n\n{context}"}],
+        )
     text = next((b.text for b in response.content if b.type == "text"), "")
     return text.strip().upper().startswith("YES")

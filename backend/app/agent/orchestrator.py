@@ -11,9 +11,11 @@ from datetime import datetime, timezone
 from langsmith import traceable
 from pydantic import BaseModel
 
+from .download_pilot import _looks_like_download_request, handle_download_request
 from .response_shaping import (
     ChartSpec,
     Citation,
+    DownloadSpec,
     ToolCitation,
     _build_guide_citation,
     build_tool_citation,
@@ -256,6 +258,7 @@ class AgentResult(BaseModel):
     charts: list[ChartSpec] = []
     citations: list[Citation] = []
     tool_citations: list[ToolCitation] = []
+    downloads: list[DownloadSpec] = []
 
 
 def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
@@ -327,6 +330,11 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
         # out-of-scope question shouldn't poison what the next in-scope
         # question's history contains.
         return AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
+
+    if _looks_like_download_request(question):
+        download_result = handle_download_request(question, conversation_id)
+        if download_result is not None:
+            return download_result
 
     _tool_call_log.set([])
 

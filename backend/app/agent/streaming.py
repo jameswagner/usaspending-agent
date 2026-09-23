@@ -28,6 +28,7 @@ import logging
 import queue
 from collections.abc import AsyncIterator
 
+from .download_pilot import _looks_like_download_request, handle_download_request
 from .orchestrator import NOT_FOUND_MESSAGE, AgentResult, _build_result
 from .scope import _is_in_scope
 from .singletons import _get_conversation_graph
@@ -81,6 +82,7 @@ def _build_done_payload(result: AgentResult) -> dict:
         "charts": [c.model_dump() for c in result.charts],
         "citations": [c.model_dump() for c in result.citations],
         "tool_citations": [c.model_dump() for c in result.tool_citations],
+        "downloads": [d.model_dump() for d in result.downloads],
     }
 
 
@@ -98,6 +100,12 @@ def _run_graph_stream(question: str, conversation_id: str, event_queue: queue.Qu
             result = AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
             event_queue.put(("done", _build_done_payload(result)))
             return
+
+        if _looks_like_download_request(question):
+            download_result = handle_download_request(question, conversation_id)
+            if download_result is not None:
+                event_queue.put(("done", _build_done_payload(download_result)))
+                return
 
         _tool_call_log.set([])
         last_ai_message = None

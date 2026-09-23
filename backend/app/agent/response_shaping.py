@@ -133,6 +133,17 @@ class ChartSpec(BaseModel):
     values: list[float]
 
 
+class DownloadSpec(BaseModel):
+    """One in-flight or finished CSV export job, surfaced by the
+    deterministic download pilot (see agent/download_pilot.py) rather than
+    a tool call - url is null while the job is still running."""
+
+    file_name: str
+    url: str | None
+    status: str
+    total_rows: int | None = None
+
+
 class Citation(BaseModel):
     chunk_id: str
     source: str

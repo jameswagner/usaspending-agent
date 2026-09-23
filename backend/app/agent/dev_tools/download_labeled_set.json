@@ -1,0 +1,21 @@
+{
+  "_notes": [
+    "Labeled set for eval_download_pilot.py. Each entry has a 'question' plus exactly one of: 'expect_download' (bool - a real AgentResult.downloads entry should come back, status finished or still-generating), 'expect_not_supported' (bool - a fixed 'isn't supported yet' answer for a download endpoint this pilot doesn't cover), or 'expect_fallback_to_loop' (bool - the download gate should NOT short-circuit; the question should reach the normal tool-calling loop unchanged, e.g. it doesn't actually name a download-shaped request, or the agency/year range is too ambiguous to extract confidently).",
+    "category is filled in by eval_download_pilot.py from the top-level key, not stored per-entry."
+  ],
+  "clean_download_request": [
+    {"question": "Can I download NSF's January 2024 awards as a CSV?", "expect_download": true},
+    {"question": "Download HHS's FY2023 grant awards to a spreadsheet.", "expect_download": true},
+    {"question": "Export the Department of Education's FY2024 contract awards as a CSV file.", "expect_download": true}
+  ],
+  "unsupported_endpoint": [
+    {"question": "Download transaction-level data for the Department of Education.", "expect_not_supported": true},
+    {"question": "Can I get a CSV of NSF's federal account-level spending data?", "expect_not_supported": true},
+    {"question": "Export disaster relief recipient data as a CSV.", "expect_not_supported": true}
+  ],
+  "fallback_to_loop": [
+    {"question": "How much did NSF spend in FY2024?", "expect_fallback_to_loop": true},
+    {"question": "Download the data for that agency I asked about earlier.", "expect_fallback_to_loop": true},
+    {"question": "Can I download awards for a made-up agency called Zorptron Federal Bureau?", "expect_fallback_to_loop": true}
+  ]
+}

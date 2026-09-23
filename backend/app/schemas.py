@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from backend.app.agent.response_shaping import Citation, ToolCitation
+from backend.app.agent.response_shaping import Citation, DownloadSpec, ToolCitation
 
 
 class AskRequest(BaseModel):
@@ -18,3 +18,4 @@ class AskResponse(BaseModel):
     charts: list[dict] = []
     citations: list[Citation] = []
     tool_citations: list[ToolCitation] = []
+    downloads: list[DownloadSpec] = []

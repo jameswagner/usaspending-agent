@@ -11,9 +11,15 @@ from datetime import datetime, timezone
 from langsmith import traceable
 from pydantic import BaseModel
 
+from .download_pilot import (
+    _is_download_followup,
+    _looks_like_download_request,
+    handle_download_request,
+)
 from .response_shaping import (
     ChartSpec,
     Citation,
+    DownloadSpec,
     ToolCitation,
     _build_guide_citation,
     build_tool_citation,
@@ -251,7 +257,13 @@ def _build_system_prompt() -> str:
         "does not know today's actual date. 'Most recent complete fiscal "
         "year' normally means the one that just ended, not the one in "
         "progress; only use the in-progress fiscal year if the question is "
-        "explicitly about data so far this year."
+        "explicitly about data so far this year.\n\n"
+        "Separately from these tools, a CSV download of an agency's awards "
+        "IS available - it's handled automatically outside this tool loop "
+        "when a question explicitly asks to download/export the data, so "
+        "never claim this app can't produce a CSV; if you're here for a "
+        "download request, ask the user to rephrase explicitly (e.g. "
+        "'download NSF's FY2024 awards as a CSV') rather than pointing them to usaspending.gov."
     )
 
 
@@ -261,6 +273,7 @@ class AgentResult(BaseModel):
     charts: list[ChartSpec] = []
     citations: list[Citation] = []
     tool_citations: list[ToolCitation] = []
+    downloads: list[DownloadSpec] = []
 
 
 def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
@@ -315,6 +328,14 @@ def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
     )
 
 
+def _persist_download_turn(graph, config: dict, question: str, answer_text: str) -> None:
+    """download_pilot.py's early return skips graph.invoke(), so without this the turn never enters the checkpointer."""
+    graph.update_state(
+        config,
+        {"messages": [{"role": "user", "content": question}, {"role": "assistant", "content": answer_text}]},
+    )
+
+
 def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
     """LangGraph-backed path - conversation_id is a real LangGraph
     thread_id, giving persisted, resumable history via the checkpointer
@@ -332,6 +353,12 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
         # out-of-scope question shouldn't poison what the next in-scope
         # question's history contains.
         return AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
+
+    if _looks_like_download_request(question) or _is_download_followup(recent_messages):
+        download_result = handle_download_request(question, conversation_id, recent_messages)
+        if download_result is not None:
+            _persist_download_turn(graph, config, question, download_result.answer_text)
+            return download_result
 
     if pilot_enabled() and _looks_like_agency_fy_spending_request(question):
         pilot_result = handle_agency_fy_spending_request(question, conversation_id)

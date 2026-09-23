@@ -133,6 +133,16 @@ class ChartSpec(BaseModel):
     values: list[float]
 
 
+class DownloadSpec(BaseModel):
+    """One in-flight or finished CSV export job from the download pilot - url is the eventual file, live once status is "finished"."""
+
+    file_name: str
+    url: str
+    status_url: str
+    status: str
+    total_rows: int | None = None
+
+
 class Citation(BaseModel):
     chunk_id: str
     source: str

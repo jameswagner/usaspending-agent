@@ -12,6 +12,8 @@ from langgraph.checkpoint.base import empty_checkpoint
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.prebuilt import create_react_agent
 
+from backend.app.agent.orchestrator import _persist_download_turn
+
 
 def _make_saver(tmp_path) -> SqliteSaver:
     conn = sqlite3.connect(str(tmp_path / "test_conversations.db"), check_same_thread=False)
@@ -74,3 +76,32 @@ class TestReactAgentRoundTrip:
 
         contents = [m.content for m in result["messages"]]
         assert "question 1" not in contents
+
+
+class TestPersistDownloadTurn:
+    """Regression (live-reported): download turns never entered the checkpointer, breaking follow-ups."""
+
+    def _make_graph(self, tmp_path):
+        saver = _make_saver(tmp_path)
+        model = FakeMessagesListChatModel(responses=[AIMessage(content="unused")])
+        return create_react_agent(model=model, tools=[], checkpointer=saver)
+
+    def test_download_turn_is_visible_to_the_next_question(self, tmp_path):
+        graph = self._make_graph(tmp_path)
+        config = {"configurable": {"thread_id": "t1"}}
+
+        _persist_download_turn(graph, config, "download NSF's January 2024 awards", "Your download is ready: ...")
+
+        recent_messages = graph.get_state(config).values.get("messages", [])
+        contents = [m.content for m in recent_messages]
+        assert "download NSF's January 2024 awards" in contents
+        assert "Your download is ready: ..." in contents
+
+    def test_persisted_download_turn_is_isolated_per_thread(self, tmp_path):
+        graph = self._make_graph(tmp_path)
+        _persist_download_turn(
+            graph, {"configurable": {"thread_id": "t1"}}, "download NSF's awards", "ready",
+        )
+
+        other_thread_messages = graph.get_state({"configurable": {"thread_id": "t2"}}).values.get("messages", [])
+        assert other_thread_messages == []

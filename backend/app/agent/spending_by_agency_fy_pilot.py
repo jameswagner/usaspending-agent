@@ -47,11 +47,7 @@ def _looks_like_agency_fy_spending_request(question: str) -> bool:
 
 
 def pilot_enabled() -> bool:
-    """Read at call time, not import time, so the before/after eval script
-    can toggle SPENDING_BY_AGENCY_FY_PILOT_ENABLED per-call without
-    reimporting this module. Defaults off - this pilot adds a second
-    forced-tool-choice extraction call plus a response call on the
-    critical path, unmeasured (see #245); merged dark until instrumented."""
+    """Read at call time so the eval script can toggle it per-call; defaults off pending #245 instrumentation."""
     return os.environ.get("SPENDING_BY_AGENCY_FY_PILOT_ENABLED", "false").lower() == "true"
 
 

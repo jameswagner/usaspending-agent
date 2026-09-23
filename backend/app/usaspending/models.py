@@ -622,3 +622,26 @@ class SpendingExplorerResponse(BaseModel):
     total: float | None = None
     end_date: str
     results: list[SpendingExplorerResult]
+
+
+class DownloadJobResponse(BaseModel):
+    """The job has only just been queued - file_url isn't live until status == "finished"."""
+
+    model_config = ConfigDict(extra="allow")
+
+    status_url: str
+    file_name: str
+    file_url: str
+
+
+class DownloadStatusResponse(BaseModel):
+    """status moves "ready" -> "running" -> "finished"/"failed" - confirmed live, not just running->finished."""
+
+    model_config = ConfigDict(extra="allow")
+
+    status: str
+    file_name: str
+    file_url: str
+    total_rows: int | None = None
+    seconds_elapsed: str | None = None
+    message: str | None = None

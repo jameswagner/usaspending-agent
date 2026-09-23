@@ -1,17 +1,6 @@
-"""Before/after eval for the #233 spending-by-agency-by-fiscal-year pilot
-(backend/app/agent/spending_by_agency_fy_pilot.py) - checked against
-spending_by_agency_fy_labeled_set.json via a LangSmith Dataset + evaluate()
-experiment, same skeleton as eval_tool_selection.py.
+"""Before/after eval for spending_by_agency_fy_pilot.py, via a LangSmith Dataset + evaluate().
 
-Unlike eval_tool_selection.py, predict() calls ask() TWICE per question -
-once with the pilot enabled (the "after" path) and once with it disabled via
-SPENDING_BY_AGENCY_FY_PILOT_ENABLED=false (the "before" path, i.e. today's
-tool-calling loop) - so a single run produces a real round-trip-count and
-latency comparison per question, not just a pass/fail on whether the pilot
-fired.
-
-Real, billed API calls (2x per labeled question - both paths run). Not part
-of CI:
+Real, billed API calls (2x per labeled question - pilot enabled and disabled). Not part of CI:
     uv run python -m backend.app.agent.dev_tools.eval_spending_by_agency_fy_pilot
 """
 from __future__ import annotations

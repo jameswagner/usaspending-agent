@@ -39,6 +39,11 @@ def main():
         print("[tool citations]")
         for tc in result.tool_citations:
             print(f"  {tc.description} (tool={tc.tool_name}, params={tc.parameters})")
+    if result.downloads:
+        print()
+        print("[downloads]")
+        for d in result.downloads:
+            print(f"  {d.file_name} (status={d.status}, url={d.url})")
 
 
 if __name__ == "__main__":

@@ -28,7 +28,17 @@ import logging
 import queue
 from collections.abc import AsyncIterator
 
-from .orchestrator import NOT_FOUND_MESSAGE, AgentResult, _build_result
+from .download_pilot import (
+    _is_download_followup,
+    _looks_like_download_request,
+    handle_download_request,
+)
+from .orchestrator import (
+    NOT_FOUND_MESSAGE,
+    AgentResult,
+    _build_result,
+    _persist_download_turn,
+)
 from .scope import _is_in_scope
 from .singletons import _get_conversation_graph
 from .spending_by_agency_fy_pilot import (
@@ -86,6 +96,7 @@ def _build_done_payload(result: AgentResult) -> dict:
         "charts": [c.model_dump() for c in result.charts],
         "citations": [c.model_dump() for c in result.citations],
         "tool_citations": [c.model_dump() for c in result.tool_citations],
+        "downloads": [d.model_dump() for d in result.downloads],
     }
 
 
@@ -103,6 +114,14 @@ def _run_graph_stream(question: str, conversation_id: str, event_queue: queue.Qu
             result = AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
             event_queue.put(("done", _build_done_payload(result)))
             return
+
+        if _looks_like_download_request(question) or _is_download_followup(recent_messages):
+            event_queue.put(("tool_call_start", {"tool_name": "download_awards", "args": {}}))
+            download_result = handle_download_request(question, conversation_id, recent_messages)
+            if download_result is not None:
+                _persist_download_turn(graph, config, question, download_result.answer_text)
+                event_queue.put(("done", _build_done_payload(download_result)))
+                return
 
         if pilot_enabled() and _looks_like_agency_fy_spending_request(question):
             pilot_result = handle_agency_fy_spending_request(question, conversation_id)

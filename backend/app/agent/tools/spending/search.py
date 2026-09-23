@@ -356,36 +356,18 @@ def search_awards(
             COVID-19/Infrastructure Obligations and Outlays when non-zero, regardless of
             whether this filter is set.
         contract_pricing_type: Optional. Restrict to contracts with one or more of these
-            Type of Contract Pricing values, e.g. ["firm_fixed_price"] or
-            ["cost_plus_fixed_fee", "cost_plus_award_fee"] (multiple values are OR'd
-            together). Contract-only - meaningless for grants/loans/other assistance.
-            Valid values: combination, cost_no_fee, cost_plus_award_fee,
-            cost_plus_fixed_fee, cost_plus_incentive_fee, cost_sharing, firm_fixed_price,
-            fixed_price_award_fee, fixed_price_incentive, fixed_price_level_of_effort,
-            fixed_price_redetermination, fixed_price_economic_price_adjustment,
-            labor_hours, order_dependent, other, time_and_materials. Sufficient scope on
-            its own.
+            Type of Contract Pricing values (see the enum for the full list), e.g.
+            ["firm_fixed_price"] or ["cost_plus_fixed_fee", "cost_plus_award_fee"]
+            (multiple values are OR'd together). Contract-only - meaningless for
+            grants/loans/other assistance. Sufficient scope on its own.
         set_aside_type: Optional. Restrict to contracts with one or more of these Type of
-            Set Aside values, e.g. ["small_business_set_aside_total"] (multiple values are
-            OR'd together). Contract-only. Valid values: 8a_sole_source,
-            8a_with_hubzone_preference, 8a_competed, buy_indian,
-            economically_disadvantaged_women_owned_small_business,
-            economically_disadvantaged_women_owned_small_business_sole_source,
-            emerging_small_business, hbcu_mi_partial, hbcu_mi_total, hubzone_set_aside,
-            hubzone_sole_source, indian_economic_enterprise,
-            indian_small_business_economic_enterprise, no_set_aside,
-            reserved_for_small_business, sdvosb_sole_source, sdvosb_set_aside,
-            small_business_set_aside_partial, small_business_set_aside_total,
-            veteran_set_aside, veteran_sole_source, very_small_business,
-            women_owned_small_business, women_owned_small_business_sole_source.
-            Sufficient scope on its own.
+            Set Aside values (see the enum for the full list), e.g.
+            ["small_business_set_aside_total"] (multiple values are OR'd together).
+            Contract-only. Sufficient scope on its own.
         extent_competed_type: Optional. Restrict to contracts with one or more of these
-            Extent Competed values, e.g. ["full_and_open_competition"] (multiple values
-            are OR'd together). Contract-only. Valid values: competed_under_sap,
-            competitive_delivery_order, follow_on_to_competed_action,
-            full_and_open_competition, full_and_open_competition_after_exclusion_of_sources,
-            non_competitive_delivery_order, not_available_for_competition, not_competed,
-            not_competed_under_sap. Sufficient scope on its own.
+            Extent Competed values (see the enum for the full list), e.g.
+            ["full_and_open_competition"] (multiple values are OR'd together).
+            Contract-only. Sufficient scope on its own.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget

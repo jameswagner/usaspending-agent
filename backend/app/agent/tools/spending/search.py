@@ -324,11 +324,8 @@ def search_awards(
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
         recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
         naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511" - or a
-            plain-English industry description, e.g. "custom software development", which
-            auto-resolves to a code on a single confident semantic match (the result discloses
-            when this happened). If the description is ambiguous (multiple plausible codes),
-            call resolve_naics_code first to see the candidates and pick one, or browse via
-            get_spending_by_category (category="naics") instead of guessing.
+            plain-English industry description (see resolve_naics_code above); if ambiguous,
+            browse via get_spending_by_category (category="naics") instead of guessing.
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".
@@ -750,9 +747,7 @@ def search_subawards(
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
         recipient_scope: Optional. "domestic" or "foreign" - where the SUB-recipient is located.
         naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511" - or a
-            plain-English industry description, which auto-resolves to a code on a single
-            confident semantic match (disclosed in the result when it happens); call
-            resolve_naics_code first if the description is ambiguous.
+            plain-English industry description (see resolve_naics_code above).
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number, format NN.NNN.
         award_id: Optional. Restrict to subawards under a single known award by its plain Award ID
@@ -1054,9 +1049,7 @@ def search_transactions(
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
         recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
         naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511" - or a
-            plain-English industry description, which auto-resolves to a code on a single
-            confident semantic match (disclosed in the result when it happens); call
-            resolve_naics_code first if the description is ambiguous.
+            plain-English industry description (see resolve_naics_code above).
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".

@@ -202,9 +202,7 @@ def get_spending_by_geography(
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
         recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
         naics_code: Optional. Restrict to this exact NAICS industry code - or a plain-English
-            industry description, which auto-resolves to a code on a single confident semantic
-            match (disclosed in the result when it happens); call resolve_naics_code first if
-            the description is ambiguous.
+            industry description (see resolve_naics_code above).
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code.
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number, format NN.NNN.
         award_id: Optional. Restrict to a single known award by its plain Award ID (PIID/FAIN/URI) -

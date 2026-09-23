@@ -237,11 +237,8 @@ def get_spending_over_time(
         place_of_performance_scope: Optional. "domestic" or "foreign" - where the work was performed.
         recipient_scope: Optional. "domestic" or "foreign" - where the recipient is located.
         naics_code: Optional. Restrict to this exact NAICS industry code, e.g. "541511" - or a
-            plain-English industry description, e.g. "custom software development", which
-            auto-resolves to a code on a single confident semantic match (the result discloses
-            when this happened). If the description is ambiguous, call resolve_naics_code first
-            to see the candidates, or use get_spending_by_category with category="naics" to
-            browse the actual breakdown instead of guessing.
+            plain-English industry description (see resolve_naics_code above); if ambiguous, use
+            get_spending_by_category with category="naics" to browse instead of guessing.
         psc_code: Optional. Restrict to this exact 4-character Product/Service Code, e.g. "7030".
         cfda_program: Optional. Restrict to this exact CFDA/Assistance Listing number (grants
             only), format NN.NNN, e.g. "10.001".

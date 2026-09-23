@@ -5,11 +5,11 @@ capture buffer afterward.
 from __future__ import annotations
 
 import logging
-import time
 import uuid
 from datetime import datetime, timezone
 
 from langsmith import traceable
+from langsmith.run_helpers import get_current_run_tree
 from pydantic import BaseModel
 
 from .download_pilot import (
@@ -28,9 +28,8 @@ from .response_shaping import (
     should_chart,
 )
 from .scope import _is_in_scope
-from .singletons import _get_conversation_graph
+from .singletons import CACHE_TTL, _get_conversation_graph
 from .tools import MAX_TOOL_CALLS_PER_TURN, _tool_call_log
-from .turn_metrics import ModelToolTimingCallback, log_turn
 
 logger = logging.getLogger(__name__)
 
@@ -325,8 +324,17 @@ def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
     )
 
 
-def _human_turn_count(recent_messages: list) -> int:
-    return sum(1 for m in recent_messages if getattr(m, "type", None) == "human")
+def _tag_turn(outcome: str, human_turn_count: int, **extra) -> None:
+    """Tags the agent_ask run (this function's caller, ask()) with this
+    app's own outcome vocabulary and turn shape - LangSmith already has
+    the latency/token/span data via wrap_anthropic and @traceable, it
+    just doesn't know what the turn *was* unless told.
+    """
+    run_tree = get_current_run_tree()
+    if run_tree is not None:
+        run_tree.add_metadata(
+            {"outcome": outcome, "human_turn_count": human_turn_count, "cache_ttl_config": CACHE_TTL, **extra}
+        )
 
 
 def _persist_download_turn(graph, config: dict, question: str, answer_text: str) -> None:
@@ -342,60 +350,39 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
     thread_id, giving persisted, resumable history via the checkpointer
     built in singletons.warm_up().
     """
-    turn_start = time.perf_counter()
     graph = _get_conversation_graph()
     config = {"configurable": {"thread_id": conversation_id}}
     # A cheap, already-in-memory-or-sqlite lookup (no extra LLM call) - on
     # a brand new thread_id this is just {} (confirmed live), not an error.
     recent_messages = graph.get_state(config).values.get("messages", [])
-    human_turn_count = _human_turn_count(recent_messages)
+    human_turn_count = sum(1 for m in recent_messages if getattr(m, "type", None) == "human")
 
-    scope_timing: dict[str, float] = {}
-    in_scope = _is_in_scope(question, recent_messages, timing=scope_timing)
-    if not in_scope:
+    if not _is_in_scope(question, recent_messages):
         logger.info("Scope gate rejected question: %r", question)
-        log_turn(
-            outcome="scope_rejected",
-            total_ms=round((time.perf_counter() - turn_start) * 1000, 1),
-            human_turn_count=human_turn_count,
-            scope_timing=scope_timing,
-        )
+        _tag_turn("scope_rejected", human_turn_count)
         # Deliberately not persisted into checkpointer state - an
         # out-of-scope question shouldn't poison what the next in-scope
         # question's history contains.
         return AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
 
     if _looks_like_download_request(question) or _is_download_followup(recent_messages):
-        download_timing: dict[str, float] = {}
-        download_result = handle_download_request(question, conversation_id, recent_messages, timing=download_timing)
+        download_result = handle_download_request(question, conversation_id, recent_messages)
         if download_result is not None:
             _persist_download_turn(graph, config, question, download_result.answer_text)
-            log_turn(
-                outcome="download_handled",
-                total_ms=round((time.perf_counter() - turn_start) * 1000, 1),
-                human_turn_count=human_turn_count,
-                scope_timing=scope_timing,
-                download_timing=download_timing,
-            )
+            _tag_turn("download_handled", human_turn_count)
             return download_result
 
     _tool_call_log.set([])
-    metrics = ModelToolTimingCallback()
 
-    final_state = graph.invoke(
-        {"messages": [{"role": "user", "content": question}]}, config={**config, "callbacks": [metrics]}
-    )
+    final_state = graph.invoke({"messages": [{"role": "user", "content": question}]}, config=config)
 
     final_messages = final_state["messages"]
     answer_text = final_messages[-1].content if final_messages else ""
 
     tool_call_count = len(_tool_call_log.get() or [])
-    log_turn(
-        outcome="answered",
-        total_ms=round((time.perf_counter() - turn_start) * 1000, 1),
-        human_turn_count=human_turn_count,
-        scope_timing=scope_timing,
-        metrics=metrics,
+    _tag_turn(
+        "answered",
+        human_turn_count,
         tool_call_count=tool_call_count,
         tool_call_budget_hit=tool_call_count >= MAX_TOOL_CALLS_PER_TURN,
     )

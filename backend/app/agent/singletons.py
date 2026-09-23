@@ -35,6 +35,11 @@ MODEL = os.environ.get("AGENT_MODEL", "claude-haiku-4-5")
 # (data-driven optimum -1.89, using -2.0 for a small safety margin).
 RERANK_CONFIDENCE_THRESHOLD = -2.0
 
+# The system prompt's cache_control block below is the only place this is
+# used - named here so it can also be attached as LangSmith run metadata
+# (orchestrator.py's _tag_turn), for filtering a TTL before/after comparison.
+CACHE_TTL = "1h"
+
 NAICS_CHROMA_DB_DIR = os.environ.get("NAICS_CHROMA_DB_DIR", "./data/chroma_naics")
 NAICS_WHOOSH_INDEX_DIR = os.environ.get("NAICS_WHOOSH_INDEX_DIR", "./data/whoosh_naics")
 PSC_CHROMA_DB_DIR = os.environ.get("PSC_CHROMA_DB_DIR", "./data/chroma_psc")
@@ -195,7 +200,7 @@ def warm_up() -> None:
                     {
                         "type": "text",
                         "text": _build_system_prompt(),
-                        "cache_control": {"type": "ephemeral", "ttl": "1h"},
+                        "cache_control": {"type": "ephemeral", "ttl": CACHE_TTL},
                     }
                 ]
             ),

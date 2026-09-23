@@ -6,6 +6,7 @@ import logging
 import time
 from typing import Literal
 
+from langsmith.run_helpers import get_current_run_tree
 from pydantic import BaseModel, ValidationError
 
 from backend.app.usaspending import (
@@ -25,7 +26,6 @@ from .response_shaping import (
 from .scope import _render_recent_exchanges
 from .singletons import MODEL, _get_client, _get_usaspending_client
 from .tool_filters import _build_filters
-from .turn_metrics import timed
 
 logger = logging.getLogger(__name__)
 
@@ -228,14 +228,24 @@ def _build_download_citation(agency_name: str | None, intent: DownloadIntent, fi
     return ToolCitation(tool_name="download_awards", parameters=params, description=description, curl=curl)
 
 
-def handle_download_request(
-    question: str, conversation_id: str, recent_messages: list | None = None, timing: dict[str, float] | None = None
-):
+def _tag_download_outcome(outcome: str) -> None:
+    """Tags whichever run is active in the ask() call stack (there's no
+    @traceable on this function itself) with this pilot's own outcome
+    vocabulary - a no-op outside a traced call (e.g. streaming.py, which
+    has no enclosing @traceable span yet - a separate, pre-existing gap).
+    """
+    run_tree = get_current_run_tree()
+    if run_tree is not None:
+        run_tree.add_metadata({"download_outcome": outcome})
+
+
+def handle_download_request(question: str, conversation_id: str, recent_messages: list | None = None):
     """Returns None to signal "fall through to the normal tool loop unchanged"."""
     from .orchestrator import AgentResult
 
     unsupported = _unsupported_download_label(question)
     if unsupported is not None:
+        _tag_download_outcome("unsupported_endpoint")
         return AgentResult(
             answer_text=(
                 f"Downloading {unsupported} isn't supported yet — only award-level CSV "
@@ -245,9 +255,9 @@ def handle_download_request(
         )
 
     history_block = _render_recent_exchanges(recent_messages) if recent_messages else ""
-    with timed(timing, "extraction_ms"):
-        intent = _extract_download_intent(question, history_block)
+    intent = _extract_download_intent(question, history_block)
     if intent is None:
+        _tag_download_outcome("no_clear_intent")
         return None
 
     client = _get_usaspending_client()
@@ -255,6 +265,7 @@ def handle_download_request(
     if intent.agency_raw:
         match = client.find_agency_by_name(intent.agency_raw)
         if match is None:
+            _tag_download_outcome("unknown_agency")
             return None
         agency_name = match.agency_name
 
@@ -272,14 +283,15 @@ def handle_download_request(
         )
         if intent.start_date and intent.end_date:
             filters.time_period = [TimePeriod(start_date=intent.start_date, end_date=intent.end_date)]
-        with timed(timing, "download_ms"):
-            job = client.download_awards(filters, _DOWNLOAD_COLUMNS)
-            citation = _build_download_citation(agency_name, intent, filters)
-            status = _poll_until_finished(client, job.file_name)
+        job = client.download_awards(filters, _DOWNLOAD_COLUMNS)
+        citation = _build_download_citation(agency_name, intent, filters)
+        status = _poll_until_finished(client, job.file_name)
     except USASpendingAPIError as e:
         logger.warning("Download pipeline failed for question %r: %s", question, e)
+        _tag_download_outcome("api_error")
         return AgentResult(answer_text=f"This download failed: {e}.", conversation_id=conversation_id)
 
+    _tag_download_outcome(status.status)
     download = DownloadSpec(
         file_name=status.file_name, url=status.file_url, status_url=job.status_url,
         status=status.status, total_rows=status.total_rows,

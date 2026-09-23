@@ -24,6 +24,44 @@ When asked to commit changes:
 If a task requires multiple related commits, they can go on the same
 branch/PR — no need for one PR per commit.
 
+## Never share a working directory across concurrent sessions
+
+This repo runs multiple agents on separate issues at once — that's normal
+and expected, not something to avoid. What's not safe is two sessions
+operating in the *same physical checkout* at the same time: this repo's
+plain root (`/Users/jameswagner/Projects/USSpendingRag`, no worktree) has
+exactly one `HEAD`, one index, one working tree. Two sessions mutating that
+concurrently *will* race — a `git checkout` from one lands mid-task in the
+other, a commit ends up on the wrong branch, a stash from one session gets
+popped by the other. This already happened once: one session's commit
+landed on `dedupe-spending-tool-filter-schemas` because another session
+checked out that branch in the shared root mid-task.
+
+Checking `git status`/`git branch --show-current` more carefully does
+**not** fix this — there is always a gap between checking state and acting
+on it that another session can land in. The fix is process isolation, not
+vigilance:
+
+- **Before running more than one or two git-mutating commands** (checkout,
+  commit, stash, merge) as part of a task, confirm you're the only session
+  in this checkout. If there's any chance another session is active here,
+  stop and get an isolated worktree instead of proceeding in the shared
+  root.
+- **Spawning a subagent via the Agent tool**: pass `isolation: "worktree"`
+  so it gets its own checkout automatically — this repo already has
+  several `.claude/worktrees/<branch>` directories from exactly this
+  pattern.
+- **Starting a second interactive session** (a new terminal or editor
+  window) yourself: point it at a fresh `git worktree add
+  ../USSpendingRag-<branch> <branch>` directory, never back at this same
+  root.
+- **If you're already mid-task in the shared root and find an
+  untracked/modified file you didn't create**: it's very likely another
+  session's in-progress work, not abandoned cruft. Don't commit over it or
+  discard it — set it aside with `git stash push -m "<file> belongs to
+  <other branch/session>" -- <path>` and flag it to the user rather than
+  guessing.
+
 ## Verify against the live API and upstream repo, not memory or docstrings alone
 
 Before filing an issue or writing a fix that touches USAspending API

@@ -245,13 +245,10 @@ def get_spending_by_category(
         performed_in_state: Optional. Restrict to spending on work performed in this US
             state (where the work happened), e.g. "Virginia" or "VA".
         recipient_in_state: Optional. Restrict to spending on recipients
-            headquartered/located in this US state - different from performed_in_state:
-            a company headquartered in one state can perform work in another, and these
-            can give substantially different totals.
+            headquartered/located in this US state.
         performed_in_county: Optional. A specific county where work was performed - a 3-digit
             FIPS code (e.g. "025" for Yavapai County, AZ), not a name. Requires
-            performed_in_state also be set. Use resolve_county_fips to find the code from a
-            county name - do not guess or construct one.
+            performed_in_state also be set.
         recipient_in_county: Optional. Same as performed_in_county, but for the recipient's
             location. Requires recipient_in_state also be set.
         performed_in_city: Optional. Restrict to work performed in this city, e.g. "Livermore".

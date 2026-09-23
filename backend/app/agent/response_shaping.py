@@ -134,12 +134,11 @@ class ChartSpec(BaseModel):
 
 
 class DownloadSpec(BaseModel):
-    """One in-flight or finished CSV export job, surfaced by the
-    deterministic download pilot (see agent/download_pilot.py) rather than
-    a tool call - url is null while the job is still running."""
+    """One in-flight or finished CSV export job from the download pilot - url is the eventual file, live once status is "finished"."""
 
     file_name: str
-    url: str | None
+    url: str
+    status_url: str
     status: str
     total_rows: int | None = None
 

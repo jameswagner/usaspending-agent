@@ -263,9 +263,7 @@ class USASpendingClient:
     def download_awards(
         self, filters: AdvancedFilters, columns: list[str], file_format: str = "csv"
     ) -> DownloadJobResponse:
-        """POST /api/v2/download/awards/ - queues an async zip-generation
-        job and returns immediately; file_url isn't live yet, poll
-        get_download_status(file_name) until status == "finished"."""
+        """Queues an async zip-generation job - poll get_download_status until status == "finished"."""
         body = {
             "filters": filters.model_dump(exclude_none=True),
             "columns": columns,

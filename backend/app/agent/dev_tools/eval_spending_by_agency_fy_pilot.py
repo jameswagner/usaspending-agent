@@ -107,14 +107,14 @@ def predict(inputs: dict) -> dict:
         fired["pilot"] = result is not None
         return result
 
-    with patch("backend.app.agent.orchestrator.handle_agency_fy_spending_request", side_effect=_spy):
-        pilot_result, pilot_latency_s = _run_ask(question)
-
-    os.environ[_PILOT_ENV_VAR] = "false"
+    os.environ[_PILOT_ENV_VAR] = "true"
     try:
-        loop_result, loop_latency_s = _run_ask(question)
+        with patch("backend.app.agent.orchestrator.handle_agency_fy_spending_request", side_effect=_spy):
+            pilot_result, pilot_latency_s = _run_ask(question)
     finally:
         os.environ.pop(_PILOT_ENV_VAR, None)
+
+    loop_result, loop_latency_s = _run_ask(question)
 
     return {
         "pilot_fired": fired["pilot"],

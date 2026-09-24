@@ -1,4 +1,4 @@
-"""Tool-selection eval (issue #20) - does the agent call the right data
+"""Tool-selection eval - does the agent call the right data
 tool, checked against tool_selection_labeled_set.json (schema documented
 there) via a LangSmith Dataset + evaluate() experiment.
 
@@ -51,7 +51,7 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
     if not client.has_dataset(dataset_name=DATASET_NAME):
         client.create_dataset(
             DATASET_NAME,
-            description="Tool-selection eval for issue #20 - synced from "
+            description="Tool-selection eval - synced from "
             "tool_selection_labeled_set.json, do not hand-edit examples here.",
         )
     dataset = client.read_dataset(dataset_name=DATASET_NAME)
@@ -256,7 +256,7 @@ _HEDGE_PHRASES = (
 
 
 def hedge_language_present(run: Run, example: Example) -> dict[str, Any]:
-    """Diagnostic only (issue #52's 4th ask) - not gated into tool_selection_correct,
+    """Diagnostic only - not gated into tool_selection_correct,
     same reasoning as red_team_jailbreak.py's own note on keyword checks: a
     hedge-phrase match is suggestive, not proof of genuine hedging, so this
     is reported for a human to read, not treated as a strict pass/fail."""

@@ -2,10 +2,12 @@
 tool, checked against tool_selection_labeled_set.json (schema documented
 there) via a LangSmith Dataset + evaluate() experiment.
 
-tools_called comes from AgentResult.tool_citations, not from reading
-_tool_call_log after ask() returns (see red_team_jailbreak.py) - ask() is
-@traceable, which isolates contextvars, so a set() inside it never
-propagates back out; tool_citations is read inside ask() before return.
+tools_called comes from the LangGraph checkpointer's persisted messages
+for the run's thread, not from AgentResult.tool_citations - see
+_trajectory_from_messages for why that list can't answer what was called.
+Reading _tool_call_log after ask() returns doesn't work either (see
+red_team_jailbreak.py): ask() is @traceable, which isolates contextvars,
+so a set() inside it never propagates back out.
 
 Real, billed API calls. Not part of CI:
     uv run python -m backend.app.agent.dev_tools.eval_tool_selection
@@ -17,11 +19,12 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from langchain_core.messages import AIMessage, ToolMessage
 from langsmith import Client, evaluate
 from langsmith.schemas import Example, ExampleUpdate, Run
 
 from backend.app.agent.orchestrator import ask
-from backend.app.agent.singletons import warm_up
+from backend.app.agent.singletons import _get_conversation_graph, warm_up
 
 LABELED_SET_PATH = Path(__file__).parent / "tool_selection_labeled_set.json"
 DATASET_NAME = "tool-selection-eval"
@@ -83,11 +86,46 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
     return dataset.id
 
 
+# Enough to hold a resolve_* tool's candidate list or a tool's
+# "this query failed" line; the full output would bloat every run payload.
+_TOOL_OUTPUT_CHARS = 2000
+
+
+def _trajectory_from_messages(messages: list) -> list[dict]:
+    """Every tool call in the thread, in call order, with the arguments the
+    model actually passed and what the tool returned.
+
+    AgentResult.tool_citations can't answer any of that: a search_guide call
+    becomes a Citation and never a ToolCitation, a tool that hit its
+    "This query failed" branch returns before _record_tool_call so it leaves
+    no entry at all, ToolCitation.parameters is a per-tool display subset
+    rather than the call's arguments, and repeated calls are deduplicated.
+    """
+    outputs = {m.tool_call_id: m.content for m in messages if isinstance(m, ToolMessage)}
+    return [
+        {
+            "tool": call["name"],
+            "args": call["args"],
+            "output": str(outputs.get(call["id"], ""))[:_TOOL_OUTPUT_CHARS],
+        }
+        for message in messages
+        if isinstance(message, AIMessage)
+        for call in (message.tool_calls or [])
+    ]
+
+
 def predict(inputs: dict) -> dict:
     result = ask(inputs["question"])
+    config = {"configurable": {"thread_id": result.conversation_id}}
+    trajectory = _trajectory_from_messages(_get_conversation_graph().get_state(config).values.get("messages", []))
+    if not trajectory:
+        # A scope-gate rejection and the download/agency-FY pilots answer
+        # without ever entering the graph, so the thread holds no tool calls.
+        trajectory = [{"tool": tc.tool_name, "args": {}, "output": ""} for tc in result.tool_citations]
     return {
         "answer": result.answer_text,
-        "tools_called": [tc.tool_name for tc in result.tool_citations],
+        "tools_called": [step["tool"] for step in trajectory],
+        "trajectory": trajectory,
     }
 
 
@@ -125,6 +163,42 @@ def tool_selection_correct(run: Run, example: Example) -> dict[str, Any]:
         "key": "tool_selection_correct",
         "score": float(passed),
         "comment": f"expected {_expected_description(expected)}, got {tools_called}",
+    }
+
+
+def _ordered_match_end(expected: list[str], tools_called: list[str]) -> int | None:
+    """Index just past the last expected tool, or None if expected doesn't
+    appear as an ordered subsequence. Unrelated calls in between are fine -
+    a chain stays correct when the model looks an agency up mid-way."""
+    position = 0
+    for tool in expected:
+        try:
+            position = tools_called.index(tool, position) + 1
+        except ValueError:
+            return None
+    return position
+
+
+def tool_order_correct(run: Run, example: Example) -> dict[str, Any]:
+    """The order half of what tool_selection_correct only checks membership
+    for: a followup_chains entry passes that one as long as both tools appear
+    anywhere, including search_awards before the resolve_* call that was
+    supposed to feed it. Reported under its own key rather than folded into
+    tool_selection_correct, so that metric's history stays comparable."""
+    expected = example.outputs or {}
+    if "expected_tools" not in expected:
+        return {"key": "tool_order_correct", "score": None, "comment": "not applicable"}
+
+    tools_called = (run.outputs or {}).get("tools_called", [])
+    match_end = _ordered_match_end(expected["expected_tools"], tools_called)
+    passed = match_end is not None
+    if passed and expected.get("then_one_of"):
+        passed = any(t in tools_called[match_end:] for t in expected["then_one_of"])
+
+    return {
+        "key": "tool_order_correct",
+        "score": float(passed),
+        "comment": f"expected {_expected_description(expected)} in that order, got {tools_called}",
     }
 
 
@@ -181,6 +255,18 @@ def print_report(rows: list[dict]) -> None:
     overall = sum(_feedback_score(r, "tool_selection_correct") for r in rows) / len(rows)
     print(f"  {'OVERALL':<24} {overall:.1%} ({len(rows)})")
 
+    ordered = [r for r in rows if _feedback_score(r, "tool_order_correct") is not None]
+    if ordered:
+        rate = sum(_feedback_score(r, "tool_order_correct") for r in ordered) / len(ordered)
+        print(f"\nTool-order pass rate, multi-step entries only: {rate:.1%} ({len(ordered)})")
+        for row in ordered:
+            if _feedback_score(row, "tool_order_correct") > 0:
+                continue
+            question = row["example"].inputs["question"]
+            membership = "membership passed" if _feedback_score(row, "tool_selection_correct") > 0 else "membership failed too"
+            tools_called = (row["run"].outputs or {}).get("tools_called", [])
+            print(f"  [{membership}] {question!r} - tools called: {tools_called}")
+
     confused = [r for r in rows if _feedback_score(r, "confusable_alternative_called") > 0]
     print(f"\nQuestions where a confusable alternative was also called ({len(confused)}/{len(rows)}):")
     for row in confused:
@@ -204,11 +290,11 @@ def print_report(rows: list[dict]) -> None:
         print(f"  {'[hedged]' if hedged else '[NOT hedged]'} {question!r}")
 
 
-def dump_tools_called(rows: list[dict], path: Path) -> None:
-    """Per-question tools_called, keyed by question."""
-    data = {row["example"].inputs["question"]: (row["run"].outputs or {}).get("tools_called", []) for row in rows}
+def dump_trajectories(rows: list[dict], path: Path) -> None:
+    """Per-question trajectory (tool, args, output), keyed by question."""
+    data = {row["example"].inputs["question"]: (row["run"].outputs or {}).get("trajectory", []) for row in rows}
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    print(f"\nDumped per-question tools_called to {path}")
+    print(f"\nDumped per-question trajectories to {path}")
 
 
 def main() -> None:
@@ -223,7 +309,12 @@ def main() -> None:
     results = evaluate(
         predict,
         data=DATASET_NAME,
-        evaluators=[tool_selection_correct, confusable_alternative_called, hedge_language_present],
+        evaluators=[
+            tool_selection_correct,
+            tool_order_correct,
+            confusable_alternative_called,
+            hedge_language_present,
+        ],
         experiment_prefix="tool-selection",
         client=client,
         # >1 hangs/spins CPU here even after warm_up() - a real, separate bug, not yet root-caused.
@@ -235,7 +326,7 @@ def main() -> None:
 
     rows = list(results)
     print_report(rows)
-    dump_tools_called(rows, Path("/tmp/tool_selection.json"))
+    dump_trajectories(rows, Path("/tmp/tool_selection.json"))
 
 
 if __name__ == "__main__":

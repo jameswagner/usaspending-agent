@@ -125,7 +125,7 @@ def _route_records(
 
 
 _SPENDING_LEVEL_OF_LEVEL: dict[Level, str] = {
-    "award": "awards", "subaward": "subawards", "transaction": "transactions",
+    "award": "transactions", "subaward": "subawards", "transaction": "transactions",
 }
 
 
@@ -185,6 +185,12 @@ def _route_aggregate(
         "award_id": award_id, "recipient_type": recipient_type, "description": description,
     }
     spending_level = _SPENDING_LEVEL_OF_LEVEL[level]
+    # Both aggregate endpoints reject recipient_id outright for subaward queries - fail fast, not via a live 400.
+    if spending_level == "subawards" and recipient_id is not None:
+        return (
+            "This query failed: recipient_id is not supported for subaward "
+            "queries (a live API restriction, not a bug) - use recipient_name instead."
+        )
     if group_by == "time":
         return get_spending_over_time(**shared, group=time_grouping, def_codes=def_codes, spending_level=spending_level)
     if group_by == "geography":
@@ -259,16 +265,28 @@ def query_spending(
     X's spending trended" questions, as opposed to a ranked list of individual
     records.
 
+    When comparing the same entity across more than one call (e.g. prime vs.
+    subaward totals, or two time periods, or two agencies), reuse the exact same
+    recipient scoping in every call - once recipient_id is resolved for an entity,
+    use it every time you scope by that entity again, never switching to
+    recipient_name/recipient_search_text partway through a comparison, since the two
+    are not guaranteed to match the same set of records. The one exception:
+    level="subaward" never accepts recipient_id at all (see recipient_id below) -
+    use recipient_name for every subaward-level call about that entity instead,
+    consistently, not just as a fallback after recipient_id fails.
+
     Args:
         level: "award" for prime awards (default choice for records), "subaward"
             for subawards (recipient_/location_ fields below then filter the
             SUB-recipient, not the prime - opposite of normal), "transaction" for
             individual transactions/modifications rather than award-level totals.
-            Still required even when group_by is set: for group_by="time" or a
-            category name, level picks the underlying spending_level the aggregate is
-            summed over (level="subaward" gives a real subaward-dollar total/trend,
-            not individual subaward records - use group_by=None for those instead).
-            Has no effect on group_by="geography", which only ever aggregates prime
+            Still required even when group_by is set: level="subaward" with
+            group_by="time" or a category name gives a real subaward-dollar
+            total/trend (not individual subaward records - use group_by=None for
+            those instead). level="award" vs "transaction" makes no difference to
+            an aggregate - both compute the same period-scoped grand total; that
+            distinction only matters for individual rows (group_by=None). Has no
+            effect on group_by="geography", which only ever aggregates prime
             transactions.
         group_by: Optional. Omit to return individual ranked rows for the chosen
             level (sort_by controls ranking). Set to a category name (naics, psc,
@@ -296,7 +314,12 @@ def query_spending(
             specific state/country codes.
         agency_name: Optional. The awarding agency's name.
         recipient_name: Optional. Recipient name text match (the sub-recipient's, if level="subaward").
-        recipient_id: Optional. Exact recipient id - only honored for group_by aggregates, not records.
+        recipient_id: Optional. Exact recipient id - only honored for group_by aggregates, not
+            records, and NOT supported at all when level="subaward" (a live API restriction -
+            use recipient_name there instead, every time, not just after this fails once).
+            Otherwise prefer this over recipient_name whenever you have it (e.g. from
+            search_recipients), and once you've used it for an entity, keep using it for every
+            later call about that same entity in this answer.
         min_amount: Optional. Minimum award/transaction amount.
         max_amount: Optional. Maximum award/transaction amount.
         performed_in_state: Optional. Where the work was performed.

@@ -35,14 +35,14 @@ Level = Literal["award", "subaward", "transaction"]
 # group_by="geography"+geo_layer="county") for the same, less-capable-on-one-side
 # result, with nothing in the schema to prefer one - so group_by="geography" is
 # the only path to a location breakdown.
-GroupBy = Literal[
+SpendingGroupBy = Literal[
     "awarding_agency", "awarding_subagency", "cfda", "defc", "federal_account",
     "funding_agency", "funding_subagency", "naics", "psc", "recipient",
     "recipient_duns", "time", "geography",
 ]
 
 _LOCATION_CATEGORIES = {"state_territory", "county", "district", "country"}
-assert set(GroupBy.__args__) - {"time", "geography"} == VALID_CATEGORIES - _LOCATION_CATEGORIES
+assert set(SpendingGroupBy.__args__) - {"time", "geography"} == VALID_CATEGORIES - _LOCATION_CATEGORIES
 
 
 def _route_records(
@@ -133,7 +133,7 @@ def _route_records(
 
 
 def _route_aggregate(
-    group_by: GroupBy,
+    group_by: SpendingGroupBy,
     *,
     time_period_type: Literal["fiscal", "calendar"],
     start_year: int,
@@ -201,7 +201,7 @@ def _route_aggregate(
 def query_spending(
     level: Level,
     *,
-    group_by: GroupBy | None = None,
+    group_by: SpendingGroupBy | None = None,
     time_period_type: Literal["fiscal", "calendar"] = "fiscal",
     start_year: int,
     end_year: int,

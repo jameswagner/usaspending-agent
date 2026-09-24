@@ -27,20 +27,15 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 | `list_top_agencies_by_budget` | Agencies ranked by budget authority, largest first, with each one's share of the total federal budget — always the current fiscal year/quarter, no historical range |
 | `get_agency_budget` | An agency's actual appropriated budgetary resources, obligations, and outlays for a fiscal year range — the real answer to "what is X's budget," as opposed to the spending tools below, which report award-level spending (a different, non-interchangeable number) |
 | `get_agency_budget_by_subcomponent` | Same figures as `get_agency_budget` (budgetary resources, obligated, outlayed), but broken down by sub-component/bureau (e.g. NIH or CDC within HHS) instead of one whole-agency total |
-| `get_agency_award_breakdown` | One agency's award obligations *and* transaction/new-award counts, broken down by sub-agency, for a single fiscal year — `get_spending_by_category` has no count fields at all |
+| `get_agency_award_breakdown` | One agency's award obligations *and* transaction/new-award counts, broken down by sub-agency, for a single fiscal year — `query_spending`'s group_by aggregates have no count fields at all |
 | `get_award_type_breakdown` | The count of awards by type — Contracts, Contract IDVs, Grants, Direct Payments, Loans, Other. The only tool here with no scoping filter required at all (a bounded six-number answer even fully unscoped); optional filters narrow it to one agency/recipient/location/etc. |
 | `get_disaster_spending_overview` | Headline disaster/emergency-relief totals — budget authority, obligations, outlays — optionally scoped to specific Disaster Emergency Fund Codes (e.g. COVID-19, infrastructure relief). All-time, government-wide only; a different data source from every award-level spending tool here |
 | `get_spending_explorer_breakdown` | Whole-of-government obligated spending grouped by budget function/subfunction/federal account/program activity/object class/agency/recipient — account-level data, a different lineage from every award-level spending tool below; totals won't match them and that's expected |
-| `get_spending_by_category` | Spending broken down by NAICS/PSC/sub-agency/etc. for a fiscal year range, scoped by an awarding agency and/or a recipient (at least one required) — optionally filtered further by award type, recipient name/id, amount range, US state (place of performance or recipient location), keywords, `date_type` (action_date/date_signed/last_modified_date/new_awards_only), domestic/foreign scope, or an exact NAICS/PSC/CFDA code — charts when 2+ categories come back |
-| `get_spending_over_time` | A spending trend across fiscal years/quarters/months, same agency-and/or-recipient scoping and optional filters as `get_spending_by_category` — charts when 2+ periods come back |
-| `get_spending_by_geography` | Spending ranked by state, county, congressional district, or country in one call, instead of checking one place at a time — population and per-capita figures reflect current data, not the queried period |
-| `search_awards` | Individual contract/grant/loan records for a fiscal year range, scoped by an awarding agency and/or a recipient, ranked largest-amount-first by default, with the same optional filters as `get_spending_by_category` (except `recipient_id`, confirmed silently ignored by the live API on this endpoint). Each result includes an `internal_id` for a follow-up `get_award_details` call. Flags when a result list is truncated (more matches than shown) rather than presenting a partial list as complete |
-| `search_transactions` | Individual transaction/modification records — one row per transaction, not per award — matching USASpending's own Keyword Search results. A multi-year award with 10 mods is one row under `search_awards` but up to 10 rows here |
-| `get_award_details` | Full details for one specific award (contract, IDV, grant, loan, or other financial assistance) found via `search_awards` — description, dates, competition data, recipient, funding breakdown, and parent-vehicle linkage. `include_child_orders=True` fetches the real child/grandchild-order rollup for an IDV (contract vehicle), since an IDV's own reported total can show $0 even when it's an active, heavily-used vehicle |
+| `query_spending` | Individual award/subaward/transaction records, or an aggregate rollup, for a fiscal year range, scoped by an awarding agency and/or a recipient. `level` (`award`/`subaward`/`transaction`) picks the record type — `subaward` reverses `recipient_name`/`recipient_in_*` to mean the *sub*-recipient, not the prime, the opposite of every other level. Omit `group_by` for ranked individual rows (`search_awards`/`search_subawards`/`search_transactions`'s old job); set it to a category name (NAICS/PSC/sub-agency/etc. — top `limit` categories, not a grand total), `"time"` (a real grand total across fiscal years/quarters/months), or `"geography"` (state/county/congressional-district/country, the only path to a location breakdown — population/per-capita figures reflect current data, not the queried period). Consolidates what were six separate tools (`search_awards`, `search_subawards`, `search_transactions`, `get_spending_by_category`, `get_spending_over_time`, `get_spending_by_geography`) into one (#265) — each result still includes an `internal_id` for a follow-up `get_award_details` call, and flags when a result list is truncated |
+| `get_award_details` | Full details for one specific award (contract, IDV, grant, loan, or other financial assistance) found via `query_spending` — description, dates, competition data, recipient, funding breakdown, and parent-vehicle linkage. `include_child_orders=True` fetches the real child/grandchild-order rollup for an IDV (contract vehicle), since an IDV's own reported total can show $0 even when it's an active, heavily-used vehicle |
 | `get_award_funding_breakdown` | The Federal Account Funding breakdown for one specific award — which Treasury Account Symbol/object class/program activity/DEFC combinations funded it, and how much each contributed. A separate, later-timed data source from `get_award_details`' own total, only best-effort linked to it |
 | `get_award_transaction_history` | The individual transactions/modifications that built up to one specific award's current state — mod number, action date, action type, amount, description per row |
-| `search_subawards` | Individual subaward records — money a prime awardee passed on to a sub-recipient — scoped by an awarding agency and/or a sub-recipient. `recipient_name` and every `recipient_in_*` location parameter filter the *sub*-recipient here, the opposite of what those same names mean on every other spending tool above, which filter the prime |
-| `get_award_subawards` | The complete subaward list for one specific prime award already found via `search_awards`, given its `internal_id` — the award-profile page's own Sub-Awards tab, as opposed to `search_subawards`' cross-award search |
+| `get_award_subawards` | The complete subaward list for one specific prime award already found via `query_spending`, given its `internal_id` — the award-profile page's own Sub-Awards tab, as opposed to `query_spending(level="subaward")`'s cross-award search |
 | `search_recipients` | Find a company/organization/individual's exact `recipient_id` by name, UEI, or DUNS — a name alone is often genuinely ambiguous (e.g. "Boeing" resolves to 6+ distinct recipients sharing the same display name), so this shows every real candidate rather than silently picking one, for a precise follow-up via `get_recipient_details` or the `recipient_id` filter above |
 | `get_recipient_details` | Full profile for one already-resolved recipient — identity, parent company, address, business types, and total federal transactions for a fiscal year, `"all"` (default), or `"latest"` (trailing 12 months) |
 | `get_recipient_children` | The individual child recipients rolling up into one already-resolved "parent"-level recipient's total, e.g. "which subsidiaries make up Boeing's total" — resolves the live API's DUNS/UEI keying internally, so callers still pass a `recipient_id` |
@@ -164,18 +159,21 @@ backend/app/
                                 models, the Guide+Glossary and NAICS/PSC/CFDA
                                 retrievers, the USASpending API client, and the
                                 LangGraph checkpointer + conversation graph
-    tools/                   The 26 @beta_tool data tools, split by concern:
+    tools/                   The 22 @beta_tool data tools, split by concern:
                                 _shared.py (call recording, per-turn budget,
                                 untrusted-data wrapping, + search_guide/
                                 lookup_agency/get_agency_budget/
                                 get_agency_budget_by_subcomponent/
                                 list_top_agencies_by_budget/
                                 get_agency_award_breakdown), spending/
-                                (category.py/over_time.py/search.py/geography.py -
+                                (category.py/over_time.py/search.py/geography.py/
+                                consolidated.py - query_spending, consolidating
                                 get_spending_by_category/get_spending_over_time/
                                 search_awards/search_transactions/search_subawards/
-                                get_spending_by_geography, all funneled through
-                                tool_filters._build_filters), awards.py
+                                get_spending_by_geography (#265; the six stay as
+                                internal implementation, not bound to the agent),
+                                all funneled through tool_filters._build_filters),
+                                awards.py
                                 (get_award_details/get_award_subawards/
                                 get_award_funding_breakdown/
                                 get_award_transaction_history), recipients.py

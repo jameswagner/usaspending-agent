@@ -8,6 +8,13 @@ passes its dict spec through fine, but the resulting result blocks land
 in AIMessage.content as plain dicts, not the attribute-access objects
 _record_code_execution_calls (tools/_shared.py) expects, so citations for
 it wouldn't work without adapting that function first.
+
+search_awards/search_subawards/search_transactions/get_spending_by_category/
+get_spending_over_time/get_spending_by_geography are deliberately not bound
+here either (#265) - query_spending consolidates all six into one tool;
+the six stay real, callable, @beta_tool-decorated functions (query_spending
+delegates to them) but aren't in _BETA_TOOLS, so the model never sees
+their own schemas.
 """
 from __future__ import annotations
 
@@ -33,22 +40,17 @@ from .tools import (
     get_disaster_spending_overview,
     get_recipient_children,
     get_recipient_details,
-    get_spending_by_category,
-    get_spending_by_geography,
     get_spending_explorer_breakdown,
-    get_spending_over_time,
     list_top_agencies_by_budget,
     lookup_agency,
+    query_spending,
     resolve_budget_function,
     resolve_cfda_program,
     resolve_county_fips,
     resolve_naics_code,
     resolve_psc_code,
-    search_awards,
     search_guide,
     search_recipients,
-    search_subawards,
-    search_transactions,
 )
 
 _BETA_TOOLS = [
@@ -63,22 +65,17 @@ _BETA_TOOLS = [
     get_disaster_spending_overview,
     get_recipient_children,
     get_recipient_details,
-    get_spending_by_category,
-    get_spending_by_geography,
     get_spending_explorer_breakdown,
-    get_spending_over_time,
     list_top_agencies_by_budget,
     lookup_agency,
+    query_spending,
     resolve_budget_function,
     resolve_cfda_program,
     resolve_county_fips,
     resolve_naics_code,
     resolve_psc_code,
-    search_awards,
     search_guide,
     search_recipients,
-    search_subawards,
-    search_transactions,
 ]
 _ARITHMETIC_TOOLS = [average, delta, percentage_of, rank_values, ratio, sum_values]
 

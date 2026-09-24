@@ -528,9 +528,14 @@ def _citation_scope_label(context: dict) -> str:
 
 
 def _merge_optional_filter_params(params: dict, context: dict, keys: set[str]) -> None:
+    # def_codes/contract_pricing_type/set_aside_type/extent_competed_type are list[str]
+    # on the tools themselves - ToolCitation.parameters is str|int|float, so a list
+    # value has to be flattened to display, same join ", ".join(...) already uses
+    # for the disaster-overview citation's own def_codes handling above.
     for key in keys:
         if key in context:
-            params[key] = context[key]
+            value = context[key]
+            params[key] = ", ".join(value) if isinstance(value, list) else value
 
 
 def _curl_from_context(context: dict) -> str | None:

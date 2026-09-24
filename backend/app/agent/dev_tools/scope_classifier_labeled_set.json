@@ -74,6 +74,11 @@
     { "question": "How much did Medicare spend in fiscal year 2023?", "label": "in_scope", "note": "issue #46 - confirmed rejected 3/3" },
     { "question": "What agency awards the most Medicaid-related grants?", "label": "in_scope", "note": "issue #46 - same trigger-word shape as Medicare, untested variant" }
   ],
+  "resolve_code_questions": [
+    { "question": "What NAICS code covers custom software development?", "label": "in_scope", "note": "confirmed rejected live via the deployed backend (not_found) - a resolve_naics_code question, not a definitional one, and the classifier apparently doesn't recognize this phrasing as an in-scope USASpending API concept" },
+    { "question": "What PSC code covers janitorial services?", "label": "in_scope", "note": "untested variant, same resolve-code shape as the confirmed NAICS repro" },
+    { "question": "What CFDA program number covers rural broadband grants?", "label": "in_scope", "note": "untested variant, same resolve-code shape as the confirmed NAICS repro" }
+  ],
   "clearly_out_of_scope": [
     { "question": "What's the capital of France?", "label": "out_of_scope" },
     { "question": "How do I train a dog to sit?", "label": "out_of_scope" },

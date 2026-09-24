@@ -20,6 +20,7 @@ from langchain_core.messages import AIMessage, ToolMessage
 from langsmith import Client, evaluate
 from langsmith.schemas import Example, ExampleUpdate, Run
 
+from backend.app.agent.dev_tools.failure_judge import judge_failure_acknowledged
 from backend.app.agent.orchestrator import ask
 from backend.app.agent.singletons import _get_conversation_graph, warm_up
 
@@ -236,6 +237,48 @@ def tool_args_correct(run: Run, example: Example) -> dict[str, Any]:
     return {"key": "tool_args_correct", "score": float(not wrong), "comment": comment[:500]}
 
 
+# Substrings the tools return from their error and empty-result branches.
+_FAILURE_MARKERS = ("this query failed", "no agency found matching", "no award data found")
+
+
+def _failed_steps(trajectory: list[dict]) -> list[dict]:
+    return [s for s in trajectory if any(m in (s.get("output") or "").lower() for m in _FAILURE_MARKERS)]
+
+
+def tool_failure_observed(run: Run, example: Example) -> dict[str, Any]:
+    """Did the case actually drive a tool into its error/empty branch. Deterministic
+    and free, and it's what keeps the case honest - when the live API changes and a
+    deliberately-broken input starts succeeding, the case has stopped testing
+    anything and this is what says so."""
+    if not (example.outputs or {}).get("expect_failure_acknowledged"):
+        return {"key": "tool_failure_observed", "score": None, "comment": "not applicable"}
+
+    failed = _failed_steps((run.outputs or {}).get("trajectory", []))
+    return {
+        "key": "tool_failure_observed",
+        "score": float(bool(failed)),
+        "comment": f"{failed[0]['tool']}: {failed[0]['output'][:160]}" if failed else "no tool hit a failure branch",
+    }
+
+
+def failure_acknowledged(run: Run, example: Example) -> dict[str, Any]:
+    """Diagnostic until calibrate_failure_judge.py says the judge is accurate enough
+    to gate on - same stance hedge_language_present takes, for the same reason."""
+    if not (example.outputs or {}).get("expect_failure_acknowledged"):
+        return {"key": "failure_acknowledged", "score": None, "comment": "not applicable"}
+
+    failed = _failed_steps((run.outputs or {}).get("trajectory", []))
+    if not failed:
+        return {"key": "failure_acknowledged", "score": None, "comment": "no failure to acknowledge"}
+
+    acknowledged, reason = judge_failure_acknowledged(
+        example.inputs["question"],
+        failed[0]["output"],
+        (run.outputs or {}).get("answer") or "",
+    )
+    return {"key": "failure_acknowledged", "score": float(acknowledged), "comment": reason[:300]}
+
+
 def confusable_alternative_called(run: Run, example: Example) -> dict[str, Any]:
     tools_called = (run.outputs or {}).get("tools_called", [])
     expected = example.outputs or {}
@@ -310,6 +353,21 @@ def print_report(rows: list[dict]) -> None:
                 continue
             print(f"  {row['example'].inputs['question']!r}")
 
+    failure_rows = [r for r in rows if _feedback_score(r, "tool_failure_observed") is not None]
+    if failure_rows:
+        drove = sum(_feedback_score(r, "tool_failure_observed") for r in failure_rows)
+        print(f"\nError-path entries: {drove:.0f}/{len(failure_rows)} actually reached a tool failure branch")
+        for row in failure_rows:
+            question = row["example"].inputs["question"]
+            if not _feedback_score(row, "tool_failure_observed"):
+                print(f"  [NO FAILURE - case may be stale] {question!r}")
+                continue
+            judged = _feedback_score(row, "failure_acknowledged")
+            label = "acknowledged" if judged else "NOT acknowledged"
+            print(f"  [{label}] {question!r}")
+        print("  (failure_acknowledged is an LLM judge - diagnostic, not gating; "
+              "run calibrate_failure_judge.py for its measured accuracy)")
+
     confused = [r for r in rows if _feedback_score(r, "confusable_alternative_called") > 0]
     print(f"\nQuestions where a confusable alternative was also called ({len(confused)}/{len(rows)}):")
     for row in confused:
@@ -356,6 +414,8 @@ def main() -> None:
             tool_selection_correct,
             tool_order_correct,
             tool_args_correct,
+            tool_failure_observed,
+            failure_acknowledged,
             confusable_alternative_called,
             hedge_language_present,
         ],

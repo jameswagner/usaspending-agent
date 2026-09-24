@@ -5,6 +5,7 @@
     "'then_one_of' (optional, paired with 'expected_tools') - a second step where more than one tool is a legitimate choice (e.g. resolve_naics_code -> either search_awards or get_spending_by_category both correctly use the resolved code). AND'd onto expected_tools: all of expected_tools must appear, AND at least one of then_one_of must also appear - and for tool_order_correct, after the last expected_tools entry.",
     "'check_hedge_language' (optional, bool) flags entries where a resolve_*_code tool presents a code to the user - scored informationally (diagnostic, not gating overall pass/fail) on whether the final answer hedges appropriately (e.g. 'closest match', 'semantic match', 'verify') rather than stating the code as a confirmed fact.",
     "'expected_args' (optional) maps a tool name to the arguments that call must have been made with, scored as tool_args_correct. A scalar must match (case-insensitive, string-coerced), a list means any one of them is fine, and \"<from:some_tool>\" means the value must appear in an earlier some_tool call's output - that's the check that a resolved code was actually used rather than guessed. Only grades tools the run actually called, so a then_one_of entry can name args for either branch; whether a tool was called at all is tool_selection_correct's job. Only assert args whose wrong value would make the answer wrong.",
+    "'expect_failure_acknowledged' (optional, bool) marks an error_paths entry - a deliberately broken input that should drive a tool into its \"This query failed\" or no-results branch. Scored twice: tool_failure_observed checks deterministically that a tool really did return a failure (if the live API changes and the input starts working, the case has stopped testing anything and this says so), and failure_acknowledged asks an LLM judge whether the answer owned up to it rather than quietly substituting other data. The judge is diagnostic, not gating, until calibrate_failure_judge.py measures it.",
     "category is filled in by eval_tool_selection.py from the top-level key, not stored per-entry."
   ],
   "category_breakdown": [
@@ -132,5 +133,13 @@
     {"question": "Where did the Department of Defense's FY2023 spending go?", "acceptable_tools": ["get_spending_by_category", "get_spending_by_geography"]},
     {"question": "Give me a breakdown of NASA's FY2023 spending.", "acceptable_tools": ["get_spending_by_category", "get_spending_by_geography", "get_spending_over_time"]},
     {"question": "How has federal spending on Leidos evolved geographically over the last five years?", "acceptable_tools": ["get_spending_by_geography", "get_spending_over_time"]}
+  ],
+  "error_paths": [
+    {"question": "How many new awards did EPA issue in FY2005?", "expected_tool": "get_agency_award_breakdown", "expect_failure_acknowledged": true},
+    {"question": "Show me the details for contract award ZZ9999-00-X-9999.", "expected_tool": "get_award_details", "expect_failure_acknowledged": true},
+    {"question": "Break down EPA's FY2004 award spending by sub-agency.", "expected_tool": "get_agency_award_breakdown", "expect_failure_acknowledged": true},
+    {"question": "Show me the subawards under contract ZZ9999-00-X-9999.", "expected_tool": "get_award_subawards", "expect_failure_acknowledged": true},
+    {"question": "What is the total federal funding for Acme Anvil Corporation?", "acceptable_tools": ["search_recipients", "get_recipient_details"], "expect_failure_acknowledged": true},
+    {"question": "How much federal spending went to Nonesuch County, Montana in FY2023?", "expected_tool": "resolve_county_fips", "expect_failure_acknowledged": true}
   ]
 }

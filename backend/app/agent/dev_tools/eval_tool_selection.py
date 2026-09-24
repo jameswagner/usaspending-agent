@@ -238,7 +238,15 @@ def tool_args_correct(run: Run, example: Example) -> dict[str, Any]:
 
 
 # Substrings the tools return from their error and empty-result branches.
-_FAILURE_MARKERS = ("this query failed", "no agency found matching", "no award data found")
+# Incomplete beyond these five - naics.py/psc.py/cfda.py/awards.py/search.py
+# each have their own "No X found..." wording not covered here yet.
+_FAILURE_MARKERS = (
+    "this query failed",
+    "no agency found matching",
+    "no award data found",
+    "no county found matching",
+    "no recipients found matching",
+)
 
 
 def _failed_steps(trajectory: list[dict]) -> list[dict]:

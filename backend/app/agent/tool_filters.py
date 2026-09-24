@@ -11,6 +11,7 @@ it. Nothing here depends on anything in tools.py, so this can be imported
 freely by future tools without pulling in the @beta_tool/@traceable
 machinery those don't need.
 """
+
 from __future__ import annotations
 
 import contextvars

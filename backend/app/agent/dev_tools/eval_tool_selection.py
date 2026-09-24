@@ -262,8 +262,9 @@ def tool_failure_observed(run: Run, example: Example) -> dict[str, Any]:
 
 
 def failure_acknowledged(run: Run, example: Example) -> dict[str, Any]:
-    """Diagnostic until calibrate_failure_judge.py says the judge is accurate enough
-    to gate on - same stance hedge_language_present takes, for the same reason."""
+    """Gating: calibrate_failure_judge.py measured 100% majority-vote accuracy (10/10
+    fixtures, 5/5 repeat agreement on every one, including the near-misses) - re-run
+    that script and drop back to diagnostic if a future prompt change regresses it."""
     if not (example.outputs or {}).get("expect_failure_acknowledged"):
         return {"key": "failure_acknowledged", "score": None, "comment": "not applicable"}
 
@@ -365,8 +366,11 @@ def print_report(rows: list[dict]) -> None:
             judged = _feedback_score(row, "failure_acknowledged")
             label = "acknowledged" if judged else "NOT acknowledged"
             print(f"  [{label}] {question!r}")
-        print("  (failure_acknowledged is an LLM judge - diagnostic, not gating; "
-              "run calibrate_failure_judge.py for its measured accuracy)")
+        judged_rows = [r for r in failure_rows if _feedback_score(r, "failure_acknowledged") is not None]
+        if judged_rows:
+            rate = sum(_feedback_score(r, "failure_acknowledged") for r in judged_rows) / len(judged_rows)
+            print(f"  Failure-acknowledged rate (LLM judge, calibrated 100% on 10 fixtures): "
+                  f"{rate:.1%} ({len(judged_rows)})")
 
     confused = [r for r in rows if _feedback_score(r, "confusable_alternative_called") > 0]
     print(f"\nQuestions where a confusable alternative was also called ({len(confused)}/{len(rows)}):")

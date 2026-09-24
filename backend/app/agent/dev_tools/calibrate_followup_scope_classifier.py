@@ -22,6 +22,9 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from langsmith import traceable
+from langsmith.run_helpers import get_current_run_tree, tracing_context
+
 from backend.app.agent.scope import _is_in_scope
 from backend.app.agent.singletons import warm_up
 
@@ -60,10 +63,19 @@ def classify(new_question: str, prior_turns: list[dict]) -> bool:
 
 
 def run_repeated(fn, n: int) -> list[bool]:
+    # A pool thread doesn't inherit the caller's run tree, so without this every
+    # repeat starts its own root trace instead of nesting under evaluate_entry.
+    parent = get_current_run_tree()
+
+    def call(_):
+        with tracing_context(parent=parent):
+            return fn()
+
     with ThreadPoolExecutor(max_workers=n) as pool:
-        return list(pool.map(lambda _: fn(), range(n)))
+        return list(pool.map(call, range(n)))
 
 
+@traceable(run_type="chain", name="calibrate_followup_entry")
 def evaluate_entry(entry: dict) -> dict:
     expected = entry["label"] == "in_scope"
     calls = run_repeated(lambda: classify(entry["new_question"], entry["prior_turns"]), N_REPEATS)

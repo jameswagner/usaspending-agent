@@ -259,17 +259,27 @@ class USASpendingClient:
         data = self._get("/api/v2/disaster/overview/", params=params)
         return DisasterOverviewResponse(**data)
 
-    @traceable(run_type="tool", name="download_awards")
-    def download_awards(
-        self, filters: AdvancedFilters, columns: list[str], file_format: str = "csv"
+    @traceable(run_type="tool", name="download_search")
+    def download_search(
+        self,
+        filters: AdvancedFilters,
+        columns: list[str],
+        spending_level: list[str],
+        file_format: str = "csv",
     ) -> DownloadJobResponse:
-        """Queues an async zip-generation job - poll get_download_status until status == "finished"."""
+        """Queues an async zip-generation job - poll get_download_status until status == "finished".
+
+        spending_level's array members are fully independent - confirmed live 2026-09-24
+        ["awards"] alone excludes sub-awards, unlike the legacy /download/awards/ endpoint
+        which always bundles them (== ["awards", "subawards"] here). Callers must pass the
+        full desired combination explicitly, not assume one value implies another."""
         body = {
             "filters": filters.model_dump(exclude_none=True),
             "columns": columns,
             "file_format": file_format,
+            "spending_level": spending_level,
         }
-        data = self._post("/api/v2/download/awards/", body)
+        data = self._post("/api/v2/download/search/", body)
         return DownloadJobResponse(**data)
 
     @traceable(run_type="tool", name="get_download_status")

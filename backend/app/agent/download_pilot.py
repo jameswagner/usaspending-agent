@@ -34,11 +34,9 @@ _DOWNLOAD_INTENT_PATTERN = (
 )
 
 # Endpoints this pilot defers - matched before the extraction call runs, so an unsupported request never burns one.
+# "transaction"/"sub-award"/"subaward" are deliberately absent - spending_level (below) now covers them.
 _UNSUPPORTED_DOWNLOAD_PATTERN = {
-    "transaction": "transaction-level data",
     "account": "account-level data",
-    "sub-award": "sub-award data",
-    "subaward": "sub-award data",
     "idv": "IDV data",
     "indefinite delivery": "IDV data",
     "disaster": "disaster/relief-specific data",
@@ -48,14 +46,47 @@ _POLL_INTERVAL_SECONDS = 4
 _POLL_TIMEOUT_SECONDS = 90
 
 # Fixed - this pilot rules out free-form column selection.
-_DOWNLOAD_COLUMNS = [
-    "award_id_piid",
-    "award_id_fain",
-    "recipient_name",
-    "total_obligated_amount",
-    "period_of_performance_start_date",
-    "awarding_agency_name",
-]
+_DOWNLOAD_COLUMNS_BY_LEVEL = {
+    "awards": [
+        "award_id_piid",
+        "award_id_fain",
+        "recipient_name",
+        "total_obligated_amount",
+        "period_of_performance_start_date",
+        "awarding_agency_name",
+    ],
+    # Verified live 2026-09-24 - transactions use per-action field names (federal_action_obligation,
+    # action_date), not the award-level totals/dates above, which don't apply to a single transaction.
+    "transactions": [
+        "award_id_piid",
+        "award_id_fain",
+        "recipient_name",
+        "federal_action_obligation",
+        "action_date",
+        "awarding_agency_name",
+    ],
+    # Verified live 2026-09-24 - subawards use their own prime_award_*/subaward*/subawardee_* prefix,
+    # not the prime-award column names above (e.g. award_id_piid isn't valid here, prime_award_piid is;
+    # a job posted with the wrong names for this level is accepted at request time then fails async).
+    "subawards": [
+        "prime_award_piid",
+        "subawardee_name",
+        "subaward_amount",
+        "subaward_action_date",
+        "prime_award_awarding_agency_name",
+    ],
+}
+
+# Verified live 2026-09-24: /download/search/'s spending_level array members are fully
+# independent (["awards"] alone excludes sub-awards) - unlike the legacy /download/awards/
+# and /download/transactions/ endpoints, which always bundle subawards in. This table
+# preserves that legacy bundling so switching to /download/search/ is a strict widening,
+# not a silent regression for the two levels this pilot already shipped.
+_SPENDING_LEVEL_TO_API_ARRAY = {
+    "awards": ["awards", "subawards"],
+    "transactions": ["transactions", "subawards"],
+    "subawards": ["subawards"],
+}
 
 
 def _looks_like_download_request(question: str) -> bool:
@@ -93,6 +124,7 @@ class DownloadIntent(BaseModel):
     start_date: str | None = None
     end_date: str | None = None
     award_type: str | None = None
+    spending_level: Literal["awards", "transactions", "subawards"] = "awards"
 
 
 _EXTRACT_TOOL_NAME = "extract_download_intent"
@@ -133,6 +165,17 @@ _EXTRACT_TOOL = {
                 "type": "string",
                 "enum": ["contracts", "grants", "loans"],
                 "description": "Omit unless the question specifically names one award type.",
+            },
+            "spending_level": {
+                "type": "string",
+                "enum": ["awards", "transactions", "subawards"],
+                "description": "awards (default): one row per prime award, its current total value - "
+                "use for a plain \"download X's awards/contracts/grants\" request. transactions: one row "
+                "per individual transaction/modification - use when the question specifically says "
+                "\"transactions\" or \"transaction-level\", not just \"awards\". subawards: one row per "
+                "sub-recipient/sub-contractor payment under those prime awards - use when the question "
+                "specifically says \"sub-awards\"/\"subcontractors\"/\"subgrantees\", not prime recipients. "
+                "Default to awards unless the question clearly names one of the other two.",
             },
         },
         "required": ["wants_download"],
@@ -208,9 +251,14 @@ def _poll_until_finished(client: USASpendingClient, file_name: str):
     return status
 
 
-def _build_download_citation(agency_name: str | None, intent: DownloadIntent, filters: AdvancedFilters) -> ToolCitation:
+def _build_download_citation(
+    agency_name: str | None, intent: DownloadIntent, filters: AdvancedFilters, columns: list[str], api_spending_level: list[str]
+) -> ToolCitation:
     """Built locally, not via the shared capture-buffer drain - that contextvar set doesn't reliably propagate out of @traceable."""
-    params: dict[str, str | int | float] = {"agency_name": agency_name or "all agencies"}
+    params: dict[str, str | int | float] = {
+        "agency_name": agency_name or "all agencies",
+        "spending_level": intent.spending_level,
+    }
     if intent.start_date and intent.end_date:
         params["start_date"] = intent.start_date
         params["end_date"] = intent.end_date
@@ -221,10 +269,15 @@ def _build_download_citation(agency_name: str | None, intent: DownloadIntent, fi
         period_label = f"{year_label(intent.time_period_type, intent.start_year)}-{year_label(intent.time_period_type, intent.end_year)}"
     if intent.award_type:
         params["award_type"] = intent.award_type
-    description = f"Award CSV download, {agency_name or 'all agencies'}, {period_label}"
-    body = {"filters": filters.model_dump(exclude_none=True), "columns": _DOWNLOAD_COLUMNS, "file_format": "csv"}
-    curl = f"curl -X POST '{BASE_URL}/api/v2/download/awards/' -H 'Content-Type: application/json' -d '{json.dumps(body)}'"
-    return ToolCitation(tool_name="download_awards", parameters=params, description=description, curl=curl)
+    description = f"{intent.spending_level.capitalize()} CSV download, {agency_name or 'all agencies'}, {period_label}"
+    body = {
+        "filters": filters.model_dump(exclude_none=True),
+        "columns": columns,
+        "file_format": "csv",
+        "spending_level": api_spending_level,
+    }
+    curl = f"curl -X POST '{BASE_URL}/api/v2/download/search/' -H 'Content-Type: application/json' -d '{json.dumps(body)}'"
+    return ToolCitation(tool_name="download_search", parameters=params, description=description, curl=curl)
 
 
 def handle_download_request(question: str, conversation_id: str, recent_messages: list | None = None):
@@ -268,8 +321,10 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         )
         if intent.start_date and intent.end_date:
             filters.time_period = [TimePeriod(start_date=intent.start_date, end_date=intent.end_date)]
-        job = client.download_awards(filters, _DOWNLOAD_COLUMNS)
-        citation = _build_download_citation(agency_name, intent, filters)
+        columns = _DOWNLOAD_COLUMNS_BY_LEVEL[intent.spending_level]
+        api_spending_level = _SPENDING_LEVEL_TO_API_ARRAY[intent.spending_level]
+        job = client.download_search(filters, columns, api_spending_level)
+        citation = _build_download_citation(agency_name, intent, filters, columns, api_spending_level)
         status = _poll_until_finished(client, job.file_name)
     except USASpendingAPIError as e:
         logger.warning("Download pipeline failed for question %r: %s", question, e)

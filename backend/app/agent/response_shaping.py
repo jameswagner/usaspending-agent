@@ -873,6 +873,7 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
 
     if tool_name == "get_recipient_details":
         recipient_id = context["recipient_id"]
+        year = context.get("year", "all")
         # name falls back to the raw recipient_id only if the response
         # somehow carried no name at all - shouldn't happen per the live
         # recipient_id.md contract (name is nullable but real-world
@@ -882,18 +883,19 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         label = context.get("name") or recipient_id
         return ToolCitation(
             tool_name=tool_name,
-            parameters={"recipient_id": recipient_id},
-            description=f"Recipient details: {label}",
-            url=f"{BASE_URL}/api/v2/recipient/{recipient_id}/",
+            parameters={"recipient_id": recipient_id, "year": year},
+            description=f"Recipient details: {label} ({year})",
+            url=f"{BASE_URL}/api/v2/recipient/{recipient_id}/?year={year}",
         )
 
     if tool_name == "get_recipient_children":
         recipient_id = context["recipient_id"]
+        year = context.get("year", "all")
         label = context.get("name") or recipient_id
         return ToolCitation(
             tool_name=tool_name,
-            parameters={"recipient_id": recipient_id},
-            description=f"Recipient children: {label}",
+            parameters={"recipient_id": recipient_id, "year": year},
+            description=f"Recipient children: {label} ({year})",
         )
 
     if tool_name == "code_execution":

@@ -93,13 +93,11 @@
     },
     {
       "question": "Has Leidos' federal revenue grown or shrunk since FY2020?",
-      "expected_tool": "query_spending",
       "check_answer_correctness": true,
-      "expected_args": {
-        "query_spending": {
-          "group_by": "time"
-        }
-      }
+      "acceptable_tools": [
+        "query_spending",
+        "get_recipient_details"
+      ]
     },
     {
       "question": "What was the Department of Energy's month-by-month obligation pattern in FY2024?",

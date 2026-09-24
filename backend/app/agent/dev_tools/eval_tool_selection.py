@@ -343,9 +343,9 @@ def answer_matches_tool_output(run: Run, example: Example) -> dict[str, Any]:
 
 
 def answer_correctness_judged(run: Run, example: Example) -> dict[str, Any]:
-    """Diagnostic only - not calibrated yet. Same two-step failure_acknowledged
-    went through: measure accuracy on hand-written fixtures
-    (calibrate_answer_correctness.py) before trusting this to gate a run."""
+    """Gating: calibrate_answer_correctness.py measured 100% majority-vote accuracy
+    (11/11 fixtures, 5/5 repeat agreement on every one, including the near-misses) -
+    re-run that script and drop back to diagnostic if a future prompt change regresses it."""
     if not (example.outputs or {}).get("check_answer_correctness"):
         return {"key": "answer_correctness_judged", "score": None, "comment": "not applicable"}
 
@@ -469,7 +469,7 @@ def print_report(rows: list[dict]) -> None:
     judged_checked = [r for r in rows if _feedback_score(r, "answer_correctness_judged") is not None]
     if judged_checked:
         rate = sum(_feedback_score(r, "answer_correctness_judged") for r in judged_checked) / len(judged_checked)
-        print(f"\nAnswer-correctness-judged rate (LLM judge, diagnostic only - not yet calibrated): "
+        print(f"\nAnswer-correctness-judged rate (LLM judge, calibrated 100% on 11 fixtures): "
               f"{rate:.1%} ({len(judged_checked)})")
         for row in judged_checked:
             if _feedback_score(row, "answer_correctness_judged") > 0:

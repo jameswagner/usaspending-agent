@@ -1,11 +1,10 @@
-"""Tool-selection eval (issue #20) - does the agent call the right data
+"""Tool-selection eval - does the agent call the right data
 tool, checked against tool_selection_labeled_set.json (schema documented
 there) via a LangSmith Dataset + evaluate() experiment.
 
-tools_called comes from AgentResult.tool_citations, not from reading
-_tool_call_log after ask() returns (see red_team_jailbreak.py) - ask() is
-@traceable, which isolates contextvars, so a set() inside it never
-propagates back out; tool_citations is read inside ask() before return.
+tools_called comes from the LangGraph checkpointer's persisted messages for
+the run's thread - tool_citations drops search_guide, error-branch returns and
+repeat calls, and carries display parameters rather than the call's arguments.
 
 Real, billed API calls. Not part of CI:
     uv run python -m backend.app.agent.dev_tools.eval_tool_selection
@@ -17,11 +16,13 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from langchain_core.messages import AIMessage, ToolMessage
 from langsmith import Client, evaluate
 from langsmith.schemas import Example, ExampleUpdate, Run
 
+from backend.app.agent.dev_tools.failure_judge import judge_failure_acknowledged
 from backend.app.agent.orchestrator import ask
-from backend.app.agent.singletons import warm_up
+from backend.app.agent.singletons import _get_conversation_graph, warm_up
 
 LABELED_SET_PATH = Path(__file__).parent / "tool_selection_labeled_set.json"
 DATASET_NAME = "tool-selection-eval"
@@ -51,7 +52,7 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
     if not client.has_dataset(dataset_name=DATASET_NAME):
         client.create_dataset(
             DATASET_NAME,
-            description="Tool-selection eval for issue #20 - synced from "
+            description="Tool-selection eval - synced from "
             "tool_selection_labeled_set.json, do not hand-edit examples here.",
         )
     dataset = client.read_dataset(dataset_name=DATASET_NAME)
@@ -83,11 +84,35 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
     return dataset.id
 
 
+_TOOL_OUTPUT_CHARS = 2000
+
+
+def _trajectory_from_messages(messages: list) -> list[dict]:
+    """Every tool call in the thread, in call order, with its arguments and output."""
+    outputs = {m.tool_call_id: m.content for m in messages if isinstance(m, ToolMessage)}
+    return [
+        {
+            "tool": call["name"],
+            "args": call["args"],
+            "output": str(outputs.get(call["id"], ""))[:_TOOL_OUTPUT_CHARS],
+        }
+        for message in messages
+        if isinstance(message, AIMessage)
+        for call in (message.tool_calls or [])
+    ]
+
+
 def predict(inputs: dict) -> dict:
     result = ask(inputs["question"])
+    config = {"configurable": {"thread_id": result.conversation_id}}
+    trajectory = _trajectory_from_messages(_get_conversation_graph().get_state(config).values.get("messages", []))
+    if not trajectory:
+        # A scope-gate rejection and the pilots answer without entering the graph.
+        trajectory = [{"tool": tc.tool_name, "args": {}, "output": ""} for tc in result.tool_citations]
     return {
         "answer": result.answer_text,
-        "tools_called": [tc.tool_name for tc in result.tool_citations],
+        "tools_called": [step["tool"] for step in trajectory],
+        "trajectory": trajectory,
     }
 
 
@@ -128,6 +153,133 @@ def tool_selection_correct(run: Run, example: Example) -> dict[str, Any]:
     }
 
 
+def _ordered_match_end(expected: list[str], tools_called: list[str]) -> int | None:
+    """Index past the last expected tool, or None if it isn't an ordered
+    subsequence. Unrelated calls in between are fine."""
+    position = 0
+    for tool in expected:
+        try:
+            position = tools_called.index(tool, position) + 1
+        except ValueError:
+            return None
+    return position
+
+
+def tool_order_correct(run: Run, example: Example) -> dict[str, Any]:
+    """Order, which tool_selection_correct doesn't check - it passes as long as
+    both tools appear anywhere. Its own key, so that metric stays comparable."""
+    expected = example.outputs or {}
+    if "expected_tools" not in expected:
+        return {"key": "tool_order_correct", "score": None, "comment": "not applicable"}
+
+    tools_called = (run.outputs or {}).get("tools_called", [])
+    match_end = _ordered_match_end(expected["expected_tools"], tools_called)
+    passed = match_end is not None
+    if passed and expected.get("then_one_of"):
+        passed = any(t in tools_called[match_end:] for t in expected["then_one_of"])
+
+    return {
+        "key": "tool_order_correct",
+        "score": float(passed),
+        "comment": f"expected {_expected_description(expected)} in that order, got {tools_called}",
+    }
+
+
+_FROM_PREFIX = "<from:"
+
+
+def _scalar_matches(expected: Any, actual: Any) -> bool:
+    return str(expected).strip().lower() == str(actual).strip().lower()
+
+
+def _arg_matches(expected: Any, actual: Any, earlier_outputs: dict[str, list[str]]) -> bool:
+    if isinstance(expected, str) and expected.startswith(_FROM_PREFIX):
+        source = expected[len(_FROM_PREFIX) :].rstrip(">")
+        return any(str(actual) in output for output in earlier_outputs.get(source, []))
+    if isinstance(expected, list):
+        return any(_scalar_matches(option, actual) for option in expected)
+    return _scalar_matches(expected, actual)
+
+
+def _call_matches(expected_args: dict, args: dict, earlier_outputs: dict[str, list[str]]) -> bool:
+    return all(
+        name in args and _arg_matches(value, args[name], earlier_outputs)
+        for name, value in expected_args.items()
+    )
+
+
+def tool_args_correct(run: Run, example: Example) -> dict[str, Any]:
+    """Were the arguments right, not just the tool name. Only grades tools the run
+    actually called - whether it called them at all is tool_selection_correct's job,
+    and that split is what lets a then_one_of case name args for either branch."""
+    expected = (example.outputs or {}).get("expected_args")
+    if not expected:
+        return {"key": "tool_args_correct", "score": None, "comment": "not applicable"}
+
+    trajectory = (run.outputs or {}).get("trajectory", [])
+    earlier_outputs: dict[str, list[str]] = {}
+    graded: dict[str, bool] = {}
+    for step in trajectory:
+        tool = step.get("tool")
+        if tool in expected and not graded.get(tool):
+            graded[tool] = _call_matches(expected[tool], step.get("args") or {}, earlier_outputs)
+        earlier_outputs.setdefault(tool, []).append(step.get("output") or "")
+
+    if not graded:
+        return {"key": "tool_args_correct", "score": None, "comment": "none of the named tools were called"}
+
+    wrong = [tool for tool, ok in graded.items() if not ok]
+    comment = "all matched" if not wrong else "; ".join(
+        f"{tool}: expected {expected[tool]}, got "
+        f"{[s.get('args') for s in trajectory if s.get('tool') == tool]}"
+        for tool in wrong
+    )
+    return {"key": "tool_args_correct", "score": float(not wrong), "comment": comment[:500]}
+
+
+# Substrings the tools return from their error and empty-result branches.
+_FAILURE_MARKERS = ("this query failed", "no agency found matching", "no award data found")
+
+
+def _failed_steps(trajectory: list[dict]) -> list[dict]:
+    return [s for s in trajectory if any(m in (s.get("output") or "").lower() for m in _FAILURE_MARKERS)]
+
+
+def tool_failure_observed(run: Run, example: Example) -> dict[str, Any]:
+    """Did the case actually drive a tool into its error/empty branch. Deterministic
+    and free, and it's what keeps the case honest - when the live API changes and a
+    deliberately-broken input starts succeeding, the case has stopped testing
+    anything and this is what says so."""
+    if not (example.outputs or {}).get("expect_failure_acknowledged"):
+        return {"key": "tool_failure_observed", "score": None, "comment": "not applicable"}
+
+    failed = _failed_steps((run.outputs or {}).get("trajectory", []))
+    return {
+        "key": "tool_failure_observed",
+        "score": float(bool(failed)),
+        "comment": f"{failed[0]['tool']}: {failed[0]['output'][:160]}" if failed else "no tool hit a failure branch",
+    }
+
+
+def failure_acknowledged(run: Run, example: Example) -> dict[str, Any]:
+    """Gating: calibrate_failure_judge.py measured 100% majority-vote accuracy (10/10
+    fixtures, 5/5 repeat agreement on every one, including the near-misses) - re-run
+    that script and drop back to diagnostic if a future prompt change regresses it."""
+    if not (example.outputs or {}).get("expect_failure_acknowledged"):
+        return {"key": "failure_acknowledged", "score": None, "comment": "not applicable"}
+
+    failed = _failed_steps((run.outputs or {}).get("trajectory", []))
+    if not failed:
+        return {"key": "failure_acknowledged", "score": None, "comment": "no failure to acknowledge"}
+
+    acknowledged, reason = judge_failure_acknowledged(
+        example.inputs["question"],
+        failed[0]["output"],
+        (run.outputs or {}).get("answer") or "",
+    )
+    return {"key": "failure_acknowledged", "score": float(acknowledged), "comment": reason[:300]}
+
+
 def confusable_alternative_called(run: Run, example: Example) -> dict[str, Any]:
     tools_called = (run.outputs or {}).get("tools_called", [])
     expected = example.outputs or {}
@@ -148,7 +300,7 @@ _HEDGE_PHRASES = (
 
 
 def hedge_language_present(run: Run, example: Example) -> dict[str, Any]:
-    """Diagnostic only (issue #52's 4th ask) - not gated into tool_selection_correct,
+    """Diagnostic only - not gated into tool_selection_correct,
     same reasoning as red_team_jailbreak.py's own note on keyword checks: a
     hedge-phrase match is suggestive, not proof of genuine hedging, so this
     is reported for a human to read, not treated as a strict pass/fail."""
@@ -181,6 +333,45 @@ def print_report(rows: list[dict]) -> None:
     overall = sum(_feedback_score(r, "tool_selection_correct") for r in rows) / len(rows)
     print(f"  {'OVERALL':<24} {overall:.1%} ({len(rows)})")
 
+    ordered = [r for r in rows if _feedback_score(r, "tool_order_correct") is not None]
+    if ordered:
+        rate = sum(_feedback_score(r, "tool_order_correct") for r in ordered) / len(ordered)
+        print(f"\nTool-order pass rate, multi-step entries only: {rate:.1%} ({len(ordered)})")
+        for row in ordered:
+            if _feedback_score(row, "tool_order_correct") > 0:
+                continue
+            question = row["example"].inputs["question"]
+            membership = "membership passed" if _feedback_score(row, "tool_selection_correct") > 0 else "membership failed too"
+            tools_called = (row["run"].outputs or {}).get("tools_called", [])
+            print(f"  [{membership}] {question!r} - tools called: {tools_called}")
+
+    arg_graded = [r for r in rows if _feedback_score(r, "tool_args_correct") is not None]
+    if arg_graded:
+        rate = sum(_feedback_score(r, "tool_args_correct") for r in arg_graded) / len(arg_graded)
+        print(f"\nTool-argument pass rate, entries with expected_args: {rate:.1%} ({len(arg_graded)})")
+        for row in arg_graded:
+            if _feedback_score(row, "tool_args_correct") > 0:
+                continue
+            print(f"  {row['example'].inputs['question']!r}")
+
+    failure_rows = [r for r in rows if _feedback_score(r, "tool_failure_observed") is not None]
+    if failure_rows:
+        drove = sum(_feedback_score(r, "tool_failure_observed") for r in failure_rows)
+        print(f"\nError-path entries: {drove:.0f}/{len(failure_rows)} actually reached a tool failure branch")
+        for row in failure_rows:
+            question = row["example"].inputs["question"]
+            if not _feedback_score(row, "tool_failure_observed"):
+                print(f"  [NO FAILURE - case may be stale] {question!r}")
+                continue
+            judged = _feedback_score(row, "failure_acknowledged")
+            label = "acknowledged" if judged else "NOT acknowledged"
+            print(f"  [{label}] {question!r}")
+        judged_rows = [r for r in failure_rows if _feedback_score(r, "failure_acknowledged") is not None]
+        if judged_rows:
+            rate = sum(_feedback_score(r, "failure_acknowledged") for r in judged_rows) / len(judged_rows)
+            print(f"  Failure-acknowledged rate (LLM judge, calibrated 100% on 10 fixtures): "
+                  f"{rate:.1%} ({len(judged_rows)})")
+
     confused = [r for r in rows if _feedback_score(r, "confusable_alternative_called") > 0]
     print(f"\nQuestions where a confusable alternative was also called ({len(confused)}/{len(rows)}):")
     for row in confused:
@@ -204,11 +395,11 @@ def print_report(rows: list[dict]) -> None:
         print(f"  {'[hedged]' if hedged else '[NOT hedged]'} {question!r}")
 
 
-def dump_tools_called(rows: list[dict], path: Path) -> None:
-    """Per-question tools_called, keyed by question."""
-    data = {row["example"].inputs["question"]: (row["run"].outputs or {}).get("tools_called", []) for row in rows}
+def dump_trajectories(rows: list[dict], path: Path) -> None:
+    """Per-question trajectory (tool, args, output), keyed by question."""
+    data = {row["example"].inputs["question"]: (row["run"].outputs or {}).get("trajectory", []) for row in rows}
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    print(f"\nDumped per-question tools_called to {path}")
+    print(f"\nDumped per-question trajectories to {path}")
 
 
 def main() -> None:
@@ -223,7 +414,15 @@ def main() -> None:
     results = evaluate(
         predict,
         data=DATASET_NAME,
-        evaluators=[tool_selection_correct, confusable_alternative_called, hedge_language_present],
+        evaluators=[
+            tool_selection_correct,
+            tool_order_correct,
+            tool_args_correct,
+            tool_failure_observed,
+            failure_acknowledged,
+            confusable_alternative_called,
+            hedge_language_present,
+        ],
         experiment_prefix="tool-selection",
         client=client,
         # >1 hangs/spins CPU here even after warm_up() - a real, separate bug, not yet root-caused.
@@ -235,7 +434,7 @@ def main() -> None:
 
     rows = list(results)
     print_report(rows)
-    dump_tools_called(rows, Path("/tmp/tool_selection.json"))
+    dump_trajectories(rows, Path("/tmp/tool_selection.json"))
 
 
 if __name__ == "__main__":

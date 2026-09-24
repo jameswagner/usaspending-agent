@@ -1,24 +1,26 @@
 {
   "_notes": [
-    "Labeled set for eval_tool_selection.py (issue #20). Each entry has a 'question' plus exactly one of: 'expected_tool' (single required tool), 'expected_tools' (ordered list - all must appear, for legitimate multi-step chains like search_awards -> get_award_details), or 'acceptable_tools' (any one of these counts as a pass - for the 'ambiguous_intentional' category, where more than one tool is a defensible choice).",
+    "Labeled set for eval_tool_selection.py. Each entry has a 'question' plus exactly one of: 'expected_tool' (single required tool), 'expected_tools' (ordered list, for legitimate multi-step chains like search_awards -> get_award_details - scored twice: tool_selection_correct asks only that all of them appear, tool_order_correct that they appear in this order, with unrelated calls in between allowed), or 'acceptable_tools' (any one of these counts as a pass - for the 'ambiguous_intentional' category, where more than one tool is a defensible choice).",
     "'confusable_with' (optional) lists the specific alternative tool(s) this question is structurally similar to - if the agent calls one of these instead of/alongside the expected tool, it's tallied in the confusion report even on entries that otherwise pass.",
-    "'then_one_of' (optional, paired with 'expected_tools') - a second step where more than one tool is a legitimate choice (e.g. resolve_naics_code -> either search_awards or get_spending_by_category both correctly use the resolved code). AND'd onto expected_tools: all of expected_tools must appear, AND at least one of then_one_of must also appear.",
-    "'check_hedge_language' (optional, bool) flags entries where a resolve_*_code tool presents a code to the user - scored informationally (diagnostic, not gating overall pass/fail) on whether the final answer hedges appropriately (e.g. 'closest match', 'semantic match', 'verify') rather than stating the code as a confirmed fact. Issue #52.",
+    "'then_one_of' (optional, paired with 'expected_tools') - a second step where more than one tool is a legitimate choice (e.g. resolve_naics_code -> either search_awards or get_spending_by_category both correctly use the resolved code). AND'd onto expected_tools: all of expected_tools must appear, AND at least one of then_one_of must also appear - and for tool_order_correct, after the last expected_tools entry.",
+    "'check_hedge_language' (optional, bool) flags entries where a resolve_*_code tool presents a code to the user - scored informationally (diagnostic, not gating overall pass/fail) on whether the final answer hedges appropriately (e.g. 'closest match', 'semantic match', 'verify') rather than stating the code as a confirmed fact.",
+    "'expected_args' (optional) maps a tool name to the arguments that call must have been made with, scored as tool_args_correct. A scalar must match (case-insensitive, string-coerced), a list means any one of them is fine, and \"<from:some_tool>\" means the value must appear in an earlier some_tool call's output - that's the check that a resolved code was actually used rather than guessed. Only grades tools the run actually called, so a then_one_of entry can name args for either branch; whether a tool was called at all is tool_selection_correct's job. Only assert args whose wrong value would make the answer wrong.",
+    "'expect_failure_acknowledged' (optional, bool) marks an error_paths entry - a deliberately broken input that should drive a tool into its \"This query failed\" or no-results branch. Scored twice: tool_failure_observed checks deterministically that a tool really did return a failure (if the live API changes and the input starts working, the case has stopped testing anything and this says so), and failure_acknowledged asks an LLM judge whether the answer owned up to it rather than quietly substituting other data. The judge is diagnostic, not gating, until calibrate_failure_judge.py measures it.",
     "category is filled in by eval_tool_selection.py from the top-level key, not stored per-entry."
   ],
   "category_breakdown": [
-    {"question": "How is NSF's FY2023 contract spending broken down by NAICS code?", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]},
+    {"question": "How is NSF's FY2023 contract spending broken down by NAICS code?", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"], "expected_args": {"get_spending_by_category": {"category": "naics", "start_year": 2023, "end_year": 2023}}},
     {"question": "What are the top product/service codes NASA spent on in FY2024?", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]},
     {"question": "Break down the Department of Defense's FY2023 contract spending by sub-agency, in dollars only.", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography", "get_agency_award_breakdown"]},
-    {"question": "Which CFDA programs did HHS fund the most in FY2022?", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]},
+    {"question": "Which CFDA programs did HHS fund the most in FY2022?", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"], "expected_args": {"get_spending_by_category": {"category": "cfda", "start_year": 2022, "end_year": 2022}}},
     {"question": "Show me Leidos' federal awards broken down by awarding agency.", "expected_tool": "get_spending_by_category", "confusable_with": ["get_spending_over_time", "get_spending_by_geography"]}
   ],
   "time_breakdown": [
-    {"question": "How has NSF's contract spending trended from FY2019 through FY2023?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]},
+    {"question": "How has NSF's contract spending trended from FY2019 through FY2023?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"], "expected_args": {"get_spending_over_time": {"start_year": 2019, "end_year": 2023}}},
     {"question": "Show me NASA's spending by quarter for FY2023.", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]},
     {"question": "Has Leidos' federal revenue grown or shrunk since FY2020?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]},
     {"question": "What was the Department of Energy's month-by-month obligation pattern in FY2024?", "acceptable_tools": ["get_spending_over_time", "get_agency_budget"]},
-    {"question": "How did the Department of Defense's grant spending change year over year between FY2018 and FY2023?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"]}
+    {"question": "How did the Department of Defense's grant spending change year over year between FY2018 and FY2023?", "expected_tool": "get_spending_over_time", "confusable_with": ["get_spending_by_category", "get_spending_by_geography"], "expected_args": {"get_spending_over_time": {"start_year": 2018, "end_year": 2023}}}
   ],
   "geography_breakdown": [
     {"question": "Which states received the most NSF funding in FY2023?", "expected_tool": "get_spending_by_geography", "confusable_with": ["get_spending_by_category", "get_spending_over_time"]},
@@ -35,10 +37,10 @@
     {"question": "Did NSF's obligations exceed its appropriated budget in FY2023?", "expected_tool": "get_agency_budget", "confusable_with": ["get_spending_by_category", "get_spending_over_time", "get_agency_award_breakdown"]}
   ],
   "agency_award_breakdown": [
-    {"question": "How many new grant awards did NIH issue in FY2024, and what did they total?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_budget"]},
-    {"question": "How many transactions did the Department of Energy have in FY2023?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_budget"]},
+    {"question": "How many new grant awards did NIH issue in FY2024, and what did they total?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_budget"], "expected_args": {"get_agency_award_breakdown": {"agency_name": ["NIH", "National Institutes of Health"], "fiscal_year": 2024}}},
+    {"question": "How many transactions did the Department of Energy have in FY2023?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_budget"], "expected_args": {"get_agency_award_breakdown": {"agency_name": ["Department of Energy", "DOE"], "fiscal_year": 2023}}},
     {"question": "Break down NSF's FY2023 contract obligations by sub-agency, and tell me how many new contracts each one signed.", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category"]},
-    {"question": "How many new awards has EPA issued per sub-agency in FY2022?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_budget"]}
+    {"question": "How many new awards has EPA issued per sub-agency in FY2022?", "expected_tool": "get_agency_award_breakdown", "confusable_with": ["get_spending_by_category", "get_agency_budget"], "expected_args": {"get_agency_award_breakdown": {"fiscal_year": 2022}}}
   ],
   "agency_budget_by_subcomponent": [
     {"question": "Which part of HHS has the most funding?", "expected_tool": "get_agency_budget_by_subcomponent", "confusable_with": ["get_agency_budget", "get_agency_award_breakdown"]},
@@ -71,10 +73,10 @@
   ],
   "subaward_tools": [
     {"question": "Who did Electric Boat subcontract work to on their submarine contract?", "acceptable_tools": ["search_subawards", "get_award_subawards"], "confusable_with": ["search_awards"]},
-    {"question": "Show me subawards where Thermo Electron was the subcontractor on Department of Energy prime contracts.", "expected_tool": "search_subawards", "confusable_with": ["search_awards", "get_award_subawards"]},
+    {"question": "Show me subawards where Thermo Electron was the subcontractor on Department of Energy prime contracts.", "expected_tool": "search_subawards", "confusable_with": ["search_awards", "get_award_subawards"], "expected_args": {"search_subawards": {"subrecipient_name": "Thermo Electron", "agency_name": ["Department of Energy", "DOE"]}}},
     {"question": "Which sub-recipients received subawards funded by NASA's prime contracts in FY2023?", "expected_tool": "search_subawards", "confusable_with": ["search_awards"]},
-    {"question": "Find subawards where Boeing is the sub-recipient.", "expected_tool": "search_subawards", "confusable_with": ["search_awards"]},
-    {"question": "What subawards has Lockheed Martin received as a subcontractor located in Texas?", "expected_tool": "search_subawards", "confusable_with": ["search_awards"]},
+    {"question": "Find subawards where Boeing is the sub-recipient.", "expected_tool": "search_subawards", "confusable_with": ["search_awards"], "expected_args": {"search_subawards": {"subrecipient_name": "Boeing"}}},
+    {"question": "What subawards has Lockheed Martin received as a subcontractor located in Texas?", "expected_tool": "search_subawards", "confusable_with": ["search_awards"], "expected_args": {"search_subawards": {"subrecipient_name": "Lockheed Martin", "subrecipient_in_state": ["TX", "Texas"]}}},
     {"question": "Show subawards under Department of Defense prime contracts where the sub-recipient is headquartered in California.", "expected_tool": "search_subawards", "confusable_with": ["search_awards"]}
   ],
   "guide_and_lookup_tools": [
@@ -99,10 +101,10 @@
     {"question": "What's Boeing's exact recipient_id, and what's their all-time total federal funding?", "expected_tools": ["search_recipients", "get_recipient_details"]},
     {"question": "Find NASA's biggest FY2024 grant and tell me who the recipient is and where they're located.", "expected_tools": ["search_awards", "get_award_details"]},
     {"question": "Look up Leidos and tell me its parent company and total transactions all-time.", "expected_tools": ["search_recipients", "get_recipient_details"]},
-    {"question": "How much did NSF spend on custom software development contracts in FY2023?", "expected_tools": ["resolve_naics_code"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true},
-    {"question": "How much federal spending went toward office furniture purchases in FY2023?", "expected_tools": ["resolve_psc_code"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true},
+    {"question": "How much did NSF spend on custom software development contracts in FY2023?", "expected_tools": ["resolve_naics_code"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true, "expected_args": {"search_awards": {"naics_code": "<from:resolve_naics_code>"}, "get_spending_by_category": {"naics_code": "<from:resolve_naics_code>"}}},
+    {"question": "How much federal spending went toward office furniture purchases in FY2023?", "expected_tools": ["resolve_psc_code"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true, "expected_args": {"search_awards": {"psc_code": "<from:resolve_psc_code>"}, "get_spending_by_category": {"psc_code": "<from:resolve_psc_code>"}}},
     {"question": "Break down whole-of-government spending on National Defense by sub-function for FY2023.", "expected_tools": ["resolve_budget_function", "get_spending_explorer_breakdown"], "confusable_with": ["get_spending_by_category"]},
-    {"question": "Which agencies gave the most Medicaid grants to states in FY2023?", "expected_tools": ["resolve_cfda_program"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true},
+    {"question": "Which agencies gave the most Medicaid grants to states in FY2023?", "expected_tools": ["resolve_cfda_program"], "then_one_of": ["search_awards", "get_spending_by_category"], "check_hedge_language": true, "expected_args": {"search_awards": {"cfda_program": "<from:resolve_cfda_program>"}, "get_spending_by_category": {"cfda_program": "<from:resolve_cfda_program>"}}},
     {"question": "How much federal spending went to Yavapai County, Arizona in FY2023?", "expected_tools": ["resolve_county_fips"], "then_one_of": ["search_awards", "get_spending_by_category", "get_spending_by_geography"], "check_hedge_language": true},
     {"question": "How much did NSF spend on ship building contracts in FY2023?", "acceptable_tools": ["resolve_naics_code", "search_awards", "get_spending_by_category", "get_spending_over_time"], "check_hedge_language": true},
     {"question": "Find NSF's single largest FY2023 contract, then tell me which subcontractors it went to.", "expected_tools": ["search_awards", "get_award_subawards"], "confusable_with": ["search_subawards"]},
@@ -131,5 +133,13 @@
     {"question": "Where did the Department of Defense's FY2023 spending go?", "acceptable_tools": ["get_spending_by_category", "get_spending_by_geography"]},
     {"question": "Give me a breakdown of NASA's FY2023 spending.", "acceptable_tools": ["get_spending_by_category", "get_spending_by_geography", "get_spending_over_time"]},
     {"question": "How has federal spending on Leidos evolved geographically over the last five years?", "acceptable_tools": ["get_spending_by_geography", "get_spending_over_time"]}
+  ],
+  "error_paths": [
+    {"question": "How many new awards did EPA issue in FY2005?", "expected_tool": "get_agency_award_breakdown", "expect_failure_acknowledged": true},
+    {"question": "Show me the details for contract award ZZ9999-00-X-9999.", "expected_tool": "get_award_details", "expect_failure_acknowledged": true},
+    {"question": "Break down EPA's FY2004 award spending by sub-agency.", "expected_tool": "get_agency_award_breakdown", "expect_failure_acknowledged": true},
+    {"question": "Show me the subawards under contract ZZ9999-00-X-9999.", "expected_tool": "get_award_subawards", "expect_failure_acknowledged": true},
+    {"question": "What is the total federal funding for Acme Anvil Corporation?", "acceptable_tools": ["search_recipients", "get_recipient_details"], "expect_failure_acknowledged": true},
+    {"question": "How much federal spending went to Nonesuch County, Montana in FY2023?", "expected_tool": "resolve_county_fips", "expect_failure_acknowledged": true}
   ]
 }

@@ -768,18 +768,6 @@ carries the same weak-match risk for live-data questions the gate's
 prompt already has to explicitly guard against. Worth its own eval if
 pursued later, not bundled into this change.
 
-**Follow-up classifier eval** (2026-09-23, closes #76):
-`calibrate_followup_scope_classifier.py`, 27 cases x 5 repeats against the
-real `_is_in_scope` follow-up path. 94.1% single-shot, 92.6% majority-vote,
-98.5% agreement. Two misses:
-
-- Leidos "federal revenue" (#46's trap as a follow-up): flaky, 2/5.
-- A "no tool calls" jailbreak follow-up passes 5/5. Checked via the real
-  two-turn `ask()`: the tool loop still refuses it downstream, so it costs
-  a round trip, not a security hole.
-
-Calibration data only — no prompt change shipped.
-
 ## Shared filter layer for the three spending tools, and what's still deferred
 
 An audit of `get_spending_by_category`, `get_spending_over_time`, and `search_awards`

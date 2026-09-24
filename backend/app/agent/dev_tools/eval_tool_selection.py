@@ -2,12 +2,9 @@
 tool, checked against tool_selection_labeled_set.json (schema documented
 there) via a LangSmith Dataset + evaluate() experiment.
 
-tools_called comes from the LangGraph checkpointer's persisted messages
-for the run's thread, not from AgentResult.tool_citations - see
-_trajectory_from_messages for why that list can't answer what was called.
-Reading _tool_call_log after ask() returns doesn't work either (see
-red_team_jailbreak.py): ask() is @traceable, which isolates contextvars,
-so a set() inside it never propagates back out.
+tools_called comes from the LangGraph checkpointer's persisted messages for
+the run's thread - tool_citations drops search_guide, error-branch returns and
+repeat calls, and carries display parameters rather than the call's arguments.
 
 Real, billed API calls. Not part of CI:
     uv run python -m backend.app.agent.dev_tools.eval_tool_selection
@@ -86,21 +83,11 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
     return dataset.id
 
 
-# Enough to hold a resolve_* tool's candidate list or a tool's
-# "this query failed" line; the full output would bloat every run payload.
 _TOOL_OUTPUT_CHARS = 2000
 
 
 def _trajectory_from_messages(messages: list) -> list[dict]:
-    """Every tool call in the thread, in call order, with the arguments the
-    model actually passed and what the tool returned.
-
-    AgentResult.tool_citations can't answer any of that: a search_guide call
-    becomes a Citation and never a ToolCitation, a tool that hit its
-    "This query failed" branch returns before _record_tool_call so it leaves
-    no entry at all, ToolCitation.parameters is a per-tool display subset
-    rather than the call's arguments, and repeated calls are deduplicated.
-    """
+    """Every tool call in the thread, in call order, with its arguments and output."""
     outputs = {m.tool_call_id: m.content for m in messages if isinstance(m, ToolMessage)}
     return [
         {
@@ -119,8 +106,7 @@ def predict(inputs: dict) -> dict:
     config = {"configurable": {"thread_id": result.conversation_id}}
     trajectory = _trajectory_from_messages(_get_conversation_graph().get_state(config).values.get("messages", []))
     if not trajectory:
-        # A scope-gate rejection and the download/agency-FY pilots answer
-        # without ever entering the graph, so the thread holds no tool calls.
+        # A scope-gate rejection and the pilots answer without entering the graph.
         trajectory = [{"tool": tc.tool_name, "args": {}, "output": ""} for tc in result.tool_citations]
     return {
         "answer": result.answer_text,
@@ -167,9 +153,8 @@ def tool_selection_correct(run: Run, example: Example) -> dict[str, Any]:
 
 
 def _ordered_match_end(expected: list[str], tools_called: list[str]) -> int | None:
-    """Index just past the last expected tool, or None if expected doesn't
-    appear as an ordered subsequence. Unrelated calls in between are fine -
-    a chain stays correct when the model looks an agency up mid-way."""
+    """Index past the last expected tool, or None if it isn't an ordered
+    subsequence. Unrelated calls in between are fine."""
     position = 0
     for tool in expected:
         try:
@@ -180,11 +165,8 @@ def _ordered_match_end(expected: list[str], tools_called: list[str]) -> int | No
 
 
 def tool_order_correct(run: Run, example: Example) -> dict[str, Any]:
-    """The order half of what tool_selection_correct only checks membership
-    for: a followup_chains entry passes that one as long as both tools appear
-    anywhere, including search_awards before the resolve_* call that was
-    supposed to feed it. Reported under its own key rather than folded into
-    tool_selection_correct, so that metric's history stays comparable."""
+    """Order, which tool_selection_correct doesn't check - it passes as long as
+    both tools appear anywhere. Its own key, so that metric stays comparable."""
     expected = example.outputs or {}
     if "expected_tools" not in expected:
         return {"key": "tool_order_correct", "score": None, "comment": "not applicable"}

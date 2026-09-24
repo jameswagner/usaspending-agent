@@ -41,8 +41,7 @@ class TestTrajectoryFromMessages:
         ]
 
     def test_includes_a_tool_that_returned_its_failure_branch(self):
-        """The case tool_citations can't represent - the tool returns before
-        _record_tool_call, so it leaves no citation behind."""
+        """The case tool_citations can't represent - no citation is recorded."""
         messages = [
             _ai_tool_call("get_agency_budget", {"agency_name": "Department of Atlantic Affairs"}, "a"),
             ToolMessage(
@@ -111,7 +110,6 @@ class TestToolOrderCorrect:
         assert tool_order_correct(run, example)["score"] == 1.0
 
     def test_fails_when_both_appear_but_reversed(self):
-        """tool_selection_correct passes this one - membership is all it asks."""
         run, example = _row(
             {"expected_tools": ["resolve_naics_code", "search_awards"]},
             ["search_awards", "resolve_naics_code"],

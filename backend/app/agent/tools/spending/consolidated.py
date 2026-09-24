@@ -124,9 +124,15 @@ def _route_records(
     )
 
 
+_SPENDING_LEVEL_OF_LEVEL: dict[Level, str] = {
+    "award": "awards", "subaward": "subawards", "transaction": "transactions",
+}
+
+
 def _route_aggregate(
     group_by: SpendingGroupBy,
     *,
+    level: Level,
     time_period_type: Literal["fiscal", "calendar"],
     start_year: int,
     end_year: int,
@@ -178,15 +184,21 @@ def _route_aggregate(
         "naics_code": naics_code, "psc_code": psc_code, "cfda_program": cfda_program,
         "award_id": award_id, "recipient_type": recipient_type, "description": description,
     }
+    spending_level = _SPENDING_LEVEL_OF_LEVEL[level]
     if group_by == "time":
-        return get_spending_over_time(**shared, group=time_grouping, def_codes=def_codes)
+        return get_spending_over_time(**shared, group=time_grouping, def_codes=def_codes, spending_level=spending_level)
     if group_by == "geography":
         if scope is None or geo_layer is None:
             return "This query failed: group_by='geography' requires scope and geo_layer."
+        # spending_by_geography has no spending_level - hardcoded to "transactions" by
+        # design (client.spending_by_geography's own docstring: other modes overcounted
+        # 60%+ in testing), so level has no effect here.
         return get_spending_by_geography(
             **shared, scope=scope, geo_layer=geo_layer, geo_layer_filters=geo_layer_filters,
         )
-    return get_spending_by_category(category=group_by, **shared, limit=limit, def_codes=def_codes)
+    return get_spending_by_category(
+        category=group_by, **shared, limit=limit, def_codes=def_codes, spending_level=spending_level,
+    )
 
 
 @beta_tool
@@ -252,8 +264,12 @@ def query_spending(
             for subawards (recipient_/location_ fields below then filter the
             SUB-recipient, not the prime - opposite of normal), "transaction" for
             individual transactions/modifications rather than award-level totals.
-            Still required even when group_by is set, to pick which underlying
-            record type the aggregate is computed over.
+            Still required even when group_by is set: for group_by="time" or a
+            category name, level picks the underlying spending_level the aggregate is
+            summed over (level="subaward" gives a real subaward-dollar total/trend,
+            not individual subaward records - use group_by=None for those instead).
+            Has no effect on group_by="geography", which only ever aggregates prime
+            transactions.
         group_by: Optional. Omit to return individual ranked rows for the chosen
             level (sort_by controls ranking). Set to a category name (naics, psc,
             cfda, awarding_agency, awarding_subagency, funding_agency,
@@ -331,6 +347,7 @@ def query_spending(
         )
     return _route_aggregate(
         group_by,
+        level=level,
         time_period_type=time_period_type, start_year=start_year, end_year=end_year,
         time_grouping=time_grouping, scope=scope, geo_layer=geo_layer,
         geo_layer_filters=geo_layer_filters, award_type=award_type, limit=limit,

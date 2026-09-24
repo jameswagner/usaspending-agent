@@ -681,17 +681,21 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         )
 
     if tool_name == "get_spending_by_category":
+        spending_level = context.get("spending_level", "transactions")
         params = {
             "category": context["category"],
             "start_year": context["start_year"],
             "end_year": context["end_year"],
+            "spending_level": spending_level,
         }
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
         time_period_type = context.get("time_period_type", "fiscal")
+        level_suffix = f" ({spending_level})" if spending_level != "transactions" else ""
         description = _with_naics_disclosure(
             f"{params['category']} breakdown, {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
+            f"{level_suffix}",
             context,
         )
         return ToolCitation(
@@ -699,17 +703,21 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         )
 
     if tool_name == "get_spending_over_time":
+        spending_level = context.get("spending_level", "transactions")
         params = {
             "start_year": context["start_year"],
             "end_year": context["end_year"],
             "group": context["group"],
+            "spending_level": spending_level,
         }
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
         time_period_type = context.get("time_period_type", "fiscal")
+        level_suffix = f" ({spending_level})" if spending_level != "transactions" else ""
         description = _with_naics_disclosure(
             f"Spending over time ({params['group']}), {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
+            f"{level_suffix}",
             context,
         )
         return ToolCitation(

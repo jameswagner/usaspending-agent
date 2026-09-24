@@ -70,11 +70,15 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
 
 def predict(inputs: dict) -> dict:
     result = ask(inputs["question"])
+    spending_level = None
+    if result.tool_citations:
+        spending_level = result.tool_citations[0].parameters.get("spending_level")
     return {
         "answer": result.answer_text,
         "got_download": bool(result.downloads),
         "not_supported": "isn't supported yet" in result.answer_text,
         "fell_back_to_loop": not result.downloads and result.answer_text != NOT_FOUND_MESSAGE,
+        "spending_level": spending_level,
     }
 
 
@@ -84,6 +88,11 @@ def download_pilot_correct(run: Run, example: Example) -> dict[str, Any]:
 
     if expected.get("expect_download"):
         passed = outputs.get("got_download", False)
+        # Argument-level check, not just presence - see #277: a question asking for
+        # transactions that silently downloaded awards would otherwise still score a pass.
+        expected_level = expected.get("expect_spending_level")
+        if passed and expected_level is not None:
+            passed = outputs.get("spending_level") == expected_level
     elif expected.get("expect_not_supported"):
         passed = outputs.get("not_supported", False)
     else:  # expect_fallback_to_loop

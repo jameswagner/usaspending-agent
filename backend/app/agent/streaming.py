@@ -111,7 +111,7 @@ def _run_graph_stream(question: str, conversation_id: str, event_queue: queue.Qu
             return
 
         if _looks_like_download_request(question) or _is_download_followup(recent_messages):
-            event_queue.put(("tool_call_start", {"tool_name": "download_awards", "args": {}}))
+            event_queue.put(("tool_call_start", {"tool_name": "download_search", "args": {}}))
             download_result = handle_download_request(question, conversation_id, recent_messages)
             if download_result is not None:
                 _persist_download_turn(graph, config, question, download_result.answer_text)

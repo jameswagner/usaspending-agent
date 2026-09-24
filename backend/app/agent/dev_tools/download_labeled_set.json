@@ -1,17 +1,27 @@
 {
   "_notes": [
     "Labeled set for eval_download_pilot.py. Each entry has a 'question' plus exactly one of: 'expect_download' (bool - a real AgentResult.downloads entry should come back, status finished or still-generating), 'expect_not_supported' (bool - a fixed 'isn't supported yet' answer for a download endpoint this pilot doesn't cover), or 'expect_fallback_to_loop' (bool - the download gate should NOT short-circuit; the question should reach the normal tool-calling loop unchanged, e.g. it doesn't actually name a download-shaped request, or the agency/year range is too ambiguous to extract confidently).",
+    "'expect_spending_level' (optional, paired with expect_download: true) - asserts which of awards/transactions/subawards was actually resolved (via the citation), not just that a download happened. See #277: without this, a question asking for transactions that silently downloaded awards would still score a pass.",
+    "'spending_level_confusable' entries (see #277) target keyword confusability between 'transactions' and 'subawards' phrasing specifically - agency/year/award_type are held fixed across them since those don't interact with spending_level classification.",
     "category is filled in by eval_download_pilot.py from the top-level key, not stored per-entry."
   ],
   "clean_download_request": [
-    {"question": "Can I download NSF's January 2024 awards as a CSV?", "expect_download": true},
-    {"question": "Download HHS's FY2023 grant awards to a spreadsheet.", "expect_download": true},
-    {"question": "Export the Department of Education's FY2024 contract awards as a CSV file.", "expect_download": true}
+    {"question": "Can I download NSF's January 2024 awards as a CSV?", "expect_download": true, "expect_spending_level": "awards"},
+    {"question": "Download HHS's FY2023 grant awards to a spreadsheet.", "expect_download": true, "expect_spending_level": "awards"},
+    {"question": "Export the Department of Education's FY2024 contract awards as a CSV file.", "expect_download": true, "expect_spending_level": "awards"}
+  ],
+  "spending_level_confusable": [
+    {"question": "Download NSF's individual transactions for FY2024 as a CSV.", "expect_download": true, "expect_spending_level": "transactions"},
+    {"question": "Export NSF's FY2024 transaction-level award data.", "expect_download": true, "expect_spending_level": "transactions"},
+    {"question": "Download NSF's FY2024 sub-awards as a CSV.", "expect_download": true, "expect_spending_level": "subawards"},
+    {"question": "Can I get a CSV of NSF's FY2024 subcontractor/subgrantee payments?", "expect_download": true, "expect_spending_level": "subawards"},
+    {"question": "Export NSF's FY2024 sub-award transactions as a CSV.", "expect_download": true, "expect_spending_level": "subawards"},
+    {"question": "Download NSF's FY2024 awards, transaction by transaction.", "expect_download": true, "expect_spending_level": "transactions"}
   ],
   "unsupported_endpoint": [
-    {"question": "Download transaction-level data for the Department of Education.", "expect_not_supported": true},
     {"question": "Can I get a CSV of NSF's federal account-level spending data?", "expect_not_supported": true},
-    {"question": "Export disaster relief recipient data as a CSV.", "expect_not_supported": true}
+    {"question": "Export disaster relief recipient data as a CSV.", "expect_not_supported": true},
+    {"question": "Download the full contract file for a specific IDV award.", "expect_not_supported": true}
   ],
   "fallback_to_loop": [
     {"question": "How much did NSF spend in FY2024?", "expect_fallback_to_loop": true},

@@ -28,11 +28,6 @@ from .response_shaping import (
 )
 from .scope import _is_in_scope
 from .singletons import _get_conversation_graph
-from .spending_by_agency_fy_pilot import (
-    _looks_like_agency_fy_spending_request,
-    handle_agency_fy_spending_request,
-    pilot_enabled,
-)
 from .tools import _tool_call_log
 
 logger = logging.getLogger(__name__)
@@ -365,11 +360,6 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
         if download_result is not None:
             _persist_download_turn(graph, config, question, download_result.answer_text)
             return download_result
-
-    if pilot_enabled() and _looks_like_agency_fy_spending_request(question):
-        pilot_result = handle_agency_fy_spending_request(question, conversation_id)
-        if pilot_result is not None:
-            return pilot_result
 
     _tool_call_log.set([])
 

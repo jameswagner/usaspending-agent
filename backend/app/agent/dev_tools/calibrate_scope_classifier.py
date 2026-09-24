@@ -116,8 +116,7 @@ def get_top_passage(retriever: HybridRetriever, question: str) -> tuple[str | No
 
 
 def run_repeated(fn, n: int) -> list[bool]:
-    # A pool thread doesn't inherit the caller's run tree, so without this every
-    # repeat starts its own root trace instead of nesting under evaluate_entry.
+    # A pool thread doesn't inherit the run tree, so each repeat would start its own trace.
     parent = get_current_run_tree()
 
     def call(_):

@@ -12,7 +12,6 @@ Real, billed API calls. Not part of CI:
 from __future__ import annotations
 
 import json
-import uuid
 from pathlib import Path
 from typing import Any
 
@@ -27,9 +26,6 @@ from backend.app.agent.singletons import _get_conversation_graph, warm_up
 LABELED_SET_PATH = Path(__file__).parent / "tool_selection_labeled_set.json"
 DATASET_NAME = "tool-selection-eval"
 
-# Fixed so uuid5(NAMESPACE, question) is stable across runs, making re-sync an upsert.
-_EXAMPLE_ID_NAMESPACE = uuid.UUID("6f6f3b0e-6e2a-4f0b-9a3d-6d1a6b1b6a10")
-
 
 def load_labeled_set() -> list[dict]:
     with LABELED_SET_PATH.open(encoding="utf-8") as fh:
@@ -43,12 +39,20 @@ def load_labeled_set() -> list[dict]:
     return entries
 
 
-def _example_id(question: str) -> uuid.UUID:
-    return uuid.uuid5(_EXAMPLE_ID_NAMESPACE, question)
-
-
 def sync_dataset(client: Client, entries: list[dict]) -> str:
-    """Create the dataset if needed, then create/update every entry by deterministic id."""
+    """Create the dataset if needed, then create/update every entry, matched by
+    question text rather than a self-assigned id.
+
+    A prior version derived each example's id locally via uuid5(NAMESPACE, question)
+    so a re-sync could upsert by id. That worked until an id was reused after its
+    original dataset was deleted: LangSmith's create_examples/create_example then
+    409s ("dataset id does not match example's dataset id") for that id in ANY
+    dataset from then on - confirmed with a controlled test (a never-before-used
+    uuid5 succeeds every time; the same value, once used and its dataset deleted,
+    fails every time after). Letting LangSmith assign ids itself, as it does for
+    every other caller, sidesteps that entirely - this only ever supplies an id on
+    an ExampleUpdate, using the real id LangSmith already gave that example.
+    """
     if not client.has_dataset(dataset_name=DATASET_NAME):
         client.create_dataset(
             DATASET_NAME,
@@ -56,30 +60,29 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
             "tool_selection_labeled_set.json, do not hand-edit examples here.",
         )
     dataset = client.read_dataset(dataset_name=DATASET_NAME)
-    existing_ids = {e.id for e in client.list_examples(dataset_id=dataset.id)}
-    current_ids = {_example_id(entry["question"]) for entry in entries}
+    existing_by_question = {e.inputs["question"]: e for e in client.list_examples(dataset_id=dataset.id)}
+    current_questions = {entry["question"] for entry in entries}
 
     to_create, to_update = [], []
     for entry in entries:
         question = entry["question"]
-        example_id = _example_id(question)
         outputs = {k: v for k, v in entry.items() if k != "question"}
-        if example_id in existing_ids:
-            to_update.append(ExampleUpdate(id=example_id, inputs={"question": question}, outputs=outputs))
+        existing = existing_by_question.get(question)
+        if existing is not None:
+            to_update.append(ExampleUpdate(id=existing.id, inputs={"question": question}, outputs=outputs))
         else:
-            to_create.append({"id": example_id, "inputs": {"question": question}, "outputs": outputs})
+            to_create.append({"inputs": {"question": question}, "outputs": outputs})
 
     if to_create:
         client.create_examples(dataset_id=dataset.id, examples=to_create)
     if to_update:
         client.update_examples(dataset_id=dataset.id, updates=to_update)
 
-    # A question's id is derived from its text (_example_id), so editing a
-    # question's wording orphans its old example under the old id - delete
-    # whatever's left in the dataset that isn't in the current JSON.
-    orphaned = existing_ids - current_ids
+    # A question's identity is its text, so editing wording orphans the old example -
+    # delete whatever's left in the dataset that isn't in the current JSON.
+    orphaned = [e.id for q, e in existing_by_question.items() if q not in current_questions]
     if orphaned:
-        client.delete_examples(list(orphaned))
+        client.delete_examples(orphaned)
 
     return dataset.id
 

@@ -27,6 +27,98 @@ jobs:
       - name: Test (pytest)
         run: uv run pytest -v
 
+  smoke-eval:
+    # Real, billed Anthropic API calls - only on PRs touching the tool-calling
+    # surface, not every push. tool_selection_labeled_set.json's full suite
+    # (~100 cases) stays opt-in/manual; this is a fixed 9-case subset.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Check for changed tool-calling surface
+        id: changed
+        run: |
+          changed_files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
+          if echo "$changed_files" | grep -qE '^backend/app/agent/(orchestrator\.py|tool_filters\.py|tools/)'; then
+            echo "agent=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "agent=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ask() requires all four retrieval indexes to exist (warm_up() builds
+      # them unconditionally, regardless of which tools a given question
+      # needs) - cached by a hash of their source data and the pipeline/
+      # embedding-model code, so this is a no-op after the first run unless
+      # the sources or the embedding model change.
+      - name: Cache retrieval indexes
+        if: steps.changed.outputs.agent == 'true'
+        id: index-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/chunks
+            data/chroma
+            data/chroma_naics
+            data/chroma_psc
+            data/chroma_cfda
+            data/whoosh
+            data/whoosh_naics
+            data/whoosh_psc
+            data/whoosh_cfda
+          key: retrieval-indexes-${{ hashFiles('data/raw/**', 'backend/app/retrieval/pipeline/**', 'backend/app/retrieval/hybrid.py') }}
+
+      - name: Build retrieval indexes
+        if: steps.changed.outputs.agent == 'true' && steps.index-cache.outputs.cache-hit != 'true'
+        run: |
+          uv run python -m backend.app.retrieval.pipeline.ingest \
+            --pdf data/raw/analyst-guide.pdf --out data/chunks/analysts_guide_chunks.jsonl
+          uv run python -m backend.app.retrieval.pipeline.ingest_glossary
+          uv run python -m backend.app.retrieval.pipeline.vector_index \
+            --chunks data/chunks/analysts_guide_chunks.jsonl data/chunks/glossary_chunks.jsonl
+          uv run python -m backend.app.retrieval.pipeline.bm25_index \
+            --chunks data/chunks/analysts_guide_chunks.jsonl data/chunks/glossary_chunks.jsonl
+
+          uv run python -m backend.app.retrieval.pipeline.ingest_naics
+          uv run python -m backend.app.retrieval.pipeline.ingest_psc
+          uv run python -m backend.app.retrieval.pipeline.ingest_cfda
+
+          CHROMA_DB_DIR=./data/chroma_naics WHOOSH_INDEX_DIR=./data/whoosh_naics \
+            uv run python -m backend.app.retrieval.pipeline.vector_index --chunks data/chunks/naics_chunks.jsonl
+          CHROMA_DB_DIR=./data/chroma_naics WHOOSH_INDEX_DIR=./data/whoosh_naics \
+            uv run python -m backend.app.retrieval.pipeline.bm25_index --chunks data/chunks/naics_chunks.jsonl
+
+          CHROMA_DB_DIR=./data/chroma_psc WHOOSH_INDEX_DIR=./data/whoosh_psc \
+            uv run python -m backend.app.retrieval.pipeline.vector_index --chunks data/chunks/psc_chunks.jsonl
+          CHROMA_DB_DIR=./data/chroma_psc WHOOSH_INDEX_DIR=./data/whoosh_psc \
+            uv run python -m backend.app.retrieval.pipeline.bm25_index --chunks data/chunks/psc_chunks.jsonl
+
+          CHROMA_DB_DIR=./data/chroma_cfda WHOOSH_INDEX_DIR=./data/whoosh_cfda \
+            uv run python -m backend.app.retrieval.pipeline.vector_index --chunks data/chunks/cfda_chunks.jsonl
+          CHROMA_DB_DIR=./data/chroma_cfda WHOOSH_INDEX_DIR=./data/whoosh_cfda \
+            uv run python -m backend.app.retrieval.pipeline.bm25_index --chunks data/chunks/cfda_chunks.jsonl
+
+      - name: Smoke eval (tool selection)
+        if: steps.changed.outputs.agent == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_TRACING: ${{ secrets.LANGSMITH_API_KEY != '' }}
+          LANGSMITH_PROJECT: ci-smoke-eval
+        run: uv run python -m backend.app.agent.dev_tools.smoke_eval_tool_selection
+
   web:
     runs-on: ubuntu-latest
     defaults:

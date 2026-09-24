@@ -181,4 +181,21 @@ A new tool (or a new filter that makes an existing tool confusable with another)
 - A question this tool should clearly be the answer to, with `expected_tool` set to its name.
 - If the new tool could plausibly be confused with an existing one (e.g. a new geography/breakdown tool vs. `get_spending_by_category`), also add `confusable_with` naming that tool, and consider a question on the *existing* tool's own entries that this new one might now wrongly steal.
 
+If the tool has an argument whose *wrong value* would make the answer wrong — a fiscal
+year, a code that a `resolve_*` tool was supposed to supply, a name that's easy to put in
+the wrong field (`search_subawards`'s `subrecipient_name` vs `agency_name`) — also add
+`expected_args`:
+
+```json
+"expected_args": {"get_agency_award_breakdown": {"fiscal_year": 2023}}
+```
+
+A scalar must match, a list means any one of them is fine, and `"<from:resolve_naics_code>"`
+means the value has to appear in an earlier `resolve_naics_code` output — the check that a
+resolved code was used rather than guessed. Don't assert an argument just because the tool
+takes it: two tools can answer the same question with different but equally correct
+parameters, and over-specifying here turns the eval into noise. `tests/test_eval_tool_args.py`
+checks every name you write against the real signature, so a typo fails fast rather than
+becoming a permanently-failing case.
+
 `eval_tool_selection.py` (`backend/app/agent/dev_tools/eval_tool_selection.py`) is what runs this dataset — **do not run it** as part of adding a tool unless the user explicitly asks: it makes real, billed LLM calls against a LangSmith experiment, it's opt-in by design (not part of CI or the regular test suite), and it's the user's call whether that cost is warranted right now. Adding the labeled-set entry is the deliverable; running the eval is a separate, explicit request.

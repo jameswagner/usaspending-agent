@@ -184,6 +184,58 @@ def tool_order_correct(run: Run, example: Example) -> dict[str, Any]:
     }
 
 
+_FROM_PREFIX = "<from:"
+
+
+def _scalar_matches(expected: Any, actual: Any) -> bool:
+    return str(expected).strip().lower() == str(actual).strip().lower()
+
+
+def _arg_matches(expected: Any, actual: Any, earlier_outputs: dict[str, list[str]]) -> bool:
+    if isinstance(expected, str) and expected.startswith(_FROM_PREFIX):
+        source = expected[len(_FROM_PREFIX) :].rstrip(">")
+        return any(str(actual) in output for output in earlier_outputs.get(source, []))
+    if isinstance(expected, list):
+        return any(_scalar_matches(option, actual) for option in expected)
+    return _scalar_matches(expected, actual)
+
+
+def _call_matches(expected_args: dict, args: dict, earlier_outputs: dict[str, list[str]]) -> bool:
+    return all(
+        name in args and _arg_matches(value, args[name], earlier_outputs)
+        for name, value in expected_args.items()
+    )
+
+
+def tool_args_correct(run: Run, example: Example) -> dict[str, Any]:
+    """Were the arguments right, not just the tool name. Only grades tools the run
+    actually called - whether it called them at all is tool_selection_correct's job,
+    and that split is what lets a then_one_of case name args for either branch."""
+    expected = (example.outputs or {}).get("expected_args")
+    if not expected:
+        return {"key": "tool_args_correct", "score": None, "comment": "not applicable"}
+
+    trajectory = (run.outputs or {}).get("trajectory", [])
+    earlier_outputs: dict[str, list[str]] = {}
+    graded: dict[str, bool] = {}
+    for step in trajectory:
+        tool = step.get("tool")
+        if tool in expected and not graded.get(tool):
+            graded[tool] = _call_matches(expected[tool], step.get("args") or {}, earlier_outputs)
+        earlier_outputs.setdefault(tool, []).append(step.get("output") or "")
+
+    if not graded:
+        return {"key": "tool_args_correct", "score": None, "comment": "none of the named tools were called"}
+
+    wrong = [tool for tool, ok in graded.items() if not ok]
+    comment = "all matched" if not wrong else "; ".join(
+        f"{tool}: expected {expected[tool]}, got "
+        f"{[s.get('args') for s in trajectory if s.get('tool') == tool]}"
+        for tool in wrong
+    )
+    return {"key": "tool_args_correct", "score": float(not wrong), "comment": comment[:500]}
+
+
 def confusable_alternative_called(run: Run, example: Example) -> dict[str, Any]:
     tools_called = (run.outputs or {}).get("tools_called", [])
     expected = example.outputs or {}
@@ -249,6 +301,15 @@ def print_report(rows: list[dict]) -> None:
             tools_called = (row["run"].outputs or {}).get("tools_called", [])
             print(f"  [{membership}] {question!r} - tools called: {tools_called}")
 
+    arg_graded = [r for r in rows if _feedback_score(r, "tool_args_correct") is not None]
+    if arg_graded:
+        rate = sum(_feedback_score(r, "tool_args_correct") for r in arg_graded) / len(arg_graded)
+        print(f"\nTool-argument pass rate, entries with expected_args: {rate:.1%} ({len(arg_graded)})")
+        for row in arg_graded:
+            if _feedback_score(row, "tool_args_correct") > 0:
+                continue
+            print(f"  {row['example'].inputs['question']!r}")
+
     confused = [r for r in rows if _feedback_score(r, "confusable_alternative_called") > 0]
     print(f"\nQuestions where a confusable alternative was also called ({len(confused)}/{len(rows)}):")
     for row in confused:
@@ -294,6 +355,7 @@ def main() -> None:
         evaluators=[
             tool_selection_correct,
             tool_order_correct,
+            tool_args_correct,
             confusable_alternative_called,
             hedge_language_present,
         ],

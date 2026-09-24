@@ -9,7 +9,7 @@ _format_* helpers, and non-wired-up tools.
 
 "Covered" is any tool name appearing under expected_tool, expected_tools,
 acceptable_tools, then_one_of, or confusable_with anywhere in
-tool_selection_labeled_set.json - see that file's own "_notes" for what
+tool_selection_labeled_set.json, or named as a key of expected_args - see that file's own "_notes" for what
 each key means.
 """
 from __future__ import annotations
@@ -41,6 +41,7 @@ def _covered_tool_names(labeled_set: dict) -> set[str]:
                 if value is None:
                     continue
                 covered.update(value if isinstance(value, list) else [value])
+            covered.update(case.get("expected_args", {}))
     return covered
 
 

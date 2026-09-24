@@ -1,0 +1,89 @@
+{
+  "_notes": [
+    "Hand-labeled fixtures for the answer-correctness judge (answer_correctness_judge.py), measured by calibrate_answer_correctness.py.",
+    "These are written by hand, not captured from agent runs, so the judge can be re-measured without spending a single agent call. Each entry is (question, tool_output, answer) plus the label a human would give.",
+    "'label': true means every number, unit, fiscal year, and entity the answer states matches the tool output. false means at least one of those is wrong, even if the headline number looks right at a glance.",
+    "The point of this set is the near-misses, not the obvious cases: right number wrong unit, right number wrong fiscal year, a correct number wrapped in a misleading caveat, and a number that really is in the tool output but for a different entity than the one asked about. A judge that only gets the easy ones right is not worth gating on."
+  ],
+  "clear_cases": [
+    {
+      "name": "number, unit, year, and entity all match",
+      "question": "What was NSF's FY2023 contract spending broken down by NAICS code?",
+      "tool_output": "NSF FY2023 contract obligations by NAICS: 541715 (R&D in Physical/Engineering Sciences) $412,300,000; 541511 (Custom Computer Programming) $88,900,000; other $61,200,000.",
+      "answer": "NSF's largest FY2023 NAICS category was 541715 (R&D in Physical/Engineering Sciences) at $412.3 million, followed by 541511 (Custom Computer Programming) at $88.9 million.",
+      "label": true
+    },
+    {
+      "name": "obviously invented number",
+      "question": "Which states received the most NSF funding in FY2023?",
+      "tool_output": "NSF FY2023 by state: California $612,000,000; Massachusetts $398,000,000; Texas $301,000,000.",
+      "answer": "California led with $900 million in NSF funding in FY2023, followed by Massachusetts and Texas.",
+      "label": false
+    }
+  ],
+  "near_misses": [
+    {
+      "name": "right number, wrong unit",
+      "question": "What was NASA's total FY2024 grant spending?",
+      "tool_output": "NASA FY2024 grant obligations: $4,200,000,000 total across 1,842 awards.",
+      "answer": "NASA obligated $4.2 million in grants across 1,842 awards in FY2024.",
+      "label": false
+    },
+    {
+      "name": "right number, wrong fiscal year",
+      "question": "What was the Department of Energy's total obligation in FY2023?",
+      "tool_output": "Department of Energy FY2023 total obligations: $42,100,000,000. FY2022 total obligations: $38,600,000,000.",
+      "answer": "The Department of Energy obligated $42.1 billion in FY2022.",
+      "label": false
+    },
+    {
+      "name": "correct number, misleading caveat",
+      "question": "How much federal funding did EPA send to Texas in FY2022?",
+      "tool_output": "EPA FY2022 obligations to Texas: $218,400,000.",
+      "answer": "EPA sent $218.4 million to Texas in FY2022, though that figure includes funding actually spent in other states.",
+      "label": false
+    },
+    {
+      "name": "number is real but attached to the wrong entity",
+      "question": "How much did Boeing receive in subawards from Department of Defense prime contracts in FY2023?",
+      "tool_output": "Subawards under DoD primes, FY2023: Lockheed Martin (subrecipient) $312,000,000; Boeing (subrecipient) $87,500,000; Raytheon (subrecipient) $64,200,000.",
+      "answer": "Boeing received $312 million in subawards from Department of Defense prime contracts in FY2023.",
+      "label": false
+    },
+    {
+      "name": "correct number, correctly hedged, not misleading",
+      "question": "What congressional districts got the most NASA funding in FY2024?",
+      "tool_output": "NASA FY2024 by congressional district: TX-36 $1,240,000,000; AL-05 $980,000,000; CA-23 $710,000,000.",
+      "answer": "TX-36 received the most NASA funding in FY2024 at about $1.24 billion, followed by AL-05 at roughly $980 million.",
+      "label": true
+    },
+    {
+      "name": "transaction-level answer correctly reports a count the tool gave",
+      "question": "Show me every individual transaction matching \"ventilators\" in FY2020 contracts, with each one's date and amount.",
+      "tool_output": "3 matching transactions: 2020-04-02 $1,800,000; 2020-04-19 $960,000; 2020-05-11 $2,450,000.",
+      "answer": "There were 3 matching transactions in FY2020: $1.8 million on 2020-04-02, $960,000 on 2020-04-19, and $2.45 million on 2020-05-11.",
+      "label": true
+    },
+    {
+      "name": "count silently rounded up",
+      "question": "Show me every individual transaction matching \"ventilators\" in FY2020 contracts, with each one's date and amount.",
+      "tool_output": "3 matching transactions: 2020-04-02 $1,800,000; 2020-04-19 $960,000; 2020-05-11 $2,450,000.",
+      "answer": "There were 5 matching transactions in FY2020 contracts related to ventilators, totaling roughly $7 million.",
+      "label": false
+    },
+    {
+      "name": "percentage matches the underlying totals in the tool output",
+      "question": "What percentage of NSF's FY2023 spending went to California?",
+      "tool_output": "NSF FY2023 total: $8,900,000,000. California: $2,225,000,000.",
+      "answer": "California received about 25% of NSF's FY2023 spending.",
+      "label": true
+    },
+    {
+      "name": "percentage miscalculated from the tool's own numbers",
+      "question": "What percentage of NSF's FY2023 spending went to California?",
+      "tool_output": "NSF FY2023 total: $8,900,000,000. California: $2,225,000,000.",
+      "answer": "California received about 40% of NSF's FY2023 spending.",
+      "label": false
+    }
+  ]
+}

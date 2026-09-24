@@ -12,6 +12,7 @@ Real, billed API calls. Not part of CI:
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,9 @@ from langchain_core.messages import AIMessage, ToolMessage
 from langsmith import Client, evaluate
 from langsmith.schemas import Example, ExampleUpdate, Run
 
+from backend.app.agent.dev_tools.answer_correctness_judge import (
+    judge_answer_correctness,
+)
 from backend.app.agent.dev_tools.failure_judge import judge_failure_acknowledged
 from backend.app.agent.orchestrator import ask
 from backend.app.agent.singletons import _get_conversation_graph, warm_up
@@ -241,7 +245,15 @@ def tool_args_correct(run: Run, example: Example) -> dict[str, Any]:
 
 
 # Substrings the tools return from their error and empty-result branches.
-_FAILURE_MARKERS = ("this query failed", "no agency found matching", "no award data found")
+# Incomplete beyond these five - naics.py/psc.py/cfda.py/awards.py/search.py
+# each have their own "No X found..." wording not covered here yet.
+_FAILURE_MARKERS = (
+    "this query failed",
+    "no agency found matching",
+    "no award data found",
+    "no county found matching",
+    "no recipients found matching",
+)
 
 
 def _failed_steps(trajectory: list[dict]) -> list[dict]:
@@ -294,6 +306,67 @@ def confusable_alternative_called(run: Run, example: Example) -> dict[str, Any]:
         "score": float(bool(wrong)),
         "comment": f"also called: {wrong}" if wrong else "none",
     }
+
+
+_FIGURE_PATTERN = re.compile(r"\$?\d[\d,]*(?:\.\d+)?%?")
+_BARE_YEAR = re.compile(r"(19|20)\d{2}")
+
+
+def _normalize_figure_text(text: str) -> str:
+    return text.replace("$", "").replace(",", "")
+
+
+def _extract_figures(answer: str) -> list[str]:
+    """Numbers the answer states as facts - dollar amounts, percentages, and
+    counts of three or more digits. Bare four-digit numbers are skipped since
+    they're usually a fiscal year, not a stated figure."""
+    figures = []
+    for match in _FIGURE_PATTERN.finditer(answer):
+        raw = match.group()
+        if _BARE_YEAR.fullmatch(raw):
+            continue
+        normalized = _normalize_figure_text(raw)
+        digits = normalized.rstrip("%").replace(".", "")
+        if len(digits) >= 3 or raw.endswith("%"):
+            figures.append(normalized)
+    return figures
+
+
+def answer_matches_tool_output(run: Run, example: Example) -> dict[str, Any]:
+    """Deterministic and free: does every number the answer states appear
+    somewhere in the raw tool output. Catches a wholesale invented number, not
+    a real number attached to the wrong unit, fiscal year, or entity - that
+    finer judgment is answer_correctness_judged's job."""
+    if not (example.outputs or {}).get("check_answer_correctness"):
+        return {"key": "answer_matches_tool_output", "score": None, "comment": "not applicable"}
+
+    answer = (run.outputs or {}).get("answer") or ""
+    figures = _extract_figures(answer)
+    if not figures:
+        return {"key": "answer_matches_tool_output", "score": None, "comment": "no figures stated in the answer"}
+
+    trajectory = (run.outputs or {}).get("trajectory", [])
+    combined_output = _normalize_figure_text(" ".join(step.get("output") or "" for step in trajectory))
+    missing = [f for f in figures if f not in combined_output]
+    return {
+        "key": "answer_matches_tool_output",
+        "score": float(not missing),
+        "comment": "all matched" if not missing else f"not found in tool output: {missing}",
+    }
+
+
+def answer_correctness_judged(run: Run, example: Example) -> dict[str, Any]:
+    """Gating: calibrate_answer_correctness.py measured 100% majority-vote accuracy
+    (11/11 fixtures, 5/5 repeat agreement on every one, including the near-misses) -
+    re-run that script and drop back to diagnostic if a future prompt change regresses it."""
+    if not (example.outputs or {}).get("check_answer_correctness"):
+        return {"key": "answer_correctness_judged", "score": None, "comment": "not applicable"}
+
+    trajectory = (run.outputs or {}).get("trajectory", [])
+    tool_output = " ".join(step.get("output") or "" for step in trajectory)
+    answer = (run.outputs or {}).get("answer") or ""
+    correct, reason = judge_answer_correctness(example.inputs["question"], tool_output, answer)
+    return {"key": "answer_correctness_judged", "score": float(correct), "comment": reason[:300]}
 
 
 _HEDGE_PHRASES = (
@@ -397,6 +470,25 @@ def print_report(rows: list[dict]) -> None:
         hedged = _feedback_score(row, "hedge_language_present") > 0
         print(f"  {'[hedged]' if hedged else '[NOT hedged]'} {question!r}")
 
+    figure_checked = [r for r in rows if _feedback_score(r, "answer_matches_tool_output") is not None]
+    if figure_checked:
+        rate = sum(_feedback_score(r, "answer_matches_tool_output") for r in figure_checked) / len(figure_checked)
+        print(f"\nAnswer-matches-tool-output rate (deterministic): {rate:.1%} ({len(figure_checked)})")
+        for row in figure_checked:
+            if _feedback_score(row, "answer_matches_tool_output") > 0:
+                continue
+            print(f"  {row['example'].inputs['question']!r}")
+
+    judged_checked = [r for r in rows if _feedback_score(r, "answer_correctness_judged") is not None]
+    if judged_checked:
+        rate = sum(_feedback_score(r, "answer_correctness_judged") for r in judged_checked) / len(judged_checked)
+        print(f"\nAnswer-correctness-judged rate (LLM judge, calibrated 100% on 11 fixtures): "
+              f"{rate:.1%} ({len(judged_checked)})")
+        for row in judged_checked:
+            if _feedback_score(row, "answer_correctness_judged") > 0:
+                continue
+            print(f"  {row['example'].inputs['question']!r}")
+
 
 def dump_trajectories(rows: list[dict], path: Path) -> None:
     """Per-question trajectory (tool, args, output), keyed by question."""
@@ -425,6 +517,8 @@ def main() -> None:
             failure_acknowledged,
             confusable_alternative_called,
             hedge_language_present,
+            answer_matches_tool_output,
+            answer_correctness_judged,
         ],
         experiment_prefix="tool-selection",
         client=client,

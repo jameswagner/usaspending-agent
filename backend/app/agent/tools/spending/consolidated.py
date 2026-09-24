@@ -1,10 +1,9 @@
 """query_spending - the six former filter-sharing spending tools
 (search_awards, search_subawards, search_transactions,
 get_spending_by_category, get_spending_over_time,
-get_spending_by_geography) consolidated into one, per #265's spike
-(go/no-go and token/accuracy measurements in issue #265's own comments -
-not repeated here). level (award/subaward/transaction) picks individual
-records; group_by picks an aggregate rollup instead.
+get_spending_by_geography) consolidated into one. level
+(award/subaward/transaction) picks individual records; group_by picks an
+aggregate rollup instead.
 
 Delegates to the six original @beta_tool functions rather than
 re-deriving their _raw-call/_build_filters/formatting/_record_tool_call
@@ -26,15 +25,8 @@ from .over_time import Group, get_spending_over_time
 from .search import search_awards, search_subawards, search_transactions
 
 Level = Literal["award", "subaward", "transaction"]
-# state_territory/county/district/country are deliberately excluded from the
-# category values below - confirmed live 2026-09-24 that
-# get_spending_by_category(category="county"/...) returns numbers byte-identical
-# to get_spending_by_geography(scope="place_of_performance", geo_layer="county"/...),
-# and geography's recipient_location scope has no category-side equivalent at all.
-# Keeping both would give the model two spellings (group_by="county" vs
-# group_by="geography"+geo_layer="county") for the same, less-capable-on-one-side
-# result, with nothing in the schema to prefer one - so group_by="geography" is
-# the only path to a location breakdown.
+# state_territory/county/district/country omitted: always redundant with
+# group_by="geography"+geo_layer, which is also strictly more capable (recipient_location scope).
 SpendingGroupBy = Literal[
     "awarding_agency", "awarding_subagency", "cfda", "defc", "federal_account",
     "funding_agency", "funding_subagency", "naics", "psc", "recipient",

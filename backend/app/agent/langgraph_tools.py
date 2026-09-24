@@ -11,8 +11,8 @@ it wouldn't work without adapting that function first.
 
 search_awards/search_subawards/search_transactions/get_spending_by_category/
 get_spending_over_time/get_spending_by_geography are deliberately not bound
-here either (#265) - query_spending consolidates all six into one tool;
-the six stay real, callable, @beta_tool-decorated functions (query_spending
+here either - query_spending consolidates all six into one tool; the six
+stay real, callable, @beta_tool-decorated functions (query_spending
 delegates to them) but aren't in _BETA_TOOLS, so the model never sees
 their own schemas.
 """

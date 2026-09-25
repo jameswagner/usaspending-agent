@@ -273,7 +273,8 @@ def query_spending(
     are not guaranteed to match the same set of records. The one exception:
     level="subaward" never accepts recipient_id at all (see recipient_id below) -
     use recipient_name for every subaward-level call about that entity instead,
-    consistently, not just as a fallback after recipient_id fails.
+    consistently, not just as a fallback after recipient_id fails - and prefer a
+    resolved uei/duns there over a bare name (see recipient_name below).
 
     Args:
         level: "award" for prime awards (default choice for records), "subaward"
@@ -313,7 +314,13 @@ def query_spending(
         geo_layer_filters: Optional, only used when group_by="geography" - restrict to these
             specific state/country codes.
         agency_name: Optional. The awarding agency's name.
-        recipient_name: Optional. Recipient name text match (the sub-recipient's, if level="subaward").
+        recipient_name: Optional. Recipient name text match (the sub-recipient's, if level="subaward")
+            - a bare company name can sweep in every distinct entity sharing that name (confirmed
+            live: "Boeing" alone returned 66x more than the one specific Boeing entity). When
+            level="subaward" and you already have a uei or duns for the entity (e.g. from
+            search_recipients/get_recipient_details), pass THAT here instead of the bare name -
+            it's still a text match, but a uei/duns has no other entity to collide with, giving
+            the same effective precision recipient_id gives non-subaward calls.
         recipient_id: Optional. Exact recipient id - only honored for group_by aggregates, not
             records, and NOT supported at all when level="subaward" (a live API restriction -
             use recipient_name there instead, every time, not just after this fails once).

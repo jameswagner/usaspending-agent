@@ -29,6 +29,7 @@ from .._shared import (
     _scope_label,
     _wrap_untrusted,
 )
+from .category import SpendingLevel
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +87,7 @@ def get_spending_over_time_raw(
     recipient_type: RecipientType | None = None,
     description: str | None = None,
     def_codes: list[str] | None = None,
+    spending_level: SpendingLevel = "transactions",
 ) -> SpendingOverTimeResponse:
     """Call the API once, return the structured response. Same filter
     resolution (via _build_filters) as get_spending_by_category_raw -
@@ -125,7 +127,7 @@ def get_spending_over_time_raw(
         description=description,
         def_codes=def_codes,
     )
-    return client.spending_over_time(filters, group=_normalize_group(group))
+    return client.spending_over_time(filters, group=_normalize_group(group), spending_level=spending_level)
 
 
 @beta_tool
@@ -162,6 +164,7 @@ def get_spending_over_time(
     recipient_type: RecipientType | None = None,
     description: str | None = None,
     def_codes: list[str] | None = None,
+    spending_level: SpendingLevel = "transactions",
 ) -> str:
     """Get USASpending spending trends over time for a fiscal year range, scoped by a real scoping filter, grouped by period. Use this for "how much/what total funding went to X" questions (group by fiscal_year over the requested range - the response's aggregated_amount for a single-period range is the exact grand total, computed server-side, not a top-N slice) as well as "how has X's spending changed/trended over time" questions.
 
@@ -257,6 +260,11 @@ def get_spending_over_time(
             code in that group - e.g. def_codes=["covid"] covers all 7 COVID-relief codes.
             Sufficient scope on its own - use this for "how much has been spent on COVID-19
             relief/infrastructure funding over time" trend questions.
+        spending_level: Optional. The level of spending detail to aggregate by (default
+            "transactions"). Use "subawards" for a subaward-dollar trend instead of a prime-award
+            one - this is the ONLY way to get a subaward-scoped trend/total; search_subawards
+            returns individual subaward records, not a period-bucketed sum. "awards" sums by
+            award instead of by transaction.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -303,6 +311,7 @@ def get_spending_over_time(
             recipient_type=recipient_type,
             description=description,
             def_codes=def_codes,
+            spending_level=spending_level,
         )
     except USASpendingAPIError as e:
         _pop_naics_disclosure()
@@ -316,6 +325,7 @@ def get_spending_over_time(
             "end_year": end_year,
             "time_period_type": time_period_type,
             "group": group,
+            "spending_level": spending_level,
         },
         agency_name=agency_name,
         award_type=award_type,

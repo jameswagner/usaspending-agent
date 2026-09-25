@@ -1188,30 +1188,37 @@ class TestBuildToolCitation:
     def test_get_recipient_details(self):
         citation = build_tool_citation(
             "get_recipient_details",
-            {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P", "name": "THE BOEING COMPANY"},
+            {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P", "name": "THE BOEING COMPANY", "year": "2023"},
         )
         assert citation is not None
         assert citation.tool_name == "get_recipient_details"
-        assert citation.parameters == {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P"}
-        assert citation.description == "Recipient details: THE BOEING COMPANY"
+        assert citation.parameters == {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P", "year": "2023"}
+        assert citation.description == "Recipient details: THE BOEING COMPANY (2023)"
+
+    def test_get_recipient_details_distinguishes_different_years(self):
+        """Two calls for the same recipient but different years must produce
+        distinct dedup keys - _build_result's dedup is (tool_name, sorted(parameters))."""
+        first = build_tool_citation("get_recipient_details", {"recipient_id": "abc-P", "year": "2020"})
+        second = build_tool_citation("get_recipient_details", {"recipient_id": "abc-P", "year": "2025"})
+        assert first.parameters != second.parameters
 
     def test_get_recipient_details_falls_back_to_recipient_id_without_name(self):
-        citation = build_tool_citation("get_recipient_details", {"recipient_id": "abc-P"})
-        assert citation.description == "Recipient details: abc-P"
+        citation = build_tool_citation("get_recipient_details", {"recipient_id": "abc-P", "year": "all"})
+        assert citation.description == "Recipient details: abc-P (all)"
 
     def test_get_recipient_children(self):
         citation = build_tool_citation(
             "get_recipient_children",
-            {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P", "name": "THE BOEING COMPANY"},
+            {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P", "name": "THE BOEING COMPANY", "year": "2023"},
         )
         assert citation is not None
         assert citation.tool_name == "get_recipient_children"
-        assert citation.parameters == {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P"}
-        assert citation.description == "Recipient children: THE BOEING COMPANY"
+        assert citation.parameters == {"recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P", "year": "2023"}
+        assert citation.description == "Recipient children: THE BOEING COMPANY (2023)"
 
     def test_get_recipient_children_falls_back_to_recipient_id_without_name(self):
-        citation = build_tool_citation("get_recipient_children", {"recipient_id": "abc-P"})
-        assert citation.description == "Recipient children: abc-P"
+        citation = build_tool_citation("get_recipient_children", {"recipient_id": "abc-P", "year": "all"})
+        assert citation.description == "Recipient children: abc-P (all)"
 
     # agency_name is now optional on all three spending tools (2026-09-08) -
     # these three regression tests pin that the citation builder doesn't

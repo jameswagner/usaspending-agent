@@ -265,6 +265,25 @@ def query_spending(
     X's spending trended" questions, as opposed to a ranked list of individual
     records.
 
+    IMPORTANT about fiscal-year scoping: by default (date_type omitted), an award/
+    transaction/subaward appears here if it had ANY activity in the queried fiscal
+    year - not "this dollar amount was specifically obligated in this year." A
+    multi-year award active in more than one fiscal year appears in results for
+    EACH of those years, and group_by=None row totals are each award's current
+    LIFETIME value, not a per-year figure - do not sum these across multiple
+    fiscal-year calls as if period-scoped and additive; use group_by="time" for a
+    genuinely period-scoped, non-duplicative total instead. A surprising $0 or
+    empty result under the default date_type is often correct, not a failure -
+    explain it (no NEW activity that year) rather than retrying with different
+    filters. If the question is really "what NEW awards did X get in FY2024"
+    rather than "what was X active on," set date_type="new_awards_only" instead.
+
+    Aggregates (group_by set to anything) and level="subaward" records both
+    require real scope (agency_name, recipient_name, a location, naics/psc/cfda,
+    or similar, depending on branch) - a query calling this without any of them
+    is refused with a clear error naming what's missing; level="award"/"transaction"
+    records need no scope beyond award_type and the fiscal year range.
+
     When comparing the same entity across more than one call (e.g. prime vs.
     subaward totals, or two time periods, or two agencies), reuse the exact same
     recipient scoping in every call - once recipient_id is resolved for an entity,
@@ -280,7 +299,10 @@ def query_spending(
         level: "award" for prime awards (default choice for records), "subaward"
             for subawards (recipient_/location_ fields below then filter the
             SUB-recipient, not the prime - opposite of normal), "transaction" for
-            individual transactions/modifications rather than award-level totals.
+            individual transactions/modifications rather than award-level totals -
+            one multi-year award with 10 mods is ONE row at level="award" but up to
+            10 separate rows at level="transaction", each with its own action date
+            and amount.
             Still required even when group_by is set: level="subaward" with
             group_by="time" or a category name gives a real subaward-dollar
             total/trend (not individual subaward records - use group_by=None for
@@ -304,7 +326,8 @@ def query_spending(
         start_year: First year to include.
         end_year: Last year to include.
         award_type: contracts/grants/loans or a specific sub-type (default contracts).
-        limit: Max rows/categories to return (default 5). Ignored for group_by="time".
+        limit: Max rows/categories to return (default 5). Ignored for group_by="time" and
+            group_by="geography" (always capped at 20 regions internally, not this value).
         sort_by: Ranking field for record rows only (amount default, outlays, subsidy_cost,
             recency). Ignored when group_by is set.
         time_grouping: Period size when group_by="time" - fiscal_year (default),
@@ -343,15 +366,26 @@ def query_spending(
         date_type: Optional. action_date (default), date_signed, last_modified_date, new_awards_only.
         place_of_performance_scope: Optional. "domestic" or "foreign".
         recipient_scope: Optional. "domestic" or "foreign".
-        naics_code: Optional. Exact NAICS code.
-        psc_code: Optional. Exact 4-character PSC.
+        naics_code: Optional. Exact NAICS code - or a plain-English industry description (see
+            resolve_naics_code above); if ambiguous, use group_by="naics" to browse instead of guessing.
+        psc_code: Optional. Exact 4-character PSC. Same guidance as naics_code: use
+            group_by="psc" to browse if you don't have the exact code.
         cfda_program: Optional. Exact CFDA number, NN.NNN.
-        award_id: Optional. Fuzzy PIID/FAIN/URI match, records only.
-        recipient_type: Optional. Business/recipient type tag.
-        description: Optional. Award description text match.
+        award_id: Optional. Fuzzy PIID/FAIN/URI match, records only. For an IDV's own PIID
+            (a contract vehicle, not a plain contract), pass award_type="idv" too - IDV codes
+            are disjoint from A/B/C/D, so the default award_type="contracts" won't find it.
+        recipient_type: Optional. Business/recipient type tag - sufficient scope on its own for
+            aggregates, unlike award_type. NOT reversed for level="subaward" (unlike
+            recipient_name/recipient_in_*/description above/below) - still describes the PRIME
+            recipient's business type even when scoping a subaward-level call.
+        description: Optional. Award (or, if level="subaward", the sub-award's own) description
+            text match - distinct from keywords, which also matches recipient name/PIID/FAIN/NAICS/PSC.
         tas_code: Optional. Exact Treasury Account Symbol, records only (award/transaction levels).
-        federal_account: Optional. Exact federal account, records only.
+            Must be a real code - get it from a get_award_funding_breakdown call, not guessed.
+        federal_account: Optional. Exact federal account (the AID-MAIN pair one level up from a
+            full TAS), records only - the value shown on a get_award_funding_breakdown row.
         def_codes: Optional. Disaster Emergency Fund Codes, or group aliases like "covid"/"infrastructure".
+            For a spending-by-DEFC breakdown instead of filtering to a specific one, use group_by="defc".
         contract_pricing_type: Optional. Records only, level="award". Contract-only.
         set_aside_type: Optional. Records only, level="award". Contract-only.
         extent_competed_type: Optional. Records only, level="award". Contract-only.

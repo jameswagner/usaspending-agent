@@ -35,10 +35,13 @@ from .capture import _record_request
 from .exceptions import _TIMEOUT_MESSAGE, USASpendingAPIError, _raise_with_detail
 from .filter_models import AdvancedFilters
 from .models import (
+    AgencyAwardsResponse,
     AgencyBudgetaryResourcesResponse,
+    AgencyObligationsByAwardCategoryResponse,
     AgencyOfficeAutocompleteResponse,
     AgencyOverview,
     AgencySubAgencyResponse,
+    AgencySubComponentFederalAccountsResponse,
     AgencySubComponentsResponse,
     AwardFundingResponse,
     ChildRecipient,
@@ -334,6 +337,61 @@ class USASpendingClient:
             params={k: v for k, v in params.items() if v is not None},
         )
         return AgencySubComponentsResponse(**data)
+
+    @traceable(run_type="tool", name="get_agency_sub_component_federal_accounts")
+    def get_agency_sub_component_federal_accounts(
+        self,
+        toptier_code: str,
+        bureau_slug: str,
+        fiscal_year: int | None = None,
+        limit: int = 50,
+        page: int = 1,
+    ) -> AgencySubComponentFederalAccountsResponse:
+        """One named bureau's federal accounts - #287's gap. `bureau_slug`
+        comes from the `id` field in get_agency_sub_components's own
+        results (e.g. "food-and-nutrition-service" for USDA/012's FNS row),
+        not from find_agency_by_name or any autocomplete endpoint - verified
+        live 2026-09-28."""
+        params = {"fiscal_year": fiscal_year, "limit": limit, "page": page}
+        data = self._get(
+            f"/api/v2/agency/{toptier_code}/sub_components/{bureau_slug}/",
+            params={k: v for k, v in params.items() if v is not None},
+        )
+        return AgencySubComponentFederalAccountsResponse(**data)
+
+    @traceable(run_type="tool", name="get_agency_obligations_by_award_category")
+    def get_agency_obligations_by_award_category(
+        self, toptier_code: str, fiscal_year: int | None = None
+    ) -> AgencyObligationsByAwardCategoryResponse:
+        """#286's gap - agency-profile-lineage award-category breakdown
+        (contracts/idvs/grants/loans/direct_payments/other), a different
+        data source from spending_by_category("award_type", ...) despite
+        sharing category vocabulary. No pagination, single unauthenticated
+        GET - verified live 2026-09-28."""
+        params = {"fiscal_year": fiscal_year}
+        data = self._get(
+            f"/api/v2/agency/{toptier_code}/obligations_by_award_category/",
+            params={k: v for k, v in params.items() if v is not None},
+        )
+        return AgencyObligationsByAwardCategoryResponse(**data)
+
+    @traceable(run_type="tool", name="get_agency_awards")
+    def get_agency_awards(
+        self,
+        toptier_code: str,
+        fiscal_year: int | None = None,
+        award_type_codes: list[str] | None = None,
+    ) -> AgencyAwardsResponse:
+        """Whole-agency, single-FY transaction count and obligations - no
+        grouping, the coarsest level of the award-activity lineage (see
+        get_agency_sub_agency_breakdown for the by-sub-agency grouping).
+        Verified live 2026-09-28; not yet used by any tool."""
+        params = {"fiscal_year": fiscal_year, "award_type_codes": award_type_codes}
+        data = self._get(
+            f"/api/v2/agency/{toptier_code}/awards/",
+            params={k: v for k, v in params.items() if v is not None},
+        )
+        return AgencyAwardsResponse(**data)
 
     @traceable(run_type="tool", name="spending_by_category")
     def spending_by_category(

@@ -31,8 +31,15 @@ def load_labeled_set() -> list[dict]:
     return entries
 
 
-def _example_id(question: str) -> uuid.UUID:
-    return uuid.uuid5(_EXAMPLE_ID_NAMESPACE, question)
+def _example_key(entry: dict) -> str:
+    """A stable identity for the example, single-turn or multi-turn, for uuid5-keyed upsert."""
+    if "turns" in entry:
+        return json.dumps([t["question"] for t in entry["turns"]])
+    return entry["question"]
+
+
+def _example_id(key: str) -> uuid.UUID:
+    return uuid.uuid5(_EXAMPLE_ID_NAMESPACE, key)
 
 
 def sync_dataset(client: Client, entries: list[dict]) -> str:
@@ -44,17 +51,23 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
         )
     dataset = client.read_dataset(dataset_name=DATASET_NAME)
     existing_ids = {e.id for e in client.list_examples(dataset_id=dataset.id)}
-    current_ids = {_example_id(entry["question"]) for entry in entries}
+    current_ids = {_example_id(_example_key(entry)) for entry in entries}
 
     to_create, to_update = [], []
     for entry in entries:
-        question = entry["question"]
-        example_id = _example_id(question)
-        outputs = {k: v for k, v in entry.items() if k != "question"}
-        if example_id in existing_ids:
-            to_update.append(ExampleUpdate(id=example_id, inputs={"question": question}, outputs=outputs))
+        example_id = _example_id(_example_key(entry))
+        if "turns" in entry:
+            inputs = {"turns": [{"question": t["question"]} for t in entry["turns"]]}
+            # Only the final turn's expect_* fields are scored - see download_labeled_set.json's _notes.
+            outputs = {k: v for k, v in entry["turns"][-1].items() if k != "question"}
+            outputs["category"] = entry["category"]
         else:
-            to_create.append({"id": example_id, "inputs": {"question": question}, "outputs": outputs})
+            inputs = {"question": entry["question"]}
+            outputs = {k: v for k, v in entry.items() if k != "question"}
+        if example_id in existing_ids:
+            to_update.append(ExampleUpdate(id=example_id, inputs=inputs, outputs=outputs))
+        else:
+            to_create.append({"id": example_id, "inputs": inputs, "outputs": outputs})
 
     if to_create:
         client.create_examples(dataset_id=dataset.id, examples=to_create)
@@ -68,18 +81,33 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
     return dataset.id
 
 
-def predict(inputs: dict) -> dict:
-    result = ask(inputs["question"])
+def _result_to_outputs(result) -> dict:
     spending_level = None
+    award_type = None
     if result.tool_citations:
         spending_level = result.tool_citations[0].parameters.get("spending_level")
+        award_type = result.tool_citations[0].parameters.get("award_type")
     return {
         "answer": result.answer_text,
         "got_download": bool(result.downloads),
         "not_supported": "isn't supported yet" in result.answer_text,
         "fell_back_to_loop": not result.downloads and result.answer_text != NOT_FOUND_MESSAGE,
         "spending_level": spending_level,
+        "award_type": award_type,
     }
+
+
+def predict(inputs: dict) -> dict:
+    if "turns" in inputs:
+        # Multi-turn (#290): one shared conversation_id across all turns, setup turns run and
+        # discarded, only the final turn's outputs are returned for scoring.
+        conversation_id = None
+        result = None
+        for turn in inputs["turns"]:
+            result = ask(turn["question"], conversation_id)
+            conversation_id = result.conversation_id
+        return _result_to_outputs(result)
+    return _result_to_outputs(ask(inputs["question"]))
 
 
 def download_pilot_correct(run: Run, example: Example) -> dict[str, Any]:
@@ -93,6 +121,13 @@ def download_pilot_correct(run: Run, example: Example) -> dict[str, Any]:
         expected_level = expected.get("expect_spending_level")
         if passed and expected_level is not None:
             passed = outputs.get("spending_level") == expected_level
+        # #290: a follow-up must not invent a filter neither turn stated, and must still honor
+        # one the follow-up DOES state explicitly - these are opposite failure modes, both real.
+        if passed and expected.get("expect_no_award_type"):
+            passed = outputs.get("award_type") is None
+        expected_award_type = expected.get("expect_award_type")
+        if passed and expected_award_type is not None:
+            passed = outputs.get("award_type") == expected_award_type
     elif expected.get("expect_not_supported"):
         passed = outputs.get("not_supported", False)
     else:  # expect_fallback_to_loop
@@ -128,7 +163,10 @@ def print_report(rows: list[dict]) -> None:
     failures = [r for r in rows if _feedback_score(r, "download_pilot_correct") == 0.0]
     print(f"\nFailing questions ({len(failures)}/{len(rows)}):")
     for row in failures:
-        question = row["example"].inputs["question"]
+        inputs = row["example"].inputs
+        question = (
+            " -> ".join(t["question"] for t in inputs["turns"]) if "turns" in inputs else inputs["question"]
+        )
         category = row["example"].outputs["category"]
         print(f"  [{category}] {question!r} - got: {row['run'].outputs}")
 

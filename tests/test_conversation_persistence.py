@@ -105,3 +105,26 @@ class TestPersistDownloadTurn:
 
         other_thread_messages = graph.get_state({"configurable": {"thread_id": "t2"}}).values.get("messages", [])
         assert other_thread_messages == []
+
+    def test_intent_context_round_trips_through_the_checkpointer(self, tmp_path):
+        # Regression (#290): without this, a download follow-up could only see prior turns as
+        # prose and had to re-guess fields like award_type from scratch.
+        graph = self._make_graph(tmp_path)
+        config = {"configurable": {"thread_id": "t1"}}
+        intent_context = {"agency_raw": "National Science Foundation", "spending_level": "transactions", "start_year": 2023, "end_year": 2023}
+
+        _persist_download_turn(graph, config, "download NSF's transactions for FY2023", "Your download is ready: ...", intent_context)
+
+        recent_messages = graph.get_state(config).values.get("messages", [])
+        ai_messages = [m for m in recent_messages if getattr(m, "type", None) == "ai"]
+        assert ai_messages[-1].additional_kwargs["download_intent"] == intent_context
+
+    def test_no_intent_context_leaves_additional_kwargs_empty(self, tmp_path):
+        graph = self._make_graph(tmp_path)
+        config = {"configurable": {"thread_id": "t1"}}
+
+        _persist_download_turn(graph, config, "download NSF's awards", "ready")
+
+        recent_messages = graph.get_state(config).values.get("messages", [])
+        ai_messages = [m for m in recent_messages if getattr(m, "type", None) == "ai"]
+        assert "download_intent" not in ai_messages[-1].additional_kwargs

@@ -1,0 +1,146 @@
+name: Live smoke eval
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      run_eval: ${{ steps.check.outputs.run_eval }}
+    steps:
+      - name: Check cadence and merged PRs
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const { data: currentRun } = await github.rest.actions.getWorkflowRun({
+              owner, repo, run_id: context.runId
+            });
+            let lastEvalAt = null;
+
+            for (let page = 1; lastEvalAt === null; page++) {
+              const { data: { workflow_runs: runs } } = await github.rest.actions.listWorkflowRuns({
+                owner, repo, workflow_id: 'smoke-eval.yml', event: 'schedule', per_page: 100, page
+              });
+              for (const run of runs) {
+                if (run.id === context.runId || run.conclusion !== 'success') continue;
+                const { data: { jobs } } = await github.rest.actions.listJobsForWorkflowRun({
+                  owner, repo, run_id: run.id, per_page: 100
+                });
+                if (jobs.some(job => job.name === 'smoke-eval' && job.conclusion === 'success')) {
+                  lastEvalAt = Date.parse(run.created_at);
+                  break;
+                }
+              }
+              if (runs.length < 100) break;
+            }
+
+            if (lastEvalAt !== null && Date.parse(currentRun.created_at) - lastEvalAt < 48 * 60 * 60 * 1000) {
+              core.info('The last successful smoke eval was less than 48 hours ago.');
+              core.setOutput('run_eval', 'false');
+              return;
+            }
+
+            const cutoff = lastEvalAt ?? 0;
+            const runStartedAt = Date.parse(currentRun.created_at);
+            for (let page = 1; ; page++) {
+              const { data: pulls } = await github.rest.pulls.list({
+                owner, repo, state: 'closed', base: 'main', sort: 'updated', direction: 'desc', per_page: 100, page
+              });
+              for (const pull of pulls) {
+                if (Date.parse(pull.updated_at) <= cutoff) {
+                  core.setOutput('run_eval', 'false');
+                  return;
+                }
+                const mergedAt = Date.parse(pull.merged_at);
+                if (mergedAt > cutoff && mergedAt <= runStartedAt) {
+                  core.info(`PR #${pull.number} merged since the last successful smoke eval.`);
+                  core.setOutput('run_eval', 'true');
+                  return;
+                }
+              }
+              if (pulls.length < 100) break;
+            }
+            core.info('No PR has merged since the last successful smoke eval.');
+            core.setOutput('run_eval', 'false');
+
+  smoke-eval:
+    needs: gate
+    if: needs.gate.outputs.run_eval == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Cache retrieval indexes
+        id: index-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/chunks
+            data/chroma
+            data/chroma_naics
+            data/chroma_psc
+            data/chroma_cfda
+            data/whoosh
+            data/whoosh_naics
+            data/whoosh_psc
+            data/whoosh_cfda
+          key: retrieval-indexes-${{ hashFiles('data/raw/**', 'backend/app/retrieval/pipeline/**', 'backend/app/retrieval/hybrid.py') }}
+
+      - name: Build retrieval indexes
+        if: steps.index-cache.outputs.cache-hit != 'true'
+        run: |
+          uv run python -m backend.app.retrieval.pipeline.ingest \
+            --pdf data/raw/analyst-guide.pdf --out data/chunks/analysts_guide_chunks.jsonl
+          uv run python -m backend.app.retrieval.pipeline.ingest_glossary
+          uv run python -m backend.app.retrieval.pipeline.vector_index \
+            --chunks data/chunks/analysts_guide_chunks.jsonl data/chunks/glossary_chunks.jsonl
+          uv run python -m backend.app.retrieval.pipeline.bm25_index \
+            --chunks data/chunks/analysts_guide_chunks.jsonl data/chunks/glossary_chunks.jsonl
+
+          uv run python -m backend.app.retrieval.pipeline.ingest_naics
+          uv run python -m backend.app.retrieval.pipeline.ingest_psc
+          uv run python -m backend.app.retrieval.pipeline.ingest_cfda
+
+          CHROMA_DB_DIR=./data/chroma_naics WHOOSH_INDEX_DIR=./data/whoosh_naics \
+            uv run python -m backend.app.retrieval.pipeline.vector_index --chunks data/chunks/naics_chunks.jsonl
+          CHROMA_DB_DIR=./data/chroma_naics WHOOSH_INDEX_DIR=./data/whoosh_naics \
+            uv run python -m backend.app.retrieval.pipeline.bm25_index --chunks data/chunks/naics_chunks.jsonl
+
+          CHROMA_DB_DIR=./data/chroma_psc WHOOSH_INDEX_DIR=./data/whoosh_psc \
+            uv run python -m backend.app.retrieval.pipeline.vector_index --chunks data/chunks/psc_chunks.jsonl
+          CHROMA_DB_DIR=./data/chroma_psc WHOOSH_INDEX_DIR=./data/whoosh_psc \
+            uv run python -m backend.app.retrieval.pipeline.bm25_index --chunks data/chunks/psc_chunks.jsonl
+
+          CHROMA_DB_DIR=./data/chroma_cfda WHOOSH_INDEX_DIR=./data/whoosh_cfda \
+            uv run python -m backend.app.retrieval.pipeline.vector_index --chunks data/chunks/cfda_chunks.jsonl
+          CHROMA_DB_DIR=./data/chroma_cfda WHOOSH_INDEX_DIR=./data/whoosh_cfda \
+            uv run python -m backend.app.retrieval.pipeline.bm25_index --chunks data/chunks/cfda_chunks.jsonl
+
+      - name: Smoke eval (tool selection)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_TRACING: ${{ secrets.LANGSMITH_API_KEY != '' }}
+          LANGSMITH_PROJECT: ci-smoke-eval
+        run: uv run python -m backend.app.agent.dev_tools.smoke_eval_tool_selection

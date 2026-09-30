@@ -267,6 +267,19 @@
           "fiscal_year": 2022
         }
       }
+    },
+    {
+      "question": "How does USDA's FY2024 award spending split across contracts, grants, and loans?",
+      "expected_tool": "get_agency_award_breakdown",
+      "confusable_with": [
+        "query_spending",
+        "get_agency_budget"
+      ],
+      "expected_args": {
+        "get_agency_award_breakdown": {
+          "group_by": "award_category"
+        }
+      }
     }
   ],
   "agency_budget_by_subcomponent": [
@@ -293,6 +306,22 @@
         "get_agency_budget",
         "get_agency_award_breakdown"
       ]
+    },
+    {
+      "question": "What federal accounts does the Food and Nutrition Service spend from in FY2024?",
+      "expected_tool": "get_agency_budget_by_subcomponent",
+      "confusable_with": [
+        "get_agency_award_breakdown"
+      ],
+      "expected_args": {
+        "get_agency_budget_by_subcomponent": {
+          "bureau": [
+            "Food and Nutrition Service",
+            "FNS"
+          ],
+          "fiscal_year": 2024
+        }
+      }
     }
   ],
   "spending_explorer_breakdown": [

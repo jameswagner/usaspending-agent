@@ -113,6 +113,62 @@ def _unsupported_download_label(question: str) -> str | None:
     return None
 
 
+# Maps a spending tool's own argument names to the DownloadIntent field they
+# correspond to - only fields DownloadIntent understands. Deliberately excludes
+# display-only args like `limit`/`category` (a breakdown's top-N or grouping
+# dimension is not a scope filter and must never be carried into a download).
+_TOOL_ARG_TO_DOWNLOAD_FIELD = {
+    "agency_name": "agency_raw",
+    "award_type": "award_type",
+    "start_year": "start_year",
+    "end_year": "end_year",
+    "time_period_type": "time_period_type",
+}
+
+
+def _extract_prior_tool_context(recent_messages: list | None, max_messages: int = 10) -> dict | None:
+    """Looks back through the real LangGraph message list - not the lossy prose
+    _render_recent_exchanges produces - for the most recently resolved structured
+    context: either this pilot's own prior DownloadIntent (stashed by
+    _persist_download_turn) or a spending tool's actual resolved call arguments.
+    Gives a follow-up extraction real values to copy instead of re-deriving
+    everything from text, which left room to invent fields nothing ever stated."""
+    for message in reversed((recent_messages or [])[-max_messages:]):
+        if getattr(message, "type", None) != "ai":
+            continue
+        stashed = (getattr(message, "additional_kwargs", None) or {}).get("download_intent")
+        if stashed:
+            return dict(stashed)
+        tool_calls = getattr(message, "tool_calls", None) or []
+        if tool_calls:
+            args = tool_calls[-1].get("args", {})
+            context = {
+                field: args[arg_name]
+                for arg_name, field in _TOOL_ARG_TO_DOWNLOAD_FIELD.items()
+                if args.get(arg_name) is not None
+            }
+            return context or None
+    return None
+
+
+def _download_intent_context(intent: DownloadIntent, agency_name: str | None) -> dict:
+    """The structured record of what this turn actually resolved - stashed via
+    _persist_download_turn so the next follow-up's _extract_prior_tool_context
+    has real values instead of prose to work from."""
+    context: dict = {"spending_level": intent.spending_level, "time_period_type": intent.time_period_type}
+    if agency_name:
+        context["agency_raw"] = agency_name
+    if intent.start_date and intent.end_date:
+        context["start_date"] = intent.start_date
+        context["end_date"] = intent.end_date
+    else:
+        context["start_year"] = intent.start_year
+        context["end_year"] = intent.end_year
+    if intent.award_type:
+        context["award_type"] = intent.award_type
+    return context
+
+
 class DownloadIntent(BaseModel):
     # Required in the tool schema below - forces the model to actively decide, not default to True.
     wants_download: bool = True
@@ -183,17 +239,36 @@ _EXTRACT_TOOL = {
 }
 
 
-def _extract_download_intent(question: str, history_block: str = "") -> DownloadIntent | None:
+def _extract_download_intent(
+    question: str, history_block: str = "", prior_context: dict | None = None
+) -> DownloadIntent | None:
     """Returns None on anything that isn't a clean parse, rather than guessing."""
     system = (
         f"Today's fiscal year is FY{current_fiscal_year()}. Use it for relative phrases "
         "like 'this year' or 'most recent year' if the question doesn't state one explicitly."
     )
     user_content = question
-    if history_block:
+    if prior_context:
+        # Ground truth from the actual preceding turn - see _extract_prior_tool_context.
+        # Deliberately replaces the vaguer history-only instruction below: that one asked the
+        # model to "carry over award_type from the history," which caused it to invent an
+        # award_type that appeared in neither the history nor the new question (confirmed live).
         system += (
-            " The user is continuing a prior download - carry over its agency/award_type from the "
-            "history below unless this question names a different one; only the time period usually changes."
+            " This is a follow-up in an ongoing conversation. The JSON below is the exact set of "
+            "values already resolved by the preceding turn - reuse a field's value from it only "
+            "when this new question doesn't say otherwise. Never set award_type, spending_level, "
+            "or any other field unless it appears in this JSON or is explicitly stated in the new "
+            "question - do not guess or default them.\n"
+            f"Previously resolved values: {json.dumps(prior_context, default=str)}"
+        )
+        if history_block:
+            user_content = f"{history_block}\n\nNew question: {question}"
+    elif history_block:
+        system += (
+            " The user is continuing a prior download - carry over its agency from the "
+            "history below unless this question names a different one; only the time period "
+            "usually changes. Don't guess award_type or spending_level from a vague continuation - "
+            "leave them unset unless the new question names one explicitly."
         )
         user_content = f"{history_block}\n\nNew question: {question}"
     try:
@@ -295,7 +370,8 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         )
 
     history_block = _render_recent_exchanges(recent_messages) if recent_messages else ""
-    intent = _extract_download_intent(question, history_block)
+    prior_context = _extract_prior_tool_context(recent_messages) if recent_messages else None
+    intent = _extract_download_intent(question, history_block, prior_context)
     if intent is None:
         return None
 
@@ -306,6 +382,8 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         if match is None:
             return None
         agency_name = match.agency_name
+
+    intent_context = _download_intent_context(intent, agency_name)
 
     try:
         # Placeholder when start_date is set - real scope is applied below by overwriting time_period.
@@ -328,7 +406,10 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         status = _poll_until_finished(client, job.file_name)
     except USASpendingAPIError as e:
         logger.warning("Download pipeline failed for question %r: %s", question, e)
-        return AgentResult(answer_text=f"This download failed: {e}.", conversation_id=conversation_id)
+        return AgentResult(
+            answer_text=f"This download failed: {e}.", conversation_id=conversation_id,
+            download_intent_context=intent_context,
+        )
 
     download = DownloadSpec(
         file_name=status.file_name, url=status.file_url, status_url=job.status_url,
@@ -347,5 +428,6 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         )
 
     return AgentResult(
-        answer_text=answer_text, conversation_id=conversation_id, downloads=[download], tool_citations=[citation]
+        answer_text=answer_text, conversation_id=conversation_id, downloads=[download], tool_citations=[citation],
+        download_intent_context=intent_context,
     )

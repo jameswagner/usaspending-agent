@@ -174,6 +174,14 @@ The tool-count and schema assertions will fail if a tool is in `__all__` but mis
 
 After the chart/citation step, manually test with the live agent to ensure charts render correctly and citations are present — there's no automated test for "citation was shown to the user," so visual inspection is the only gate.
 
+If that manual test is running from a fresh `git worktree` rather than the main checkout, two gitignored things won't be there and need copying over from a working checkout first, or the backend fails at startup/first request:
+- `.env` (the API keys) - without it, the first live call fails with `Could not resolve authentication method`.
+- `data/` (the prebuilt Chroma/Whoosh retrieval indexes - `chroma`, `chroma_naics`, `chroma_psc`, `chroma_cfda`, `whoosh*`) - without it, startup fails with `chromadb.errors.NotFoundError: Collection [analysts_guide] does not exist`. Rebuilding these from scratch works too (see README's "Building the retrieval indexes") but is slow and unnecessary just to test a tool change - copying the existing ones is faster:
+  ```bash
+  cp /path/to/main/checkout/.env .
+  rsync -a --exclude 'conversations.db*' /path/to/main/checkout/data/ data/
+  ```
+
 ## Add cases to the tool-selection eval
 
 A new tool (or a new filter that makes an existing tool confusable with another) needs at least one entry in `backend/app/agent/dev_tools/tool_selection_labeled_set.json` — this is what actually checks the model *picks* the new tool for the questions it's meant to answer, not just that the tool is wired up correctly. Add:

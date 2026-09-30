@@ -8,6 +8,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
+from langchain_core.messages import AIMessage, HumanMessage
 from langsmith import traceable
 from pydantic import BaseModel
 
@@ -271,6 +272,10 @@ class AgentResult(BaseModel):
     citations: list[Citation] = []
     tool_citations: list[ToolCitation] = []
     downloads: list[DownloadSpec] = []
+    # Internal only (not surfaced by AskResponse) - the resolved download intent, stashed via
+    # _persist_download_turn so a later download follow-up's _extract_prior_tool_context can
+    # recover it instead of re-deriving everything from prose. See download_handler.py.
+    download_intent_context: dict | None = None
 
 
 def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
@@ -325,11 +330,17 @@ def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
     )
 
 
-def _persist_download_turn(graph, config: dict, question: str, answer_text: str) -> None:
-    """download_handler.py's early return skips graph.invoke(), so without this the turn never enters the checkpointer."""
+def _persist_download_turn(
+    graph, config: dict, question: str, answer_text: str, intent_context: dict | None = None
+) -> None:
+    """download_handler.py's early return skips graph.invoke(), so without this the turn never enters
+    the checkpointer. intent_context (when given) is stashed on the AIMessage's additional_kwargs so
+    a later download follow-up's _extract_prior_tool_context recovers the exact resolved values
+    instead of re-deriving them from rendered text - see download_handler.py._download_intent_context."""
+    ai_kwargs = {"additional_kwargs": {"download_intent": intent_context}} if intent_context else {}
     graph.update_state(
         config,
-        {"messages": [{"role": "user", "content": question}, {"role": "assistant", "content": answer_text}]},
+        {"messages": [HumanMessage(content=question), AIMessage(content=answer_text, **ai_kwargs)]},
     )
 
 
@@ -354,7 +365,9 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
     if _looks_like_download_request(question) or _is_download_followup(recent_messages):
         download_result = handle_download_request(question, conversation_id, recent_messages)
         if download_result is not None:
-            _persist_download_turn(graph, config, question, download_result.answer_text)
+            _persist_download_turn(
+                graph, config, question, download_result.answer_text, download_result.download_intent_context
+            )
             return download_result
 
     _tool_call_log.set([])

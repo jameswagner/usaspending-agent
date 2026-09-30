@@ -293,6 +293,24 @@ class USASpendingClient:
         data = self._get("/api/v2/download/status", params={"file_name": file_name})
         return DownloadStatusResponse(**data)
 
+    @traceable(run_type="tool", name="download_contract")
+    def download_contract(self, award_id: str, file_format: str = "csv") -> DownloadJobResponse:
+        """POST /api/v2/download/contract/ - single contract award's full file, by generated_unique_award_id."""
+        data = self._post("/api/v2/download/contract/", {"award_id": award_id, "file_format": file_format})
+        return DownloadJobResponse(**data)
+
+    @traceable(run_type="tool", name="download_assistance")
+    def download_assistance(self, award_id: str, file_format: str = "csv") -> DownloadJobResponse:
+        """POST /api/v2/download/assistance/ - single grant/loan/assistance award's full file."""
+        data = self._post("/api/v2/download/assistance/", {"award_id": award_id, "file_format": file_format})
+        return DownloadJobResponse(**data)
+
+    @traceable(run_type="tool", name="download_idv")
+    def download_idv(self, award_id: str, file_format: str = "csv") -> DownloadJobResponse:
+        """POST /api/v2/download/idv/ - single IDV award's full file."""
+        data = self._post("/api/v2/download/idv/", {"award_id": award_id, "file_format": file_format})
+        return DownloadJobResponse(**data)
+
     @traceable(run_type="tool", name="get_agency_budgetary_resources")
     def get_agency_budgetary_resources(self, toptier_code: str) -> AgencyBudgetaryResourcesResponse:
         """No fiscal_year param - the live API always returns every year it

@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from backend.app.agent.download_pilot import (
+from backend.app.agent.download_handler import (
     DownloadIntent,
     _extract_download_intent,
     _is_download_followup,
@@ -116,7 +116,7 @@ class TestExtractDownloadIntent:
         response = make_tool_use_response(
             {"wants_download": False, "agency_raw": "NSF", "start_year": 2024, "end_year": 2024}
         )
-        with patch("backend.app.agent.download_pilot._get_client") as get_client:
+        with patch("backend.app.agent.download_handler._get_client") as get_client:
             get_client.return_value.messages.create.return_value = response
             result = _extract_download_intent("how is NSF spending broken down by NAICS code in 2024")
         assert result is None
@@ -125,7 +125,7 @@ class TestExtractDownloadIntent:
         response = make_tool_use_response(
             {"wants_download": True, "agency_raw": "NSF", "start_year": 2024, "end_year": 2024}
         )
-        with patch("backend.app.agent.download_pilot._get_client") as get_client:
+        with patch("backend.app.agent.download_handler._get_client") as get_client:
             get_client.return_value.messages.create.return_value = response
             result = _extract_download_intent("download NSF's FY2024 awards as a CSV")
         assert result is not None
@@ -134,7 +134,7 @@ class TestExtractDownloadIntent:
 
 class TestHandleDownloadRequest:
     def test_unsupported_endpoint_returns_fixed_message_without_calling_client(self):
-        with patch("backend.app.agent.download_pilot._get_usaspending_client") as get_client:
+        with patch("backend.app.agent.download_handler._get_usaspending_client") as get_client:
             result = handle_download_request("download disaster relief spending data", "conv-1")
         get_client.assert_not_called()
         assert result is not None
@@ -143,7 +143,7 @@ class TestHandleDownloadRequest:
 
     def test_ambiguous_intent_falls_through_to_tool_loop(self):
         with patch(
-            "backend.app.agent.download_pilot._extract_download_intent", return_value=None
+            "backend.app.agent.download_handler._extract_download_intent", return_value=None
         ):
             result = handle_download_request("download the NSF data", "conv-1")
         assert result is None
@@ -169,16 +169,16 @@ class TestHandleDownloadRequest:
             HumanMessage(content="download NSF's January 2024 awards as a CSV"),
             AIMessage(content="Your download is ready: 1 row in x.zip.\nhttps://..."),
         ]
-        with patch("backend.app.agent.download_pilot._extract_download_intent", side_effect=fake_extract), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client):
+        with patch("backend.app.agent.download_handler._extract_download_intent", side_effect=fake_extract), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
             handle_download_request("how about February 2024", "conv-1", recent_messages)
         assert "January 2024" in captured["history_block"]
 
     def test_unresolvable_agency_falls_through_to_tool_loop(self):
         intent = DownloadIntent(agency_raw="Not A Real Agency", start_year=2024, end_year=2024)
         client = FakeDownloadClient(agency=None)
-        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=intent), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client):
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
             result = handle_download_request("download Not A Real Agency's awards", "conv-1")
         assert result is None
 
@@ -193,8 +193,8 @@ class TestHandleDownloadRequest:
             file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=456,
         )
         client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
-        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=intent), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client):
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
             result = handle_download_request("download NSF's FY2024 awards as a CSV", "conv-1")
         assert result is not None
         assert len(result.downloads) == 1
@@ -222,8 +222,8 @@ class TestHandleDownloadRequest:
             file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=1,
         )
         client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
-        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=intent), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client):
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
             handle_download_request("download NSF's January 2024 awards as a CSV", "conv-1")
         assert client.last_filters.time_period[0].start_date == "2024-01-01"
         assert client.last_filters.time_period[0].end_date == "2024-01-31"
@@ -240,14 +240,14 @@ class TestHandleDownloadRequest:
 
         january = DownloadIntent(agency_raw="NSF", start_date="2024-01-01", end_date="2024-01-31")
         client_jan = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
-        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=january), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client_jan):
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=january), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client_jan):
             handle_download_request("download NSF's January 2024 awards as a CSV", "conv-1")
 
         february = DownloadIntent(agency_raw="NSF", start_date="2024-02-01", end_date="2024-02-29")
         client_feb = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
-        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=february), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client_feb):
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=february), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client_feb):
             handle_download_request("download NSF's February 2024 awards as a CSV", "conv-1")
 
         assert client_jan.last_filters.time_period != client_feb.last_filters.time_period
@@ -264,9 +264,9 @@ class TestHandleDownloadRequest:
         )
         # Enough "running" statuses to exhaust the poll loop regardless of interval/timeout constants.
         client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[running] * 50)
-        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=intent), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client), \
-             patch("backend.app.agent.download_pilot.time.sleep"):
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client), \
+             patch("backend.app.agent.download_handler.time.sleep"):
             result = handle_download_request("download NSF's FY2024 awards as a CSV", "conv-1")
         assert result is not None
         assert result.downloads[0].status == "running"
@@ -289,9 +289,9 @@ class TestHandleDownloadRequest:
             file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=456,
         )
         client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[ready, finished])
-        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=intent), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client), \
-             patch("backend.app.agent.download_pilot.time.sleep"):
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client), \
+             patch("backend.app.agent.download_handler.time.sleep"):
             result = handle_download_request("download NSF's FY2024 awards as a CSV", "conv-1")
         assert result.downloads[0].status == "finished"
         assert result.downloads[0].url == finished.file_url
@@ -309,9 +309,9 @@ class TestHandleDownloadRequest:
         )
         early_404 = USASpendingAPIError("404: Download job with filename x.zip does not exist.")
         client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[early_404, finished])
-        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=intent), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client), \
-             patch("backend.app.agent.download_pilot.time.sleep"):
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client), \
+             patch("backend.app.agent.download_handler.time.sleep"):
             result = handle_download_request("download NSF's FY2024 awards as a CSV", "conv-1")
         assert result.downloads[0].status == "finished"
 
@@ -326,8 +326,8 @@ class TestHandleDownloadRequest:
             file_url="https://files.usaspending.gov/generated_downloads/x.zip", message="internal error",
         )
         client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[failed])
-        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=intent), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client):
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
             result = handle_download_request("download NSF's FY2024 awards as a CSV", "conv-1")
         assert result is not None
         assert "failed to generate" in result.answer_text
@@ -337,8 +337,8 @@ class TestHandleDownloadRequest:
     def test_api_error_returns_error_message(self):
         intent = DownloadIntent(agency_raw="NSF", start_year=2024, end_year=2024)
         client = FakeDownloadClient(agency=make_agency(), raises=USASpendingAPIError("500: boom"))
-        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=intent), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client):
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
             result = handle_download_request("download NSF's FY2024 awards as a CSV", "conv-1")
         assert result is not None
         assert "This download failed" in result.answer_text
@@ -349,7 +349,7 @@ class TestSpendingLevel:
     """Compatibility-table mapping from DownloadIntent.spending_level to the API's array -
     see #277: /download/search/'s spending_level members are fully independent (["awards"]
     alone excludes sub-awards), unlike the legacy /download/awards/ and /download/transactions/
-    endpoints this pilot preserves parity with."""
+    endpoints this module preserves parity with."""
 
     def _run(self, spending_level, agency="NSF"):
         intent = DownloadIntent(agency_raw=agency, start_year=2024, end_year=2024, spending_level=spending_level)
@@ -362,8 +362,8 @@ class TestSpendingLevel:
             file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=1,
         )
         client = FakeDownloadClient(agency=make_agency(agency), job=job, statuses=[finished])
-        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=intent), \
-             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client):
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
             result = handle_download_request(f"download NSF's FY2024 {spending_level}", "conv-1")
         return result, client
 

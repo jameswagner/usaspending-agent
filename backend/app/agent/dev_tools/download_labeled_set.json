@@ -1,9 +1,9 @@
 {
   "_notes": [
-    "Labeled set for eval_download_pilot.py. Each entry has a 'question' plus exactly one of: 'expect_download' (bool - a real AgentResult.downloads entry should come back, status finished or still-generating), 'expect_not_supported' (bool - a fixed 'isn't supported yet' answer for a download endpoint this pilot doesn't cover), or 'expect_fallback_to_loop' (bool - the download gate should NOT short-circuit; the question should reach the normal tool-calling loop unchanged, e.g. it doesn't actually name a download-shaped request, or the agency/year range is too ambiguous to extract confidently).",
+    "Labeled set for eval_download_handler.py. Each entry has a 'question' plus exactly one of: 'expect_download' (bool - a real AgentResult.downloads entry should come back, status finished or still-generating), 'expect_not_supported' (bool - a fixed 'isn't supported yet' answer for a download endpoint this module does not cover), or 'expect_fallback_to_loop' (bool - the download gate should NOT short-circuit; the question should reach the normal tool-calling loop unchanged, e.g. it doesn't actually name a download-shaped request, or the agency/year range is too ambiguous to extract confidently).",
     "'expect_spending_level' (optional, paired with expect_download: true) - asserts which of awards/transactions/subawards was actually resolved (via the citation), not just that a download happened. See #277: without this, a question asking for transactions that silently downloaded awards would still score a pass.",
     "'spending_level_confusable' entries (see #277) target keyword confusability between 'transactions' and 'subawards' phrasing specifically - agency/year/award_type are held fixed across them since those don't interact with spending_level classification.",
-    "category is filled in by eval_download_pilot.py from the top-level key, not stored per-entry."
+    "category is filled in by eval_download_handler.py from the top-level key, not stored per-entry."
   ],
   "clean_download_request": [
     {"question": "Can I download NSF's January 2024 awards as a CSV?", "expect_download": true, "expect_spending_level": "awards"},

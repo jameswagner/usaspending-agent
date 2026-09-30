@@ -1,4 +1,4 @@
-"""Deterministic pre-tool-loop download-request pipeline, scoped to POST /api/v2/download/awards/ only."""
+"""Deterministic pre-tool-loop download-request pipeline, backed by POST /api/v2/download/search/."""
 from __future__ import annotations
 
 import json
@@ -33,7 +33,7 @@ _DOWNLOAD_INTENT_PATTERN = (
     "raw data", "data file",
 )
 
-# Endpoints this pilot defers - matched before the extraction call runs, so an unsupported request never burns one.
+# Endpoints this module defers - matched before the extraction call runs, so an unsupported request never burns one.
 # "transaction"/"sub-award"/"subaward" are deliberately absent - spending_level (below) now covers them.
 _UNSUPPORTED_DOWNLOAD_PATTERN = {
     "account": "account-level data",
@@ -45,7 +45,7 @@ _UNSUPPORTED_DOWNLOAD_PATTERN = {
 _POLL_INTERVAL_SECONDS = 4
 _POLL_TIMEOUT_SECONDS = 90
 
-# Fixed - this pilot rules out free-form column selection.
+# Fixed - this module rules out free-form column selection.
 _DOWNLOAD_COLUMNS_BY_LEVEL = {
     "awards": [
         "award_id_piid",
@@ -81,7 +81,7 @@ _DOWNLOAD_COLUMNS_BY_LEVEL = {
 # independent (["awards"] alone excludes sub-awards) - unlike the legacy /download/awards/
 # and /download/transactions/ endpoints, which always bundle subawards in. This table
 # preserves that legacy bundling so switching to /download/search/ is a strict widening,
-# not a silent regression for the two levels this pilot already shipped.
+# not a silent regression for the two levels already shipped before this table existed.
 _SPENDING_LEVEL_TO_API_ARRAY = {
     "awards": ["awards", "subawards"],
     "transactions": ["transactions", "subawards"],

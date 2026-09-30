@@ -206,6 +206,66 @@ class AgencySubComponentsResponse(BaseModel):
     messages: list[str] | None = None
 
 
+class FederalAccountBreakdown(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    name: str
+    id: str
+    total_obligations: float
+    total_outlays: float
+    total_budgetary_resources: float
+
+
+class SubComponentTotals(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    total_obligations: float
+    total_outlays: float
+    total_budgetary_resources: float
+
+
+class AgencySubComponentFederalAccountsResponse(BaseModel):
+    """`totals` mirrors the corresponding row in the parent
+    AgencySubComponentsResponse.results list - a cross-check that the
+    right bureau was targeted."""
+
+    model_config = ConfigDict(extra="allow")
+
+    toptier_code: str
+    bureau_slug: str
+    fiscal_year: int
+    totals: SubComponentTotals
+    page_metadata: PageMetadata | None = None
+    results: list[FederalAccountBreakdown]
+    messages: list[str] | None = None
+
+
+class AwardCategoryObligation(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    category: str
+    aggregated_amount: float
+
+
+class AgencyObligationsByAwardCategoryResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    total_aggregated_amount: float
+    results: list[AwardCategoryObligation]
+    messages: list[str] | None = None
+
+
+class AgencyAwardsResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    toptier_code: str
+    fiscal_year: int
+    latest_action_date: str | None = None
+    transaction_count: int
+    obligations: float
+    messages: list[str] | None = None
+
+
 class CategoryResult(BaseModel):
     model_config = ConfigDict(extra="allow")
 

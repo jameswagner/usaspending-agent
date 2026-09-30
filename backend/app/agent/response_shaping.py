@@ -328,8 +328,22 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
     agency_name = (context or {}).get("agency_name")
 
     if tool_name == "get_agency_award_breakdown":
+        group_by = (context or {}).get("group_by", "sub_agency")
+        # No breakdown to plot - same reasoning as get_agency_budget's NEVER_CHART_TOOLS entry.
+        if group_by == "whole_agency":
+            return None
         if len(structured_result.results) < 2:
             return None
+        if group_by == "award_category":
+            title = "Award obligations by category"
+            if agency_name:
+                title += f" — {agency_name}"
+            return ChartSpec(
+                chart_type="bar",
+                title=title,
+                labels=[_label_category(r.category) for r in structured_result.results],
+                values=[r.aggregated_amount for r in structured_result.results],
+            )
         title = "Award obligations by sub-agency"
         if agency_name:
             title += f" — {agency_name}"
@@ -343,8 +357,9 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
     if tool_name == "get_agency_budget_by_subcomponent":
         if len(structured_result.results) < 2:
             return None
-        title = "Budgetary resources by sub-component"
-        if agency_name:
+        bureau = (context or {}).get("bureau")
+        title = f"Federal accounts — {bureau}" if bureau else "Budgetary resources by sub-component"
+        if agency_name and not bureau:
             title += f" — {agency_name}"
         return ChartSpec(
             chart_type="bar",
@@ -643,12 +658,24 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         params = {"agency_name": context["agency_name"], "fiscal_year": context["fiscal_year"]}
         if context.get("award_type"):
             params["award_type"] = context["award_type"]
-        description = f"Award breakdown by sub-agency, {params['agency_name']}, FY{params['fiscal_year']}"
+        group_by = context.get("group_by", "sub_agency")
+        params["group_by"] = group_by
+        label = {
+            "sub_agency": "Award breakdown by sub-agency",
+            "award_category": "Award obligations by category",
+            "whole_agency": "Award activity",
+        }[group_by]
+        description = f"{label}, {params['agency_name']}, FY{params['fiscal_year']}"
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
 
     if tool_name == "get_agency_budget_by_subcomponent":
         params = {"agency_name": context["agency_name"], "fiscal_year": context["fiscal_year"]}
-        description = f"Budgetary resources by sub-component, {params['agency_name']}, FY{params['fiscal_year']}"
+        bureau = context.get("bureau")
+        if bureau:
+            params["bureau"] = bureau
+            description = f"Federal accounts, {bureau} ({params['agency_name']}), FY{params['fiscal_year']}"
+        else:
+            description = f"Budgetary resources by sub-component, {params['agency_name']}, FY{params['fiscal_year']}"
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
 
     if tool_name == "get_disaster_spending_overview":

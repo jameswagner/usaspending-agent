@@ -106,6 +106,8 @@ from backend.app.agent.tools import (
     _tool_call_log,
     _truncation_note,
     _unresolved_award_id_hint,
+    get_agency_award_breakdown,
+    get_agency_budget,
     get_agency_budget_by_subcomponent,
     get_spending_explorer_breakdown_raw,
 )
@@ -122,8 +124,14 @@ from backend.app.agent.tools.location import (
 )
 from backend.app.agent.tools.spending import get_spending_by_category, search_awards
 from backend.app.usaspending import (
+    AgencyAwardsResponse,
+    AgencyBudgetaryResourcesResponse,
+    AgencyObligationsByAwardCategoryResponse,
     AgencySubAgencyResponse,
+    AgencySubComponentFederalAccountsResponse,
     AgencySubComponentsResponse,
+    AgencyYearBudget,
+    AwardCategoryObligation,
     AwardFundingResponse,
     AwardFundingRow,
     AwardTypeCounts,
@@ -133,6 +141,7 @@ from backend.app.usaspending import (
     DisasterFunding,
     DisasterOverviewResponse,
     DisasterSpending,
+    FederalAccountBreakdown,
     GeographyTypeResult,
     IDVAmountsResponse,
     ObligationByPeriod,
@@ -150,6 +159,7 @@ from backend.app.usaspending import (
     SubAgencyBreakdown,
     SubAgencyOffice,
     SubComponentBreakdown,
+    SubComponentTotals,
     TimePeriodGroup,
     TimeResult,
     ToptierAgency,
@@ -450,6 +460,48 @@ class TestGetAgencyBudgetBySubcomponentChart:
     def test_single_subcomponent_returns_none(self):
         assert should_chart("get_agency_budget_by_subcomponent", make_sub_components_response(1)) is None
 
+    def test_bureau_drill_down_produces_bar_spec_titled_with_bureau(self):
+        response = AgencySubComponentFederalAccountsResponse(
+            toptier_code="012",
+            bureau_slug="food-and-nutrition-service",
+            fiscal_year=2024,
+            totals=SubComponentTotals(total_obligations=1.0, total_outlays=1.0, total_budgetary_resources=1.0),
+            results=[
+                FederalAccountBreakdown(name=f"Account {i}", id=f"012-{i}", total_obligations=float(i), total_outlays=float(i), total_budgetary_resources=float(i * 10))
+                for i in range(3)
+            ],
+        )
+        spec = should_chart(
+            "get_agency_budget_by_subcomponent", response,
+            context={"agency_name": "USDA", "bureau": "Food and Nutrition Service"},
+        )
+        assert spec is not None
+        assert spec.title == "Federal accounts — Food and Nutrition Service"
+        assert spec.labels == ["Account 0", "Account 1", "Account 2"]
+
+
+def make_award_category_response(n: int) -> AgencyObligationsByAwardCategoryResponse:
+    return AgencyObligationsByAwardCategoryResponse(
+        total_aggregated_amount=float(sum(range(n))),
+        results=[AwardCategoryObligation(category=f"category_{i}", aggregated_amount=float(i)) for i in range(n)],
+    )
+
+
+class TestGetAgencyAwardBreakdownGroupByChart:
+    def test_award_category_produces_bar_spec(self):
+        spec = should_chart(
+            "get_agency_award_breakdown", make_award_category_response(3),
+            context={"group_by": "award_category"},
+        )
+        assert spec is not None
+        assert spec.chart_type == "bar"
+        assert spec.labels == ["Category 0", "Category 1", "Category 2"]
+        assert spec.values == [0.0, 1.0, 2.0]
+
+    def test_whole_agency_is_never_chart_worthy(self):
+        response = AgencyAwardsResponse(toptier_code="012", fiscal_year=2024, transaction_count=1, obligations=1.0)
+        assert should_chart("get_agency_award_breakdown", response, context={"group_by": "whole_agency"}) is None
+
 
 class TestFormatAgencySubComponents:
     def test_formats_all_three_figures(self):
@@ -518,6 +570,46 @@ class TestGetAgencyBudgetBySubcomponent:
         assert "No sub-component budget data found" in result
         assert "()" not in result
 
+    def test_bureau_resolves_slug_and_returns_federal_accounts(self, monkeypatch):
+        parent = AgencySubComponentsResponse(
+            toptier_code="012",
+            fiscal_year=2024,
+            results=[
+                SubComponentBreakdown(name="Food and Nutrition Service", id="food-and-nutrition-service", total_budgetary_resources=1.0, total_obligations=1.0, total_outlays=1.0),
+                SubComponentBreakdown(name="Forest Service", id="forest-service", total_budgetary_resources=2.0, total_obligations=2.0, total_outlays=2.0),
+            ],
+        )
+        accounts = AgencySubComponentFederalAccountsResponse(
+            toptier_code="012", bureau_slug="food-and-nutrition-service", fiscal_year=2024,
+            totals=SubComponentTotals(total_obligations=1.0, total_outlays=1.0, total_budgetary_resources=1.0),
+            results=[FederalAccountBreakdown(name="SNAP", id="012-3505", total_obligations=1.0, total_outlays=1.0, total_budgetary_resources=1.0)],
+        )
+        client = self._mock_client(parent, monkeypatch, agency=make_agency("Department of Agriculture"))
+        seen = {}
+
+        def _get_accounts(toptier_code, bureau_slug, **kw):
+            seen["bureau_slug"] = bureau_slug
+            return accounts
+
+        client.get_agency_sub_component_federal_accounts = _get_accounts
+        result = get_agency_budget_by_subcomponent.func(
+            agency_name="Department of Agriculture", fiscal_year=2024, bureau="Food and Nutrition"
+        )
+        assert seen["bureau_slug"] == "food-and-nutrition-service"
+        assert "SNAP" in result
+
+    def test_unmatched_bureau_returns_failure_string_naming_known_bureaus(self, monkeypatch):
+        parent = AgencySubComponentsResponse(
+            toptier_code="012", fiscal_year=2024,
+            results=[SubComponentBreakdown(name="Forest Service", id="forest-service", total_budgetary_resources=1.0, total_obligations=1.0, total_outlays=1.0)],
+        )
+        self._mock_client(parent, monkeypatch, agency=make_agency("Department of Agriculture"))
+        result = get_agency_budget_by_subcomponent.func(
+            agency_name="Department of Agriculture", fiscal_year=2024, bureau="Not A Real Bureau"
+        )
+        assert "This query failed" in result
+        assert "Forest Service" in result
+
     def test_children_are_not_shown_by_default(self):
         response = AgencySubAgencyResponse(
             toptier_code="075",
@@ -561,6 +653,86 @@ class TestGetAgencyBudgetBySubcomponent:
         )
         result = _format_agency_award_breakdown(response, include_offices=True)
         assert "(unnamed office, code 68HERH)" in result
+
+
+class TestGetAgencyAwardBreakdownGroupBy:
+    def _mock_client(self, monkeypatch, agency=_UNSET):
+        resolved_agency = make_agency("Department of Agriculture") if agency is _UNSET else agency
+        client = FakeClient(resolved_agency)
+        monkeypatch.setattr("backend.app.agent.tools._shared._get_usaspending_client", lambda: client)
+        return client
+
+    def test_default_sub_agency_behavior_is_unchanged(self, monkeypatch):
+        client = self._mock_client(monkeypatch)
+        client.get_agency_sub_agency_breakdown = lambda *a, **kw: make_sub_agency_response(2)
+        result = get_agency_award_breakdown.func(agency_name="Department of Agriculture", fiscal_year=2024)
+        assert "SA0" in result and "SA1" in result
+
+    def test_award_category_returns_category_breakdown(self, monkeypatch):
+        client = self._mock_client(monkeypatch)
+        client.get_agency_obligations_by_award_category = lambda *a, **kw: make_award_category_response(2)
+        result = get_agency_award_breakdown.func(agency_name="Department of Agriculture", fiscal_year=2024, group_by="award_category")
+        assert "category_0" in result
+        assert "Total: $1.00" in result
+
+    def test_award_category_rejects_award_type(self):
+        result = get_agency_award_breakdown.func(
+            agency_name="Department of Agriculture", fiscal_year=2024, group_by="award_category", award_type="grants",
+        )
+        assert "award_type is not valid" in result
+
+    def test_whole_agency_returns_single_total(self, monkeypatch):
+        client = self._mock_client(monkeypatch)
+        client.get_agency_awards = lambda *a, **kw: AgencyAwardsResponse(
+            toptier_code="012", fiscal_year=2024, transaction_count=5, obligations=10.0,
+        )
+        result = get_agency_award_breakdown.func(agency_name="Department of Agriculture", fiscal_year=2024, group_by="whole_agency")
+        assert "5 transactions" in result
+        assert "$10.00" in result
+
+    def test_whole_agency_rejects_include_offices(self):
+        result = get_agency_award_breakdown.func(
+            agency_name="Department of Agriculture", fiscal_year=2024, group_by="whole_agency", include_offices=True,
+        )
+        assert "include_offices is only valid" in result
+
+
+class TestGetAgencyBudgetGroupBy:
+    def _mock_client(self, monkeypatch, agency=_UNSET):
+        resolved_agency = make_agency("Department of Agriculture") if agency is _UNSET else agency
+        client = FakeClient(resolved_agency)
+        client.get_agency_sub_components = lambda *a, **kw: make_sub_components_response(2)
+        monkeypatch.setattr("backend.app.agent.tools._shared._get_usaspending_client", lambda: client)
+        return client
+
+    def test_default_range_behavior_is_unchanged(self, monkeypatch):
+        client = self._mock_client(monkeypatch)
+        client.get_agency_budgetary_resources = lambda *a, **kw: AgencyBudgetaryResourcesResponse(
+            toptier_code="012", agency_data_by_year=[
+                AgencyYearBudget(fiscal_year=2024, agency_budgetary_resources=1.0, agency_total_obligated=1.0, agency_total_outlayed=1.0),
+            ],
+        )
+        result = get_agency_budget.func(agency_name="Department of Agriculture", start_fiscal_year=2024, end_fiscal_year=2024)
+        assert "FY2024" in result
+
+    def test_sub_component_delegates_to_get_agency_budget_by_subcomponent(self, monkeypatch):
+        self._mock_client(monkeypatch)
+        result = get_agency_budget.func(
+            agency_name="Department of Agriculture", start_fiscal_year=2024, end_fiscal_year=2024, group_by="sub_component",
+        )
+        assert "Sub-Component 0" in result
+
+    def test_sub_component_rejects_multi_year_range(self):
+        result = get_agency_budget.func(
+            agency_name="Department of Agriculture", start_fiscal_year=2022, end_fiscal_year=2024, group_by="sub_component",
+        )
+        assert "only supports a single fiscal year" in result
+
+    def test_bureau_without_group_by_is_rejected(self):
+        result = get_agency_budget.func(
+            agency_name="Department of Agriculture", start_fiscal_year=2024, end_fiscal_year=2024, bureau="Food and Nutrition Service",
+        )
+        assert 'bureau is only valid with group_by="sub_component"' in result
 
 
 class TestSpendingByGeographyChart:
@@ -901,7 +1073,10 @@ class TestBuildToolCitation:
     def test_get_agency_award_breakdown(self):
         citation = build_tool_citation(
             "get_agency_award_breakdown",
-            {"agency_name": "National Science Foundation", "fiscal_year": 2024, "award_type": "grants"},
+            {
+                "agency_name": "National Science Foundation", "fiscal_year": 2024,
+                "award_type": "grants", "group_by": "sub_agency",
+            },
         )
         assert citation is not None
         assert citation.tool_name == "get_agency_award_breakdown"
@@ -909,15 +1084,31 @@ class TestBuildToolCitation:
             "agency_name": "National Science Foundation",
             "fiscal_year": 2024,
             "award_type": "grants",
+            "group_by": "sub_agency",
         }
         assert citation.description == "Award breakdown by sub-agency, National Science Foundation, FY2024"
 
     def test_get_agency_award_breakdown_omits_award_type_when_not_set(self):
         citation = build_tool_citation(
             "get_agency_award_breakdown",
-            {"agency_name": "National Science Foundation", "fiscal_year": 2024, "award_type": None},
+            {"agency_name": "National Science Foundation", "fiscal_year": 2024, "award_type": None, "group_by": "sub_agency"},
         )
         assert "award_type" not in citation.parameters
+
+    def test_get_agency_award_breakdown_group_by_award_category(self):
+        citation = build_tool_citation(
+            "get_agency_award_breakdown",
+            {"agency_name": "USDA", "fiscal_year": 2024, "award_type": None, "group_by": "award_category"},
+        )
+        assert citation.parameters["group_by"] == "award_category"
+        assert citation.description == "Award obligations by category, USDA, FY2024"
+
+    def test_get_agency_award_breakdown_group_by_whole_agency(self):
+        citation = build_tool_citation(
+            "get_agency_award_breakdown",
+            {"agency_name": "USDA", "fiscal_year": 2024, "award_type": None, "group_by": "whole_agency"},
+        )
+        assert citation.description == "Award activity, USDA, FY2024"
 
     def test_get_agency_budget_by_subcomponent(self):
         citation = build_tool_citation(
@@ -933,6 +1124,17 @@ class TestBuildToolCitation:
         assert citation.description == (
             "Budgetary resources by sub-component, Department of Health and Human Services, FY2024"
         )
+
+    def test_get_agency_budget_by_subcomponent_with_bureau(self):
+        citation = build_tool_citation(
+            "get_agency_budget_by_subcomponent",
+            {
+                "agency_name": "Department of Agriculture", "fiscal_year": 2024,
+                "toptier_code": "012", "bureau": "Food and Nutrition Service",
+            },
+        )
+        assert citation.parameters["bureau"] == "Food and Nutrition Service"
+        assert citation.description == "Federal accounts, Food and Nutrition Service (Department of Agriculture), FY2024"
 
     def test_get_disaster_spending_overview_def_codes_is_a_string_not_a_list(self):
         citation = build_tool_citation(

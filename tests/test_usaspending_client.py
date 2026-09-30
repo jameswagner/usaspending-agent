@@ -628,6 +628,63 @@ class TestGetDisasterOverview:
         assert captured["params"] is None
 
 
+class TestSingleAwardDownloads:
+    """Real response shape from each endpoint's own live API contract example."""
+
+    def _fake_job_response(self, prefix: str) -> dict:
+        return {
+            "status_url": f"http://localhost:8000/api/v2/download/status?file_name={prefix}_x.zip",
+            "file_name": f"{prefix}_x.zip",
+            "file_url": f"/csv_downloads/{prefix}_x.zip",
+            "download_request": {},
+        }
+
+    def test_download_contract_posts_award_id_and_default_format(self, monkeypatch):
+        client = USASpendingClient()
+        captured: dict = {}
+
+        def fake_post(path, body):
+            captured["path"] = path
+            captured["body"] = body
+            return self._fake_job_response("CONT")
+
+        monkeypatch.setattr(client, "_post", fake_post)
+        job = client.download_contract("CONT_AWD_N0002404C2105_9700_-NONE-_-NONE-")
+        assert captured["path"] == "/api/v2/download/contract/"
+        assert captured["body"] == {
+            "award_id": "CONT_AWD_N0002404C2105_9700_-NONE-_-NONE-", "file_format": "csv",
+        }
+        assert job.file_name == "CONT_x.zip"
+
+    def test_download_assistance_posts_award_id(self, monkeypatch):
+        client = USASpendingClient()
+        captured: dict = {}
+
+        def fake_post(path, body):
+            captured["path"] = path
+            captured["body"] = body
+            return self._fake_job_response("ASST")
+
+        monkeypatch.setattr(client, "_post", fake_post)
+        client.download_assistance("ASST_NON_H79TI081692_7522")
+        assert captured["path"] == "/api/v2/download/assistance/"
+        assert captured["body"] == {"award_id": "ASST_NON_H79TI081692_7522", "file_format": "csv"}
+
+    def test_download_idv_posts_award_id(self, monkeypatch):
+        client = USASpendingClient()
+        captured: dict = {}
+
+        def fake_post(path, body):
+            captured["path"] = path
+            captured["body"] = body
+            return self._fake_job_response("CONT")
+
+        monkeypatch.setattr(client, "_post", fake_post)
+        client.download_idv("CONT_IDV_BBGBPA08452513_9568")
+        assert captured["path"] == "/api/v2/download/idv/"
+        assert captured["body"] == {"award_id": "CONT_IDV_BBGBPA08452513_9568", "file_format": "csv"}
+
+
 class TestGetAgencySubAgencyBreakdown:
     # Real response shape from the live API contract's own example
     # (usaspending-api's sub_agency.md, SBA FY2018), not a hand-guessed

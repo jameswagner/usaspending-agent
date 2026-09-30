@@ -227,5 +227,4 @@ web/                         Next.js frontend (separate process; proxies to the
                                 FastAPI API through web/src/app/api/ask/route.ts)
 tests/                       Unit tests
 BACKLOG.md                   Known gaps and deferred work
-private/                     Gitignored: demo script, dev narrative, blog posts - not part of the deliverable
 ```

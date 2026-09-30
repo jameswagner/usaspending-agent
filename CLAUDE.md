@@ -61,6 +61,12 @@ vigilance:
   discard it — set it aside with `git stash push -m "<file> belongs to
   <other branch/session>" -- <path>` and flag it to the user rather than
   guessing.
+- **Running the backend live from a fresh worktree** (to functionally test
+  a change, not just run the unit suite): `.env` and `data/` (the prebuilt
+  Chroma/Whoosh retrieval indexes) are gitignored, so a new worktree starts
+  without either — copy both from a working checkout first, or startup/the
+  first live call fails. See docs/adding-a-tool.md's Testing section for
+  the exact commands and error messages this produces.
 
 ## Verify against the live API and upstream repo, not memory or docstrings alone
 

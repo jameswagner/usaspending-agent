@@ -660,11 +660,15 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
             params["award_type"] = context["award_type"]
         group_by = context.get("group_by", "sub_agency")
         params["group_by"] = group_by
+        sub_agency = context.get("sub_agency")
         label = {
             "sub_agency": "Award breakdown by sub-agency",
             "award_category": "Award obligations by category",
             "whole_agency": "Award activity",
         }[group_by]
+        if sub_agency:
+            params["sub_agency"] = sub_agency
+            label = f"Awarding offices, {sub_agency}"
         description = f"{label}, {params['agency_name']}, FY{params['fiscal_year']}"
         return ToolCitation(tool_name=tool_name, parameters=params, description=description)
 

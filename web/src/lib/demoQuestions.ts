@@ -90,6 +90,12 @@ const TEMPLATES: DemoQuestionTemplate[] = [
   { generate: () => "Which part of the Department of Health and Human Services has the most funding?" },
   { generate: () => "What federal accounts does the Food and Nutrition Service spend from in FY2024?" },
   { generate: () => "How does the Department of Agriculture's FY2024 award spending split across contracts, grants, and loans?" },
+  // Download-shaped questions, kept in the same random pool as the rest -
+  // see backend/app/agent/dev_tools/download_labeled_set.json for entities
+  // confirmed to resolve a download live.
+  { generate: () => "Download NASA's FY2024 awards as a CSV." },
+  { generate: () => "Download HHS's FY2023 grant awards to a spreadsheet." },
+  { generate: () => "Export the Department of Education's FY2024 contract awards as a CSV file." },
 ];
 
 export const DEMO_QUESTIONS_SAMPLE_SIZE = 5;

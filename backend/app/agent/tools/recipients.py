@@ -190,7 +190,9 @@ def get_recipient_details(recipient_id: str, year: str = "all") -> str:
         logger.warning("get_recipient_details failed for %s: %s", recipient_id, e)
         return f"This query failed: {e}."
 
-    _record_tool_call("get_recipient_details", overview, {"recipient_id": recipient_id, "name": overview.name})
+    _record_tool_call(
+        "get_recipient_details", overview, {"recipient_id": recipient_id, "name": overview.name, "year": year}
+    )
     return _wrap_untrusted(_format_recipient_overview(overview))
 
 
@@ -237,7 +239,9 @@ def get_recipient_children(recipient_id: str, year: str = "all", limit: int = 25
         logger.warning("get_recipient_children failed for %s: %s", duns_or_uei, e)
         return f"This query failed: {e}."
 
-    _record_tool_call("get_recipient_children", children, {"recipient_id": recipient_id, "name": overview.name})
+    _record_tool_call(
+        "get_recipient_children", children, {"recipient_id": recipient_id, "name": overview.name, "year": year}
+    )
 
     if not children:
         return f"'{overview.name or recipient_id}' has no child recipients on file."

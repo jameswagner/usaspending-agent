@@ -681,17 +681,21 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         )
 
     if tool_name == "get_spending_by_category":
+        spending_level = context.get("spending_level", "transactions")
         params = {
             "category": context["category"],
             "start_year": context["start_year"],
             "end_year": context["end_year"],
+            "spending_level": spending_level,
         }
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
         time_period_type = context.get("time_period_type", "fiscal")
+        level_suffix = f" ({spending_level})" if spending_level != "transactions" else ""
         description = _with_naics_disclosure(
             f"{params['category']} breakdown, {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
+            f"{level_suffix}",
             context,
         )
         return ToolCitation(
@@ -699,17 +703,21 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         )
 
     if tool_name == "get_spending_over_time":
+        spending_level = context.get("spending_level", "transactions")
         params = {
             "start_year": context["start_year"],
             "end_year": context["end_year"],
             "group": context["group"],
+            "spending_level": spending_level,
         }
         _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
         scope = _citation_scope_label(context)
         time_period_type = context.get("time_period_type", "fiscal")
+        level_suffix = f" ({spending_level})" if spending_level != "transactions" else ""
         description = _with_naics_disclosure(
             f"Spending over time ({params['group']}), {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
+            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
+            f"{level_suffix}",
             context,
         )
         return ToolCitation(
@@ -873,6 +881,7 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
 
     if tool_name == "get_recipient_details":
         recipient_id = context["recipient_id"]
+        year = context.get("year", "all")
         # name falls back to the raw recipient_id only if the response
         # somehow carried no name at all - shouldn't happen per the live
         # recipient_id.md contract (name is nullable but real-world
@@ -882,18 +891,19 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
         label = context.get("name") or recipient_id
         return ToolCitation(
             tool_name=tool_name,
-            parameters={"recipient_id": recipient_id},
-            description=f"Recipient details: {label}",
-            url=f"{BASE_URL}/api/v2/recipient/{recipient_id}/",
+            parameters={"recipient_id": recipient_id, "year": year},
+            description=f"Recipient details: {label} ({year})",
+            url=f"{BASE_URL}/api/v2/recipient/{recipient_id}/?year={year}",
         )
 
     if tool_name == "get_recipient_children":
         recipient_id = context["recipient_id"]
+        year = context.get("year", "all")
         label = context.get("name") or recipient_id
         return ToolCitation(
             tool_name=tool_name,
-            parameters={"recipient_id": recipient_id},
-            description=f"Recipient children: {label}",
+            parameters={"recipient_id": recipient_id, "year": year},
+            description=f"Recipient children: {label} ({year})",
         )
 
     if tool_name == "code_execution":

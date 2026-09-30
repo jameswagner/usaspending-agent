@@ -8,13 +8,17 @@ from __future__ import annotations
 
 import contextvars
 import logging
+from typing import Literal
 
 from anthropic import beta_tool
 from langsmith import traceable
 from typing_extensions import Unpack
 
 from backend.app.usaspending import (
+    AgencyAwardsResponse,
+    AgencyObligationsByAwardCategoryResponse,
     AgencySubAgencyResponse,
+    AgencySubComponentFederalAccountsResponse,
     AgencySubComponentsResponse,
     AgencyYearBudget,
     ObligationByPeriod,
@@ -311,14 +315,19 @@ def _format_period_breakdown(periods: list[ObligationByPeriod]) -> str:
     return "Obligated, cumulative from the start of the fiscal year: " + ", ".join(parts)
 
 
+BudgetGroupBy = Literal["sub_component"]
+
+
 @beta_tool
 def get_agency_budget(
     agency_name: str,
     start_fiscal_year: int,
     end_fiscal_year: int,
     include_period_breakdown: bool = False,
+    group_by: BudgetGroupBy | None = None,
+    bureau: str | None = None,
 ) -> str:
-    """Get an agency's actual appropriated budgetary resources, obligations, and outlays for a fiscal year range. Use this specifically for "what is X's budget," "how much money does X have," or "how much has X actually paid out" questions.
+    """Get an agency's actual appropriated budgetary resources, obligations, and outlays. Use this specifically for "what is X's budget," "how much money does X have," or "how much has X actually paid out" questions - for a fiscal year range by default, or broken down by sub-component/bureau (e.g. NIH or CDC within HHS) for a single fiscal year with group_by="sub_component", or one named bureau's own federal accounts with group_by="sub_component" and bureau set.
 
     This is a genuinely different concept from what get_spending_by_category, get_spending_over_time, and search_awards report: those three track money obligated against specific contracts, grants, and loans (award-level spending activity), not the agency's appropriated budget authority. An agency's total budgetary resources for a fiscal year is NOT the same number as its total award spending in that year, and the two should never be presented as if interchangeable - if asked about budget/appropriations specifically, use this tool, not the spending tools, even though both involve dollar figures for the same agency.
 
@@ -327,23 +336,46 @@ def get_agency_budget(
         start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021. This endpoint's
             own data only goes back to FY2017 (a shorter history than the FY2008 floor the
             spending tools have) - a range starting earlier than that will just return whatever
-            years are actually available, not error.
+            years are actually available, not error. Must equal end_fiscal_year when group_by is
+            set - the sub-component/bureau breakdown is single-fiscal-year only.
         end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
-        include_period_breakdown: Set True only when the question is specifically about WHEN
-            during the fiscal year money was obligated (e.g. "how did NSF's obligations build up
-            over FY2024" or "was most of the budget obligated early or late in the year") - false
-            by default since most budget questions just want the yearly totals, and the
-            breakdown adds up to ~11 extra numbers per fiscal year. Each period's obligated
-            amount is CUMULATIVE from the start of that fiscal year through that period, not an
-            incremental amount for that period alone - e.g. period 6 is the running total through
-            that point in the year, not what was newly obligated in period 6. If you state what
-            share of the year's total a period represents, or how much changed between two
-            periods, call percentage_of or delta for that number - do not compute it yourself
-            just because it looks like simple subtraction or a percentage of a total you can
-            already see in this data.
+        include_period_breakdown: Only valid with group_by=None. Set True only when the question
+            is specifically about WHEN during the fiscal year money was obligated (e.g. "how did
+            NSF's obligations build up over FY2024" or "was most of the budget obligated early or
+            late in the year") - false by default since most budget questions just want the
+            yearly totals, and the breakdown adds up to ~11 extra numbers per fiscal year. Each
+            period's obligated amount is CUMULATIVE from the start of that fiscal year through
+            that period, not an incremental amount for that period alone - e.g. period 6 is the
+            running total through that point in the year, not what was newly obligated in period
+            6. If you state what share of the year's total a period represents, or how much
+            changed between two periods, call percentage_of or delta for that number - do not
+            compute it yourself just because it looks like simple subtraction or a percentage of
+            a total you can already see in this data.
+        group_by: None (default) for the agency's own yearly totals across the requested range.
+            "sub_component" to break the same figures down by sub-component/bureau for a single
+            fiscal year instead - use this for "which part of X has the most funding" questions.
+        bureau: Only valid with group_by="sub_component". Restrict to one named bureau/sub-
+            component (e.g. "Food and Nutrition Service" within USDA) instead of listing every
+            bureau, matched against the bureau names this tool itself returns when bureau is
+            omitted. Omit to list all bureaus.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
+
+    # Delegates to get_agency_budget_by_subcomponent, same pattern query_spending uses.
+    if group_by == "sub_component":
+        if include_period_breakdown:
+            return "include_period_breakdown is only valid with group_by=None."
+        if start_fiscal_year != end_fiscal_year:
+            return (
+                'group_by="sub_component" only supports a single fiscal year - call again with '
+                "start_fiscal_year == end_fiscal_year for each year needed."
+            )
+        return get_agency_budget_by_subcomponent(agency_name, start_fiscal_year, bureau)
+
+    if bureau is not None:
+        return 'bureau is only valid with group_by="sub_component".'
+
     try:
         toptier_code, years = get_agency_budget_raw(agency_name, start_fiscal_year, end_fiscal_year)
     except USASpendingAPIError as e:
@@ -413,12 +445,16 @@ def list_top_agencies_by_budget(limit: int = 10) -> str:
     return _wrap_untrusted(_format_top_agencies_by_budget(ranked))
 
 
+AwardBreakdownGroupBy = Literal["sub_agency", "award_category", "whole_agency"]
+
+
 @traceable(run_type="tool", name="get_agency_award_breakdown_raw")
 def get_agency_award_breakdown_raw(
     agency_name: str,
     fiscal_year: int,
     award_type: AwardType | None = None,
-) -> AgencySubAgencyResponse:
+    group_by: AwardBreakdownGroupBy = "sub_agency",
+) -> AgencySubAgencyResponse | AgencyObligationsByAwardCategoryResponse | AgencyAwardsResponse:
     """Call the API once, return the structured response. Raises
     USASpendingAPIError if agency_name doesn't resolve."""
     client = _get_usaspending_client()
@@ -426,9 +462,19 @@ def get_agency_award_breakdown_raw(
     if agency is None:
         raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
     award_type_codes = AWARD_TYPE_GROUPS[_normalize_award_type(award_type)] if award_type else None
+    if group_by == "award_category":
+        return client.get_agency_obligations_by_award_category(agency.toptier_code, fiscal_year=fiscal_year)
+    if group_by == "whole_agency":
+        return client.get_agency_awards(agency.toptier_code, fiscal_year=fiscal_year, award_type_codes=award_type_codes)
     return client.get_agency_sub_agency_breakdown(
         agency.toptier_code, fiscal_year=fiscal_year, award_type_codes=award_type_codes, limit=50,
     )
+
+
+def _format_award_category_breakdown(response: AgencyObligationsByAwardCategoryResponse) -> str:
+    ranked = sorted(response.results, key=lambda r: r.aggregated_amount, reverse=True)
+    lines = [f"{r.category}: ${r.aggregated_amount:,.2f}" for r in ranked]
+    return f"Total: ${response.total_aggregated_amount:,.2f}\n" + "\n".join(lines)
 
 
 def _format_agency_award_breakdown(response: AgencySubAgencyResponse, include_offices: bool = False) -> str:
@@ -458,8 +504,9 @@ def get_agency_award_breakdown(
     fiscal_year: int,
     award_type: AwardType | None = None,
     include_offices: bool = False,
+    group_by: AwardBreakdownGroupBy = "sub_agency",
 ) -> str:
-    """Get one agency's award spending broken down by sub-agency for a single fiscal year, including transaction counts and new-award counts alongside the dollar totals — not just the amount get_spending_by_category(category="awarding_subagency") gives. Use this specifically when the question asks about counts (how many transactions, how many new awards), not just dollar amounts.
+    """Get one agency's award spending activity for a single fiscal year - by default broken down by sub-agency, including transaction counts and new-award counts alongside the dollar totals. Use this specifically when the question asks about counts (how many transactions, how many new awards), not just dollar amounts.
 
     This is a genuinely different endpoint from get_spending_by_category and get_agency_budget, not a formatting variant of either: use get_spending_by_category instead for a dollar-only breakdown or a breakdown by anything other than sub-agency (NAICS, PSC, recipient, etc. — it has no count fields at all), and get_agency_budget instead for the agency's appropriated budget authority (a different number from award obligations). This tool is always scoped to exactly one agency and one fiscal year — never a recipient, never a range.
 
@@ -467,18 +514,29 @@ def get_agency_award_breakdown(
         agency_name: The agency's name, e.g. "Department of Health and Human Services".
         fiscal_year: A single fiscal year, e.g. 2024 for FY2024 — this endpoint does not accept a
             range; call again for each year if a multi-year breakdown is needed.
-        award_type: Optional. Restrict to one award type or bucket — same vocabulary as
-            search_awards's award_type. Omit to include all award types.
-        include_offices: Set True to also list each sub-agency's individual awarding offices
-            (same figures, one level more granular) — off by default since most "breakdown by
-            sub-agency" questions don't need office-level detail and it roughly doubles the
-            output length. Set it when the question specifically asks about offices, not just
-            sub-agencies.
+        award_type: Optional, only valid with group_by="sub_agency" or "whole_agency". Restrict to
+            one award type or bucket — same vocabulary as search_awards's award_type. Omit to
+            include all award types.
+        include_offices: Only valid with group_by="sub_agency" (the default). Set True to also
+            list each sub-agency's individual awarding offices (same figures, one level more
+            granular) — off by default since most "breakdown by sub-agency" questions don't need
+            office-level detail and it roughly doubles the output length.
+        group_by: "sub_agency" (default) for the by-sub-agency/office breakdown described above.
+            "award_category" for total obligations split by award category (contracts, IDVs,
+            grants, loans, direct payments, other) instead - a different data source from
+            get_spending_by_category(category="award_type", ...) despite sharing category names;
+            don't treat the two as interchangeable. "whole_agency" for the agency's own single
+            transaction-count/obligations total with no breakdown - use this instead of
+            "sub_agency" when the question doesn't actually ask for a sub-agency breakdown.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
+    if group_by == "award_category" and award_type is not None:
+        return 'award_type is not valid with group_by="award_category".'
+    if group_by != "sub_agency" and include_offices:
+        return 'include_offices is only valid with group_by="sub_agency".'
     try:
-        response = get_agency_award_breakdown_raw(agency_name, fiscal_year, award_type)
+        response = get_agency_award_breakdown_raw(agency_name, fiscal_year, award_type, group_by)
     except USASpendingAPIError as e:
         logger.warning("get_agency_award_breakdown failed for %s: %s", agency_name, e)
         return f"This query failed: {e}."
@@ -486,11 +544,20 @@ def get_agency_award_breakdown(
     _record_tool_call(
         "get_agency_award_breakdown",
         response,
-        {"agency_name": agency_name, "fiscal_year": fiscal_year, "award_type": award_type},
+        {"agency_name": agency_name, "fiscal_year": fiscal_year, "award_type": award_type, "group_by": group_by},
     )
+
+    if group_by == "whole_agency":
+        return _wrap_untrusted(
+            f"{agency_name} FY{fiscal_year}: {response.transaction_count:,} transactions, "
+            f"${response.obligations:,.2f} in obligations" + _format_api_messages(response.messages)
+        )
 
     if not response.results:
         return f"No award data found for {agency_name} in FY{fiscal_year}."
+
+    if group_by == "award_category":
+        return _wrap_untrusted(_format_award_category_breakdown(response) + _format_api_messages(response.messages))
 
     has_next = response.page_metadata.hasNext if response.page_metadata else False
     note = _truncation_note(has_next, len(response.results)) + _format_api_messages(response.messages)
@@ -498,14 +565,25 @@ def get_agency_award_breakdown(
 
 
 @traceable(run_type="tool", name="get_agency_budget_by_subcomponent_raw")
-def get_agency_budget_by_subcomponent_raw(agency_name: str, fiscal_year: int) -> AgencySubComponentsResponse:
-    """Call the API once, return the structured response. Raises
-    USASpendingAPIError if agency_name doesn't resolve."""
+def get_agency_budget_by_subcomponent_raw(
+    agency_name: str, fiscal_year: int, bureau: str | None = None
+) -> AgencySubComponentsResponse | AgencySubComponentFederalAccountsResponse:
+    """Call the API once (twice if bureau is given, to resolve its slug
+    first), return the structured response. Raises USASpendingAPIError if
+    agency_name doesn't resolve, or if bureau doesn't match any row in the
+    parent sub-components list."""
     client = _get_usaspending_client()
     agency = client.find_agency_by_name(agency_name)
     if agency is None:
         raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
-    return client.get_agency_sub_components(agency.toptier_code, fiscal_year=fiscal_year, limit=50)
+    parent = client.get_agency_sub_components(agency.toptier_code, fiscal_year=fiscal_year, limit=50)
+    if bureau is None:
+        return parent
+    match = next((r for r in parent.results if bureau.lower() in r.name.lower()), None)
+    if match is None:
+        names = ", ".join(r.name for r in parent.results)
+        raise USASpendingAPIError(f"No bureau matching '{bureau}' for {agency_name} in FY{fiscal_year} - known bureaus: {names}")
+    return client.get_agency_sub_component_federal_accounts(agency.toptier_code, match.id, fiscal_year=fiscal_year, limit=50)
 
 
 def _format_agency_sub_components(response: AgencySubComponentsResponse) -> str:
@@ -517,8 +595,23 @@ def _format_agency_sub_components(response: AgencySubComponentsResponse) -> str:
     )
 
 
+def _format_federal_accounts(response: AgencySubComponentFederalAccountsResponse) -> str:
+    ranked = sorted(response.results, key=lambda r: r.total_obligations, reverse=True)
+    t = response.totals
+    header = (
+        f"Bureau totals: budgetary resources ${t.total_budgetary_resources:,.2f}, "
+        f"obligated ${t.total_obligations:,.2f}, outlayed ${t.total_outlays:,.2f}"
+    )
+    lines = [
+        f"{r.name}: budgetary resources ${r.total_budgetary_resources:,.2f}, "
+        f"obligated ${r.total_obligations:,.2f}, outlayed ${r.total_outlays:,.2f}"
+        for r in ranked
+    ]
+    return header + "\n" + "\n".join(lines)
+
+
 @beta_tool
-def get_agency_budget_by_subcomponent(agency_name: str, fiscal_year: int) -> str:
+def get_agency_budget_by_subcomponent(agency_name: str, fiscal_year: int, bureau: str | None = None) -> str:
     """Get one agency's budgetary resources, obligations, and outlays broken down by sub-component/bureau (e.g. NIH or CDC within HHS) for a single fiscal year. Use this specifically for "which part of X has the most funding" or "how much has [bureau] obligated this year" questions.
 
     This is a genuinely different endpoint from both other agency tools, not a formatting variant of either. get_agency_budget gives ONE set of these same figures (budgetary resources, obligated, outlayed) for the WHOLE agency per fiscal year — this tool breaks that same concept down by sub-component instead. get_agency_award_breakdown breaks down AWARD spending activity (obligations from contracts/grants, with transaction/new-award counts) by sub-AGENCY — a different endpoint reporting a different number (award-level obligations, not appropriated budget authority) at a different level of the agency's structure. Use get_agency_budget for a single whole-agency figure, get_agency_award_breakdown for award activity by sub-agency with counts, and this tool for budgetary resources/obligated/outlayed by sub-component/bureau.
@@ -527,11 +620,15 @@ def get_agency_budget_by_subcomponent(agency_name: str, fiscal_year: int) -> str
         agency_name: The agency's name, e.g. "Department of Health and Human Services".
         fiscal_year: A single fiscal year, e.g. 2024 for FY2024 — this endpoint does not accept a
             range; call again for each year if a multi-year breakdown is needed.
+        bureau: Optional. Restrict to one named bureau/sub-component's own federal accounts (e.g.
+            "Food and Nutrition Service" within USDA) instead of listing every bureau in the
+            agency. Match against the bureau names this tool itself returns when bureau is
+            omitted. Omit to list all bureaus.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
     try:
-        response = get_agency_budget_by_subcomponent_raw(agency_name, fiscal_year)
+        response = get_agency_budget_by_subcomponent_raw(agency_name, fiscal_year, bureau)
     except USASpendingAPIError as e:
         logger.warning("get_agency_budget_by_subcomponent failed for %s: %s", agency_name, e)
         return f"This query failed: {e}."
@@ -539,12 +636,14 @@ def get_agency_budget_by_subcomponent(agency_name: str, fiscal_year: int) -> str
     _record_tool_call(
         "get_agency_budget_by_subcomponent",
         response,
-        {"agency_name": agency_name, "fiscal_year": fiscal_year, "toptier_code": response.toptier_code},
+        {"agency_name": agency_name, "fiscal_year": fiscal_year, "toptier_code": response.toptier_code, "bureau": bureau},
     )
 
     if not response.results:
-        return f"No sub-component budget data found for {agency_name} in FY{fiscal_year}."
+        label = f"{bureau} within {agency_name}" if bureau else agency_name
+        return f"No sub-component budget data found for {label} in FY{fiscal_year}."
 
     has_next = response.page_metadata.hasNext if response.page_metadata else False
     note = _truncation_note(has_next, len(response.results)) + _format_api_messages(response.messages)
-    return _wrap_untrusted(_format_agency_sub_components(response) + note)
+    formatted = _format_federal_accounts(response) if bureau else _format_agency_sub_components(response)
+    return _wrap_untrusted(formatted + note)

@@ -15,6 +15,10 @@ here either - query_spending consolidates all six into one tool; the six
 stay real, callable, @beta_tool-decorated functions (query_spending
 delegates to them) but aren't in _BETA_TOOLS, so the model never sees
 their own schemas.
+
+get_agency_budget_by_subcomponent is likewise not bound - get_agency_budget's
+own group_by="sub_component" branch delegates to it, same reasoning as
+query_spending above, but it isn't in _BETA_TOOLS itself.
 """
 from __future__ import annotations
 
@@ -31,7 +35,6 @@ from .arithmetic_tools import (
 from .tools import (
     get_agency_award_breakdown,
     get_agency_budget,
-    get_agency_budget_by_subcomponent,
     get_award_details,
     get_award_funding_breakdown,
     get_award_subawards,
@@ -56,7 +59,6 @@ from .tools import (
 _BETA_TOOLS = [
     get_agency_award_breakdown,
     get_agency_budget,
-    get_agency_budget_by_subcomponent,
     get_award_details,
     get_award_funding_breakdown,
     get_award_subawards,

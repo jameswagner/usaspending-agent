@@ -28,7 +28,7 @@ import logging
 import queue
 from collections.abc import AsyncIterator
 
-from .download_pilot import (
+from .download_handler import (
     _is_download_followup,
     _looks_like_download_request,
     handle_download_request,

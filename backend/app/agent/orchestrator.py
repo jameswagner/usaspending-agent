@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from langsmith import traceable
 from pydantic import BaseModel
 
-from .download_pilot import (
+from .download_handler import (
     _is_download_followup,
     _looks_like_download_request,
     handle_download_request,
@@ -326,7 +326,7 @@ def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
 
 
 def _persist_download_turn(graph, config: dict, question: str, answer_text: str) -> None:
-    """download_pilot.py's early return skips graph.invoke(), so without this the turn never enters the checkpointer."""
+    """download_handler.py's early return skips graph.invoke(), so without this the turn never enters the checkpointer."""
     graph.update_state(
         config,
         {"messages": [{"role": "user", "content": question}, {"role": "assistant", "content": answer_text}]},

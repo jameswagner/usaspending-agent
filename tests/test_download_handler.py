@@ -98,13 +98,35 @@ class TestIsDownloadFollowup:
     def test_prior_download_answer_is_a_followup(self):
         messages = [
             HumanMessage(content="download NSF's January 2024 awards as a CSV"),
-            AIMessage(content="Your download is ready: 100 rows in x.zip.\nhttps://..."),
+            AIMessage(
+                content="Your download is ready: 100 rows in x.zip.\nhttps://...",
+                additional_kwargs={"download_intent": {"agency_raw": "National Science Foundation"}},
+            ),
         ]
         assert _is_download_followup(messages)
 
     def test_ordinary_prior_answer_is_not_a_followup(self):
         messages = [HumanMessage(content="how much did NSF spend in FY2024?"), AIMessage(content="$8.86 billion.")]
         assert not _is_download_followup(messages)
+
+    def test_download_shaped_answer_without_a_stashed_intent_is_not_a_followup(self):
+        # An unsupported-endpoint refusal reads like a download answer but resolved no intent,
+        # so a follow-up has nothing to carry over from it.
+        messages = [
+            HumanMessage(content="can I get a CSV of NSF's account-level data?"),
+            AIMessage(content="Downloading account-level data isn't supported yet — only award-level CSV exports are, for now."),
+        ]
+        assert not _is_download_followup(messages)
+
+    def test_detection_survives_rewording_the_download_answer(self):
+        messages = [
+            HumanMessage(content="download NSF's January 2024 awards as a CSV"),
+            AIMessage(
+                content="Here you go, 100 rows: https://...",
+                additional_kwargs={"download_intent": {"agency_raw": "National Science Foundation"}},
+            ),
+        ]
+        assert _is_download_followup(messages)
 
 
 class TestExtractPriorToolContext:
@@ -267,12 +289,43 @@ class TestHandleDownloadRequest:
         client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
         recent_messages = [
             HumanMessage(content="download NSF's January 2024 awards as a CSV"),
-            AIMessage(content="Your download is ready: 1 row in x.zip.\nhttps://..."),
+            AIMessage(
+                content="Your download is ready: 1 row in x.zip.\nhttps://...",
+                additional_kwargs={"download_intent": {"agency_raw": "National Science Foundation"}},
+            ),
         ]
         with patch("backend.app.agent.download_handler._extract_download_intent", side_effect=fake_extract), \
              patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
             handle_download_request("how about February 2024", "conv-1", recent_messages)
         assert "January 2024" in captured["history_block"]
+
+    def test_history_is_withheld_when_the_prior_turn_was_not_a_download(self):
+        # The history block's prompt asserts the user is continuing a prior download, so an
+        # ordinary preceding answer must not get it - it would invite carrying over that turn's scope.
+        intent = DownloadIntent(agency_raw="NSF", start_year=2024, end_year=2024)
+        captured = {}
+
+        def fake_extract(question, history_block="", prior_context=None):
+            captured["history_block"] = history_block
+            return intent
+
+        job = DownloadJobResponse(
+            status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+            file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        finished = DownloadStatusResponse(
+            status="finished", file_name="x.zip",
+            file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=1,
+        )
+        client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
+        recent_messages = [
+            HumanMessage(content="how much did NSF spend on cloud computing in FY2024?"),
+            AIMessage(content="$1.2 billion."),
+        ]
+        with patch("backend.app.agent.download_handler._extract_download_intent", side_effect=fake_extract), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
+            handle_download_request("download NSF's FY2024 awards as a CSV", "conv-1", recent_messages)
+        assert captured["history_block"] == ""
 
     def test_prior_tool_context_is_forwarded_to_intent_extraction(self):
         # Regression: the resolved structured context from a prior turn (not just prose)

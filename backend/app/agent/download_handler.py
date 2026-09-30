@@ -94,14 +94,12 @@ def _looks_like_download_request(question: str) -> bool:
     return any(term in q for term in _DOWNLOAD_INTENT_PATTERN)
 
 
-# Prefixes handle_download_request's own answer_text always starts with - lets the caller recognize a download follow-up.
-_DOWNLOAD_ANSWER_PREFIXES = ("Your download is", "This download failed", "Downloading ")
-
-
 def _is_download_followup(recent_messages: list | None) -> bool:
+    """Keyed on the intent _persist_download_turn stashes, not on the answer's wording -
+    prefix-matching user-facing copy meant rewording a message silently broke detection."""
     for message in reversed(recent_messages or []):
         if getattr(message, "type", None) == "ai" and isinstance(message.content, str):
-            return message.content.startswith(_DOWNLOAD_ANSWER_PREFIXES)
+            return bool((getattr(message, "additional_kwargs", None) or {}).get("download_intent"))
     return False
 
 
@@ -369,7 +367,9 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
             conversation_id=conversation_id,
         )
 
-    history_block = _render_recent_exchanges(recent_messages) if recent_messages else ""
+    # Only a real prior download gets the prose history block, whose prompt tells the extractor
+    # the user is continuing one - prior_context stays ungated, being structured either way.
+    history_block = _render_recent_exchanges(recent_messages) if _is_download_followup(recent_messages) else ""
     prior_context = _extract_prior_tool_context(recent_messages) if recent_messages else None
     intent = _extract_download_intent(question, history_block, prior_context)
     if intent is None:

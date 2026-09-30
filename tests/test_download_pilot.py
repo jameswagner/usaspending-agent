@@ -4,7 +4,9 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from backend.app.agent.download_pilot import (
     DownloadIntent,
+    _download_intent_context,
     _extract_download_intent,
+    _extract_prior_tool_context,
     _is_download_followup,
     _looks_like_download_request,
     _unsupported_download_label,
@@ -105,6 +107,89 @@ class TestIsDownloadFollowup:
         assert not _is_download_followup(messages)
 
 
+class TestExtractPriorToolContext:
+    """Regression coverage: the download follow-up extractor used to see only lossy
+    Q/A prose, which left room to invent fields (e.g. award_type) nothing ever stated. This
+    reads the real structured tool-call/stashed-intent history instead."""
+
+    def test_no_messages_returns_none(self):
+        assert _extract_prior_tool_context(None) is None
+        assert _extract_prior_tool_context([]) is None
+
+    def test_plain_text_only_history_returns_none(self):
+        messages = [HumanMessage(content="how much did NSF spend in FY2024?"), AIMessage(content="$8.86 billion.")]
+        assert _extract_prior_tool_context(messages) is None
+
+    def test_stashed_download_intent_is_recovered_verbatim(self):
+        stashed = {"agency_raw": "National Science Foundation", "spending_level": "transactions", "start_year": 2023, "end_year": 2023}
+        messages = [
+            HumanMessage(content="download NSF's transactions for FY2023"),
+            AIMessage(content="Your download is ready: 30790 rows...", additional_kwargs={"download_intent": stashed}),
+        ]
+        assert _extract_prior_tool_context(messages) == stashed
+
+    def test_spending_tool_call_args_are_mapped_to_download_fields(self):
+        messages = [
+            HumanMessage(content="top NAICS codes for NSF in FY2025"),
+            AIMessage(content="", tool_calls=[{
+                "name": "get_spending_by_category",
+                "args": {
+                    "category": "naics", "agency_name": "National Science Foundation",
+                    "start_year": 2025, "end_year": 2025, "limit": 10, "award_type": "contracts",
+                },
+                "id": "call_1",
+            }]),
+            AIMessage(content="Here's the breakdown..."),
+        ]
+        context = _extract_prior_tool_context(messages)
+        assert context == {
+            "agency_raw": "National Science Foundation", "start_year": 2025, "end_year": 2025,
+            "award_type": "contracts",
+        }
+        # Display-only args must never leak in as if they were scope filters.
+        assert "limit" not in context
+        assert "category" not in context
+
+    def test_tool_call_with_no_mappable_fields_returns_none(self):
+        messages = [AIMessage(content="", tool_calls=[{"name": "search_guide", "args": {"query": "what is a sub-award?"}, "id": "call_1"}])]
+        assert _extract_prior_tool_context(messages) is None
+
+    def test_most_recent_ai_message_wins_over_an_older_one(self):
+        messages = [
+            AIMessage(content="", tool_calls=[{
+                "name": "get_spending_by_category",
+                "args": {"agency_name": "Department of Energy", "start_year": 2022, "end_year": 2022},
+                "id": "call_1",
+            }]),
+            AIMessage(content="Your download is ready: ...", additional_kwargs={
+                "download_intent": {"agency_raw": "National Science Foundation", "spending_level": "awards"}
+            }),
+        ]
+        context = _extract_prior_tool_context(messages)
+        assert context == {"agency_raw": "National Science Foundation", "spending_level": "awards"}
+
+
+class TestDownloadIntentContext:
+    def test_year_range_intent(self):
+        intent = DownloadIntent(agency_raw="NSF", start_year=2024, end_year=2024, spending_level="transactions")
+        context = _download_intent_context(intent, "National Science Foundation")
+        assert context == {
+            "spending_level": "transactions", "time_period_type": "fiscal",
+            "agency_raw": "National Science Foundation", "start_year": 2024, "end_year": 2024,
+        }
+
+    def test_date_range_intent_omits_start_end_year(self):
+        intent = DownloadIntent(agency_raw="NSF", start_date="2024-01-01", end_date="2024-01-31")
+        context = _download_intent_context(intent, "National Science Foundation")
+        assert context["start_date"] == "2024-01-01"
+        assert context["end_date"] == "2024-01-31"
+        assert "start_year" not in context
+
+    def test_award_type_only_included_when_set(self):
+        intent = DownloadIntent(start_year=2024, end_year=2024)
+        assert "award_type" not in _download_intent_context(intent, None)
+
+
 def make_tool_use_response(input_dict):
     block = MagicMock(type="tool_use", input=input_dict)
     return MagicMock(content=[block])
@@ -131,6 +216,21 @@ class TestExtractDownloadIntent:
         assert result is not None
         assert result.agency_raw == "NSF"
 
+    def test_prior_context_is_passed_to_the_model_as_ground_truth(self):
+        # Regression: a vague "carry over from history" instruction let the model invent
+        # an award_type nothing ever stated. With prior_context, the system prompt must both
+        # supply the exact prior values and explicitly forbid guessing anything beyond them.
+        response = make_tool_use_response(
+            {"wants_download": True, "agency_raw": "NSF", "start_year": 2024, "end_year": 2024}
+        )
+        prior_context = {"agency_raw": "National Science Foundation", "spending_level": "transactions", "start_year": 2023, "end_year": 2023}
+        with patch("backend.app.agent.download_pilot._get_client") as get_client:
+            get_client.return_value.messages.create.return_value = response
+            _extract_download_intent("how about FY2024", prior_context=prior_context)
+        call_kwargs = get_client.return_value.messages.create.call_args.kwargs
+        assert "National Science Foundation" in call_kwargs["system"]
+        assert "do not guess or default" in call_kwargs["system"].lower()
+
 
 class TestHandleDownloadRequest:
     def test_unsupported_endpoint_returns_fixed_message_without_calling_client(self):
@@ -152,7 +252,7 @@ class TestHandleDownloadRequest:
         intent = DownloadIntent(agency_raw="NSF", start_year=2024, end_year=2024)
         captured = {}
 
-        def fake_extract(question, history_block=""):
+        def fake_extract(question, history_block="", prior_context=None):
             captured["history_block"] = history_block
             return intent
 
@@ -173,6 +273,61 @@ class TestHandleDownloadRequest:
              patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client):
             handle_download_request("how about February 2024", "conv-1", recent_messages)
         assert "January 2024" in captured["history_block"]
+
+    def test_prior_tool_context_is_forwarded_to_intent_extraction(self):
+        # Regression: the resolved structured context from a prior turn (not just prose)
+        # must reach the extractor, so it has real values instead of having to guess.
+        intent = DownloadIntent(agency_raw="NSF", start_year=2024, end_year=2024, spending_level="transactions")
+        captured = {}
+
+        def fake_extract(question, history_block="", prior_context=None):
+            captured["prior_context"] = prior_context
+            return intent
+
+        job = DownloadJobResponse(
+            status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+            file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        finished = DownloadStatusResponse(
+            status="finished", file_name="x.zip",
+            file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=1,
+        )
+        client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
+        recent_messages = [
+            HumanMessage(content="download NSF's transactions for FY2023"),
+            AIMessage(content="Your download is ready: 30790 rows...", additional_kwargs={
+                "download_intent": {"agency_raw": "National Science Foundation", "spending_level": "transactions", "start_year": 2023, "end_year": 2023}
+            }),
+        ]
+        with patch("backend.app.agent.download_pilot._extract_download_intent", side_effect=fake_extract), \
+             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client):
+            handle_download_request("how about FY2024", "conv-1", recent_messages)
+        assert captured["prior_context"] == {
+            "agency_raw": "National Science Foundation", "spending_level": "transactions",
+            "start_year": 2023, "end_year": 2023,
+        }
+
+    def test_result_carries_resolved_intent_context_for_the_next_followup(self):
+        intent = DownloadIntent(agency_raw="NSF", start_year=2024, end_year=2024, spending_level="transactions")
+        job = DownloadJobResponse(
+            status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+            file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        finished = DownloadStatusResponse(
+            status="finished", file_name="x.zip",
+            file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=1,
+        )
+        client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
+        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client):
+            result = handle_download_request("download NSF's transactions for FY2024", "conv-1")
+        assert result.download_intent_context == {
+            "spending_level": "transactions", "time_period_type": "fiscal",
+            "agency_raw": "National Science Foundation", "start_year": 2024, "end_year": 2024,
+        }
+        # No award_type was ever set - must not appear, so a later follow-up has nothing to
+        # mistakenly "carry over".
+        assert "award_type" not in result.download_intent_context
 
     def test_unresolvable_agency_falls_through_to_tool_loop(self):
         intent = DownloadIntent(agency_raw="Not A Real Agency", start_year=2024, end_year=2024)

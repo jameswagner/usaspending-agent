@@ -108,7 +108,7 @@ class TestIsDownloadFollowup:
 
 
 class TestExtractPriorToolContext:
-    """Regression coverage for #290: the download follow-up extractor used to see only lossy
+    """Regression coverage: the download follow-up extractor used to see only lossy
     Q/A prose, which left room to invent fields (e.g. award_type) nothing ever stated. This
     reads the real structured tool-call/stashed-intent history instead."""
 
@@ -217,7 +217,7 @@ class TestExtractDownloadIntent:
         assert result.agency_raw == "NSF"
 
     def test_prior_context_is_passed_to_the_model_as_ground_truth(self):
-        # Regression (#290): a vague "carry over from history" instruction let the model invent
+        # Regression: a vague "carry over from history" instruction let the model invent
         # an award_type nothing ever stated. With prior_context, the system prompt must both
         # supply the exact prior values and explicitly forbid guessing anything beyond them.
         response = make_tool_use_response(
@@ -275,7 +275,7 @@ class TestHandleDownloadRequest:
         assert "January 2024" in captured["history_block"]
 
     def test_prior_tool_context_is_forwarded_to_intent_extraction(self):
-        # Regression (#290): the resolved structured context from a prior turn (not just prose)
+        # Regression: the resolved structured context from a prior turn (not just prose)
         # must reach the extractor, so it has real values instead of having to guess.
         intent = DownloadIntent(agency_raw="NSF", start_year=2024, end_year=2024, spending_level="transactions")
         captured = {}

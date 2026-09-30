@@ -107,7 +107,7 @@ class TestPersistDownloadTurn:
         assert other_thread_messages == []
 
     def test_intent_context_round_trips_through_the_checkpointer(self, tmp_path):
-        # Regression (#290): without this, a download follow-up could only see prior turns as
+        # Regression: without this, a download follow-up could only see prior turns as
         # prose and had to re-guess fields like award_type from scratch.
         graph = self._make_graph(tmp_path)
         config = {"configurable": {"thread_id": "t1"}}

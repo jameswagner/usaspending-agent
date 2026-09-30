@@ -99,7 +99,7 @@ def _result_to_outputs(result) -> dict:
 
 def predict(inputs: dict) -> dict:
     if "turns" in inputs:
-        # Multi-turn (#290): one shared conversation_id across all turns, setup turns run and
+        # Multi-turn: one shared conversation_id across all turns, setup turns run and
         # discarded, only the final turn's outputs are returned for scoring.
         conversation_id = None
         result = None
@@ -121,8 +121,8 @@ def download_pilot_correct(run: Run, example: Example) -> dict[str, Any]:
         expected_level = expected.get("expect_spending_level")
         if passed and expected_level is not None:
             passed = outputs.get("spending_level") == expected_level
-        # #290: a follow-up must not invent a filter neither turn stated, and must still honor
-        # one the follow-up DOES state explicitly - these are opposite failure modes, both real.
+        # A follow-up must not invent a filter neither turn stated, and must still honor one
+        # the follow-up DOES state explicitly - these are opposite failure modes, both real.
         if passed and expected.get("expect_no_award_type"):
             passed = outputs.get("award_type") is None
         expected_award_type = expected.get("expect_award_type")

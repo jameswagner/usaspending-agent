@@ -10,7 +10,7 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 - **Live-data questions** ("how much did NSF spend on X?") are answered by calling the real USASpending.gov API.
 - A tool-calling agent decides which tool(s) a question needs, including questions that need more than one. It runs on LangGraph (`create_react_agent`, via `langgraph_tools.py`'s LangChain-compatible wrappers of the same tool functions), with a SQLite checkpointer keyed by `conversation_id` giving real multi-turn memory — a follow-up like "what about last year?" resolves against the prior turn's history.
 - A cheap classifier gates obviously out-of-scope questions before the (more expensive) agent loop runs at all — a first-turn version (bare question + best retrieval passage) and a separate follow-up version that folds in prior conversation turns, so a continuation like "was that a lot?" isn't misjudged as off-topic just because it has no keywords of its own.
-- **Download requests** ("can I download NSF's January 2024 awards as a CSV?") are handled by a deterministic pipeline (`download_pilot.py`) that runs before the tool-calling loop even starts, rather than as another tool the model has to be prompted into choosing — a keyword gate, a forced-tool-choice extraction call, then a direct `POST /api/v2/download/awards/` + status poll. Narrowly scoped to the awards endpoint; every other download shape (transactions, accounts, IDV, disaster, sub-awards) gets a fixed "not yet supported" answer instead of best-effort handling.
+- **Download requests** ("can I download NSF's January 2024 awards as a CSV?") are handled by a deterministic pipeline (`download_handler.py`) that runs before the tool-calling loop even starts, rather than as another tool the model has to be prompted into choosing — a keyword gate, a forced-tool-choice extraction call, then a direct `POST /api/v2/download/search/` + status poll, at the awards, transactions, or sub-awards spending level. Every other download shape (accounts, IDV, disaster data) gets a fixed "not yet supported" answer instead of best-effort handling.
 - The model never does multi-number math (totals, percentages, ratios, before/after change, rankings) in its own prose — it calls one of six typed arithmetic tools, or `code_execution` as a fallback for calculations those six don't cover.
 
 ### Tools available to the agent
@@ -195,7 +195,7 @@ backend/app/
     scope.py                  In-scope gate: a first-turn classifier plus a
                                 separate follow-up classifier that folds in prior
                                 conversation turns
-    download_pilot.py         Deterministic pre-tool-loop CSV download pipeline
+    download_handler.py         Deterministic pre-tool-loop CSV download pipeline
                                 (awards endpoint only - see Architecture above)
     response_shaping.py       Chart/citation/download-spec logic, fiscal-year math
     orchestrator.py           System prompt, AgentResult, ask() - runs the
@@ -204,7 +204,7 @@ backend/app/
     dev_tools/                Manual, opt-in scripts (real billed LLM calls unless
                                 noted, not in CI): red-team checks (data-injection,
                                 jailbreak, prompt-extraction, resource-abuse),
-                                tool-selection, code-lookup, and download-pilot
+                                tool-selection, code-lookup, and download-handler
                                 accuracy evals (LangSmith Dataset + evaluate()),
                                 scope-classifier calibration, live 3-turn conversation-path
                                 verification, a code_execution wiring check, live
@@ -227,5 +227,4 @@ web/                         Next.js frontend (separate process; proxies to the
                                 FastAPI API through web/src/app/api/ask/route.ts)
 tests/                       Unit tests
 BACKLOG.md                   Known gaps and deferred work
-private/                     Gitignored: demo script, dev narrative, blog posts - not part of the deliverable
 ```

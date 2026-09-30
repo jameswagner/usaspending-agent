@@ -114,7 +114,7 @@ def predict(inputs: dict) -> dict:
     config = {"configurable": {"thread_id": result.conversation_id}}
     trajectory = _trajectory_from_messages(_get_conversation_graph().get_state(config).values.get("messages", []))
     if not trajectory:
-        # A scope-gate rejection and the pilots answer without entering the graph.
+        # A scope-gate rejection and the download handler's answer both short-circuit without entering the graph.
         trajectory = [{"tool": tc.tool_name, "args": {}, "output": ""} for tc in result.tool_citations]
     return {
         "answer": result.answer_text,

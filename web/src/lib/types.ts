@@ -26,7 +26,7 @@ export interface ToolCitation {
   curl: string | null;
 }
 
-// One in-flight or finished CSV export job from the download pilot - url is live once status is "finished".
+// One in-flight or finished CSV export job from the download handler - url is live once status is "finished".
 export interface DownloadSpec {
   file_name: string;
   url: string;

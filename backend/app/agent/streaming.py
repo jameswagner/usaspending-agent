@@ -28,7 +28,7 @@ import logging
 import queue
 from collections.abc import AsyncIterator
 
-from .download_pilot import (
+from .download_handler import (
     _is_download_followup,
     _looks_like_download_request,
     handle_download_request,
@@ -114,7 +114,9 @@ def _run_graph_stream(question: str, conversation_id: str, event_queue: queue.Qu
             event_queue.put(("tool_call_start", {"tool_name": "download_search", "args": {}}))
             download_result = handle_download_request(question, conversation_id, recent_messages)
             if download_result is not None:
-                _persist_download_turn(graph, config, question, download_result.answer_text)
+                _persist_download_turn(
+                    graph, config, question, download_result.answer_text, download_result.download_intent_context
+                )
                 event_queue.put(("done", _build_done_payload(download_result)))
                 return
 

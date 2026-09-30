@@ -1,8 +1,9 @@
-"""Deterministic pre-tool-loop download-request pipeline, scoped to POST /api/v2/download/awards/ only."""
+"""Deterministic pre-tool-loop download-request pipeline, backed by POST /api/v2/download/search/."""
 from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from typing import Literal
 
@@ -11,6 +12,7 @@ from pydantic import BaseModel, ValidationError
 from backend.app.usaspending import (
     BASE_URL,
     AdvancedFilters,
+    DownloadJobResponse,
     TimePeriod,
     USASpendingAPIError,
     USASpendingClient,
@@ -33,7 +35,7 @@ _DOWNLOAD_INTENT_PATTERN = (
     "raw data", "data file",
 )
 
-# Endpoints this pilot defers - matched before the extraction call runs, so an unsupported request never burns one.
+# Endpoints this module defers - matched before the extraction call runs, so an unsupported request never burns one.
 # "transaction"/"sub-award"/"subaward" are deliberately absent - spending_level (below) now covers them.
 _UNSUPPORTED_DOWNLOAD_PATTERN = {
     "account": "account-level data",
@@ -45,7 +47,7 @@ _UNSUPPORTED_DOWNLOAD_PATTERN = {
 _POLL_INTERVAL_SECONDS = 4
 _POLL_TIMEOUT_SECONDS = 90
 
-# Fixed - this pilot rules out free-form column selection.
+# Fixed - this module rules out free-form column selection.
 _DOWNLOAD_COLUMNS_BY_LEVEL = {
     "awards": [
         "award_id_piid",
@@ -81,7 +83,7 @@ _DOWNLOAD_COLUMNS_BY_LEVEL = {
 # independent (["awards"] alone excludes sub-awards) - unlike the legacy /download/awards/
 # and /download/transactions/ endpoints, which always bundle subawards in. This table
 # preserves that legacy bundling so switching to /download/search/ is a strict widening,
-# not a silent regression for the two levels this pilot already shipped.
+# not a silent regression for the two levels already shipped before this table existed.
 _SPENDING_LEVEL_TO_API_ARRAY = {
     "awards": ["awards", "subawards"],
     "transactions": ["transactions", "subawards"],
@@ -94,14 +96,12 @@ def _looks_like_download_request(question: str) -> bool:
     return any(term in q for term in _DOWNLOAD_INTENT_PATTERN)
 
 
-# Prefixes handle_download_request's own answer_text always starts with - lets the caller recognize a download follow-up.
-_DOWNLOAD_ANSWER_PREFIXES = ("Your download is", "This download failed", "Downloading ")
-
-
 def _is_download_followup(recent_messages: list | None) -> bool:
+    """Keyed on the intent _persist_download_turn stashes, not on the answer's wording -
+    prefix-matching user-facing copy meant rewording a message silently broke detection."""
     for message in reversed(recent_messages or []):
         if getattr(message, "type", None) == "ai" and isinstance(message.content, str):
-            return message.content.startswith(_DOWNLOAD_ANSWER_PREFIXES)
+            return bool((getattr(message, "additional_kwargs", None) or {}).get("download_intent"))
     return False
 
 
@@ -111,6 +111,117 @@ def _unsupported_download_label(question: str) -> str | None:
         if term in q:
             return label
     return None
+
+
+# generated_unique_award_id's prefixes are fully disjoint - startswith mapping is unambiguous.
+_SINGLE_AWARD_ID_PATTERN = re.compile(r"\b(?:CONT_AWD_|CONT_IDV_|ASST_)[A-Za-z0-9_\-]+")
+_SINGLE_AWARD_ENDPOINT_BY_PREFIX = (
+    ("CONT_AWD_", "contract"),
+    ("CONT_IDV_", "idv"),
+    ("ASST_", "assistance"),
+)
+_SINGLE_AWARD_CLIENT_METHOD = {
+    "contract": "download_contract",
+    "assistance": "download_assistance",
+    "idv": "download_idv",
+}
+
+# Only these phrasings are worth a history search - not every download request.
+_SINGLE_AWARD_FOLLOWUP_TERMS = (
+    "this award", "this contract", "this grant", "this loan", "this idv",
+    "that award", "that contract", "that grant", "that loan", "that idv",
+    "the same award", "download it", "download that",
+)
+
+# Matches the "[internal_id: ...]" tag search_awards/get_award_details append to each result.
+_PRIOR_INTERNAL_ID_PATTERN = re.compile(r"\[internal_id:\s*([A-Za-z0-9_\-]+)\]")
+
+
+def _award_id_endpoint(award_id: str) -> str | None:
+    for prefix, endpoint in _SINGLE_AWARD_ENDPOINT_BY_PREFIX:
+        if award_id.startswith(prefix):
+            return endpoint
+    return None
+
+
+def _extract_award_id_from_history(recent_messages: list | None) -> str | None:
+    for message in reversed(recent_messages or []):
+        if getattr(message, "type", None) != "tool" or not isinstance(message.content, str):
+            continue
+        match = _PRIOR_INTERNAL_ID_PATTERN.search(message.content)
+        if match:
+            return match.group(1)
+    return None
+
+
+def _is_single_award_followup_phrase(question: str) -> bool:
+    q = question.lower()
+    return any(term in q for term in _SINGLE_AWARD_FOLLOWUP_TERMS)
+
+
+def _resolve_single_award_id(question: str, recent_messages: list | None) -> str | None:
+    match = _SINGLE_AWARD_ID_PATTERN.search(question)
+    if match:
+        return match.group(0)
+    if _is_single_award_followup_phrase(question):
+        return _extract_award_id_from_history(recent_messages)
+    return None
+
+
+# Maps a spending tool's own argument names to the DownloadIntent field they
+# correspond to - only fields DownloadIntent understands. Deliberately excludes
+# display-only args like `limit`/`category` (a breakdown's top-N or grouping
+# dimension is not a scope filter and must never be carried into a download).
+_TOOL_ARG_TO_DOWNLOAD_FIELD = {
+    "agency_name": "agency_raw",
+    "award_type": "award_type",
+    "start_year": "start_year",
+    "end_year": "end_year",
+    "time_period_type": "time_period_type",
+}
+
+
+def _extract_prior_tool_context(recent_messages: list | None, max_messages: int = 10) -> dict | None:
+    """Looks back through the real LangGraph message list - not the lossy prose
+    _render_recent_exchanges produces - for the most recently resolved structured
+    context: either this pilot's own prior DownloadIntent (stashed by
+    _persist_download_turn) or a spending tool's actual resolved call arguments.
+    Gives a follow-up extraction real values to copy instead of re-deriving
+    everything from text, which left room to invent fields nothing ever stated."""
+    for message in reversed((recent_messages or [])[-max_messages:]):
+        if getattr(message, "type", None) != "ai":
+            continue
+        stashed = (getattr(message, "additional_kwargs", None) or {}).get("download_intent")
+        if stashed:
+            return dict(stashed)
+        tool_calls = getattr(message, "tool_calls", None) or []
+        if tool_calls:
+            args = tool_calls[-1].get("args", {})
+            context = {
+                field: args[arg_name]
+                for arg_name, field in _TOOL_ARG_TO_DOWNLOAD_FIELD.items()
+                if args.get(arg_name) is not None
+            }
+            return context or None
+    return None
+
+
+def _download_intent_context(intent: DownloadIntent, agency_name: str | None) -> dict:
+    """The structured record of what this turn actually resolved - stashed via
+    _persist_download_turn so the next follow-up's _extract_prior_tool_context
+    has real values instead of prose to work from."""
+    context: dict = {"spending_level": intent.spending_level, "time_period_type": intent.time_period_type}
+    if agency_name:
+        context["agency_raw"] = agency_name
+    if intent.start_date and intent.end_date:
+        context["start_date"] = intent.start_date
+        context["end_date"] = intent.end_date
+    else:
+        context["start_year"] = intent.start_year
+        context["end_year"] = intent.end_year
+    if intent.award_type:
+        context["award_type"] = intent.award_type
+    return context
 
 
 class DownloadIntent(BaseModel):
@@ -183,17 +294,36 @@ _EXTRACT_TOOL = {
 }
 
 
-def _extract_download_intent(question: str, history_block: str = "") -> DownloadIntent | None:
+def _extract_download_intent(
+    question: str, history_block: str = "", prior_context: dict | None = None
+) -> DownloadIntent | None:
     """Returns None on anything that isn't a clean parse, rather than guessing."""
     system = (
         f"Today's fiscal year is FY{current_fiscal_year()}. Use it for relative phrases "
         "like 'this year' or 'most recent year' if the question doesn't state one explicitly."
     )
     user_content = question
-    if history_block:
+    if prior_context:
+        # Ground truth from the actual preceding turn - see _extract_prior_tool_context.
+        # Deliberately replaces the vaguer history-only instruction below: that one asked the
+        # model to "carry over award_type from the history," which caused it to invent an
+        # award_type that appeared in neither the history nor the new question (confirmed live).
         system += (
-            " The user is continuing a prior download - carry over its agency/award_type from the "
-            "history below unless this question names a different one; only the time period usually changes."
+            " This is a follow-up in an ongoing conversation. The JSON below is the exact set of "
+            "values already resolved by the preceding turn - reuse a field's value from it only "
+            "when this new question doesn't say otherwise. Never set award_type, spending_level, "
+            "or any other field unless it appears in this JSON or is explicitly stated in the new "
+            "question - do not guess or default them.\n"
+            f"Previously resolved values: {json.dumps(prior_context, default=str)}"
+        )
+        if history_block:
+            user_content = f"{history_block}\n\nNew question: {question}"
+    elif history_block:
+        system += (
+            " The user is continuing a prior download - carry over its agency from the "
+            "history below unless this question names a different one; only the time period "
+            "usually changes. Don't guess award_type or spending_level from a vague continuation - "
+            "leave them unset unless the new question names one explicitly."
         )
         user_content = f"{history_block}\n\nNew question: {question}"
     try:
@@ -280,9 +410,71 @@ def _build_download_citation(
     return ToolCitation(tool_name="download_search", parameters=params, description=description, curl=curl)
 
 
+def _build_single_award_citation(award_id: str, endpoint: str) -> ToolCitation:
+    body = {"award_id": award_id, "file_format": "csv"}
+    curl = f"curl -X POST '{BASE_URL}/api/v2/download/{endpoint}/' -H 'Content-Type: application/json' -d '{json.dumps(body)}'"
+    return ToolCitation(
+        tool_name=f"download_{endpoint}",
+        parameters={"award_id": award_id},
+        description=f"Single-award CSV download, {award_id}",
+        curl=curl,
+    )
+
+
+def _handle_single_award_download(award_id: str, conversation_id: str):
+    from .orchestrator import AgentResult
+
+    endpoint = _award_id_endpoint(award_id)
+    if endpoint is None:
+        return None
+
+    client = _get_usaspending_client()
+    method = getattr(client, _SINGLE_AWARD_CLIENT_METHOD[endpoint])
+    try:
+        job: DownloadJobResponse = method(award_id)
+        status = _poll_until_finished(client, job.file_name)
+    except USASpendingAPIError as e:
+        logger.warning("Single-award download pipeline failed for award_id %r: %s", award_id, e)
+        return AgentResult(answer_text=f"This download failed: {e}.", conversation_id=conversation_id)
+
+    citation = _build_single_award_citation(award_id, endpoint)
+    download = DownloadSpec(
+        file_name=status.file_name, url=status.file_url, status_url=job.status_url,
+        status=status.status, total_rows=status.total_rows,
+    )
+    if status.status == "finished":
+        answer_text = f"Your download is ready: {status.file_name}.\n{status.file_url}"
+    elif status.status == "failed":
+        answer_text = f"This download failed to generate: {status.message or 'no further detail from the API.'}"
+    else:
+        answer_text = (
+            f"Your download is still generating ({status.file_name}). It'll appear at the link below "
+            "once ready - check back shortly."
+        )
+
+    return AgentResult(
+        answer_text=answer_text, conversation_id=conversation_id, downloads=[download], tool_citations=[citation]
+    )
+
+
 def handle_download_request(question: str, conversation_id: str, recent_messages: list | None = None):
     """Returns None to signal "fall through to the normal tool loop unchanged"."""
     from .orchestrator import AgentResult
+
+    award_id = _resolve_single_award_id(question, recent_messages)
+    if award_id is not None:
+        single_award_result = _handle_single_award_download(award_id, conversation_id)
+        if single_award_result is not None:
+            return single_award_result
+    elif _is_single_award_followup_phrase(question):
+        # No tool in the loop below produces a file - say so rather than silently falling through.
+        return AgentResult(
+            answer_text=(
+                "I can download that award once I know which one — look it up first (e.g. search "
+                "for it or pull up its details), then ask me to download it."
+            ),
+            conversation_id=conversation_id,
+        )
 
     unsupported = _unsupported_download_label(question)
     if unsupported is not None:
@@ -294,8 +486,11 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
             conversation_id=conversation_id,
         )
 
-    history_block = _render_recent_exchanges(recent_messages) if recent_messages else ""
-    intent = _extract_download_intent(question, history_block)
+    # Only a real prior download gets the prose history block, whose prompt tells the extractor
+    # the user is continuing one - prior_context stays ungated, being structured either way.
+    history_block = _render_recent_exchanges(recent_messages) if _is_download_followup(recent_messages) else ""
+    prior_context = _extract_prior_tool_context(recent_messages) if recent_messages else None
+    intent = _extract_download_intent(question, history_block, prior_context)
     if intent is None:
         return None
 
@@ -306,6 +501,8 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         if match is None:
             return None
         agency_name = match.agency_name
+
+    intent_context = _download_intent_context(intent, agency_name)
 
     try:
         # Placeholder when start_date is set - real scope is applied below by overwriting time_period.
@@ -328,7 +525,10 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         status = _poll_until_finished(client, job.file_name)
     except USASpendingAPIError as e:
         logger.warning("Download pipeline failed for question %r: %s", question, e)
-        return AgentResult(answer_text=f"This download failed: {e}.", conversation_id=conversation_id)
+        return AgentResult(
+            answer_text=f"This download failed: {e}.", conversation_id=conversation_id,
+            download_intent_context=intent_context,
+        )
 
     download = DownloadSpec(
         file_name=status.file_name, url=status.file_url, status_url=job.status_url,
@@ -347,5 +547,6 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         )
 
     return AgentResult(
-        answer_text=answer_text, conversation_id=conversation_id, downloads=[download], tool_citations=[citation]
+        answer_text=answer_text, conversation_id=conversation_id, downloads=[download], tool_citations=[citation],
+        download_intent_context=intent_context,
     )

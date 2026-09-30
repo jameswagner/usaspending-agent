@@ -1,9 +1,10 @@
 """Unwired download tool shapes for the standalone spike."""
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from anthropic import beta_tool
+from pydantic import Field
 
 from backend.app.usaspending import TimePeriod, USASpendingAPIError
 
@@ -61,6 +62,9 @@ def _records(
     end_date: str | None,
     award_type: Literal["contracts", "grants", "loans"] | None,
     spending_level: SpendingLevel,
+    keywords: str | None,
+    psc_code: str | None,
+    naics_code: str | None,
 ) -> str:
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -80,7 +84,8 @@ def _records(
     try:
         filters = _build_filters(
             client, agency_name, "fiscal", year, year if dates else end_fiscal_year,
-            award_type=award_type, scope_required=False,
+            award_type=award_type, keywords=keywords, psc_code=psc_code,
+            naics_code=naics_code, scope_required=False,
         )
         if dates:
             filters.time_period = [TimePeriod(start_date=start_date, end_date=end_date)]
@@ -92,6 +97,7 @@ def _records(
             {"agency_name": agency_name, "start_fiscal_year": start_fiscal_year,
              "end_fiscal_year": end_fiscal_year, "start_date": start_date, "end_date": end_date,
              "award_type": award_type, "spending_level": spending_level,
+             "keywords": keywords, "psc_code": psc_code, "naics_code": naics_code,
              "filters": filters, "columns": columns, "api_spending_level": levels},
         )
     except (USASpendingAPIError, ValueError) as exc:
@@ -108,18 +114,22 @@ def download_data(
     end_date: str | None = None,
     award_type: Literal["contracts", "grants", "loans"] | None = None,
     spending_level: SpendingLevel = "awards",
+    keywords: Annotated[str | None, Field(description="Topic terms to match in the downloaded records; reuse a prior spending query's keywords.")] = None,
+    psc_code: Annotated[str | None, Field(description="Four-character product or service code; reuse a prior spending query's validated PSC code.")] = None,
+    naics_code: Annotated[str | None, Field(description="Two- to six-digit NAICS industry code; reuse a prior spending query's code.")] = None,
     file_format: Literal["csv"] = "csv",
 ) -> str:
     """Create a CSV download; use award_id alone for one award, or scope filters without award_id for records."""
     if award_id is not None:
         if any(value is not None for value in (
-            agency_name, start_fiscal_year, end_fiscal_year, start_date, end_date, award_type
+            agency_name, start_fiscal_year, end_fiscal_year, start_date, end_date,
+            award_type, keywords, psc_code, naics_code,
         )) or spending_level != "awards":
             return "This download failed: award_id cannot be combined with record scope filters."
         return _single_award(award_id)
     return _records(
         agency_name, start_fiscal_year, end_fiscal_year, start_date, end_date,
-        award_type, spending_level,
+        award_type, spending_level, keywords, psc_code, naics_code,
     )
 
 
@@ -138,10 +148,13 @@ def download_records(
     end_date: str | None = None,
     award_type: Literal["contracts", "grants", "loans"] | None = None,
     spending_level: SpendingLevel = "awards",
+    keywords: Annotated[str | None, Field(description="Topic terms to match in the downloaded records; reuse a prior spending query's keywords.")] = None,
+    psc_code: Annotated[str | None, Field(description="Four-character product or service code; reuse a prior spending query's validated PSC code.")] = None,
+    naics_code: Annotated[str | None, Field(description="Two- to six-digit NAICS industry code; reuse a prior spending query's code.")] = None,
     file_format: Literal["csv"] = "csv",
 ) -> str:
     """Create a CSV of filtered award, transaction, or subaward records; use a fiscal-year or date range."""
     return _records(
         agency_name, start_fiscal_year, end_fiscal_year, start_date, end_date,
-        award_type, spending_level,
+        award_type, spending_level, keywords, psc_code, naics_code,
     )

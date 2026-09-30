@@ -130,6 +130,7 @@ __all__ = [
     "SubAgencyBreakdown",
     "SubAgencyOffice",
     "SubComponentBreakdown",
+    "SubComponentTotals",
     "SubawardListing",
     "SubawardListingResponse",
     "SubtierAgencyMatch",

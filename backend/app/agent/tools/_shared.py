@@ -315,14 +315,19 @@ def _format_period_breakdown(periods: list[ObligationByPeriod]) -> str:
     return "Obligated, cumulative from the start of the fiscal year: " + ", ".join(parts)
 
 
+BudgetGroupBy = Literal["sub_component"]
+
+
 @beta_tool
 def get_agency_budget(
     agency_name: str,
     start_fiscal_year: int,
     end_fiscal_year: int,
     include_period_breakdown: bool = False,
+    group_by: BudgetGroupBy | None = None,
+    bureau: str | None = None,
 ) -> str:
-    """Get an agency's actual appropriated budgetary resources, obligations, and outlays for a fiscal year range. Use this specifically for "what is X's budget," "how much money does X have," or "how much has X actually paid out" questions.
+    """Get an agency's actual appropriated budgetary resources, obligations, and outlays. Use this specifically for "what is X's budget," "how much money does X have," or "how much has X actually paid out" questions - for a fiscal year range by default, or broken down by sub-component/bureau (e.g. NIH or CDC within HHS) for a single fiscal year with group_by="sub_component", or one named bureau's own federal accounts with group_by="sub_component" and bureau set.
 
     This is a genuinely different concept from what get_spending_by_category, get_spending_over_time, and search_awards report: those three track money obligated against specific contracts, grants, and loans (award-level spending activity), not the agency's appropriated budget authority. An agency's total budgetary resources for a fiscal year is NOT the same number as its total award spending in that year, and the two should never be presented as if interchangeable - if asked about budget/appropriations specifically, use this tool, not the spending tools, even though both involve dollar figures for the same agency.
 
@@ -331,23 +336,46 @@ def get_agency_budget(
         start_fiscal_year: First fiscal year to include, e.g. 2021 for FY2021. This endpoint's
             own data only goes back to FY2017 (a shorter history than the FY2008 floor the
             spending tools have) - a range starting earlier than that will just return whatever
-            years are actually available, not error.
+            years are actually available, not error. Must equal end_fiscal_year when group_by is
+            set - the sub-component/bureau breakdown is single-fiscal-year only.
         end_fiscal_year: Last fiscal year to include, e.g. 2024 for FY2024.
-        include_period_breakdown: Set True only when the question is specifically about WHEN
-            during the fiscal year money was obligated (e.g. "how did NSF's obligations build up
-            over FY2024" or "was most of the budget obligated early or late in the year") - false
-            by default since most budget questions just want the yearly totals, and the
-            breakdown adds up to ~11 extra numbers per fiscal year. Each period's obligated
-            amount is CUMULATIVE from the start of that fiscal year through that period, not an
-            incremental amount for that period alone - e.g. period 6 is the running total through
-            that point in the year, not what was newly obligated in period 6. If you state what
-            share of the year's total a period represents, or how much changed between two
-            periods, call percentage_of or delta for that number - do not compute it yourself
-            just because it looks like simple subtraction or a percentage of a total you can
-            already see in this data.
+        include_period_breakdown: Only valid with group_by=None. Set True only when the question
+            is specifically about WHEN during the fiscal year money was obligated (e.g. "how did
+            NSF's obligations build up over FY2024" or "was most of the budget obligated early or
+            late in the year") - false by default since most budget questions just want the
+            yearly totals, and the breakdown adds up to ~11 extra numbers per fiscal year. Each
+            period's obligated amount is CUMULATIVE from the start of that fiscal year through
+            that period, not an incremental amount for that period alone - e.g. period 6 is the
+            running total through that point in the year, not what was newly obligated in period
+            6. If you state what share of the year's total a period represents, or how much
+            changed between two periods, call percentage_of or delta for that number - do not
+            compute it yourself just because it looks like simple subtraction or a percentage of
+            a total you can already see in this data.
+        group_by: None (default) for the agency's own yearly totals across the requested range.
+            "sub_component" to break the same figures down by sub-component/bureau for a single
+            fiscal year instead - use this for "which part of X has the most funding" questions.
+        bureau: Only valid with group_by="sub_component". Restrict to one named bureau/sub-
+            component (e.g. "Food and Nutrition Service" within USDA) instead of listing every
+            bureau, matched against the bureau names this tool itself returns when bureau is
+            omitted. Omit to list all bureaus.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
+
+    # Delegates to get_agency_budget_by_subcomponent, same pattern query_spending uses.
+    if group_by == "sub_component":
+        if include_period_breakdown:
+            return "include_period_breakdown is only valid with group_by=None."
+        if start_fiscal_year != end_fiscal_year:
+            return (
+                'group_by="sub_component" only supports a single fiscal year - call again with '
+                "start_fiscal_year == end_fiscal_year for each year needed."
+            )
+        return get_agency_budget_by_subcomponent(agency_name, start_fiscal_year, bureau)
+
+    if bureau is not None:
+        return 'bureau is only valid with group_by="sub_component".'
+
     try:
         toptier_code, years = get_agency_budget_raw(agency_name, start_fiscal_year, end_fiscal_year)
     except USASpendingAPIError as e:

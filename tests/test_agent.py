@@ -107,6 +107,7 @@ from backend.app.agent.tools import (
     _truncation_note,
     _unresolved_award_id_hint,
     get_agency_award_breakdown,
+    get_agency_budget,
     get_agency_budget_by_subcomponent,
     get_spending_explorer_breakdown_raw,
 )
@@ -124,10 +125,12 @@ from backend.app.agent.tools.location import (
 from backend.app.agent.tools.spending import get_spending_by_category, search_awards
 from backend.app.usaspending import (
     AgencyAwardsResponse,
+    AgencyBudgetaryResourcesResponse,
     AgencyObligationsByAwardCategoryResponse,
     AgencySubAgencyResponse,
     AgencySubComponentFederalAccountsResponse,
     AgencySubComponentsResponse,
+    AgencyYearBudget,
     AwardCategoryObligation,
     AwardFundingResponse,
     AwardFundingRow,
@@ -692,6 +695,44 @@ class TestGetAgencyAwardBreakdownGroupBy:
             agency_name="Department of Agriculture", fiscal_year=2024, group_by="whole_agency", include_offices=True,
         )
         assert "include_offices is only valid" in result
+
+
+class TestGetAgencyBudgetGroupBy:
+    def _mock_client(self, monkeypatch, agency=_UNSET):
+        resolved_agency = make_agency("Department of Agriculture") if agency is _UNSET else agency
+        client = FakeClient(resolved_agency)
+        client.get_agency_sub_components = lambda *a, **kw: make_sub_components_response(2)
+        monkeypatch.setattr("backend.app.agent.tools._shared._get_usaspending_client", lambda: client)
+        return client
+
+    def test_default_range_behavior_is_unchanged(self, monkeypatch):
+        client = self._mock_client(monkeypatch)
+        client.get_agency_budgetary_resources = lambda *a, **kw: AgencyBudgetaryResourcesResponse(
+            toptier_code="012", agency_data_by_year=[
+                AgencyYearBudget(fiscal_year=2024, agency_budgetary_resources=1.0, agency_total_obligated=1.0, agency_total_outlayed=1.0),
+            ],
+        )
+        result = get_agency_budget.func(agency_name="Department of Agriculture", start_fiscal_year=2024, end_fiscal_year=2024)
+        assert "FY2024" in result
+
+    def test_sub_component_delegates_to_get_agency_budget_by_subcomponent(self, monkeypatch):
+        self._mock_client(monkeypatch)
+        result = get_agency_budget.func(
+            agency_name="Department of Agriculture", start_fiscal_year=2024, end_fiscal_year=2024, group_by="sub_component",
+        )
+        assert "Sub-Component 0" in result
+
+    def test_sub_component_rejects_multi_year_range(self):
+        result = get_agency_budget.func(
+            agency_name="Department of Agriculture", start_fiscal_year=2022, end_fiscal_year=2024, group_by="sub_component",
+        )
+        assert "only supports a single fiscal year" in result
+
+    def test_bureau_without_group_by_is_rejected(self):
+        result = get_agency_budget.func(
+            agency_name="Department of Agriculture", start_fiscal_year=2024, end_fiscal_year=2024, bureau="Food and Nutrition Service",
+        )
+        assert 'bureau is only valid with group_by="sub_component"' in result
 
 
 class TestSpendingByGeographyChart:

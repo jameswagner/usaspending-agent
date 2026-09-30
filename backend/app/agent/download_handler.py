@@ -26,7 +26,7 @@ from .response_shaping import (
 )
 from .scope import _render_recent_exchanges
 from .singletons import MODEL, _get_client, _get_usaspending_client
-from .tool_filters import _build_filters
+from .tool_filters import _build_filters, _pop_naics_disclosure
 
 logger = logging.getLogger(__name__)
 
@@ -170,30 +170,109 @@ def _resolve_single_award_id(question: str, recent_messages: list | None) -> str
 
 # Maps a spending tool's own argument names to the DownloadIntent field they
 # correspond to - only fields DownloadIntent understands. Deliberately excludes
-# display-only args like `limit`/`category` (a breakdown's top-N or grouping
-# dimension is not a scope filter and must never be carried into a download).
+# display-only args like `limit`/`category`/`sort_by`/`group`/`geo_layer`/
+# `geo_layer_filters`/`scope` (get_spending_by_geography's grouping axis) - a
+# breakdown's top-N, sort order, or grouping dimension is not a scope filter
+# and must never be carried into a download.
+#
+# subrecipient_name/subrecipient_in_* (search_subawards's own arg names) map
+# onto the same recipient_name/recipient_in_* download fields - confirmed in
+# search_subawards_raw that they're passed into _build_filters's
+# recipient_name/recipient_in_* parameters directly, same underlying filter.
+#
+# recipient_id is deliberately absent - see _DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.
 _TOOL_ARG_TO_DOWNLOAD_FIELD = {
     "agency_name": "agency_raw",
     "award_type": "award_type",
     "start_year": "start_year",
     "end_year": "end_year",
     "time_period_type": "time_period_type",
+    "recipient_name": "recipient_name",
+    "subrecipient_name": "recipient_name",
+    "min_amount": "min_amount",
+    "max_amount": "max_amount",
+    "performed_in_state": "performed_in_state",
+    "recipient_in_state": "recipient_in_state",
+    "subrecipient_in_state": "recipient_in_state",
+    "performed_in_county": "performed_in_county",
+    "recipient_in_county": "recipient_in_county",
+    "subrecipient_in_county": "recipient_in_county",
+    "performed_in_city": "performed_in_city",
+    "recipient_in_city": "recipient_in_city",
+    "subrecipient_in_city": "recipient_in_city",
+    "performed_in_zip": "performed_in_zip",
+    "recipient_in_zip": "recipient_in_zip",
+    "subrecipient_in_zip": "recipient_in_zip",
+    "performed_in_district": "performed_in_district",
+    "recipient_in_district": "recipient_in_district",
+    "subrecipient_in_district": "recipient_in_district",
+    "keywords": "keywords",
+    "date_type": "date_type",
+    "place_of_performance_scope": "place_of_performance_scope",
+    "recipient_scope": "recipient_scope",
+    "naics_code": "naics_code",
+    "psc_code": "psc_code",
+    "cfda_program": "cfda_program",
+    "award_id": "award_id",
+    "recipient_type": "recipient_type",
+    "description": "description",
+    "tas_code": "tas_code",
+    "federal_account": "federal_account",
+    "def_codes": "def_codes",
+    "contract_pricing_type": "contract_pricing_type",
+    "set_aside_type": "set_aside_type",
+    "extent_competed_type": "extent_competed_type",
+}
+
+# Real scoping filters a spending tool can resolve that /api/v2/download/search/'s
+# own Filters object has no field for. Live-verified 2026-09-30: posting a job with
+# a bogus recipient_id alongside a real agency+time_period scope produced the exact
+# same file_name/job as the identical request with recipient_id omitted entirely -
+# the field is silently dropped before the query ever runs, not merely ignored
+# server-side after being recorded. Carrying it forward would silently widen the
+# download past what the answer it continues was scoped to, so it's excluded from
+# _TOOL_ARG_TO_DOWNLOAD_FIELD above and instead surfaced as a caveat.
+_DOWNLOAD_UNSUPPORTED_SCOPE_ARGS = {
+    "recipient_id": "the recipient ID filter",
 }
 
 
-def _extract_prior_tool_context(recent_messages: list | None, max_messages: int = 10) -> dict | None:
+def _scope_caveat(dropped_filter_labels: list[str], naics_note: str | None = None) -> str:
+    """Builds the caveat suffix appended to a download's answer_text when part of the
+    prior answer's scope couldn't be carried through - see _DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.
+    Returns "" when there's nothing to say, so this is safe to always append."""
+    notes = []
+    if dropped_filter_labels:
+        notes.append(
+            f"the prior answer's {', '.join(dropped_filter_labels)} couldn't be carried into this "
+            "download - the download endpoint has no equivalent filter. This file may include more "
+            "than what you saw."
+        )
+    if naics_note:
+        notes.append(naics_note)
+    return "\n\n" + "\n".join(f"Note: {n}" for n in notes) if notes else ""
+
+
+def _extract_prior_tool_context(
+    recent_messages: list | None, max_messages: int = 10
+) -> tuple[dict | None, list[str]]:
     """Looks back through the real LangGraph message list - not the lossy prose
     _render_recent_exchanges produces - for the most recently resolved structured
     context: either this pilot's own prior DownloadIntent (stashed by
     _persist_download_turn) or a spending tool's actual resolved call arguments.
     Gives a follow-up extraction real values to copy instead of re-deriving
-    everything from text, which left room to invent fields nothing ever stated."""
+    everything from text, which left room to invent fields nothing ever stated.
+
+    Also returns the human-readable labels of any real scope filter the prior
+    call used that has no download-side equivalent (see
+    _DOWNLOAD_UNSUPPORTED_SCOPE_ARGS), so the caller can say so rather than
+    silently dropping it."""
     for message in reversed((recent_messages or [])[-max_messages:]):
         if getattr(message, "type", None) != "ai":
             continue
         stashed = (getattr(message, "additional_kwargs", None) or {}).get("download_intent")
         if stashed:
-            return dict(stashed)
+            return dict(stashed), []
         tool_calls = getattr(message, "tool_calls", None) or []
         if tool_calls:
             args = tool_calls[-1].get("args", {})
@@ -202,8 +281,30 @@ def _extract_prior_tool_context(recent_messages: list | None, max_messages: int 
                 for arg_name, field in _TOOL_ARG_TO_DOWNLOAD_FIELD.items()
                 if args.get(arg_name) is not None
             }
-            return context or None
-    return None
+            dropped = [
+                label for arg_name, label in _DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.items()
+                if args.get(arg_name) is not None
+            ]
+            return (context or None), dropped
+    return None, []
+
+
+# Every DownloadIntent field _build_filters can actually consume, beyond the
+# original agency/time/award_type/spending_level fields _download_intent_context
+# already handles by hand above - kept as one list so both that function and the
+# _build_filters(**filters) call below stay in sync with DownloadIntent's fields.
+_CARRYOVER_FILTER_FIELDS = [
+    "recipient_name", "min_amount", "max_amount",
+    "performed_in_state", "recipient_in_state",
+    "performed_in_county", "recipient_in_county",
+    "performed_in_city", "recipient_in_city",
+    "performed_in_zip", "recipient_in_zip",
+    "performed_in_district", "recipient_in_district",
+    "keywords", "date_type", "place_of_performance_scope", "recipient_scope",
+    "naics_code", "psc_code", "cfda_program", "award_id", "recipient_type",
+    "description", "tas_code", "federal_account", "def_codes",
+    "contract_pricing_type", "set_aside_type", "extent_competed_type",
+]
 
 
 def _download_intent_context(intent: DownloadIntent, agency_name: str | None) -> dict:
@@ -221,6 +322,10 @@ def _download_intent_context(intent: DownloadIntent, agency_name: str | None) ->
         context["end_year"] = intent.end_year
     if intent.award_type:
         context["award_type"] = intent.award_type
+    for field in _CARRYOVER_FILTER_FIELDS:
+        value = getattr(intent, field)
+        if value is not None:
+            context[field] = value
     return context
 
 
@@ -236,15 +341,49 @@ class DownloadIntent(BaseModel):
     end_date: str | None = None
     award_type: str | None = None
     spending_level: Literal["awards", "transactions", "subawards"] = "awards"
+    # Every field below mirrors a SpendingFilterParams field _build_filters already
+    # accepts (see tool_filters.py) - widened alongside _TOOL_ARG_TO_DOWNLOAD_FIELD
+    # so a download following a scoped answer can actually carry that scope, not
+    # just agency/time/award_type. recipient_id is the one SpendingFilterParams
+    # field deliberately absent here - see _DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.
+    recipient_name: str | None = None
+    min_amount: float | None = None
+    max_amount: float | None = None
+    performed_in_state: str | None = None
+    recipient_in_state: str | None = None
+    performed_in_county: str | None = None
+    recipient_in_county: str | None = None
+    performed_in_city: str | None = None
+    recipient_in_city: str | None = None
+    performed_in_zip: str | None = None
+    recipient_in_zip: str | None = None
+    performed_in_district: str | None = None
+    recipient_in_district: str | None = None
+    keywords: str | None = None
+    date_type: str | None = None
+    place_of_performance_scope: str | None = None
+    recipient_scope: str | None = None
+    naics_code: str | None = None
+    psc_code: str | None = None
+    cfda_program: str | None = None
+    award_id: str | None = None
+    recipient_type: str | None = None
+    description: str | None = None
+    tas_code: str | None = None
+    federal_account: str | None = None
+    def_codes: list[str] | None = None
+    contract_pricing_type: list[str] | None = None
+    set_aside_type: list[str] | None = None
+    extent_competed_type: list[str] | None = None
 
 
 _EXTRACT_TOOL_NAME = "extract_download_intent"
 _EXTRACT_TOOL = {
     "name": _EXTRACT_TOOL_NAME,
     "description": (
-        "Extract the agency and time period the user wants a spending award CSV download for. "
-        "If the question doesn't name a specific agency or a resolvable time period, omit those "
-        "fields rather than guessing."
+        "Extract the agency, time period, and any other scoping filters the user wants a spending "
+        "award CSV download for. If the question doesn't name a specific agency or a resolvable "
+        "time period, omit those fields rather than guessing - same for every other filter field."
     ),
     "input_schema": {
         "type": "object",
@@ -288,6 +427,39 @@ _EXTRACT_TOOL = {
                 "specifically says \"sub-awards\"/\"subcontractors\"/\"subgrantees\", not prime recipients. "
                 "Default to awards unless the question clearly names one of the other two.",
             },
+            "recipient_name": {"type": "string", "description": "Recipient name text match, e.g. 'Leidos'."},
+            "min_amount": {"type": "number", "description": "Lower dollar bound on award amount."},
+            "max_amount": {"type": "number", "description": "Upper dollar bound on award amount."},
+            "performed_in_state": {"type": "string", "description": "US state/territory where work was performed."},
+            "recipient_in_state": {"type": "string", "description": "US state/territory the recipient is located in."},
+            "performed_in_county": {"type": "string", "description": "3-digit county FIPS code where work was performed."},
+            "recipient_in_county": {"type": "string", "description": "3-digit county FIPS code the recipient is located in."},
+            "performed_in_city": {"type": "string", "description": "City where work was performed."},
+            "recipient_in_city": {"type": "string", "description": "City the recipient is located in."},
+            "performed_in_zip": {"type": "string", "description": "5-digit zip code where work was performed."},
+            "recipient_in_zip": {"type": "string", "description": "5-digit zip code the recipient is located in."},
+            "performed_in_district": {"type": "string", "description": "Congressional district where work was performed."},
+            "recipient_in_district": {"type": "string", "description": "Congressional district the recipient is located in."},
+            "keywords": {"type": "string", "description": "Free-text keyword filter."},
+            "date_type": {
+                "type": "string",
+                "enum": ["action_date", "date_signed", "last_modified_date", "new_awards_only"],
+                "description": "Which date field the time period filters against, if the question specifies one.",
+            },
+            "place_of_performance_scope": {"type": "string", "enum": ["domestic", "foreign"]},
+            "recipient_scope": {"type": "string", "enum": ["domestic", "foreign"]},
+            "naics_code": {"type": "string", "description": "NAICS industry code."},
+            "psc_code": {"type": "string", "description": "Product/service code."},
+            "cfda_program": {"type": "string", "description": "CFDA/assistance listing number, e.g. '10.001'."},
+            "award_id": {"type": "string", "description": "A specific award's PIID/FAIN/URI."},
+            "recipient_type": {"type": "string", "description": "Recipient business type, e.g. 'small_business'."},
+            "description": {"type": "string", "description": "Phrase to match against the award's own description text."},
+            "tas_code": {"type": "string", "description": "A full Treasury Account Symbol code."},
+            "federal_account": {"type": "string", "description": "AID-MAIN federal account code, e.g. '028-8704'."},
+            "def_codes": {"type": "array", "items": {"type": "string"}, "description": "Disaster Emergency Fund Codes."},
+            "contract_pricing_type": {"type": "array", "items": {"type": "string"}, "description": "Contract pricing type keys, e.g. 'firm_fixed_price'."},
+            "set_aside_type": {"type": "array", "items": {"type": "string"}, "description": "Contract set-aside type keys."},
+            "extent_competed_type": {"type": "array", "items": {"type": "string"}, "description": "Contract extent-competed type keys."},
         },
         "required": ["wants_download"],
     },
@@ -399,6 +571,15 @@ def _build_download_citation(
         period_label = f"{year_label(intent.time_period_type, intent.start_year)}-{year_label(intent.time_period_type, intent.end_year)}"
     if intent.award_type:
         params["award_type"] = intent.award_type
+    # Display only - the curl body below holds the exact real request. ToolCitation.parameters
+    # has no list type, so a list-valued filter (def_codes/contract_pricing_type/etc.) is
+    # comma-joined here the same lossy-for-display-only way _merge_optional_filter_params does
+    # for the other spending tools' citations.
+    for field in _CARRYOVER_FILTER_FIELDS:
+        value = getattr(intent, field)
+        if value is None:
+            continue
+        params[field] = ", ".join(value) if isinstance(value, list) else value
     description = f"{intent.spending_level.capitalize()} CSV download, {agency_name or 'all agencies'}, {period_label}"
     body = {
         "filters": filters.model_dump(exclude_none=True),
@@ -489,7 +670,9 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
     # Only a real prior download gets the prose history block, whose prompt tells the extractor
     # the user is continuing one - prior_context stays ungated, being structured either way.
     history_block = _render_recent_exchanges(recent_messages) if _is_download_followup(recent_messages) else ""
-    prior_context = _extract_prior_tool_context(recent_messages) if recent_messages else None
+    prior_context, dropped_filter_labels = (
+        _extract_prior_tool_context(recent_messages) if recent_messages else (None, [])
+    )
     intent = _extract_download_intent(question, history_block, prior_context)
     if intent is None:
         return None
@@ -503,6 +686,7 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         agency_name = match.agency_name
 
     intent_context = _download_intent_context(intent, agency_name)
+    carryover_filters = {field: getattr(intent, field) for field in _CARRYOVER_FILTER_FIELDS}
 
     try:
         # Placeholder when start_date is set - real scope is applied below by overwriting time_period.
@@ -515,7 +699,9 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
             year_for_filters,
             award_type=intent.award_type,
             scope_required=False,
+            **carryover_filters,
         )
+        naics_note = _pop_naics_disclosure()
         if intent.start_date and intent.end_date:
             filters.time_period = [TimePeriod(start_date=intent.start_date, end_date=intent.end_date)]
         columns = _DOWNLOAD_COLUMNS_BY_LEVEL[intent.spending_level]
@@ -526,7 +712,8 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
     except USASpendingAPIError as e:
         logger.warning("Download pipeline failed for question %r: %s", question, e)
         return AgentResult(
-            answer_text=f"This download failed: {e}.", conversation_id=conversation_id,
+            answer_text=f"This download failed: {e}.{_scope_caveat(dropped_filter_labels)}",
+            conversation_id=conversation_id,
             download_intent_context=intent_context,
         )
 
@@ -545,6 +732,7 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
             f"Your download is still generating ({status.file_name}). It'll appear at the link below "
             "once ready - check back shortly."
         )
+    answer_text += _scope_caveat(dropped_filter_labels, naics_note)
 
     return AgentResult(
         answer_text=answer_text, conversation_id=conversation_id, downloads=[download], tool_citations=[citation],

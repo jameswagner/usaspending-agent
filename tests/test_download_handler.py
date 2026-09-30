@@ -153,12 +153,12 @@ class TestExtractPriorToolContext:
     reads the real structured tool-call/stashed-intent history instead."""
 
     def test_no_messages_returns_none(self):
-        assert _extract_prior_tool_context(None) is None
-        assert _extract_prior_tool_context([]) is None
+        assert _extract_prior_tool_context(None) == (None, [])
+        assert _extract_prior_tool_context([]) == (None, [])
 
     def test_plain_text_only_history_returns_none(self):
         messages = [HumanMessage(content="how much did NSF spend in FY2024?"), AIMessage(content="$8.86 billion.")]
-        assert _extract_prior_tool_context(messages) is None
+        assert _extract_prior_tool_context(messages) == (None, [])
 
     def test_stashed_download_intent_is_recovered_verbatim(self):
         stashed = {"agency_raw": "National Science Foundation", "spending_level": "transactions", "start_year": 2023, "end_year": 2023}
@@ -166,7 +166,7 @@ class TestExtractPriorToolContext:
             HumanMessage(content="download NSF's transactions for FY2023"),
             AIMessage(content="Your download is ready: 30790 rows...", additional_kwargs={"download_intent": stashed}),
         ]
-        assert _extract_prior_tool_context(messages) == stashed
+        assert _extract_prior_tool_context(messages) == (stashed, [])
 
     def test_spending_tool_call_args_are_mapped_to_download_fields(self):
         messages = [
@@ -181,18 +181,19 @@ class TestExtractPriorToolContext:
             }]),
             AIMessage(content="Here's the breakdown..."),
         ]
-        context = _extract_prior_tool_context(messages)
+        context, dropped = _extract_prior_tool_context(messages)
         assert context == {
             "agency_raw": "National Science Foundation", "start_year": 2025, "end_year": 2025,
             "award_type": "contracts",
         }
+        assert dropped == []
         # Display-only args must never leak in as if they were scope filters.
         assert "limit" not in context
         assert "category" not in context
 
     def test_tool_call_with_no_mappable_fields_returns_none(self):
         messages = [AIMessage(content="", tool_calls=[{"name": "search_guide", "args": {"query": "what is a sub-award?"}, "id": "call_1"}])]
-        assert _extract_prior_tool_context(messages) is None
+        assert _extract_prior_tool_context(messages) == (None, [])
 
     def test_most_recent_ai_message_wins_over_an_older_one(self):
         messages = [
@@ -205,8 +206,55 @@ class TestExtractPriorToolContext:
                 "download_intent": {"agency_raw": "National Science Foundation", "spending_level": "awards"}
             }),
         ]
-        context = _extract_prior_tool_context(messages)
+        context, dropped = _extract_prior_tool_context(messages)
         assert context == {"agency_raw": "National Science Foundation", "spending_level": "awards"}
+        assert dropped == []
+
+    def test_naics_scoped_category_call_is_carried_into_download_fields(self):
+        """A NAICS/PSC-scoped answer's scope must survive into the
+        download follow-up, not just agency/time_period/award_type."""
+        messages = [
+            HumanMessage(content="how much did NSF spend on cloud computing in FY2024?"),
+            AIMessage(content="", tool_calls=[{
+                "name": "get_spending_over_time",
+                "args": {
+                    "agency_name": "National Science Foundation", "start_year": 2024, "end_year": 2024,
+                    "naics_code": "518210", "group": "fiscal_year",
+                },
+                "id": "call_1",
+            }]),
+            AIMessage(content="NSF spent $12.3 million on cloud computing infrastructure in FY2024."),
+        ]
+        context, dropped = _extract_prior_tool_context(messages)
+        assert context == {
+            "agency_raw": "National Science Foundation", "start_year": 2024, "end_year": 2024,
+            "naics_code": "518210",
+        }
+        assert dropped == []
+        assert "group" not in context
+
+    def test_recipient_id_scope_is_reported_as_dropped_not_silently_carried(self):
+        """recipient_id has no equivalent in /api/v2/download/search/'s own Filters object -
+        live-verified 2026-09-30 (a bogus recipient_id alongside a real scope produced the
+        exact same job as omitting it entirely). Carrying it forward would silently widen
+        the download past the answer it continues, so it must come back as a caveat, not
+        a mapped field."""
+        messages = [
+            HumanMessage(content="how much has this recipient received from HHS in FY2024?"),
+            AIMessage(content="", tool_calls=[{
+                "name": "get_spending_over_time",
+                "args": {
+                    "agency_name": "Department of Health and Human Services",
+                    "recipient_id": "419ccd27-d6f4-d363-aeaf-b9e2c3ae6f5d-P",
+                    "start_year": 2024, "end_year": 2024,
+                },
+                "id": "call_1",
+            }]),
+            AIMessage(content="This recipient received $4.2 million from HHS in FY2024."),
+        ]
+        context, dropped = _extract_prior_tool_context(messages)
+        assert "recipient_id" not in context
+        assert dropped == ["the recipient ID filter"]
 
 
 class TestDownloadIntentContext:

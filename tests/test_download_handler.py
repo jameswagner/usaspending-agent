@@ -1,12 +1,15 @@
 from unittest.mock import MagicMock, patch
 
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from backend.app.agent.download_handler import (
     DownloadIntent,
+    _award_id_endpoint,
+    _extract_award_id_from_history,
     _extract_download_intent,
     _is_download_followup,
     _looks_like_download_request,
+    _resolve_single_award_id,
     _unsupported_download_label,
     handle_download_request,
 )
@@ -57,6 +60,21 @@ class FakeDownloadClient:
         if isinstance(next_item, Exception):
             raise next_item
         return next_item
+
+    def _single_award_download(self, award_id):
+        self.last_award_id = award_id
+        if self._raises:
+            raise self._raises
+        return self._job
+
+    def download_contract(self, award_id, file_format="csv"):
+        return self._single_award_download(award_id)
+
+    def download_assistance(self, award_id, file_format="csv"):
+        return self._single_award_download(award_id)
+
+    def download_idv(self, award_id, file_format="csv"):
+        return self._single_award_download(award_id)
 
 
 class TestLooksLikeDownloadRequest:
@@ -396,3 +414,136 @@ class TestSpendingLevel:
     def test_citation_records_resolved_spending_level(self):
         result, _ = self._run("transactions")
         assert result.tool_citations[0].parameters["spending_level"] == "transactions"
+
+
+class TestAwardIdEndpoint:
+    def test_contract_prefix(self):
+        assert _award_id_endpoint("CONT_AWD_N0002404C2105_9700_-NONE-_-NONE-") == "contract"
+
+    def test_idv_prefix(self):
+        assert _award_id_endpoint("CONT_IDV_BBGBPA08452513_9568") == "idv"
+
+    def test_assistance_prefix(self):
+        assert _award_id_endpoint("ASST_NON_H79TI081692_7522") == "assistance"
+
+    def test_unrecognized_prefix_returns_none(self):
+        assert _award_id_endpoint("N0002404C2105") is None
+
+
+class TestExtractAwardIdFromHistory:
+    def test_no_history_returns_none(self):
+        assert _extract_award_id_from_history(None) is None
+        assert _extract_award_id_from_history([]) is None
+
+    def test_finds_internal_id_in_tool_message(self):
+        messages = [
+            HumanMessage(content="find NASA's biggest contract in 2024"),
+            ToolMessage(
+                content="CONT_AWD_X — Boeing: $1.2M [internal_id: CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-]",
+                tool_call_id="1",
+            ),
+            AIMessage(content="NASA's biggest contract in 2024 was with Boeing for $1.2M."),
+        ]
+        assert (
+            _extract_award_id_from_history(messages)
+            == "CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-"
+        )
+
+    def test_ignores_ai_message_text(self):
+        # Only ToolMessage content is searched - an AI message shouldn't match.
+        messages = [AIMessage(content="internal_id: CONT_AWD_looks_like_one_but_isnt_tagged")]
+        assert _extract_award_id_from_history(messages) is None
+
+    def test_most_recent_tool_message_wins(self):
+        messages = [
+            ToolMessage(content="[internal_id: CONT_AWD_OLDER]", tool_call_id="1"),
+            ToolMessage(content="[internal_id: CONT_AWD_NEWER]", tool_call_id="2"),
+        ]
+        assert _extract_award_id_from_history(messages) == "CONT_AWD_NEWER"
+
+
+class TestResolveSingleAwardId:
+    def test_award_id_in_question_is_used_directly(self):
+        assert (
+            _resolve_single_award_id("download CONT_IDV_BBGBPA08452513_9568", None)
+            == "CONT_IDV_BBGBPA08452513_9568"
+        )
+
+    def test_followup_phrase_without_history_returns_none(self):
+        assert _resolve_single_award_id("download this award", None) is None
+
+    def test_followup_phrase_resolves_from_history(self):
+        messages = [ToolMessage(content="[internal_id: ASST_NON_H79TI081692_7522]", tool_call_id="1")]
+        assert _resolve_single_award_id("download this grant", messages) == "ASST_NON_H79TI081692_7522"
+
+    def test_ordinary_multi_award_question_returns_none(self):
+        assert _resolve_single_award_id("download NSF's FY2024 awards as a CSV", None) is None
+
+
+class TestHandleDownloadRequestSingleAward:
+    def test_direct_award_id_routes_to_contract_endpoint(self):
+        job = DownloadJobResponse(
+            status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+            file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        finished = DownloadStatusResponse(
+            status="finished", file_name="x.zip",
+            file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=None,
+        )
+        client = FakeDownloadClient(job=job, statuses=[finished])
+        with patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
+            result = handle_download_request(
+                "download CONT_AWD_N0002404C2105_9700_-NONE-_-NONE-", "conv-1"
+            )
+        assert result is not None
+        assert client.last_award_id == "CONT_AWD_N0002404C2105_9700_-NONE-_-NONE-"
+        assert result.downloads[0].status == "finished"
+        assert result.tool_citations[0].tool_name == "download_contract"
+
+    def test_direct_idv_award_id_routes_to_idv_endpoint(self):
+        job = DownloadJobResponse(
+            status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+            file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        finished = DownloadStatusResponse(
+            status="finished", file_name="x.zip",
+            file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        client = FakeDownloadClient(job=job, statuses=[finished])
+        with patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
+            result = handle_download_request("download CONT_IDV_BBGBPA08452513_9568", "conv-1")
+        assert result.tool_citations[0].tool_name == "download_idv"
+
+    def test_followup_phrase_uses_history_resolved_award_id(self):
+        job = DownloadJobResponse(
+            status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+            file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        finished = DownloadStatusResponse(
+            status="finished", file_name="x.zip",
+            file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        client = FakeDownloadClient(job=job, statuses=[finished])
+        recent_messages = [
+            HumanMessage(content="get me the details on that contract"),
+            ToolMessage(content="[internal_id: ASST_NON_H79TI081692_7522]", tool_call_id="1"),
+            AIMessage(content="Here are the details."),
+        ]
+        with patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
+            result = handle_download_request("download this grant", "conv-1", recent_messages)
+        assert client.last_award_id == "ASST_NON_H79TI081692_7522"
+        assert result.tool_citations[0].tool_name == "download_assistance"
+
+    def test_followup_phrase_with_no_resolvable_id_returns_helpful_message_not_none(self):
+        result = handle_download_request("download this award", "conv-1", None)
+        assert result is not None
+        assert "conv-1" == result.conversation_id
+        assert result.downloads == []
+
+    def test_api_error_on_single_award_download_returns_error_message(self):
+        client = FakeDownloadClient(raises=USASpendingAPIError("500: boom"))
+        with patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
+            result = handle_download_request(
+                "download CONT_AWD_N0002404C2105_9700_-NONE-_-NONE-", "conv-1"
+            )
+        assert "This download failed" in result.answer_text

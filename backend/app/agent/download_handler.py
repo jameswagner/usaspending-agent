@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from typing import Literal
 
@@ -11,6 +12,7 @@ from pydantic import BaseModel, ValidationError
 from backend.app.usaspending import (
     BASE_URL,
     AdvancedFilters,
+    DownloadJobResponse,
     TimePeriod,
     USASpendingAPIError,
     USASpendingClient,
@@ -110,6 +112,61 @@ def _unsupported_download_label(question: str) -> str | None:
     for term, label in _UNSUPPORTED_DOWNLOAD_PATTERN.items():
         if term in q:
             return label
+    return None
+
+
+# generated_unique_award_id's prefixes are fully disjoint - startswith mapping is unambiguous.
+_SINGLE_AWARD_ID_PATTERN = re.compile(r"\b(?:CONT_AWD_|CONT_IDV_|ASST_)[A-Za-z0-9_\-]+")
+_SINGLE_AWARD_ENDPOINT_BY_PREFIX = (
+    ("CONT_AWD_", "contract"),
+    ("CONT_IDV_", "idv"),
+    ("ASST_", "assistance"),
+)
+_SINGLE_AWARD_CLIENT_METHOD = {
+    "contract": "download_contract",
+    "assistance": "download_assistance",
+    "idv": "download_idv",
+}
+
+# Only these phrasings are worth a history search - not every download request.
+_SINGLE_AWARD_FOLLOWUP_TERMS = (
+    "this award", "this contract", "this grant", "this loan", "this idv",
+    "that award", "that contract", "that grant", "that loan", "that idv",
+    "the same award", "download it", "download that",
+)
+
+# Matches the "[internal_id: ...]" tag search_awards/get_award_details append to each result.
+_PRIOR_INTERNAL_ID_PATTERN = re.compile(r"\[internal_id:\s*([A-Za-z0-9_\-]+)\]")
+
+
+def _award_id_endpoint(award_id: str) -> str | None:
+    for prefix, endpoint in _SINGLE_AWARD_ENDPOINT_BY_PREFIX:
+        if award_id.startswith(prefix):
+            return endpoint
+    return None
+
+
+def _extract_award_id_from_history(recent_messages: list | None) -> str | None:
+    for message in reversed(recent_messages or []):
+        if getattr(message, "type", None) != "tool" or not isinstance(message.content, str):
+            continue
+        match = _PRIOR_INTERNAL_ID_PATTERN.search(message.content)
+        if match:
+            return match.group(1)
+    return None
+
+
+def _is_single_award_followup_phrase(question: str) -> bool:
+    q = question.lower()
+    return any(term in q for term in _SINGLE_AWARD_FOLLOWUP_TERMS)
+
+
+def _resolve_single_award_id(question: str, recent_messages: list | None) -> str | None:
+    match = _SINGLE_AWARD_ID_PATTERN.search(question)
+    if match:
+        return match.group(0)
+    if _is_single_award_followup_phrase(question):
+        return _extract_award_id_from_history(recent_messages)
     return None
 
 
@@ -280,9 +337,71 @@ def _build_download_citation(
     return ToolCitation(tool_name="download_search", parameters=params, description=description, curl=curl)
 
 
+def _build_single_award_citation(award_id: str, endpoint: str) -> ToolCitation:
+    body = {"award_id": award_id, "file_format": "csv"}
+    curl = f"curl -X POST '{BASE_URL}/api/v2/download/{endpoint}/' -H 'Content-Type: application/json' -d '{json.dumps(body)}'"
+    return ToolCitation(
+        tool_name=f"download_{endpoint}",
+        parameters={"award_id": award_id},
+        description=f"Single-award CSV download, {award_id}",
+        curl=curl,
+    )
+
+
+def _handle_single_award_download(award_id: str, conversation_id: str):
+    from .orchestrator import AgentResult
+
+    endpoint = _award_id_endpoint(award_id)
+    if endpoint is None:
+        return None
+
+    client = _get_usaspending_client()
+    method = getattr(client, _SINGLE_AWARD_CLIENT_METHOD[endpoint])
+    try:
+        job: DownloadJobResponse = method(award_id)
+        status = _poll_until_finished(client, job.file_name)
+    except USASpendingAPIError as e:
+        logger.warning("Single-award download pipeline failed for award_id %r: %s", award_id, e)
+        return AgentResult(answer_text=f"This download failed: {e}.", conversation_id=conversation_id)
+
+    citation = _build_single_award_citation(award_id, endpoint)
+    download = DownloadSpec(
+        file_name=status.file_name, url=status.file_url, status_url=job.status_url,
+        status=status.status, total_rows=status.total_rows,
+    )
+    if status.status == "finished":
+        answer_text = f"Your download is ready: {status.file_name}.\n{status.file_url}"
+    elif status.status == "failed":
+        answer_text = f"This download failed to generate: {status.message or 'no further detail from the API.'}"
+    else:
+        answer_text = (
+            f"Your download is still generating ({status.file_name}). It'll appear at the link below "
+            "once ready - check back shortly."
+        )
+
+    return AgentResult(
+        answer_text=answer_text, conversation_id=conversation_id, downloads=[download], tool_citations=[citation]
+    )
+
+
 def handle_download_request(question: str, conversation_id: str, recent_messages: list | None = None):
     """Returns None to signal "fall through to the normal tool loop unchanged"."""
     from .orchestrator import AgentResult
+
+    award_id = _resolve_single_award_id(question, recent_messages)
+    if award_id is not None:
+        single_award_result = _handle_single_award_download(award_id, conversation_id)
+        if single_award_result is not None:
+            return single_award_result
+    elif _is_single_award_followup_phrase(question):
+        # No tool in the loop below produces a file - say so rather than silently falling through.
+        return AgentResult(
+            answer_text=(
+                "I can download that award once I know which one — look it up first (e.g. search "
+                "for it or pull up its details), then ask me to download it."
+            ),
+            conversation_id=conversation_id,
+        )
 
     unsupported = _unsupported_download_label(question)
     if unsupported is not None:

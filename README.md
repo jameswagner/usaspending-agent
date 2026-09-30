@@ -25,9 +25,8 @@ A tool-calling assistant for questions about USASpending.gov federal spending da
 | `resolve_county_fips` | A county name → its 3-digit FIPS code, for the `performed_in_county`/`recipient_in_county` filters — strips local suffixes (Louisiana parishes, Alaska boroughs/census areas) the live endpoint's own match otherwise fails on |
 | `resolve_budget_function` | A plain-English budget category (e.g. "National Defense", "Medicare") → matching `budget_function`/`budget_subfunction` code(s), for `get_spending_explorer_breakdown`'s filters |
 | `list_top_agencies_by_budget` | Agencies ranked by budget authority, largest first, with each one's share of the total federal budget — always the current fiscal year/quarter, no historical range |
-| `get_agency_budget` | An agency's actual appropriated budgetary resources, obligations, and outlays for a fiscal year range — the real answer to "what is X's budget," as opposed to the spending tools below, which report award-level spending (a different, non-interchangeable number) |
-| `get_agency_budget_by_subcomponent` | Same figures as `get_agency_budget` (budgetary resources, obligated, outlayed), but broken down by sub-component/bureau (e.g. NIH or CDC within HHS) instead of one whole-agency total |
-| `get_agency_award_breakdown` | One agency's award obligations *and* transaction/new-award counts, broken down by sub-agency, for a single fiscal year — `query_spending`'s group_by aggregates have no count fields at all |
+| `get_agency_budget` | An agency's actual appropriated budgetary resources, obligations, and outlays for a fiscal year range — the real answer to "what is X's budget," as opposed to the spending tools below, which report award-level spending (a different, non-interchangeable number). `group_by="sub_component"` breaks the same figures down by sub-component/bureau (e.g. NIH or CDC within HHS) for a single fiscal year instead, optionally scoped to one named bureau's own federal accounts |
+| `get_agency_award_breakdown` | One agency's award obligations *and* transaction/new-award counts for a single fiscal year, broken down by sub-agency by default — `query_spending`'s group_by aggregates have no count fields at all. `group_by="award_category"` breaks down by award category instead, and `group_by="whole_agency"` gives the agency's own single total with no breakdown |
 | `get_award_type_breakdown` | The count of awards by type — Contracts, Contract IDVs, Grants, Direct Payments, Loans, Other. The only tool here with no scoping filter required at all (a bounded six-number answer even fully unscoped); optional filters narrow it to one agency/recipient/location/etc. |
 | `get_disaster_spending_overview` | Headline disaster/emergency-relief totals — budget authority, obligations, outlays — optionally scoped to specific Disaster Emergency Fund Codes (e.g. COVID-19, infrastructure relief). All-time, government-wide only; a different data source from every award-level spending tool here |
 | `get_spending_explorer_breakdown` | Whole-of-government obligated spending grouped by budget function/subfunction/federal account/program activity/object class/agency/recipient — account-level data, a different lineage from every award-level spending tool below; totals won't match them and that's expected |
@@ -159,12 +158,12 @@ backend/app/
                                 models, the Guide+Glossary and NAICS/PSC/CFDA
                                 retrievers, the USASpending API client, and the
                                 LangGraph checkpointer + conversation graph
-    tools/                   The 22 @beta_tool data tools, split by concern:
+    tools/                   The 21 @beta_tool data tools, split by concern:
                                 _shared.py (call recording, per-turn budget,
                                 untrusted-data wrapping, + search_guide/
-                                lookup_agency/get_agency_budget/
-                                get_agency_budget_by_subcomponent/
-                                list_top_agencies_by_budget/
+                                lookup_agency/get_agency_budget (also covers
+                                the old get_agency_budget_by_subcomponent via
+                                group_by)/list_top_agencies_by_budget/
                                 get_agency_award_breakdown), spending/
                                 (category.py/over_time.py/search.py/geography.py/
                                 consolidated.py - query_spending, consolidating

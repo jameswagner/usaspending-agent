@@ -87,6 +87,9 @@ const TEMPLATES: DemoQuestionTemplate[] = [
   { generate: () => "What's the difference between a contract and a grant?" },
   { generate: () => "How many sub-agencies does the Environmental Protection Agency have?" },
   { generate: () => "What percentage of the total federal budget does the Department of Defense account for?" },
+  { generate: () => "Which part of the Department of Health and Human Services has the most funding?" },
+  { generate: () => "What federal accounts does the Food and Nutrition Service spend from in FY2024?" },
+  { generate: () => "How does the Department of Agriculture's FY2024 award spending split across contracts, grants, and loans?" },
 ];
 
 export const DEMO_QUESTIONS_SAMPLE_SIZE = 5;

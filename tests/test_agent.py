@@ -697,6 +697,112 @@ class TestGetAgencyAwardBreakdownGroupBy:
         assert "include_offices is only valid" in result
 
 
+def _make_sub_agency_row(name: str, abbreviation: str | None, offices: list[SubAgencyOffice]) -> SubAgencyBreakdown:
+    return SubAgencyBreakdown(
+        name=name, abbreviation=abbreviation, total_obligations=1.0, transaction_count=1, new_award_count=1,
+        children=offices,
+    )
+
+
+class TestGetAgencyAwardBreakdownSubAgencyTarget:
+    def _mock_client(self, monkeypatch, agency=_UNSET, matched_subtier=None):
+        resolved_agency = make_agency("Department of Agriculture") if agency is _UNSET else agency
+        client = FakeClient(resolved_agency)
+        client.find_agency_by_name_with_subagency = lambda name: (
+            (resolved_agency, matched_subtier) if resolved_agency is not None else None
+        )
+        monkeypatch.setattr("backend.app.agent.tools._shared._get_usaspending_client", lambda: client)
+        return client
+
+    def _fns_row(self) -> SubAgencyBreakdown:
+        return _make_sub_agency_row(
+            "Food and Nutrition Service", "FNS",
+            [
+                SubAgencyOffice(name="SNAP", code="1234HK", total_obligations=5.0, transaction_count=1, new_award_count=1),
+                SubAgencyOffice(name="WIC", code="12348M", total_obligations=50.0, transaction_count=1, new_award_count=1),
+            ],
+        )
+
+    def test_agency_name_auto_detects_sub_agency_and_returns_only_its_offices(self, monkeypatch):
+        # FNS -> USDA resolution preserves that FNS was the actual target,
+        # rather than losing it the way find_agency_by_name alone does.
+        client = self._mock_client(monkeypatch, matched_subtier="Food and Nutrition Service")
+        client.get_agency_sub_agency_breakdown = lambda *a, **kw: AgencySubAgencyResponse(
+            toptier_code="012", fiscal_year=2024,
+            results=[self._fns_row(), _make_sub_agency_row("Forest Service", "FS", [])],
+        )
+        result = get_agency_award_breakdown.func(agency_name="Food and Nutrition Service", fiscal_year=2024)
+        assert "Food and Nutrition Service" in result
+        assert "Forest Service" not in result
+
+    def test_explicit_sub_agency_param_filters_to_that_sub_agency_only(self, monkeypatch):
+        client = self._mock_client(monkeypatch)
+        client.get_agency_sub_agency_breakdown = lambda *a, **kw: AgencySubAgencyResponse(
+            toptier_code="012", fiscal_year=2024,
+            results=[self._fns_row(), _make_sub_agency_row("Forest Service", "FS", [])],
+        )
+        result = get_agency_award_breakdown.func(
+            agency_name="Department of Agriculture", fiscal_year=2024, sub_agency="Food and Nutrition Service",
+        )
+        assert "Forest Service" not in result
+
+    def test_offices_are_ranked_by_obligations_descending(self, monkeypatch):
+        client = self._mock_client(monkeypatch)
+        client.get_agency_sub_agency_breakdown = lambda *a, **kw: AgencySubAgencyResponse(
+            toptier_code="012", fiscal_year=2024, results=[self._fns_row()],
+        )
+        result = get_agency_award_breakdown.func(
+            agency_name="Department of Agriculture", fiscal_year=2024, sub_agency="FNS",
+        )
+        assert result.index("WIC") < result.index("SNAP")
+
+    def test_include_offices_is_implied_even_when_not_set(self, monkeypatch):
+        client = self._mock_client(monkeypatch)
+        client.get_agency_sub_agency_breakdown = lambda *a, **kw: AgencySubAgencyResponse(
+            toptier_code="012", fiscal_year=2024, results=[self._fns_row()],
+        )
+        result = get_agency_award_breakdown.func(
+            agency_name="Department of Agriculture", fiscal_year=2024, sub_agency="FNS", include_offices=False,
+        )
+        assert "SNAP" in result
+
+    def test_target_on_a_later_page_is_not_treated_as_a_miss(self, monkeypatch):
+        client = self._mock_client(monkeypatch)
+        page_one = AgencySubAgencyResponse(
+            toptier_code="012", fiscal_year=2024,
+            results=[_make_sub_agency_row("Forest Service", "FS", [])],
+            page_metadata=PageMetadata(page=1, hasNext=True),
+        )
+        page_two = AgencySubAgencyResponse(
+            toptier_code="012", fiscal_year=2024, results=[self._fns_row()],
+            page_metadata=PageMetadata(page=2, hasNext=False),
+        )
+        calls = iter([page_one, page_two])
+        client.get_agency_sub_agency_breakdown = lambda *a, **kw: next(calls)
+        result = get_agency_award_breakdown.func(
+            agency_name="Department of Agriculture", fiscal_year=2024, sub_agency="Food and Nutrition Service",
+        )
+        assert "Food and Nutrition Service" in result
+
+    def test_no_matching_sub_agency_lists_known_sub_agencies(self, monkeypatch):
+        client = self._mock_client(monkeypatch)
+        client.get_agency_sub_agency_breakdown = lambda *a, **kw: AgencySubAgencyResponse(
+            toptier_code="012", fiscal_year=2024, results=[self._fns_row()],
+        )
+        result = get_agency_award_breakdown.func(
+            agency_name="Department of Agriculture", fiscal_year=2024, sub_agency="Not A Real Sub Agency",
+        )
+        assert "This query failed" in result
+        assert "Food and Nutrition Service" in result
+
+    def test_sub_agency_rejected_with_other_group_by(self):
+        result = get_agency_award_breakdown.func(
+            agency_name="Department of Agriculture", fiscal_year=2024,
+            group_by="award_category", sub_agency="Food and Nutrition Service",
+        )
+        assert "sub_agency is only valid" in result
+
+
 class TestGetAgencyBudgetGroupBy:
     def _mock_client(self, monkeypatch, agency=_UNSET):
         resolved_agency = make_agency("Department of Agriculture") if agency is _UNSET else agency
@@ -1109,6 +1215,17 @@ class TestBuildToolCitation:
             {"agency_name": "USDA", "fiscal_year": 2024, "award_type": None, "group_by": "whole_agency"},
         )
         assert citation.description == "Award activity, USDA, FY2024"
+
+    def test_get_agency_award_breakdown_sub_agency_target(self):
+        citation = build_tool_citation(
+            "get_agency_award_breakdown",
+            {
+                "agency_name": "USDA", "fiscal_year": 2024, "award_type": None,
+                "group_by": "sub_agency", "sub_agency": "Food and Nutrition Service",
+            },
+        )
+        assert citation.parameters["sub_agency"] == "Food and Nutrition Service"
+        assert citation.description == "Awarding offices, Food and Nutrition Service, USDA, FY2024"
 
     def test_get_agency_budget_by_subcomponent(self):
         citation = build_tool_citation(
@@ -1711,13 +1828,18 @@ def make_agency(name: str = "National Science Foundation") -> ToptierAgency:
 class FakeClient:
     """Stands in for USASpendingClient in _build_filters tests - only
     find_agency_by_name is ever called by _build_filters, so that's all
-    that needs faking."""
+    that needs faking. find_agency_by_name_with_subagency defaults to no
+    sub-tier match (same agency, None) - tests exercising an actual
+    sub-agency-name match override it directly."""
 
     def __init__(self, agency: ToptierAgency | None):
         self._agency = agency
 
     def find_agency_by_name(self, name):
         return self._agency
+
+    def find_agency_by_name_with_subagency(self, name):
+        return (self._agency, None) if self._agency is not None else None
 
 
 class TestFormatTopAgenciesByBudget:

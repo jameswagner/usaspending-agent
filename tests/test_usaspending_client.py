@@ -178,6 +178,50 @@ class TestFindAgencyByName:
         assert result is hhs
 
 
+class TestFindAgencyByNameWithSubagency:
+    @pytest.fixture
+    def client(self):
+        return USASpendingClient()
+
+    def test_top_tier_match_returns_none_subagency(self, client, monkeypatch):
+        nsf = make_agency("National Science Foundation", "NSF", code="049")
+        monkeypatch.setattr(client, "list_toptier_agencies", lambda: [nsf])
+        agency, sub_agency = client.find_agency_by_name_with_subagency("NSF")
+        assert agency is nsf
+        assert sub_agency is None
+
+    def test_subtier_match_returns_its_own_name(self, client, monkeypatch):
+        # Preserve that "FNS" itself was the target, not just its USDA parent.
+        usda = make_agency("Department of Agriculture", "USDA", code="012")
+        monkeypatch.setattr(client, "list_toptier_agencies", lambda: [usda])
+        body = {
+            "results": {
+                "toptier_agency": [],
+                "subtier_agency": [
+                    {
+                        "abbreviation": "FNS",
+                        "code": "12F2",
+                        "name": "Food and Nutrition Service",
+                        "offices": [],
+                        "toptier_agency": {"abbreviation": "USDA", "code": "012", "name": "Department of Agriculture"},
+                    }
+                ],
+                "office": [],
+            },
+            "messages": [],
+        }
+        monkeypatch.setattr(client, "_post", lambda path, b: body)
+        agency, sub_agency = client.find_agency_by_name_with_subagency("FNS")
+        assert agency is usda
+        assert sub_agency == "Food and Nutrition Service"
+
+    def test_no_match_returns_none(self, client, monkeypatch):
+        monkeypatch.setattr(client, "list_toptier_agencies", list)
+        empty = {"results": {"toptier_agency": [], "subtier_agency": [], "office": []}, "messages": []}
+        monkeypatch.setattr(client, "_post", lambda path, body: empty)
+        assert client.find_agency_by_name_with_subagency("Department of Pizza") is None
+
+
 class TestResolveSpendingExplorerAgencyId:
     @pytest.fixture
     def client(self):

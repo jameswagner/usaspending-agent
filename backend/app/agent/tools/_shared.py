@@ -448,26 +448,73 @@ def list_top_agencies_by_budget(limit: int = 10) -> str:
 AwardBreakdownGroupBy = Literal["sub_agency", "award_category", "whole_agency"]
 
 
+def _match_sub_agency_row(results: list, target: str) -> object | None:
+    """Exact name/abbreviation match first, then a substring fallback -
+    same cascade shape as USASpendingClient.find_agency_by_name, since a
+    sub-agency row has no code to join on (see SubAgencyBreakdown)."""
+    target_lower = target.lower()
+    for r in results:
+        if r.name.lower() == target_lower or (r.abbreviation and r.abbreviation.lower() == target_lower):
+            return r
+    for r in results:
+        if target_lower in r.name.lower():
+            return r
+    return None
+
+
 @traceable(run_type="tool", name="get_agency_award_breakdown_raw")
 def get_agency_award_breakdown_raw(
     agency_name: str,
     fiscal_year: int,
     award_type: AwardType | None = None,
     group_by: AwardBreakdownGroupBy = "sub_agency",
+    sub_agency: str | None = None,
 ) -> AgencySubAgencyResponse | AgencyObligationsByAwardCategoryResponse | AgencyAwardsResponse:
-    """Call the API once, return the structured response. Raises
-    USASpendingAPIError if agency_name doesn't resolve."""
+    """Call the API once, return the structured response - or, with a
+    sub_agency target, fetch every page needed (a first-page miss is not
+    "no such sub-agency") and return a single-row response for the
+    matched sub-agency alone, its children sorted by obligations."""
     client = _get_usaspending_client()
-    agency = client.find_agency_by_name(agency_name)
-    if agency is None:
+    resolved = client.find_agency_by_name_with_subagency(agency_name)
+    if resolved is None:
         raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
+    agency, matched_subtier = resolved
     award_type_codes = AWARD_TYPE_GROUPS[_normalize_award_type(award_type)] if award_type else None
     if group_by == "award_category":
         return client.get_agency_obligations_by_award_category(agency.toptier_code, fiscal_year=fiscal_year)
     if group_by == "whole_agency":
         return client.get_agency_awards(agency.toptier_code, fiscal_year=fiscal_year, award_type_codes=award_type_codes)
-    return client.get_agency_sub_agency_breakdown(
-        agency.toptier_code, fiscal_year=fiscal_year, award_type_codes=award_type_codes, limit=50,
+
+    target = sub_agency or matched_subtier
+    page = 1
+    response = client.get_agency_sub_agency_breakdown(
+        agency.toptier_code, fiscal_year=fiscal_year, award_type_codes=award_type_codes, limit=50, page=page,
+    )
+    if target is None:
+        return response
+
+    all_results = list(response.results)
+    match = _match_sub_agency_row(response.results, target)
+    while match is None and response.page_metadata and response.page_metadata.hasNext:
+        page += 1
+        response = client.get_agency_sub_agency_breakdown(
+            agency.toptier_code, fiscal_year=fiscal_year, award_type_codes=award_type_codes, limit=50, page=page,
+        )
+        all_results.extend(response.results)
+        match = _match_sub_agency_row(response.results, target)
+
+    if match is None:
+        names = ", ".join(r.name for r in all_results)
+        raise USASpendingAPIError(
+            f"No sub-agency matching '{target}' found under {agency_name} in FY{fiscal_year} - "
+            f"known sub-agencies: {names}"
+        )
+
+    ranked_children = sorted(match.children, key=lambda c: c.total_obligations, reverse=True)
+    single = match.model_copy(update={"children": ranked_children})
+    return AgencySubAgencyResponse(
+        toptier_code=response.toptier_code, fiscal_year=response.fiscal_year,
+        results=[single], page_metadata=None, messages=response.messages,
     )
 
 
@@ -505,13 +552,17 @@ def get_agency_award_breakdown(
     award_type: AwardType | None = None,
     include_offices: bool = False,
     group_by: AwardBreakdownGroupBy = "sub_agency",
+    sub_agency: str | None = None,
 ) -> str:
     """Get one agency's award spending activity for a single fiscal year - by default broken down by sub-agency, including transaction counts and new-award counts alongside the dollar totals. Use this specifically when the question asks about counts (how many transactions, how many new awards), not just dollar amounts.
 
     This is a genuinely different endpoint from get_spending_by_category and get_agency_budget, not a formatting variant of either: use get_spending_by_category instead for a dollar-only breakdown or a breakdown by anything other than sub-agency (NAICS, PSC, recipient, etc. — it has no count fields at all), and get_agency_budget instead for the agency's appropriated budget authority (a different number from award obligations). This tool is always scoped to exactly one agency and one fiscal year — never a recipient, never a range.
 
     Args:
-        agency_name: The agency's name, e.g. "Department of Health and Human Services".
+        agency_name: The agency's name, e.g. "Department of Health and Human Services". A named
+            sub-agency also works here directly (e.g. "Food and Nutrition Service") and is
+            auto-targeted the same as passing it via sub_agency below - no need to separately name
+            the top-tier parent in that case.
         fiscal_year: A single fiscal year, e.g. 2024 for FY2024 — this endpoint does not accept a
             range; call again for each year if a multi-year breakdown is needed.
         award_type: Optional, only valid with group_by="sub_agency" or "whole_agency". Restrict to
@@ -520,7 +571,9 @@ def get_agency_award_breakdown(
         include_offices: Only valid with group_by="sub_agency" (the default). Set True to also
             list each sub-agency's individual awarding offices (same figures, one level more
             granular) — off by default since most "breakdown by sub-agency" questions don't need
-            office-level detail and it roughly doubles the output length.
+            office-level detail and it roughly doubles the output length. Always effectively True
+            when sub_agency is set (or auto-detected from agency_name) - showing that one
+            sub-agency's offices is the whole point of targeting it.
         group_by: "sub_agency" (default) for the by-sub-agency/office breakdown described above.
             "award_category" for total obligations split by award category (contracts, IDVs,
             grants, loans, direct payments, other) instead - a different data source from
@@ -528,6 +581,10 @@ def get_agency_award_breakdown(
             don't treat the two as interchangeable. "whole_agency" for the agency's own single
             transaction-count/obligations total with no breakdown - use this instead of
             "sub_agency" when the question doesn't actually ask for a sub-agency breakdown.
+        sub_agency: Only valid with group_by="sub_agency". Restrict to one named sub-agency (e.g.
+            "Food and Nutrition Service" when agency_name is "Department of Agriculture") and rank
+            its offices by total obligations - instead of every sub-agency under agency_name. Omit
+            when agency_name already names the sub-agency directly.
     """
     if (over_budget := _check_tool_call_budget()) is not None:
         return over_budget
@@ -535,16 +592,27 @@ def get_agency_award_breakdown(
         return 'award_type is not valid with group_by="award_category".'
     if group_by != "sub_agency" and include_offices:
         return 'include_offices is only valid with group_by="sub_agency".'
+    if group_by != "sub_agency" and sub_agency is not None:
+        return 'sub_agency is only valid with group_by="sub_agency".'
     try:
-        response = get_agency_award_breakdown_raw(agency_name, fiscal_year, award_type, group_by)
+        response = get_agency_award_breakdown_raw(agency_name, fiscal_year, award_type, group_by, sub_agency)
     except USASpendingAPIError as e:
         logger.warning("get_agency_award_breakdown failed for %s: %s", agency_name, e)
         return f"This query failed: {e}."
 
+    # page_metadata is None only for the synthetic single-row response a matched sub-agency target produces.
+    targeted_sub_agency = group_by == "sub_agency" and response.page_metadata is None
+    include_offices = include_offices or targeted_sub_agency
+
+    # The actual matched name, not the raw param - it may have come from auto-detection instead.
+    resolved_sub_agency = response.results[0].name if targeted_sub_agency and response.results else sub_agency
     _record_tool_call(
         "get_agency_award_breakdown",
         response,
-        {"agency_name": agency_name, "fiscal_year": fiscal_year, "award_type": award_type, "group_by": group_by},
+        {
+            "agency_name": agency_name, "fiscal_year": fiscal_year, "award_type": award_type,
+            "group_by": group_by, "sub_agency": resolved_sub_agency,
+        },
     )
 
     if group_by == "whole_agency":

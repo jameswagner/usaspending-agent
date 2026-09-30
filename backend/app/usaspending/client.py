@@ -186,21 +186,36 @@ class USASpendingClient:
         parent top-tier agency, since every other tool (budgets, breakdowns,
         ...) keys off a toptier_code.
         """
+        resolved = self._resolve_agency_and_subtier(name)
+        return resolved[0] if resolved is not None else None
+
+    @traceable(run_type="tool", name="find_agency_by_name_with_subagency")
+    def find_agency_by_name_with_subagency(self, name: str) -> tuple[ToptierAgency, str | None] | None:
+        """Same resolution as find_agency_by_name, but also returns the
+        matched sub-tier agency's own name (e.g. "Food and Nutrition
+        Service") when name resolved through a sub-tier match rather than a
+        direct top-tier one, or None when it didn't. For targeting a named
+        sub-agency in get_agency_award_breakdown - the sub-agency has to be
+        matched by name against get_agency_sub_agency_breakdown's own rows,
+        since there's no code shared between the two endpoints to join on."""
+        return self._resolve_agency_and_subtier(name)
+
+    def _resolve_agency_and_subtier(self, name: str) -> tuple[ToptierAgency, str | None] | None:
         agencies = self.list_toptier_agencies()
         name_lower = name.lower()
         name_pattern = re.compile(rf"\b{re.escape(name_lower)}\b")
 
         for a in agencies:
             if a.agency_name.lower() == name_lower or a.abbreviation.lower() == name_lower:
-                return a
+                return a, None
         for a in agencies:
             if name_pattern.search(a.agency_name.lower()):
-                return a
+                return a, None
 
-        for code in self._candidate_autocomplete_toptier_codes(name_lower):
+        for code, subtier_name in self._candidate_autocomplete_toptier_codes(name_lower):
             match = next((a for a in agencies if a.toptier_code == code), None)
             if match is not None:
-                return match
+                return match, subtier_name
         return None
 
     def resolve_spending_explorer_agency_id(self, agency: str) -> str | None:
@@ -217,9 +232,11 @@ class USASpendingClient:
         return str(match.agency_id) if match is not None else None
 
     def _candidate_autocomplete_toptier_codes(self, name_lower: str):
-        """Yields toptier_code candidates from the autocomplete response,
-        best guess first. Two things to guard against, both live-verified
-        2026-09-15:
+        """Yields (toptier_code, subtier_name) candidates from the
+        autocomplete response, best guess first - subtier_name is None for
+        a toptier_agency hit, or that entry's own name for a subtier_agency
+        hit (find_agency_by_name discards it; find_agency_by_name_with_subagency
+        keeps it). Two things to guard against, both live-verified 2026-09-15:
 
         - The endpoint's own ranking isn't relevance-sorted for our
           purposes: searching "IRS" returns Veterans Affairs first (its
@@ -240,15 +257,15 @@ class USASpendingClient:
 
         for t in results.toptier_agency:
             if (t.abbreviation and t.abbreviation.lower() == name_lower) or t.name.lower() == name_lower:
-                yield t.code
+                yield t.code, None
         for s in results.subtier_agency:
             if (s.abbreviation and s.abbreviation.lower() == name_lower) or s.name.lower() == name_lower:
-                yield s.toptier_agency.code
+                yield s.toptier_agency.code, s.name
 
         for t in results.toptier_agency:
-            yield t.code
+            yield t.code, None
         for s in results.subtier_agency:
-            yield s.toptier_agency.code
+            yield s.toptier_agency.code, s.name
 
     @traceable(run_type="tool", name="get_agency_overview")
     def get_agency_overview(self, toptier_code: str, fiscal_year: int | None = None) -> AgencyOverview:

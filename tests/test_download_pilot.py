@@ -36,12 +36,16 @@ class FakeDownloadClient:
         self._statuses = list(statuses or [])
         self._raises = raises
         self.last_filters = None
+        self.last_columns = None
+        self.last_spending_level = None
 
     def find_agency_by_name(self, name):
         return self._agency
 
-    def download_awards(self, filters, columns, file_format="csv"):
+    def download_search(self, filters, columns, spending_level, file_format="csv"):
         self.last_filters = filters
+        self.last_columns = columns
+        self.last_spending_level = spending_level
         if self._raises:
             raise self._raises
         return self._job
@@ -67,11 +71,21 @@ class TestLooksLikeDownloadRequest:
 
 
 class TestUnsupportedDownloadLabel:
-    def test_transaction_level_is_unsupported(self):
-        assert _unsupported_download_label("download transaction-level data for NSF") is not None
+    def test_account_level_is_unsupported(self):
+        assert _unsupported_download_label("download federal account-level data for NSF") is not None
+
+    def test_disaster_data_is_unsupported(self):
+        assert _unsupported_download_label("download disaster relief spending data") is not None
 
     def test_awards_download_is_supported(self):
         assert _unsupported_download_label("download NSF's awards as a CSV") is None
+
+    def test_transaction_level_is_now_supported(self):
+        # Regression: transactions used to be a fixed "not supported" label - spending_level covers it now.
+        assert _unsupported_download_label("download transaction-level data for NSF") is None
+
+    def test_subaward_download_is_now_supported(self):
+        assert _unsupported_download_label("download sub-award data for NSF") is None
 
 
 class TestIsDownloadFollowup:
@@ -121,7 +135,7 @@ class TestExtractDownloadIntent:
 class TestHandleDownloadRequest:
     def test_unsupported_endpoint_returns_fixed_message_without_calling_client(self):
         with patch("backend.app.agent.download_pilot._get_usaspending_client") as get_client:
-            result = handle_download_request("download transaction-level data for NSF", "conv-1")
+            result = handle_download_request("download disaster relief spending data", "conv-1")
         get_client.assert_not_called()
         assert result is not None
         assert "isn't supported yet" in result.answer_text
@@ -188,8 +202,11 @@ class TestHandleDownloadRequest:
         assert result.downloads[0].url == finished.file_url
         assert result.downloads[0].total_rows == 456
         assert len(result.tool_citations) == 1
-        assert result.tool_citations[0].tool_name == "download_awards"
+        assert result.tool_citations[0].tool_name == "download_search"
         assert result.tool_citations[0].parameters["agency_name"] == "National Science Foundation"
+        assert result.tool_citations[0].parameters["spending_level"] == "awards"
+        # Compatibility table: "awards" preserves the legacy /download/awards/ bundling.
+        assert client.last_spending_level == ["awards", "subawards"]
 
     def test_month_level_intent_scopes_filter_to_that_month_not_the_whole_year(self):
         # Regression (live-reported): month-less extraction silently expanded "January 2024" to all of 2024.
@@ -326,3 +343,56 @@ class TestHandleDownloadRequest:
         assert result is not None
         assert "This download failed" in result.answer_text
         assert result.downloads == []
+
+
+class TestSpendingLevel:
+    """Compatibility-table mapping from DownloadIntent.spending_level to the API's array -
+    see #277: /download/search/'s spending_level members are fully independent (["awards"]
+    alone excludes sub-awards), unlike the legacy /download/awards/ and /download/transactions/
+    endpoints this pilot preserves parity with."""
+
+    def _run(self, spending_level, agency="NSF"):
+        intent = DownloadIntent(agency_raw=agency, start_year=2024, end_year=2024, spending_level=spending_level)
+        job = DownloadJobResponse(
+            status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+            file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        finished = DownloadStatusResponse(
+            status="finished", file_name="x.zip",
+            file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=1,
+        )
+        client = FakeDownloadClient(agency=make_agency(agency), job=job, statuses=[finished])
+        with patch("backend.app.agent.download_pilot._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_pilot._get_usaspending_client", return_value=client):
+            result = handle_download_request(f"download NSF's FY2024 {spending_level}", "conv-1")
+        return result, client
+
+    def test_awards_maps_to_awards_and_subawards(self):
+        _, client = self._run("awards")
+        assert client.last_spending_level == ["awards", "subawards"]
+
+    def test_transactions_maps_to_transactions_and_subawards(self):
+        _, client = self._run("transactions")
+        assert client.last_spending_level == ["transactions", "subawards"]
+
+    def test_subawards_maps_to_subawards_only(self):
+        # Net-new - no legacy single-purpose endpoint to preserve parity with here.
+        _, client = self._run("subawards")
+        assert client.last_spending_level == ["subawards"]
+
+    def test_transactions_uses_transaction_shaped_columns_not_award_shaped(self):
+        _, client = self._run("transactions")
+        assert "federal_action_obligation" in client.last_columns
+        assert "total_obligated_amount" not in client.last_columns
+
+    def test_subawards_uses_subaward_shaped_columns_not_award_shaped(self):
+        # Regression risk: award-level column names (award_id_piid, total_obligated_amount)
+        # are silently accepted by the API at request time for this level but make the job
+        # fail async - confirmed live 2026-09-24. Must use prime_award_*/subaward* names.
+        _, client = self._run("subawards")
+        assert "subaward_amount" in client.last_columns
+        assert "award_id_piid" not in client.last_columns
+
+    def test_citation_records_resolved_spending_level(self):
+        result, _ = self._run("transactions")
+        assert result.tool_citations[0].parameters["spending_level"] == "transactions"

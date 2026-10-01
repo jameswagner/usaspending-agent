@@ -115,28 +115,69 @@ def _identifier_columns_for_award_type(award_type: str | None) -> list[str]:
     return ["award_id_piid"] if category in _PROCUREMENT_AWARD_CATEGORIES else ["award_id_fain"]
 
 
-# Which download-side column shows the category a row was scoped by, keyed on the
-# SpendingFilterParams field that scoped it. The *search* endpoint's own display field
-# names (e.g. "NAICS"/"PSC" from spending_by_award.md) are NOT valid here - confirmed
-# live 2026-10-01 that both crash /api/v2/download/search/ the same "accepted at
-# request time, fails async" way an always-null identifier column does (see
+# Which download-side column shows naics_code/psc_code when either is a real scope
+# filter (as opposed to get_spending_by_category's own `category` grouping dimension -
+# see _DOWNLOAD_COLUMN_BY_CATEGORY below for that). The *search* endpoint's own display
+# field names (e.g. "NAICS"/"PSC" from spending_by_award.md) are NOT valid here -
+# confirmed live 2026-10-01 that both crash /api/v2/download/search/ the same "accepted
+# at request time, fails async" way an always-null identifier column does (see
 # _identifier_columns_for_award_type above); the download endpoint's `columns` takes
-# the underlying search-index field name instead. Only these two are live-verified -
-# do not add another SpendingFilterParams field here without verifying its real
-# download-side column name first. Guessing a plausible-looking name is exactly what
-# caused that bug.
+# the underlying search-index field name instead.
 _CATEGORY_COLUMN_BY_FILTER_FIELD = {
     "naics_code": "naics_code",
     "psc_code": "product_or_service_code",
 }
 
+# get_spending_by_category's own `category` grouping-dimension values, mapped to the
+# live-verified download-side column that shows it per row - useful even when the
+# breakdown wasn't filtered to one specific value (a NAICS breakdown ranking across
+# every code has no naics_code scope value to key off, but each row still has its own
+# real NAICS code worth showing in the download). Derived from
+# fedspendingtransparency/usaspending-api's own download_column_historical_lookups.py,
+# then independently confirmed live against /api/v2/download/search/ 2026-10-01 - not
+# assumed from the source alone, since that file predates the Elasticsearch-backed
+# /download/search/ endpoint and at least one of its entries (disaster_emergency_fund_
+# codes, below) turned out not to carry over.
+#
+# awarding_agency/recipient need no entry - awarding_agency_name/recipient_name are
+# already in _DOWNLOAD_COLUMNS_BASE_BY_LEVEL for every "awards"/"transactions" download.
+#
+# district and defc are deliberately absent, not guessed around: district has no
+# corresponding column anywhere in that lookup file at all, and defc's own field
+# (disaster_emergency_fund_codes) crashed live both plain and with the lookup file's
+# own NAMING_CONFLICT_DISCRIMINATOR suffix - genuinely unresolved, left for a future
+# fix once a working column name is actually found.
+_DOWNLOAD_COLUMN_BY_CATEGORY = {
+    "naics": "naics_code",
+    "psc": "product_or_service_code",
+    "cfda": "cfda_number",
+    "country": "primary_place_of_performance_country_code",
+    "county": "primary_place_of_performance_county_name",
+    "state_territory": "primary_place_of_performance_state_code",
+    "awarding_subagency": "awarding_sub_agency_name",
+    "funding_agency": "funding_agency_name",
+    "funding_subagency": "funding_sub_agency_name",
+    "recipient_duns": "recipient_duns",
+    # Live-verified but notably slower (~100s vs. single-digit seconds for the others) -
+    # this one resolves via a subquery annotation, not a plain indexed field.
+    "federal_account": "federal_accounts_funding_this_award",
+}
 
-def _category_columns_for(naics_code: str | None, psc_code: str | None) -> list[str]:
+
+def _category_columns_for(naics_code: str | None, psc_code: str | None, category: str | None) -> list[str]:
+    """Columns showing which category a row belongs to - triggered by either a real
+    naics_code/psc_code scope filter, or get_spending_by_category's own `category`
+    grouping dimension (see _DOWNLOAD_COLUMN_BY_CATEGORY). Deduplicated so a call
+    scoped by naics_code AND broken down by category="naics" doesn't request the
+    same column twice."""
     columns = []
     if naics_code is not None:
         columns.append(_CATEGORY_COLUMN_BY_FILTER_FIELD["naics_code"])
     if psc_code is not None:
         columns.append(_CATEGORY_COLUMN_BY_FILTER_FIELD["psc_code"])
+    category_column = _DOWNLOAD_COLUMN_BY_CATEGORY.get(category)
+    if category_column is not None and category_column not in columns:
+        columns.append(category_column)
     return columns
 
 
@@ -145,13 +186,14 @@ def _download_columns_for(
     award_type: str | None,
     naics_code: str | None = None,
     psc_code: str | None = None,
+    category: str | None = None,
 ) -> list[str]:
     base = _DOWNLOAD_COLUMNS_BASE_BY_LEVEL[spending_level]
     if spending_level == "subawards":
         return base
     return (
         _identifier_columns_for_award_type(award_type)
-        + _category_columns_for(naics_code, psc_code)
+        + _category_columns_for(naics_code, psc_code, category)
         + base
     )
 
@@ -357,6 +399,13 @@ def _extract_prior_tool_context(
                 for arg_name, field in _TOOL_ARG_TO_DOWNLOAD_FIELD.items()
                 if args.get(arg_name) is not None
             }
+            # category (get_spending_by_category's grouping dimension) is NOT a scope
+            # filter - never passed to _build_filters (see _CARRYOVER_FILTER_FIELDS,
+            # which deliberately excludes it) - but still carried here so a NAICS/PSC
+            # breakdown's download can show each row's own category column even though
+            # the breakdown itself wasn't filtered to one value. See _category_columns_for.
+            if args.get("category") is not None:
+                context["category"] = args["category"]
             dropped = [
                 label for arg_name, label in _DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.items()
                 if args.get(arg_name) is not None
@@ -402,6 +451,8 @@ def _download_intent_context(intent: DownloadIntent, agency_name: str | None) ->
         value = getattr(intent, field)
         if value is not None:
             context[field] = value
+    if intent.category is not None:
+        context["category"] = intent.category
     return context
 
 
@@ -451,6 +502,12 @@ class DownloadIntent(BaseModel):
     contract_pricing_type: list[str] | None = None
     set_aside_type: list[str] | None = None
     extent_competed_type: list[str] | None = None
+    # NOT a real scope filter - never passed to _build_filters (see
+    # _CARRYOVER_FILTER_FIELDS). Only carries get_spending_by_category's own
+    # grouping dimension (e.g. "naics", "psc") across a follow-up, so the
+    # resulting download can include that category's column (_category_columns_for)
+    # even for a breakdown that wasn't filtered to one specific value.
+    category: str | None = None
 
 
 _EXTRACT_TOOL_NAME = "extract_download_intent"
@@ -536,6 +593,12 @@ _EXTRACT_TOOL = {
             "contract_pricing_type": {"type": "array", "items": {"type": "string"}, "description": "Contract pricing type keys, e.g. 'firm_fixed_price'."},
             "set_aside_type": {"type": "array", "items": {"type": "string"}, "description": "Contract set-aside type keys."},
             "extent_competed_type": {"type": "array", "items": {"type": "string"}, "description": "Contract extent-competed type keys."},
+            "category": {
+                "type": "string",
+                "description": "Only ever copy this from the previously resolved JSON when continuing a "
+                "category breakdown (e.g. a NAICS or PSC breakdown) - never infer or state this from the "
+                "new question itself.",
+            },
         },
         "required": ["wants_download"],
     },
@@ -781,7 +844,7 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         if intent.start_date and intent.end_date:
             filters.time_period = [TimePeriod(start_date=intent.start_date, end_date=intent.end_date)]
         columns = _download_columns_for(
-            intent.spending_level, intent.award_type, intent.naics_code, intent.psc_code
+            intent.spending_level, intent.award_type, intent.naics_code, intent.psc_code, intent.category
         )
         api_spending_level = _SPENDING_LEVEL_TO_API_ARRAY[intent.spending_level]
         job = client.download_search(filters, columns, api_spending_level)

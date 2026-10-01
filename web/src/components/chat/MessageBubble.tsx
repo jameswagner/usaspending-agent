@@ -1,12 +1,14 @@
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { ConversationTurn } from "@/lib/types";
+import type { ConversationTurn, FollowUp } from "@/lib/types";
 import { Citations } from "./Citations";
 import { ChartBlock } from "./ChartBlock";
 import { DownloadBlock } from "./DownloadBlock";
 
 interface MessageBubbleProps {
   turn: ConversationTurn;
+  onDownload: (followUp: FollowUp) => Promise<void>;
 }
 
 function statusLine(status: ConversationTurn["status"]): { text: string; isError: boolean } {
@@ -24,8 +26,21 @@ function statusLine(status: ConversationTurn["status"]): { text: string; isError
   }
 }
 
-export function MessageBubble({ turn }: MessageBubbleProps) {
+export function MessageBubble({ turn, onDownload }: MessageBubbleProps) {
   const { question, response, status } = turn;
+  // Local, not lifted into useConversation's turn state - this only disables
+  // the button on *this* bubble while its own click is in flight, independent
+  // of the global `loading` the input box watches.
+  const [requestingDownload, setRequestingDownload] = useState(false);
+
+  const handleFollowUpClick = async (followUp: FollowUp) => {
+    setRequestingDownload(true);
+    try {
+      await onDownload(followUp);
+    } finally {
+      setRequestingDownload(false);
+    }
+  };
 
   if (!response) {
     const { text, isError } = statusLine(status);
@@ -74,6 +89,22 @@ export function MessageBubble({ turn }: MessageBubbleProps) {
         <div className="mt-4 flex flex-wrap gap-3">
           {response.downloads.map((download, i) => (
             <DownloadBlock key={i} download={download} />
+          ))}
+        </div>
+      )}
+      {response.follow_ups.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {response.follow_ups.map((followUp, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleFollowUpClick(followUp)}
+              disabled={requestingDownload}
+              className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium hover:bg-black/5 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/10"
+              style={{ color: "var(--chart-ink)" }}
+            >
+              {requestingDownload ? "Preparing download…" : followUp.label}
+            </button>
           ))}
         </div>
       )}

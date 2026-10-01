@@ -1,5 +1,5 @@
 import { createParser } from "eventsource-parser";
-import type { AskResponse } from "./types";
+import type { AskResponse, FollowUp } from "./types";
 
 // One tool-status event from POST /api/ask/stream's SSE body - see
 // backend/app/agent/streaming.py's event protocol. Named "tool_name" (not
@@ -119,6 +119,35 @@ export async function askQuestion(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question, conversation_id: conversationId }),
+      signal: controller.signal,
+    });
+    if (!resp.ok) {
+      throw new Error(`Server error: ${resp.status}`);
+    }
+    return (await resp.json()) as AskResponse;
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Request timed out - the server may be unresponsive.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Calls this Next.js app's own /api/ask/download route (never FastAPI
+// directly, same proxy pattern as askQuestion) - the "Download this" button's
+// click path. Posts the follow-up's own structured filters as-is; skips
+// intent extraction/the text gate entirely on the backend (see
+// download_handler.handle_download_followup's docstring).
+export async function requestDownloadFollowUp(followUp: FollowUp, conversationId: string): Promise<AskResponse> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const resp = await fetch("/api/ask/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filters: followUp.filters, conversation_id: conversationId }),
       signal: controller.signal,
     });
     if (!resp.ok) {

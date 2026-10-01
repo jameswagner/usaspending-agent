@@ -35,6 +35,19 @@ export interface DownloadSpec {
   total_rows: number | null;
 }
 
+// A contextual follow-up action offered after a tool result - the pilot for a
+// general mechanism (backend/app/agent/response_shaping.py's follow_ups_for),
+// so far shipping only kind "download": a "Download this data as a CSV"
+// button. filters is a DownloadIntent-shaped dict, posted as-is to
+// POST /api/ask/download (see lib/api.ts's requestDownloadFollowUp) - never
+// re-typed into a question and re-sent through /api/ask, which would
+// re-derive scope from prose instead of reusing what was already resolved.
+export interface FollowUp {
+  kind: "download";
+  label: string;
+  filters: Record<string, string | number | string[]>;
+}
+
 export interface AskRequest {
   question: string;
   conversation_id: string | null;
@@ -48,6 +61,7 @@ export interface AskResponse {
   citations: Citation[];
   tool_citations: ToolCitation[];
   downloads: DownloadSpec[];
+  follow_ups: FollowUp[];
 }
 
 // The in-flight status of a turn being streamed from POST /ask/stream

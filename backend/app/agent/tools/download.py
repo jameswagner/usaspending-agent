@@ -27,6 +27,9 @@ from ..tool_filters import (
 from ._shared import _check_tool_call_budget, _record_tool_call
 
 SpendingLevel = Literal["awards", "transactions", "subawards"]
+_CONTRACT_AWARD_COLUMNS = [
+    "award_id_piid", "recipient_name", "total_obligated_amount", "awarding_agency_name",
+]
 
 
 @traceable(run_type="tool", name="download_single_award_raw")
@@ -52,9 +55,17 @@ def _complete_download(job, client, tool_name: str, context: dict) -> str:
     )
     _record_tool_call(tool_name, download, context)
     if status.status == "finished":
-        return f"CSV download ready: {status.file_name}, {status.total_rows or 0} rows. {status.file_url}"
+        levels = context.get("api_spending_level")
+        level_note = (
+            f" Requested levels: {', '.join(levels)} only; the ZIP filename is generic."
+            if levels and len(levels) == 1 else ""
+        )
+        return f"CSV download ready: {status.file_name}, {status.total_rows or 0} rows. {status.file_url}.{level_note}"
     if status.status == "failed":
-        return f"This download failed to generate: {status.message or 'no further detail from the API.'}"
+        detail = status.message or "no further detail from the API."
+        if detail.strip().lower().rstrip(".") == "an error occurred":
+            detail += " The API did not identify a cause; this does not mean the filters are invalid or no records match."
+        return f"This download failed: {detail}"
     return f"CSV download still generating: {status.file_name}. Status: {job.status_url}"
 
 
@@ -110,7 +121,11 @@ def _records(args: dict) -> str:
         if dates:
             filters.time_period = [TimePeriod(start_date=args["start_date"], end_date=args["end_date"])]
         level = args["spending_level"]
-        columns = _DOWNLOAD_COLUMNS_BY_LEVEL[level]
+        contract_awards = (
+            level == "awards" and filters.award_type_codes
+            and set(filters.award_type_codes) <= {"A", "B", "C", "D"}
+        )
+        columns = _CONTRACT_AWARD_COLUMNS if contract_awards else _DOWNLOAD_COLUMNS_BY_LEVEL[level]
         api_levels = (
             [level] if not args["include_subawards"] and level != "subawards"
             else _SPENDING_LEVEL_TO_API_ARRAY[level]

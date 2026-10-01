@@ -4,13 +4,18 @@ import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pytest
 from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
 from langchain_core.messages import AIMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt import create_react_agent
 
 from backend.app.agent.langgraph_tools import LANGGRAPH_TOOLS
-from backend.app.agent.orchestrator import _build_result
+from backend.app.agent.orchestrator import (
+    _ask_langgraph,
+    _build_result,
+    _build_system_prompt,
+)
 from backend.app.agent.response_shaping import DownloadSpec
 from backend.app.agent.streaming import _build_done_payload, sse_event_generator
 from backend.app.agent.tool_filters import SpendingFilterParams
@@ -27,6 +32,7 @@ JOB = DownloadJobResponse(
     file_url="https://files.usaspending.gov/generated_downloads/x.zip",
 )
 STATUS = DownloadStatusResponse(status="finished", file_name="x.zip", file_url=JOB.file_url, total_rows=12)
+FAILED_STATUS = DownloadStatusResponse(status="failed", file_name="x.zip", file_url=JOB.file_url, message="An error occurred.")
 
 
 def test_records_project_to_result_and_sse_with_scope_citation():
@@ -47,6 +53,7 @@ def test_records_project_to_result_and_sse_with_scope_citation():
                 award_type="contracts", keywords="information technology",
             )
         assert "12 rows" in text
+        assert "Requested levels: awards only" in text
         assert build_filters.call_args.kwargs["keywords"] == "information technology"
         assert build_filters.call_args.kwargs["award_type"] == "contracts"
         assert client.download_search.call_count == 1
@@ -95,6 +102,7 @@ def test_two_psc_codes_share_one_awards_only_download_job():
     client = MagicMock()
     client.download_search.return_value = JOB
     filters = MagicMock()
+    filters.award_type_codes = ["A", "B", "C", "D"]
     with patch("backend.app.agent.tools.download._get_usaspending_client", return_value=client), patch(
         "backend.app.agent.tools.download._build_filters", return_value=filters
     ), patch("backend.app.agent.tools.download._poll_until_finished", return_value=STATUS), patch(
@@ -106,6 +114,9 @@ def test_two_psc_codes_share_one_awards_only_download_job():
         )
     assert filters.psc_codes == ["DA01", "D302"]
     assert client.download_search.call_count == 1
+    assert client.download_search.call_args.args[1] == [
+        "award_id_piid", "recipient_name", "total_obligated_amount", "awarding_agency_name",
+    ]
     assert client.download_search.call_args.args[2] == ["awards"]
     assert client.download_search.call_args.args[2] == ["awards"]
 
@@ -136,7 +147,33 @@ def test_download_schema_covers_shared_spending_filters():
     assert set(SpendingFilterParams.__annotations__) <= actual
 
 
-def test_real_graph_stream_done_contains_download_and_citation():
+def test_opt_in_prompt_exposes_download_tools(monkeypatch):
+    monkeypatch.delenv("DOWNLOAD_TOOL_LOOP_ENABLED", raising=False)
+    assert "handled automatically outside this tool loop" in _build_system_prompt()
+    monkeypatch.setenv("DOWNLOAD_TOOL_LOOP_ENABLED", "1")
+    prompt = _build_system_prompt()
+    assert "Use download_single_award" in prompt
+    assert "handled automatically outside this tool loop" not in prompt
+
+
+def test_opt_in_synchronous_download_bypasses_legacy_gate(monkeypatch):
+    monkeypatch.setenv("DOWNLOAD_TOOL_LOOP_ENABLED", "1")
+    graph = MagicMock()
+    graph.get_state.return_value.values = {"messages": []}
+    graph.invoke.return_value = {"messages": [AIMessage(content="Download routed through the graph.")]}
+    with patch("backend.app.agent.orchestrator._get_conversation_graph", return_value=graph), patch(
+        "backend.app.agent.orchestrator._is_in_scope", return_value=True
+    ), patch("backend.app.agent.orchestrator.handle_download_request", side_effect=AssertionError("legacy gate")):
+        result = _ask_langgraph("Download NSF's FY2024 awards as CSV.", "conversation")
+    assert result.answer_text == "Download routed through the graph."
+    graph.invoke.assert_called_once()
+
+
+@pytest.mark.parametrize(("status", "expected_event"), [
+    (STATUS, "tool_result"), (FAILED_STATUS, "tool_error"),
+])
+def test_real_graph_stream_done_contains_download_and_citation(monkeypatch, status, expected_event):
+    monkeypatch.setenv("DOWNLOAD_TOOL_LOOP_ENABLED", "1")
     class ScriptedModel(FakeMessagesListChatModel):
         def bind_tools(self, tools, **kwargs):
             return self
@@ -161,17 +198,23 @@ def test_real_graph_stream_done_contains_download_and_citation():
     filters.model_dump.return_value = {"time_period": [{"start_date": "2023-10-01", "end_date": "2024-09-30"}]}
 
     async def collect():
-        return [frame async for frame in sse_event_generator("probe", "probe")]
+        return [frame async for frame in sse_event_generator("Download NSF's FY2024 awards as CSV.", "probe")]
 
     with patch("backend.app.agent.streaming._get_conversation_graph", return_value=graph), patch(
         "backend.app.agent.streaming._is_in_scope", return_value=True
+    ), patch("backend.app.agent.streaming.handle_download_request", side_effect=AssertionError("legacy gate")
     ), patch("backend.app.agent.tools.download._get_usaspending_client", return_value=client), patch(
         "backend.app.agent.tools.download._build_filters", return_value=filters
-    ), patch("backend.app.agent.tools.download._poll_until_finished", return_value=STATUS), patch(
+    ), patch("backend.app.agent.tools.download._poll_until_finished", return_value=status), patch(
         "backend.app.agent.tools.download._pop_naics_disclosure", return_value=None
     ):
         frames = asyncio.run(collect())
 
     done = next(json.loads(frame.decode().split("data: ", 1)[1]) for frame in frames if frame.startswith(b"event: done"))
     assert done["downloads"][0]["file_name"] == "x.zip"
+    assert done["downloads"][0]["status"] == status.status
     assert done["tool_citations"][0]["tool_name"] == "download_records"
+    assert any(frame.startswith(f"event: {expected_event}".encode()) for frame in frames)
+    if status.status == "failed":
+        error = next(frame for frame in frames if frame.startswith(b"event: tool_error"))
+        assert "did not identify a cause" in error.decode()

@@ -601,7 +601,7 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
 
     if tool_name in {"download_records", "download_single_award"}:
         params = {
-            key: ", ".join(value) if isinstance(value, list) else value
+            key: ", ".join(value) if isinstance(value, list) else str(value).lower() if isinstance(value, bool) else value
             for key, value in context.items()
             if key not in {"filters", "columns", "api_spending_level"} and not key.startswith("_")
         }

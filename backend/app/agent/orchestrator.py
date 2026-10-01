@@ -5,6 +5,7 @@ capture buffer afterward.
 from __future__ import annotations
 
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 
@@ -39,6 +40,11 @@ NOT_FOUND_MESSAGE = (
 )
 
 
+def _download_tool_loop_enabled() -> bool:
+    """Enable the opt-in download tool path for local trials."""
+    return os.environ.get("DOWNLOAD_TOOL_LOOP_ENABLED", "").lower() in {"1", "true", "yes"}
+
+
 def _build_system_prompt() -> str:
     """Rebuilt on every ask() call (not a module-level constant) so the date
     grounding below is never stale in a long-running server process - see
@@ -50,10 +56,36 @@ def _build_system_prompt() -> str:
     today = datetime.now(timezone.utc).date()
     current_fy = current_fiscal_year(today)
     most_recent_completed_fy = current_fy - 1
+    tool_intro = (
+        "have tools for data retrieval and CSV downloads: "
+        if _download_tool_loop_enabled() else "have twenty-three tools. Twenty-two retrieve data: "
+    )
+    required_tool = (
+        "data or download tools" if _download_tool_loop_enabled() else "twenty-two data tools"
+    )
+    download_guidance = (
+        "Use download_single_award for one known full internal award ID and download_records for "
+        "filtered CSV records. For an amount and matching CSV, use the same agency, period, award "
+        "type, topic, and other filters in query_spending and download_records. A broad topic such "
+        "as IT needs one explicit keyword scope for both results; label it as a keyword-based estimate. "
+        "A few candidate PSCs do not define all IT contracts. For several named PSC codes, use one "
+        "download_records call with psc_codes; query_spending accepts one psc_code per call, so call "
+        "sum_values to combine separate totals. A request for one award CSV uses the awards-only "
+        "default. For a follow-up download, reuse prior filters without inventing an award type. "
+        "The download endpoint cannot filter by recipient ID; pass that ID so download_records "
+        "returns its scope error instead of generating a broader file."
+        if _download_tool_loop_enabled() else
+        "Separately from these tools, a CSV download of an agency's awards "
+        "IS available - it's handled automatically outside this tool loop "
+        "when a question explicitly asks to download/export the data, so "
+        "never claim this app can't produce a CSV; if you're here for a "
+        "download request, ask the user to rephrase explicitly (e.g. "
+        "'download NSF's FY2024 awards as a CSV') rather than pointing them to usaspending.gov."
+    )
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        "have twenty-three tools. Twenty-two retrieve data: search_guide "
+        f"{tool_intro}search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
         "toptier code), resolve_naics_code (candidates for an ambiguous "
@@ -187,7 +219,7 @@ def _build_system_prompt() -> str:
         "child-level recipient has no children of its own). Six do arithmetic: "
         "sum_values, average, percentage_of, delta, ratio, and rank_values. "
         "One more, code_execution, is a general-purpose Python/Bash sandbox. "
-        "You must call at least one of the twenty-two data tools before writing any "
+        f"You must call at least one of the {required_tool} before writing any "
         "answer, every question, with no exceptions — including questions "
         "that seem "
         "unrelated to federal spending, general-knowledge questions, "
@@ -256,12 +288,7 @@ def _build_system_prompt() -> str:
         "year' normally means the one that just ended, not the one in "
         "progress; only use the in-progress fiscal year if the question is "
         "explicitly about data so far this year.\n\n"
-        "Separately from these tools, a CSV download of an agency's awards "
-        "IS available - it's handled automatically outside this tool loop "
-        "when a question explicitly asks to download/export the data, so "
-        "never claim this app can't produce a CSV; if you're here for a "
-        "download request, ask the user to rephrase explicitly (e.g. "
-        "'download NSF's FY2024 awards as a CSV') rather than pointing them to usaspending.gov."
+        f"{download_guidance}"
     )
 
 
@@ -359,7 +386,9 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
         # question's history contains.
         return AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
 
-    if _looks_like_download_request(question) or _is_download_followup(recent_messages):
+    if not _download_tool_loop_enabled() and (
+        _looks_like_download_request(question) or _is_download_followup(recent_messages)
+    ):
         download_result = handle_download_request(question, conversation_id, recent_messages)
         if download_result is not None:
             _persist_download_turn(

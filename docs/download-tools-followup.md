@@ -1,6 +1,6 @@
 # Download tools follow-up
 
-The two-tool design from the download spike is implemented alongside the existing download handler. The production keyword and follow-up gate remains in place. The normal tool loop now has `download_records` and `download_single_award`, but explicit download requests still reach the legacy gate first.
+The two-tool design from the download spike is implemented alongside the existing download handler. The production keyword and follow-up gate remains in place by default. The normal tool loop now has `download_records` and `download_single_award`; set `DOWNLOAD_TOOL_LOOP_ENABLED=1` on the backend to send explicit download requests through those tools for local trials. The flag switches both `/ask` and `/ask/stream` and changes the system prompt to describe the tool path.
 
 ## Endpoint and schema decisions
 
@@ -26,6 +26,8 @@ All 21 cases selected the expected tool family. That score alone misses the two 
 
 ## Verification and cutover decision
 
-The full repository suite passed with network access: 840 tests. Ruff passed on every touched Python file. A graph/SSE test verified that a download from the normal tool loop reaches the final download and citation payload. The two-PSC, awards-only request was verified against the live public API.
+The full repository suite passed with network access: 843 tests. Ruff passed on every touched Python file. A graph/SSE test verified that a download from the normal tool loop reaches the final download and citation payload. The two-PSC, awards-only request was verified against the live public API.
+
+An opt-in local frontend trial used “Download one CSV of NSF contracts from January 2024 with PSC codes DA01 or D302.” The frontend proxy streamed one `download_records` call and a finished 14-row award download with a POST citation. The API's ZIP filename mentions awards, transactions, and subawards even when the request contains only `spending_level=["awards"]`; the tool result now states the requested level so the answer does not infer contents from that generic name. The first trial's wider mixed award-column set failed asynchronously with only “An error occurred”; the new tool uses the four-column contract award set that completed against the live endpoint. Failed jobs now emit `tool_error` and avoid claiming the filters were invalid without evidence.
 
 Keep the legacy gate for now. The compound broad-topic prompt remains unreliable even with a focused tool docstring and system guidance, and the exact-PSC compound prompt still violated the application's arithmetic-tool rule in the full-surface run. A production cutover needs a deterministic scope choice for broad topics and a guard against unsupported or unmatched compound answers. The existing pre-loop handler and follow-up state should remain until those behaviors are validated end to end.

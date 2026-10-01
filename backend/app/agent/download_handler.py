@@ -115,11 +115,45 @@ def _identifier_columns_for_award_type(award_type: str | None) -> list[str]:
     return ["award_id_piid"] if category in _PROCUREMENT_AWARD_CATEGORIES else ["award_id_fain"]
 
 
-def _download_columns_for(spending_level: str, award_type: str | None) -> list[str]:
+# Which download-side column shows the category a row was scoped by, keyed on the
+# SpendingFilterParams field that scoped it. The *search* endpoint's own display field
+# names (e.g. "NAICS"/"PSC" from spending_by_award.md) are NOT valid here - confirmed
+# live 2026-10-01 that both crash /api/v2/download/search/ the same "accepted at
+# request time, fails async" way an always-null identifier column does (see
+# _identifier_columns_for_award_type above); the download endpoint's `columns` takes
+# the underlying search-index field name instead. Only these two are live-verified -
+# do not add another SpendingFilterParams field here without verifying its real
+# download-side column name first. Guessing a plausible-looking name is exactly what
+# caused that bug.
+_CATEGORY_COLUMN_BY_FILTER_FIELD = {
+    "naics_code": "naics_code",
+    "psc_code": "product_or_service_code",
+}
+
+
+def _category_columns_for(naics_code: str | None, psc_code: str | None) -> list[str]:
+    columns = []
+    if naics_code is not None:
+        columns.append(_CATEGORY_COLUMN_BY_FILTER_FIELD["naics_code"])
+    if psc_code is not None:
+        columns.append(_CATEGORY_COLUMN_BY_FILTER_FIELD["psc_code"])
+    return columns
+
+
+def _download_columns_for(
+    spending_level: str,
+    award_type: str | None,
+    naics_code: str | None = None,
+    psc_code: str | None = None,
+) -> list[str]:
     base = _DOWNLOAD_COLUMNS_BASE_BY_LEVEL[spending_level]
     if spending_level == "subawards":
         return base
-    return _identifier_columns_for_award_type(award_type) + base
+    return (
+        _identifier_columns_for_award_type(award_type)
+        + _category_columns_for(naics_code, psc_code)
+        + base
+    )
 
 # Verified live 2026-09-24: /download/search/'s spending_level array members are fully
 # independent (["awards"] alone excludes sub-awards) - unlike the legacy /download/awards/
@@ -746,7 +780,9 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
         naics_note = _pop_naics_disclosure()
         if intent.start_date and intent.end_date:
             filters.time_period = [TimePeriod(start_date=intent.start_date, end_date=intent.end_date)]
-        columns = _download_columns_for(intent.spending_level, intent.award_type)
+        columns = _download_columns_for(
+            intent.spending_level, intent.award_type, intent.naics_code, intent.psc_code
+        )
         api_spending_level = _SPENDING_LEVEL_TO_API_ARRAY[intent.spending_level]
         job = client.download_search(filters, columns, api_spending_level)
         citation = _build_download_citation(agency_name, intent, filters, columns, api_spending_level)

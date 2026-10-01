@@ -742,6 +742,61 @@ class TestDownloadIdentifierColumns:
         ]
 
 
+class TestDownloadCategoryColumns:
+    """naics_code/product_or_service_code columns, added only when the resolved
+    intent was actually scoped by that filter - see _category_columns_for's own
+    docstring. Live-verified 2026-10-01: the *search* endpoint's own display field
+    names ("NAICS", "PSC") are NOT valid download columns and crash the job the
+    same "accepted at request time, fails async" way an always-null identifier
+    column does."""
+
+    def _run(self, naics_code=None, psc_code=None, spending_level="awards"):
+        intent = DownloadIntent(
+            agency_raw="NSF", start_year=2024, end_year=2024,
+            naics_code=naics_code, psc_code=psc_code, spending_level=spending_level,
+        )
+        job = DownloadJobResponse(
+            status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+            file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        finished = DownloadStatusResponse(
+            status="finished", file_name="x.zip",
+            file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=1,
+        )
+        client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
+            handle_download_request("download NSF's FY2024 awards", "conv-1")
+        return client.last_columns
+
+    def test_no_category_filter_adds_no_category_column(self):
+        columns = self._run()
+        assert "naics_code" not in columns
+        assert "product_or_service_code" not in columns
+
+    def test_naics_scoped_adds_naics_code_column(self):
+        columns = self._run(naics_code="518210")
+        assert "naics_code" in columns
+        # The search endpoint's display field name must never leak in here - it
+        # crashes the download job (see class docstring).
+        assert "NAICS" not in columns
+
+    def test_psc_scoped_adds_product_or_service_code_column(self):
+        columns = self._run(psc_code="7030")
+        assert "product_or_service_code" in columns
+        assert "PSC" not in columns
+        assert "psc_code" not in columns
+
+    def test_both_naics_and_psc_scoped_adds_both_columns(self):
+        columns = self._run(naics_code="518210", psc_code="7030")
+        assert "naics_code" in columns
+        assert "product_or_service_code" in columns
+
+    def test_subawards_level_unaffected_by_category_filters(self):
+        columns = self._run(naics_code="518210", spending_level="subawards")
+        assert "naics_code" not in columns
+
+
 class TestAwardIdEndpoint:
     def test_contract_prefix(self):
         assert _award_id_endpoint("CONT_AWD_N0002404C2105_9700_-NONE-_-NONE-") == "contract"

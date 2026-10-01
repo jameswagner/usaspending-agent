@@ -279,21 +279,17 @@ class AgentResult(BaseModel):
 
 
 def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
-    """Turn the current call's _tool_call_log buffer into the chart/citation
-    lists an AgentResult carries. Shared by both _ask_langgraph (reads the
-    buffer once, after graph.invoke() fully completes) and streaming.py
-    (reads the same buffer after graph.stream() fully completes) - the
-    buffer's own population (_record_tool_call, called as a side effect
-    during tool execution) doesn't care whether the graph ran via invoke()
-    or stream().
-    """
+    """Build charts, citations, and downloads from the current tool-call buffer."""
     charts: list[ChartSpec] = []
     seen_chunk_ids: set[str] = set()
     seen_guide_questions: set[str] = set()
     citations: list[Citation] = []
     seen_tool_citation_keys: set[tuple] = set()
     tool_citations: list[ToolCitation] = []
+    downloads: list[DownloadSpec] = []
     for tool_name, result, context in _tool_call_log.get() or []:
+        if isinstance(result, DownloadSpec) and tool_name in {"download_records", "download_single_award"}:
+            downloads.append(result)
         chart = should_chart(tool_name, result, context)
         if chart is not None:
             charts.append(chart)
@@ -327,6 +323,7 @@ def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
         charts=charts,
         citations=citations,
         tool_citations=tool_citations,
+        downloads=downloads,
     )
 
 

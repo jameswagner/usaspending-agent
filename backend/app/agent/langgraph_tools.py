@@ -23,6 +23,7 @@ query_spending above, but it isn't in _BETA_TOOLS itself.
 from __future__ import annotations
 
 from langchain_core.tools import tool as _lc_tool
+from pydantic import ConfigDict
 
 from .arithmetic_tools import (
     average,
@@ -33,6 +34,8 @@ from .arithmetic_tools import (
     sum_values,
 )
 from .tools import (
+    download_records,
+    download_single_award,
     get_agency_award_breakdown,
     get_agency_budget,
     get_award_details,
@@ -57,6 +60,8 @@ from .tools import (
 )
 
 _BETA_TOOLS = [
+    download_records,
+    download_single_award,
     get_agency_award_breakdown,
     get_agency_budget,
     get_award_details,
@@ -81,4 +86,29 @@ _BETA_TOOLS = [
 ]
 _ARITHMETIC_TOOLS = [average, delta, percentage_of, rank_values, ratio, sum_values]
 
-LANGGRAPH_TOOLS = [_lc_tool(bt.func, parse_docstring=True) for bt in _BETA_TOOLS + _ARITHMETIC_TOOLS]
+LANGGRAPH_TOOLS = [
+    _lc_tool(bt.func, parse_docstring=bt not in (download_records, download_single_award))
+    for bt in _BETA_TOOLS + _ARITHMETIC_TOOLS
+]
+
+
+def _reject_invalid_args(error, prefix: str) -> str:
+    fields = sorted({
+        ".".join(str(part) for part in item["loc"])
+        for item in error.errors()
+        if item["type"] == "extra_forbidden"
+    })
+    if fields:
+        return f"{prefix} unsupported tool argument(s): {', '.join(fields)}. Check the tool schema."
+    return f"{prefix} invalid tool arguments. Check the tool schema."
+
+
+for _wrapped in LANGGRAPH_TOOLS:
+    if _wrapped.name in {"query_spending", "download_records", "download_single_award"}:
+        _wrapped.args_schema = type(
+            f"Strict{_wrapped.name}Args",
+            (_wrapped.args_schema,),
+            {"model_config": ConfigDict(arbitrary_types_allowed=True, extra="forbid")},
+        )
+        _prefix = "This query failed:" if _wrapped.name == "query_spending" else "This download failed:"
+        _wrapped.handle_validation_error = lambda error, prefix=_prefix: _reject_invalid_args(error, prefix)

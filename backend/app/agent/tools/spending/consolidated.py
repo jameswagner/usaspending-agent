@@ -368,8 +368,7 @@ def query_spending(
         recipient_scope: Optional. "domestic" or "foreign".
         naics_code: Optional. Exact NAICS code - or a plain-English industry description (see
             resolve_naics_code above); if ambiguous, use group_by="naics" to browse instead of guessing.
-        psc_code: Optional. Exact 4-character PSC. Same guidance as naics_code: use
-            group_by="psc" to browse if you don't have the exact code.
+        psc_code: Optional. One exact 4-character PSC per call; psc_codes is unsupported here, so query each code separately with group_by="time" and combine totals with sum_values.
         cfda_program: Optional. Exact CFDA number, NN.NNN.
         award_id: Optional. Fuzzy PIID/FAIN/URI match, records only. For an IDV's own PIID
             (a contract vehicle, not a plain contract), pass award_type="idv" too - IDV codes

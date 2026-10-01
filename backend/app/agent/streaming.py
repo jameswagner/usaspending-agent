@@ -51,13 +51,8 @@ logger = logging.getLogger(__name__)
 # to send, so the connection needs its own liveness signal in that gap.
 _KEEPALIVE_INTERVAL_SECONDS = 15.0
 
-# Every data tool's `except USASpendingAPIError as e: return f"This query
-# failed: {e}."` pattern (spending.py, awards.py, recipients.py, and now
-# location.py) is the only signal available here that a ToolMessage is an
-# error vs. a normal result - _record_tool_call (and so _tool_call_log) is
-# never populated on this path, only on success, so it can't be used to
-# distinguish the two.
-_TOOL_ERROR_PREFIX = "This query failed:"
+# Tool wrappers return these prefixes when they fail before recording a result.
+_TOOL_ERROR_PREFIX = ("This query failed:", "This download failed:")
 
 _SUMMARY_MAX_CHARS = 200
 

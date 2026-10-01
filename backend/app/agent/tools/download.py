@@ -56,10 +56,16 @@ def _complete_download(job, client, tool_name: str, context: dict) -> str:
     _record_tool_call(tool_name, download, context)
     if status.status == "finished":
         levels = context.get("api_spending_level")
-        level_note = (
-            f" Requested levels: {', '.join(levels)} only; the ZIP filename is generic."
-            if levels and len(levels) == 1 else ""
-        )
+        if levels == ["awards"]:
+            level_note = (
+                " Requested levels: awards only; total_obligated_amount is each award's lifetime total, "
+                "not the obligations in the requested period. Do not sum that CSV column to reproduce "
+                "a fiscal-year spending total. The ZIP filename is generic."
+            )
+        elif levels and len(levels) == 1:
+            level_note = f" Requested levels: {', '.join(levels)} only; the ZIP filename is generic."
+        else:
+            level_note = ""
         return f"CSV download ready: {status.file_name}, {status.total_rows or 0} rows. {status.file_url}.{level_note}"
     if status.status == "failed":
         detail = status.message or "no further detail from the API."

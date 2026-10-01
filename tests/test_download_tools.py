@@ -54,6 +54,7 @@ def test_records_project_to_result_and_sse_with_scope_citation():
             )
         assert "12 rows" in text
         assert "Requested levels: awards only" in text
+        assert "lifetime total" in text
         assert build_filters.call_args.kwargs["keywords"] == "information technology"
         assert build_filters.call_args.kwargs["award_type"] == "contracts"
         assert client.download_search.call_count == 1
@@ -153,6 +154,7 @@ def test_opt_in_prompt_exposes_download_tools(monkeypatch):
     monkeypatch.setenv("DOWNLOAD_TOOL_LOOP_ENABLED", "1")
     prompt = _build_system_prompt()
     assert "Use download_single_award" in prompt
+    assert "never invent PSC meanings" in prompt
     assert "handled automatically outside this tool loop" not in prompt
 
 

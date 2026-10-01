@@ -3,7 +3,7 @@
     "Labeled set for eval_download_handler.py. Each entry has a 'question' plus exactly one of: 'expect_download' (bool - a real AgentResult.downloads entry should come back, status finished or still-generating), 'expect_not_supported' (bool - a fixed 'isn't supported yet' answer for a download endpoint this module does not cover), or 'expect_fallback_to_loop' (bool - the download gate should NOT short-circuit; the question should reach the normal tool-calling loop unchanged, e.g. it doesn't actually name a download-shaped request, or the agency/year range is too ambiguous to extract confidently).",
     "'expect_spending_level' (optional, paired with expect_download: true) - asserts which of awards/transactions/subawards was actually resolved (via the citation), not just that a download happened. See #277: without this, a question asking for transactions that silently downloaded awards would still score a pass.",
     "'spending_level_confusable' entries (see #277) target keyword confusability between 'transactions' and 'subawards' phrasing specifically - agency/year/award_type are held fixed across them since those don't interact with spending_level classification.",
-    "'followup' entries are multi-turn: 'turns' is a list of {'question': ...} dicts run in order against one conversation_id, all but the last as setup with no assertions. Only the final turn's outputs are scored, against expect_* fields on that last turn (same vocabulary as above) plus two more: 'expect_no_award_type' (bool - award_type must be absent from the resolved citation, i.e. nothing invented that neither this turn nor the prior one stated) and 'expect_award_type' (string - award_type must resolve to exactly this, for the case where the follow-up DOES name one explicitly and it must still be honored, not suppressed).",
+    "'followup' entries are multi-turn: 'turns' is a list of {'question': ...} dicts run in order against one conversation_id, all but the last as setup with no assertions. Only the final turn's outputs are scored, against expect_* fields on that last turn (same vocabulary as above) plus: 'expect_no_award_type' (bool - award_type must be absent from the resolved citation, i.e. nothing invented that neither this turn nor the prior one stated), 'expect_award_type' (string - award_type must resolve to exactly this, for the case where the follow-up DOES name one explicitly and it must still be honored, not suppressed), 'expect_citation_contains' (dict - the resolved citation's parameters must contain each of these key/value pairs; see the scope-preservation cases below, e.g. a NAICS/location-scoped answer's download must carry that same naics_code/performed_in_state, not just agency/time_period/award_type), and 'expect_answer_contains' (string, case-insensitive substring - for a filter the download endpoint genuinely can't honor, e.g. recipient_id, the answer text must say so rather than silently widening).",
     "category is filled in by eval_download_handler.py from the top-level key, not stored per-entry."
   ],
   "clean_download_request": [
@@ -52,6 +52,24 @@
       "turns": [
         {"question": "Download NSF's sub-awards for FY2024 as a CSV."},
         {"question": "Same thing but for the Department of Energy.", "expect_download": true, "expect_spending_level": "subawards"}
+      ]
+    },
+    {
+      "turns": [
+        {"question": "How much did NSF spend on cloud computing in FY2024?"},
+        {"question": "Can I download that as a CSV?", "expect_download": true, "expect_citation_contains": {"naics_code": "518210"}}
+      ]
+    },
+    {
+      "turns": [
+        {"question": "How much did DoD spend on work performed in Virginia in FY2024?"},
+        {"question": "Download that as a CSV.", "expect_download": true, "expect_citation_contains": {"performed_in_state": "VA"}}
+      ]
+    },
+    {
+      "turns": [
+        {"question": "Search for NSF's top 5 recipients receiving a Small Business Innovation Research grant program (CFDA 47.076) in FY2024."},
+        {"question": "Give me a CSV of that same set.", "expect_download": true, "expect_citation_contains": {"cfda_program": "47.076"}}
       ]
     }
   ]

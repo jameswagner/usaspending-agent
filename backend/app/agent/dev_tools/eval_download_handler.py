@@ -84,9 +84,11 @@ def sync_dataset(client: Client, entries: list[dict]) -> str:
 def _result_to_outputs(result) -> dict:
     spending_level = None
     award_type = None
+    citation_parameters: dict = {}
     if result.tool_citations:
-        spending_level = result.tool_citations[0].parameters.get("spending_level")
-        award_type = result.tool_citations[0].parameters.get("award_type")
+        citation_parameters = result.tool_citations[0].parameters
+        spending_level = citation_parameters.get("spending_level")
+        award_type = citation_parameters.get("award_type")
     return {
         "answer": result.answer_text,
         "got_download": bool(result.downloads),
@@ -94,6 +96,7 @@ def _result_to_outputs(result) -> dict:
         "fell_back_to_loop": not result.downloads and result.answer_text != NOT_FOUND_MESSAGE,
         "spending_level": spending_level,
         "award_type": award_type,
+        "citation_parameters": citation_parameters,
     }
 
 
@@ -128,6 +131,16 @@ def download_pilot_correct(run: Run, example: Example) -> dict[str, Any]:
         expected_award_type = expected.get("expect_award_type")
         if passed and expected_award_type is not None:
             passed = outputs.get("award_type") == expected_award_type
+        # Scope-preservation check: the resolved citation must carry the prior
+        # turn's real scope filter(s) (e.g. naics_code/performed_in_state), not just
+        # agency/time_period/award_type.
+        expected_citation = expected.get("expect_citation_contains")
+        if passed and expected_citation is not None:
+            citation_parameters = outputs.get("citation_parameters", {})
+            passed = all(citation_parameters.get(k) == v for k, v in expected_citation.items())
+        expected_answer_substring = expected.get("expect_answer_contains")
+        if passed and expected_answer_substring is not None:
+            passed = expected_answer_substring.lower() in outputs.get("answer", "").lower()
     elif expected.get("expect_not_supported"):
         passed = outputs.get("not_supported", False)
     else:  # expect_fallback_to_loop

@@ -672,6 +672,76 @@ class TestSpendingLevel:
         assert result.tool_citations[0].parameters["spending_level"] == "transactions"
 
 
+class TestDownloadIdentifierColumns:
+    """award_id_piid/award_id_fain selection, by award_type - see
+    _identifier_columns_for_award_type's own docstring. Live-verified 2026-10-01:
+    requesting the identifier column that's 100% null for a narrowed award_type
+    (award_id_fain for a contracts-only download, or award_id_piid for a
+    grants-only one) crashes /api/v2/download/search/ outright with a generic
+    "An error occurred." - not merely a wasted column, a fatal one."""
+
+    def _run(self, award_type, spending_level="awards"):
+        intent = DownloadIntent(
+            agency_raw="NSF", start_year=2024, end_year=2024,
+            award_type=award_type, spending_level=spending_level,
+        )
+        job = DownloadJobResponse(
+            status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+            file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        finished = DownloadStatusResponse(
+            status="finished", file_name="x.zip",
+            file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=1,
+        )
+        client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
+            handle_download_request("download NSF's FY2024 awards", "conv-1")
+        return client.last_columns
+
+    def test_unscoped_award_type_requests_both_identifiers(self):
+        columns = self._run(award_type=None)
+        assert "award_id_piid" in columns
+        assert "award_id_fain" in columns
+
+    def test_contracts_requests_piid_only(self):
+        columns = self._run(award_type="contracts")
+        assert "award_id_piid" in columns
+        assert "award_id_fain" not in columns
+
+    def test_idv_requests_piid_only(self):
+        columns = self._run(award_type="idv")
+        assert "award_id_piid" in columns
+        assert "award_id_fain" not in columns
+
+    def test_grants_requests_fain_only(self):
+        columns = self._run(award_type="grants")
+        assert "award_id_fain" in columns
+        assert "award_id_piid" not in columns
+
+    def test_cooperative_agreement_sub_type_requests_fain_only(self):
+        """cooperative_agreement is a grants sub-type (code 05), not its own broad
+        category - must resolve the same way "grants" itself does, not fall through
+        to a default."""
+        columns = self._run(award_type="cooperative_agreement")
+        assert "award_id_fain" in columns
+        assert "award_id_piid" not in columns
+
+    def test_loans_requests_fain_only(self):
+        columns = self._run(award_type="loans")
+        assert "award_id_fain" in columns
+        assert "award_id_piid" not in columns
+
+    def test_subawards_level_unaffected_by_award_type(self):
+        """subawards has its own fixed prime_award_piid column, never swapped -
+        the piid/fain split only applies to "awards"/"transactions"."""
+        columns = self._run(award_type="grants", spending_level="subawards")
+        assert columns == [
+            "prime_award_piid", "subawardee_name", "subaward_amount",
+            "subaward_action_date", "prime_award_awarding_agency_name",
+        ]
+
+
 class TestAwardIdEndpoint:
     def test_contract_prefix(self):
         assert _award_id_endpoint("CONT_AWD_N0002404C2105_9700_-NONE-_-NONE-") == "contract"

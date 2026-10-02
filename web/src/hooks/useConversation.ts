@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { askQuestionStream } from "@/lib/api";
-import type { ConversationTurn, TurnStatus } from "@/lib/types";
+import { askQuestionStream, requestDownloadFollowUp } from "@/lib/api";
+import type { ConversationTurn, FollowUp, TurnStatus } from "@/lib/types";
 
 function statusFromToolEvent(event: { type: string; tool_name: string; summary?: string; message?: string }): TurnStatus {
   if (event.type === "tool_call_start") {
@@ -89,5 +89,37 @@ export function useConversation() {
     setError(null);
   }, []);
 
-  return { conversationId, turns, loading, error, sendMessage, newConversation };
+  // Appends a new turn for a "Download this" button click - a direct,
+  // deterministic call (no LLM/tool-calling loop, so no tool-status events to
+  // stream), but otherwise the same pending -> done turn lifecycle sendMessage
+  // uses. Requires an existing conversationId - a follow-up only ever renders
+  // attached to a turn that already produced one.
+  const requestDownload = useCallback(async (followUp: FollowUp) => {
+    const existingConversationId = conversationIdRef.current;
+    if (!existingConversationId) return;
+
+    setLoading(true);
+    setError(null);
+    const turnId = crypto.randomUUID();
+    const pendingTurn: ConversationTurn = {
+      id: turnId, question: followUp.label, response: null, status: { kind: "pending" },
+    };
+    setTurns((prev) => [...prev, pendingTurn]);
+
+    try {
+      const response = await requestDownloadFollowUp(followUp, existingConversationId);
+      setTurns((prev) =>
+        prev.map((turn) =>
+          turn.id === turnId ? { id: turnId, question: followUp.label, response, status: { kind: "done" } } : turn
+        )
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setTurns((prev) => prev.filter((turn) => turn.id !== turnId));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { conversationId, turns, loading, error, sendMessage, newConversation, requestDownload };
 }

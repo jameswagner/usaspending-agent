@@ -21,10 +21,12 @@ from .response_shaping import (
     ChartSpec,
     Citation,
     DownloadSpec,
+    FollowUp,
     ToolCitation,
     _build_guide_citation,
     build_tool_citation,
     current_fiscal_year,
+    follow_ups_for,
     should_chart,
 )
 from .scope import _is_in_scope
@@ -272,6 +274,7 @@ class AgentResult(BaseModel):
     citations: list[Citation] = []
     tool_citations: list[ToolCitation] = []
     downloads: list[DownloadSpec] = []
+    follow_ups: list[FollowUp] = []
     # Internal only (not surfaced by AskResponse) - the resolved download intent, stashed via
     # _persist_download_turn so a later download follow-up's _extract_prior_tool_context can
     # recover it instead of re-deriving everything from prose. See download_handler.py.
@@ -293,10 +296,24 @@ def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
     citations: list[Citation] = []
     seen_tool_citation_keys: set[tuple] = set()
     tool_citations: list[ToolCitation] = []
+    seen_follow_up_keys: set[tuple] = set()
+    follow_ups: list[FollowUp] = []
     for tool_name, result, context in _tool_call_log.get() or []:
         chart = should_chart(tool_name, result, context)
         if chart is not None:
             charts.append(chart)
+
+        for follow_up in follow_ups_for(tool_name, result, context):
+            # Values are hashed as tuples where they're lists (e.g. def_codes) - a
+            # plain tuple(sorted(...items())) would raise on an unhashable list value.
+            hashable_filters = tuple(
+                sorted((k, tuple(v) if isinstance(v, list) else v) for k, v in follow_up.filters.items())
+            )
+            dedup_key = (follow_up.kind, hashable_filters)
+            if dedup_key in seen_follow_up_keys:
+                continue
+            seen_follow_up_keys.add(dedup_key)
+            follow_ups.append(follow_up)
 
         if tool_name == "search_guide":
             for chunk in result:
@@ -327,6 +344,7 @@ def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
         charts=charts,
         citations=citations,
         tool_citations=tool_citations,
+        follow_ups=follow_ups,
     )
 
 

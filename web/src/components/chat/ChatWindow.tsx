@@ -6,7 +6,7 @@ import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 
 export function ChatWindow() {
-  const { turns, loading, error, sendMessage, newConversation } = useConversation();
+  const { turns, loading, error, sendMessage, newConversation, requestDownload } = useConversation();
   const backendReady = useBackendHealth();
 
   return (
@@ -21,7 +21,13 @@ export function ChatWindow() {
           <p className="text-sm text-amber-600 dark:text-amber-400">Waking up the server, this may take a moment…</p>
         )}
       </header>
-      <MessageList turns={turns} error={error} onSend={sendMessage} disabled={!backendReady} />
+      <MessageList
+        turns={turns}
+        error={error}
+        onSend={sendMessage}
+        onDownload={requestDownload}
+        disabled={!backendReady}
+      />
       <MessageInput onSend={sendMessage} onNewConversation={newConversation} loading={loading} disabled={!backendReady} />
     </div>
   );

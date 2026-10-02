@@ -31,7 +31,12 @@ from .response_shaping import (
 )
 from .scope import _render_recent_exchanges
 from .singletons import MODEL, _get_client, _get_usaspending_client
-from .tool_filters import _build_filters, _pop_naics_disclosure
+from .tool_filters import (
+    _BROAD_CATEGORY_FOR_AWARD_TYPE,
+    _build_filters,
+    _normalize_award_type,
+    _pop_naics_disclosure,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,11 +57,12 @@ _UNSUPPORTED_DOWNLOAD_PATTERN = {
 _POLL_INTERVAL_SECONDS = 4
 _POLL_TIMEOUT_SECONDS = 90
 
-# Fixed - this module rules out free-form column selection.
-_DOWNLOAD_COLUMNS_BY_LEVEL = {
+# Fixed - this module rules out free-form column selection. award_id_piid/award_id_fain
+# are deliberately NOT hard-coded into "awards"/"transactions" here - see
+# _identifier_columns_for_award_type below for why, and _DOWNLOAD_COLUMNS_BASE_BY_LEVEL
+# for the rest of each level's fixed columns.
+_DOWNLOAD_COLUMNS_BASE_BY_LEVEL = {
     "awards": [
-        "award_id_piid",
-        "award_id_fain",
         "recipient_name",
         "total_obligated_amount",
         "period_of_performance_start_date",
@@ -65,8 +71,6 @@ _DOWNLOAD_COLUMNS_BY_LEVEL = {
     # Verified live 2026-09-24 - transactions use per-action field names (federal_action_obligation,
     # action_date), not the award-level totals/dates above, which don't apply to a single transaction.
     "transactions": [
-        "award_id_piid",
-        "award_id_fain",
         "recipient_name",
         "federal_action_obligation",
         "action_date",
@@ -75,6 +79,8 @@ _DOWNLOAD_COLUMNS_BY_LEVEL = {
     # Verified live 2026-09-24 - subawards use their own prime_award_*/subaward*/subawardee_* prefix,
     # not the prime-award column names above (e.g. award_id_piid isn't valid here, prime_award_piid is;
     # a job posted with the wrong names for this level is accepted at request time then fails async).
+    # Not affected by the piid/fain split below - prime_award_piid is its own fixed column here,
+    # not swapped per award_type.
     "subawards": [
         "prime_award_piid",
         "subawardee_name",
@@ -83,6 +89,42 @@ _DOWNLOAD_COLUMNS_BY_LEVEL = {
         "prime_award_awarding_agency_name",
     ],
 }
+
+# AWARD_TYPE_GROUPS leaf categories (tool_filters.py's _BROAD_CATEGORY_FOR_AWARD_TYPE)
+# that are procurement, not assistance - the only families with a PIID at all.
+_PROCUREMENT_AWARD_CATEGORIES = {"contracts", "idv"}
+
+
+def _identifier_columns_for_award_type(award_type: str | None) -> list[str]:
+    """Which of award_id_piid/award_id_fain to request for an "awards"/"transactions"
+    download, given the resolved award_type (or None if unscoped by type).
+
+    Live-verified 2026-10-01: requesting the identifier column that's 100% null across
+    every row of a narrowed award_type crashes /api/v2/download/search/ outright
+    ("An error occurred.", no further detail - every exception here is masked server-
+    side, see fedspendingtransparency/usaspending-api#4690) - not merely wasted, but
+    fatal. Confirmed in both directions: award_id_fain (always null for a contracts-
+    only request) and award_id_piid (always null for a grants-only request) each
+    reliably crash the job; the correct column alone works every time, and so does
+    requesting both when award_type is unset and the result set spans multiple award
+    families (neither column is 100% null across a mixed set).
+
+    Only two of AWARD_TYPE_GROUPS' eight leaf categories are procurement (PIID-bearing):
+    contracts and idv. The other six - grants, loans, insurance,
+    other_financial_assistance, direct_payment_specified, direct_payment_unrestricted -
+    are all assistance awards, identified by FAIN instead.
+    """
+    if award_type is None:
+        return ["award_id_piid", "award_id_fain"]
+    category = _BROAD_CATEGORY_FOR_AWARD_TYPE[_normalize_award_type(award_type)]
+    return ["award_id_piid"] if category in _PROCUREMENT_AWARD_CATEGORIES else ["award_id_fain"]
+
+
+def _download_columns_for(spending_level: str, award_type: str | None) -> list[str]:
+    base = _DOWNLOAD_COLUMNS_BASE_BY_LEVEL[spending_level]
+    if spending_level == "subawards":
+        return base
+    return _identifier_columns_for_award_type(award_type) + base
 
 # Verified live 2026-09-24: /download/search/'s spending_level array members are fully
 # independent (["awards"] alone excludes sub-awards) - unlike the legacy /download/awards/
@@ -598,7 +640,7 @@ def _execute_download(
         naics_note = _pop_naics_disclosure()
         if intent.start_date and intent.end_date:
             filters.time_period = [TimePeriod(start_date=intent.start_date, end_date=intent.end_date)]
-        columns = _DOWNLOAD_COLUMNS_BY_LEVEL[intent.spending_level]
+        columns = _download_columns_for(intent.spending_level, intent.award_type)
         api_spending_level = _SPENDING_LEVEL_TO_API_ARRAY[intent.spending_level]
         job = client.download_search(filters, columns, api_spending_level)
         citation = _build_download_citation(agency_name, intent, filters, columns, api_spending_level)

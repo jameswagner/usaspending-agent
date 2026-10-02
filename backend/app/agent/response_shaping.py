@@ -134,7 +134,7 @@ class ChartSpec(BaseModel):
 
 
 class DownloadSpec(BaseModel):
-    """One in-flight or finished CSV export job from the download handler - url is the eventual file, live once status is "finished"."""
+    """One in-flight or finished CSV export job."""
 
     file_name: str
     url: str
@@ -276,6 +276,7 @@ class ToolCitation(BaseModel):
 # real design question deferred for now - excluded here rather than
 # guessing which one the model would want.
 NEVER_CHART_TOOLS = {
+    "download_records", "download_single_award",
     "search_guide", "lookup_agency", "search_awards", "search_transactions", "get_agency_budget",
     "code_execution", "get_award_details",
     # A single scoped total, same reasoning as get_agency_budget above.
@@ -597,6 +598,37 @@ def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitat
     """
     if not context:
         return None
+
+    if tool_name in {"download_records", "download_single_award"}:
+        params = {
+            key: ", ".join(value) if isinstance(value, list) else str(value).lower() if isinstance(value, bool) else value
+            for key, value in context.items()
+            if key not in {"filters", "columns", "api_spending_level"} and not key.startswith("_")
+        }
+        requests_made = [
+            request for request in context.get("_requests", [])
+            if request[0] == "POST" and "/download/" in request[1]
+        ]
+        if requests_made:
+            curl = _curl_from_context({"_requests": requests_made[:1]})
+        elif tool_name == "download_single_award":
+            body = {"award_id": context["award_id"], "file_format": "csv"}
+            url = f"{BASE_URL}/api/v2/download/{context['endpoint']}/"
+            curl = f"curl -X POST '{url}' -H 'Content-Type: application/json' -d '{json.dumps(body)}'"
+        else:
+            body = {
+                "filters": context["filters"].model_dump(exclude_none=True),
+                "columns": context["columns"],
+                "file_format": "csv",
+                "spending_level": context["api_spending_level"],
+            }
+            url = f"{BASE_URL}/api/v2/download/search/"
+            curl = f"curl -X POST '{url}' -H 'Content-Type: application/json' -d '{json.dumps(body)}'"
+        label = "Single-award" if tool_name == "download_single_award" else context["spending_level"].capitalize()
+        scope = context.get("award_id") or context.get("agency_name") or "all agencies"
+        return ToolCitation(
+            tool_name=tool_name, parameters=params, description=f"{label} CSV download, {scope}", curl=curl,
+        )
 
     if tool_name == "lookup_agency":
         name = context["name"]

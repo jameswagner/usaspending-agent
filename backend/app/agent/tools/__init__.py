@@ -68,6 +68,12 @@ from .disaster import (
     get_disaster_spending_overview,
     get_disaster_spending_overview_raw,
 )
+from .download import (
+    download_records,
+    download_records_raw,
+    download_single_award,
+    download_single_award_raw,
+)
 from .location import _query_candidates, resolve_county_fips
 from .naics import resolve_naics_code
 from .psc import resolve_psc_code
@@ -159,6 +165,10 @@ __all__ = [
     "_truncation_note",
     "_unresolved_award_id_hint",
     "_wrap_untrusted",
+    "download_records",
+    "download_records_raw",
+    "download_single_award",
+    "download_single_award_raw",
     "get_agency_award_breakdown",
     "get_agency_award_breakdown_raw",
     "get_agency_budget",

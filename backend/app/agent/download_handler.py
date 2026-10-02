@@ -91,23 +91,13 @@ _PROCUREMENT_AWARD_CATEGORIES = {"contracts", "idv"}
 
 
 def _identifier_columns_for_award_type(award_type: str | None) -> list[str]:
-    """Which of award_id_piid/award_id_fain to request for an "awards"/"transactions"
-    download, given the resolved award_type (or None if unscoped by type).
+    """Picks award_id_piid vs award_id_fain for an "awards"/"transactions" download.
 
-    Live-verified 2026-10-01: requesting the identifier column that's 100% null across
-    every row of a narrowed award_type crashes /api/v2/download/search/ outright
-    ("An error occurred.", no further detail - every exception here is masked server-
-    side, see fedspendingtransparency/usaspending-api#4690) - not merely wasted, but
-    fatal. Confirmed in both directions: award_id_fain (always null for a contracts-
-    only request) and award_id_piid (always null for a grants-only request) each
-    reliably crash the job; the correct column alone works every time, and so does
-    requesting both when award_type is unset and the result set spans multiple award
-    families (neither column is 100% null across a mixed set).
-
-    Only two of AWARD_TYPE_GROUPS' eight leaf categories are procurement (PIID-bearing):
-    contracts and idv. The other six - grants, loans, insurance,
-    other_financial_assistance, direct_payment_specified, direct_payment_unrestricted -
-    are all assistance awards, identified by FAIN instead.
+    Live-verified 2026-10-01: requesting the identifier that's 100% null for the
+    narrowed award_type (fain for contracts, piid for grants) crashes
+    /api/v2/download/search/ outright ("An error occurred.") - not just wasted, fatal.
+    Only contracts/idv are PIID-bearing; the other six AWARD_TYPE_GROUPS leaf
+    categories are assistance awards, identified by FAIN.
     """
     if award_type is None:
         return ["award_id_piid", "award_id_fain"]
@@ -115,38 +105,21 @@ def _identifier_columns_for_award_type(award_type: str | None) -> list[str]:
     return ["award_id_piid"] if category in _PROCUREMENT_AWARD_CATEGORIES else ["award_id_fain"]
 
 
-# Which download-side column shows naics_code/psc_code when either is a real scope
-# filter (as opposed to get_spending_by_category's own `category` grouping dimension -
-# see _DOWNLOAD_COLUMN_BY_CATEGORY below for that). The *search* endpoint's own display
-# field names (e.g. "NAICS"/"PSC" from spending_by_award.md) are NOT valid here -
-# confirmed live 2026-10-01 that both crash /api/v2/download/search/ the same "accepted
-# at request time, fails async" way an always-null identifier column does (see
-# _identifier_columns_for_award_type above); the download endpoint's `columns` takes
-# the underlying search-index field name instead.
+# Download-side column for naics_code/psc_code when either is a real scope filter
+# (as opposed to a category breakdown - see _DOWNLOAD_COLUMN_BY_CATEGORY). The search
+# endpoint's display names ("NAICS"/"PSC") are NOT valid here - same crash as above.
 _CATEGORY_COLUMN_BY_FILTER_FIELD = {
     "naics_code": "naics_code",
     "psc_code": "product_or_service_code",
 }
 
-# get_spending_by_category's own `category` grouping-dimension values, mapped to the
-# live-verified download-side column that shows it per row - useful even when the
-# breakdown wasn't filtered to one specific value (a NAICS breakdown ranking across
-# every code has no naics_code scope value to key off, but each row still has its own
-# real NAICS code worth showing in the download). Derived from
-# fedspendingtransparency/usaspending-api's own download_column_historical_lookups.py,
-# then independently confirmed live against /api/v2/download/search/ 2026-10-01 - not
-# assumed from the source alone, since that file predates the Elasticsearch-backed
-# /download/search/ endpoint and at least one of its entries (disaster_emergency_fund_
-# codes, below) turned out not to carry over.
-#
-# awarding_agency/recipient need no entry - awarding_agency_name/recipient_name are
-# already in _DOWNLOAD_COLUMNS_BASE_BY_LEVEL for every "awards"/"transactions" download.
-#
-# district and defc are deliberately absent, not guessed around: district has no
-# corresponding column anywhere in that lookup file at all, and defc's own field
-# (disaster_emergency_fund_codes) crashed live both plain and with the lookup file's
-# own NAMING_CONFLICT_DISCRIMINATOR suffix - genuinely unresolved, left for a future
-# fix once a working column name is actually found.
+# get_spending_by_category's `category` values, mapped to the download-side column
+# that shows it per row - from fedspendingtransparency/usaspending-api's own
+# download_column_historical_lookups.py, live-verified 2026-10-01 against
+# /api/v2/download/search/ directly (that file predates the ES-backed endpoint and
+# one entry, disaster_emergency_fund_codes, didn't carry over). awarding_agency/
+# recipient need no entry - already in _DOWNLOAD_COLUMNS_BASE_BY_LEVEL. district/defc
+# are deliberately absent - no working column name found, not guessed around.
 _DOWNLOAD_COLUMN_BY_CATEGORY = {
     "naics": "naics_code",
     "psc": "product_or_service_code",
@@ -502,11 +475,8 @@ class DownloadIntent(BaseModel):
     contract_pricing_type: list[str] | None = None
     set_aside_type: list[str] | None = None
     extent_competed_type: list[str] | None = None
-    # NOT a real scope filter - never passed to _build_filters (see
-    # _CARRYOVER_FILTER_FIELDS). Only carries get_spending_by_category's own
-    # grouping dimension (e.g. "naics", "psc") across a follow-up, so the
-    # resulting download can include that category's column (_category_columns_for)
-    # even for a breakdown that wasn't filtered to one specific value.
+    # NOT a real scope filter (never passed to _build_filters) - carries
+    # get_spending_by_category's own grouping dimension for _category_columns_for.
     category: str | None = None
 
 

@@ -3,7 +3,12 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from backend.app.agent.response_shaping import Citation, DownloadSpec, FollowUp, ToolCitation
+from backend.app.agent.response_shaping import (
+    Citation,
+    DownloadSpec,
+    FollowUp,
+    ToolCitation,
+)
 
 
 class AskRequest(BaseModel):

@@ -89,11 +89,7 @@ export function useConversation() {
     setError(null);
   }, []);
 
-  // Appends a new turn for a "Download this" button click - a direct,
-  // deterministic call (no LLM/tool-calling loop, so no tool-status events to
-  // stream), but otherwise the same pending -> done turn lifecycle sendMessage
-  // uses. Requires an existing conversationId - a follow-up only ever renders
-  // attached to a turn that already produced one.
+  // Appends a pending -> done turn for a "Download this" click; needs an existing conversationId.
   const requestDownload = useCallback(async (followUp: FollowUp) => {
     const existingConversationId = conversationIdRef.current;
     if (!existingConversationId) return;

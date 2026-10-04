@@ -135,11 +135,7 @@ export async function askQuestion(
   }
 }
 
-// Calls this Next.js app's own /api/ask/download route (never FastAPI
-// directly, same proxy pattern as askQuestion) - the "Download this" button's
-// click path. Posts the follow-up's own structured filters as-is; skips
-// intent extraction/the text gate entirely on the backend (see
-// download_handler.handle_download_followup's docstring).
+// Posts the follow-up's structured filters to /api/ask/download, skipping backend intent extraction.
 export async function requestDownloadFollowUp(followUp: FollowUp, conversationId: string): Promise<AskResponse> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);

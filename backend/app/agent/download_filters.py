@@ -1,30 +1,8 @@
-"""Shared vocabulary for mapping a spending tool's own resolved call
-arguments/context into the download pilot's filter field names
-(DownloadIntent in download_handler.py).
-
-Split into its own module, with no dependency on download_handler.py or
-response_shaping.py, so both can import this table without creating a
-circular import between them: download_handler.py needs it for the text
-download path's follow-up carryover (_extract_prior_tool_context), and
-response_shaping.py needs the identical mapping for follow_ups_for's
-"Download this" button, which has to build the same download-shaped filter
-dict from a tool call's own recorded context.
-"""
+"""Tool-arg to DownloadIntent field mapping, split out so download_handler and response_shaping can share it without a circular import."""
 from __future__ import annotations
 
-# Maps a spending tool's own argument/context key names to the DownloadIntent
-# field they correspond to - only fields DownloadIntent understands.
-# Deliberately excludes display-only args like `limit`/`category`/`sort_by`/
-# `group`/`geo_layer`/`geo_layer_filters`/`scope` (get_spending_by_geography's
-# grouping axis) - a breakdown's top-N, sort order, or grouping dimension is
-# not a scope filter and must never be carried into a download.
-#
-# subrecipient_name/subrecipient_in_* (search_subawards's own arg names) map
-# onto the same recipient_name/recipient_in_* download fields - confirmed in
-# search_subawards_raw that they're passed into _build_filters's
-# recipient_name/recipient_in_* parameters directly, same underlying filter.
-#
-# recipient_id is deliberately absent - see DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.
+# Display-only args (limit/category/sort_by/group/geo_layer/scope) are excluded: they aren't scope filters.
+# subrecipient_* args map onto the same recipient_* download fields.
 TOOL_ARG_TO_DOWNLOAD_FIELD = {
     "agency_name": "agency_raw",
     "award_type": "award_type",
@@ -68,26 +46,12 @@ TOOL_ARG_TO_DOWNLOAD_FIELD = {
     "extent_competed_type": "extent_competed_type",
 }
 
-# Real scoping filters a spending tool can resolve that /api/v2/download/search/'s
-# own Filters object has no field for. Live-verified 2026-09-30: posting a job with
-# a bogus recipient_id alongside a real agency+time_period scope produced the exact
-# same file_name/job as the identical request with recipient_id omitted entirely -
-# the field is silently dropped before the query ever runs, not merely ignored
-# server-side after being recorded. Carrying it forward would silently widen the
-# download past what the answer it continues was scoped to, so it's excluded from
-# TOOL_ARG_TO_DOWNLOAD_FIELD above and instead surfaced as a caveat (download_handler.py)
-# or used to suppress the follow-up button entirely when it's the only scope available
-# (response_shaping.py's follow_ups_for).
+# Scope filters /download/search/ silently drops; surfaced as a caveat, or suppresses the follow-up button when it's the only scope.
 DOWNLOAD_UNSUPPORTED_SCOPE_ARGS = {
     "recipient_id": "the recipient ID filter",
 }
 
-# Every DownloadIntent field _build_filters can actually consume, beyond
-# agency_raw/time_period_type/start_year/end_year/award_type/spending_level,
-# which both download_handler.py and response_shaping.py handle by hand since
-# they're resolved slightly differently (e.g. agency_raw needs a lookup;
-# spending_level has a per-caller default). One list so every caller that
-# needs "every carryover-able filter field" stays in sync with DownloadIntent.
+# DownloadIntent fields _build_filters consumes, beyond the core agency/time/award_type/spending_level handled by hand.
 CARRYOVER_FILTER_FIELDS = [
     "recipient_name", "min_amount", "max_amount",
     "performed_in_state", "recipient_in_state",

@@ -28,10 +28,7 @@ class AskResponse(BaseModel):
 
 
 class DownloadFollowUpRequest(BaseModel):
-    """POST body for /ask/download - the "Download this" button's click path.
-    filters is the structured, DownloadIntent-shaped dict a FollowUp (kind="download")
-    carried; conversation_id is required (a follow-up only ever appears attached to an
-    already-existing turn, unlike AskRequest's conversation_id which starts a thread)."""
+    """POST body for /ask/download; conversation_id is required (the button attaches to an existing turn)."""
 
     filters: dict[str, str | int | float | list[str]]
     conversation_id: str

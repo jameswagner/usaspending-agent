@@ -265,10 +265,7 @@ def _resolve_single_award_id(question: str, recent_messages: list | None) -> str
 
 
 def _scope_caveat(dropped_filter_labels: list[str], naics_note: str | None = None) -> str:
-    """Builds the caveat suffix appended to a download's answer_text when part of the
-    prior answer's scope couldn't be carried through - see DOWNLOAD_UNSUPPORTED_SCOPE_ARGS
-    (download_filters.py). Returns "" when there's nothing to say, so this is safe to
-    always append."""
+    """Caveat suffix for scope that couldn't be carried into the download; "" if none."""
     notes = []
     if dropped_filter_labels:
         notes.append(
@@ -291,10 +288,7 @@ def _extract_prior_tool_context(
     Gives a follow-up extraction real values to copy instead of re-deriving
     everything from text, which left room to invent fields nothing ever stated.
 
-    Also returns the human-readable labels of any real scope filter the prior
-    call used that has no download-side equivalent (see
-    DOWNLOAD_UNSUPPORTED_SCOPE_ARGS in download_filters.py), so the caller can
-    say so rather than silently dropping it."""
+    Also returns labels of prior scope filters with no download-side equivalent."""
     for message in reversed((recent_messages or [])[-max_messages:]):
         if getattr(message, "type", None) != "ai":
             continue
@@ -360,11 +354,7 @@ class DownloadIntent(BaseModel):
     end_date: str | None = None
     award_type: str | None = None
     spending_level: Literal["awards", "transactions", "subawards"] = "awards"
-    # Every field below mirrors a SpendingFilterParams field _build_filters already
-    # accepts (see tool_filters.py) - widened alongside download_filters.TOOL_ARG_TO_DOWNLOAD_FIELD
-    # so a download following a scoped answer can actually carry that scope, not
-    # just agency/time/award_type. recipient_id is the one SpendingFilterParams
-    # field deliberately absent here - see download_filters.DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.
+    # Mirrors SpendingFilterParams except recipient_id (see download_filters.DOWNLOAD_UNSUPPORTED_SCOPE_ARGS).
     recipient_name: str | None = None
     min_amount: float | None = None
     max_amount: float | None = None
@@ -670,20 +660,7 @@ def _execute_download(
     intent: DownloadIntent, agency_name: str | None, conversation_id: str,
     dropped_filter_labels: list[str] | None = None,
 ):
-    """Back half shared by the text download path (handle_download_request, which
-    extracts `intent` from a natural-language question) and the "Download this"
-    follow-up button (handle_download_followup, which builds `intent` directly from
-    the structured filters response_shaping.follow_ups_for attached to a prior tool
-    call - no NL re-extraction, so the earlier scope-dropping bug can't reappear on that path):
-    build the real filters, post the job, poll it, and shape the AgentResult.
-
-    agency_name is the already-resolved agency (or None) - resolving intent.agency_raw
-    is left to each caller rather than done here, since what an unresolvable agency
-    should do differs by caller: handle_download_request falls through to the normal
-    tool loop (returns None) on a bad name, which only makes sense for a freshly
-    parsed natural-language question; handle_download_followup has no such fallback
-    (the button already names a real, previously-resolved agency) and returns an
-    error AgentResult instead. Always returns a real AgentResult, never None."""
+    """Shared back half of the text and button download paths; agency resolution stays with each caller."""
     from .orchestrator import AgentResult
 
     dropped_filter_labels = dropped_filter_labels or []
@@ -795,13 +772,7 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
     return _execute_download(intent, agency_name, conversation_id, dropped_filter_labels)
 
 def handle_download_followup(filters: dict, conversation_id: str):
-    """Entry point for the "Download this" follow-up button (response_shaping.py's
-    FollowUp, kind="download") - skips intent extraction/the natural-language gate
-    entirely. `filters` is the structured, DownloadIntent-shaped dict
-    follow_ups_for built from the resolved tool call's own recorded context, so
-    this never re-derives scope from prose the way a synthesized "download that"
-    question re-run through handle_download_request would (reopening the same
-    scope-dropping lossiness). Always returns a real AgentResult."""
+    """Click path for the "Download this" button: builds the intent straight from structured filters, no NL extraction."""
     from .orchestrator import AgentResult
 
     intent = DownloadIntent(**filters)

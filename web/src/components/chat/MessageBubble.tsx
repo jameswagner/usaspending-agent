@@ -28,9 +28,7 @@ function statusLine(status: ConversationTurn["status"]): { text: string; isError
 
 export function MessageBubble({ turn, onDownload }: MessageBubbleProps) {
   const { question, response, status } = turn;
-  // Local, not lifted into useConversation's turn state - this only disables
-  // the button on *this* bubble while its own click is in flight, independent
-  // of the global `loading` the input box watches.
+  // Local: disables only this bubble's button while its click is in flight.
   const [requestingDownload, setRequestingDownload] = useState(false);
 
   const handleFollowUpClick = async (followUp: FollowUp) => {

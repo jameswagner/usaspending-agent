@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Same server-side proxy pattern as ../route.ts - the "Download this" follow-up
-// button's click path, forwarded to FastAPI's POST /ask/download.
+// Proxies to FastAPI's POST /ask/download, same pattern as ../route.ts.
 const FASTAPI_BASE_URL = process.env.FASTAPI_BASE_URL ?? "http://localhost:8000";
 
 export async function POST(request: NextRequest) {

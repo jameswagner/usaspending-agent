@@ -97,19 +97,14 @@ def ask(request: Request, response: Response, payload: AskRequest) -> AskRespons
 @app.post("/ask/download", response_model=AskResponse)
 @limiter.limit(f"{ASK_RATE_LIMIT_PER_MINUTE}/minute")
 def ask_download(request: Request, response: Response, payload: DownloadFollowUpRequest) -> AskResponse:
-    """The "Download this" follow-up button's click path - skips intent extraction/the
-    text gate entirely (see download_handler.handle_download_followup's own docstring
-    for why re-synthesizing a question and re-running it through /ask would reopen
-    the download pilot's scope-dropping lossiness)."""
+    """Click path for the "Download this" button; skips intent extraction and the text gate."""
     logger.info("Received download follow-up for conversation_id=%s", payload.conversation_id)
     try:
         result = handle_download_followup(payload.filters, payload.conversation_id)
     except Exception:
         logger.exception("handle_download_followup raised for conversation_id=%s", payload.conversation_id)
         raise
-    # Persisted the same way a text download turn is (see _ask_langgraph) - a button
-    # click still needs to enter the checkpointer so a later "download that again"
-    # follow-up has real history to read, and so this turn appears in the transcript.
+    # Persisted like a text download turn so later "download that again" follow-ups have history.
     graph = _get_conversation_graph()
     config = {"configurable": {"thread_id": payload.conversation_id}}
     _persist_download_turn(

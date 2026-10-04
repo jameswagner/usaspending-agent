@@ -146,14 +146,7 @@ class DownloadSpec(BaseModel):
 
 
 class FollowUp(BaseModel):
-    """A contextual follow-up action offered after a tool result - the pilot for
-    a general mechanism (see follow_ups_for below), so far shipping only
-    kind="download": a "Download this data as a CSV" button. `filters` is a
-    DownloadIntent-shaped dict (download_handler.py) built from the resolved
-    tool call's own recorded context, structured (lists stay lists) rather than
-    the display-flattened shape ToolCitation.parameters uses - a click POSTs it
-    straight to download_handler.handle_download_followup, which builds a real
-    DownloadIntent from it and skips natural-language re-extraction entirely."""
+    """A follow-up action offered after a tool result (only kind="download" so far); `filters` is a structured DownloadIntent-shaped dict."""
 
     kind: Literal["download"]
     label: str
@@ -478,52 +471,26 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
     return None
 
 
-# Tools with a real time period and an award-level CSV analog - the gate for
-# offering a "Download this" follow-up (see follow_ups_for below). Deliberately
-# excludes get_agency_budget/get_agency_budget_by_subcomponent: those return
-# budgetary-resources data with no award-level CSV equivalent, so a button
-# there would hand back award records that don't match what's on screen - the
-# most important exclusion here, easy for a generic "every spending answer
-# gets a button" rule to swallow.
+# Excludes get_agency_budget*: budgetary-resources data has no award-level CSV equivalent.
 _DOWNLOADABLE_FOLLOW_UP_TOOLS = {
     "search_awards", "search_subawards", "search_transactions",
     "get_spending_by_category", "get_spending_over_time",
     "get_award_type_breakdown", "get_spending_by_geography",
 }
 
-# search_awards/search_subawards/search_transactions each call one fixed
-# /download/search/ spending_level - it's which tool ran, not a parameter in
-# their own context dict the way get_spending_by_category/get_spending_over_time's
-# spending_level is (see tools/spending/search.py's three *_raw functions).
+# The search_* tools imply a fixed spending_level by which tool ran, not via a context param.
 _FIXED_SPENDING_LEVEL_BY_TOOL = {
     "search_awards": "awards",
     "search_subawards": "subawards",
     "search_transactions": "transactions",
 }
 
-# Context keys that, by themselves, are never real scope for a download - either
-# display-only (merged in from TOOL_ARG_TO_DOWNLOAD_FIELD's own exclusions) or,
-# for recipient_id specifically, scope the download endpoint can't honor at all
-# (see download_filters.py's DOWNLOAD_UNSUPPORTED_SCOPE_ARGS). Checked below so a
-# tool call scoped ONLY by recipient_id doesn't offer a button that would silently
-# download unscoped data instead of what was actually shown.
+# Keys excluded from the "has real scope" check below.
 _FOLLOW_UP_CORE_FIELDS = {"agency_name", "award_type", "start_year", "end_year", "time_period_type"}
 
 
 def follow_ups_for(tool_name: str, result, context: dict | None) -> list[FollowUp]:
-    """Deterministic, unit-testable follow-up-eligibility check, the same role
-    should_chart/build_tool_citation play for charts/citations - a third thing
-    derived from the same (tool_name, result, context) tuple _build_result
-    already loops over (orchestrator.py), not a new LLM call or new
-    conversational state. Ships only kind="download" for now; a future
-    follow-up kind is one more branch here plus one frontend renderer case.
-
-    context is the exact dict the tool call recorded for its own citation
-    (build_tool_citation's second argument) - reused here as the source of
-    truth for "what was this call actually scoped by," so a NAICS/location/
-    etc.-scoped answer's follow-up carries that same scope, not just agency/time_period,
-    the same fix made for the text download follow-up path.
-    """
+    """Derives follow-up buttons from the tool call's recorded context, like should_chart; no LLM call."""
     if tool_name not in _DOWNLOADABLE_FOLLOW_UP_TOOLS or not context:
         return []
 
@@ -550,21 +517,12 @@ def follow_ups_for(tool_name: str, result, context: dict | None) -> list[FollowU
         if value is not None:
             filters[field] = value
 
-    # recipient_id is real scope but has no download-side equivalent (see
-    # download_filters.py) - if it's the only scope this call had, a button here
-    # would silently download unscoped data rather than what was shown, which is
-    # worse than no button at all.
+    # recipient_id can't be honored by the download endpoint; alone, a button would download unscoped data.
     has_other_scope = any(key not in ("start_year", "end_year", "time_period_type") for key in filters)
     if context.get("recipient_id") and not has_other_scope:
         return []
 
-    # spending_level: the three search_* tools each imply a fixed level (which tool
-    # ran); get_spending_by_category/get_spending_over_time carry it explicitly in
-    # context (already resolved, defaulting to "transactions" - see those tools'
-    # own docstrings); get_award_type_breakdown/get_spending_by_geography have no
-    # such parameter at all, so the same "transactions" default stands in. This is
-    # deliberately NOT DownloadIntent's own "awards" default, which would silently
-    # request a different level than the one actually shown on screen.
+    # Default "transactions" matches what the citation showed, not DownloadIntent's "awards" default.
     filters["spending_level"] = (
         _FIXED_SPENDING_LEVEL_BY_TOOL.get(tool_name) or context.get("spending_level", "transactions")
     )

@@ -304,8 +304,7 @@ def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
             charts.append(chart)
 
         for follow_up in follow_ups_for(tool_name, result, context):
-            # Values are hashed as tuples where they're lists (e.g. def_codes) - a
-            # plain tuple(sorted(...items())) would raise on an unhashable list value.
+            # Lists (e.g. def_codes) become tuples so the key is hashable.
             hashable_filters = tuple(
                 sorted((k, tuple(v) if isinstance(v, list) else v) for k, v in follow_up.filters.items())
             )

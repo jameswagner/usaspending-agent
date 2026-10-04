@@ -184,12 +184,14 @@ class TestExtractPriorToolContext:
         context, dropped = _extract_prior_tool_context(messages)
         assert context == {
             "agency_raw": "National Science Foundation", "start_year": 2025, "end_year": 2025,
-            "award_type": "contracts",
+            "award_type": "contracts", "category": "naics",
         }
         assert dropped == []
-        # Display-only args must never leak in as if they were scope filters.
+        # limit is purely display-only (a breakdown's top-N) and must never leak in as
+        # if it were a scope filter. category IS carried (unlike limit) but only for
+        # picking the download's category column (_category_columns_for) - it's never
+        # passed to _build_filters as a real filter (see _CARRYOVER_FILTER_FIELDS).
         assert "limit" not in context
-        assert "category" not in context
 
     def test_tool_call_with_no_mappable_fields_returns_none(self):
         messages = [AIMessage(content="", tool_calls=[{"name": "search_guide", "args": {"query": "what is a sub-award?"}, "id": "call_1"}])]
@@ -740,6 +742,130 @@ class TestDownloadIdentifierColumns:
             "prime_award_piid", "subawardee_name", "subaward_amount",
             "subaward_action_date", "prime_award_awarding_agency_name",
         ]
+
+
+class TestDownloadCategoryColumns:
+    """naics_code/product_or_service_code columns, added only when the resolved
+    intent was actually scoped by that filter - see _category_columns_for's own
+    docstring. Live-verified 2026-10-01: the *search* endpoint's own display field
+    names ("NAICS", "PSC") are NOT valid download columns and crash the job the
+    same "accepted at request time, fails async" way an always-null identifier
+    column does."""
+
+    def _run(self, naics_code=None, psc_code=None, category=None, spending_level="awards"):
+        intent = DownloadIntent(
+            agency_raw="NSF", start_year=2024, end_year=2024,
+            naics_code=naics_code, psc_code=psc_code, category=category, spending_level=spending_level,
+        )
+        job = DownloadJobResponse(
+            status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+            file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        finished = DownloadStatusResponse(
+            status="finished", file_name="x.zip",
+            file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=1,
+        )
+        client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
+        with patch("backend.app.agent.download_handler._extract_download_intent", return_value=intent), \
+             patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
+            handle_download_request("download NSF's FY2024 awards", "conv-1")
+        return client.last_columns
+
+    def test_no_category_filter_adds_no_category_column(self):
+        columns = self._run()
+        assert "naics_code" not in columns
+        assert "product_or_service_code" not in columns
+
+    def test_naics_scoped_adds_naics_code_column(self):
+        columns = self._run(naics_code="518210")
+        assert "naics_code" in columns
+        # The search endpoint's display field name must never leak in here - it
+        # crashes the download job (see class docstring).
+        assert "NAICS" not in columns
+
+    def test_psc_scoped_adds_product_or_service_code_column(self):
+        columns = self._run(psc_code="7030")
+        assert "product_or_service_code" in columns
+        assert "PSC" not in columns
+        assert "psc_code" not in columns
+
+    def test_both_naics_and_psc_scoped_adds_both_columns(self):
+        columns = self._run(naics_code="518210", psc_code="7030")
+        assert "naics_code" in columns
+        assert "product_or_service_code" in columns
+
+    def test_subawards_level_unaffected_by_category_filters(self):
+        columns = self._run(naics_code="518210", spending_level="subawards")
+        assert "naics_code" not in columns
+
+    def test_naics_breakdown_adds_naics_code_column_with_no_filter(self):
+        """The original repro: a NAICS *breakdown* (ranking across every code, not
+        filtered to one) has no naics_code scope value, but each row still has its
+        own real NAICS code worth showing - live-verified 2026-10-01 that naics_code
+        populates fine as a download column with zero naics_codes filter applied."""
+        columns = self._run(category="naics")
+        assert "naics_code" in columns
+
+    def test_psc_breakdown_adds_product_or_service_code_column(self):
+        columns = self._run(category="psc")
+        assert "product_or_service_code" in columns
+
+    def test_cfda_breakdown_adds_cfda_number_column(self):
+        columns = self._run(category="cfda")
+        assert "cfda_number" in columns
+
+    def test_country_breakdown_adds_pop_country_code_column(self):
+        columns = self._run(category="country")
+        assert "primary_place_of_performance_country_code" in columns
+
+    def test_county_breakdown_adds_pop_county_name_column(self):
+        columns = self._run(category="county")
+        assert "primary_place_of_performance_county_name" in columns
+
+    def test_state_territory_breakdown_adds_pop_state_code_column(self):
+        columns = self._run(category="state_territory")
+        assert "primary_place_of_performance_state_code" in columns
+
+    def test_awarding_subagency_breakdown_adds_column(self):
+        columns = self._run(category="awarding_subagency")
+        assert "awarding_sub_agency_name" in columns
+
+    def test_funding_agency_breakdown_adds_column(self):
+        columns = self._run(category="funding_agency")
+        assert "funding_agency_name" in columns
+
+    def test_funding_subagency_breakdown_adds_column(self):
+        columns = self._run(category="funding_subagency")
+        assert "funding_sub_agency_name" in columns
+
+    def test_recipient_duns_breakdown_adds_column(self):
+        columns = self._run(category="recipient_duns")
+        assert "recipient_duns" in columns
+
+    def test_federal_account_breakdown_adds_column(self):
+        columns = self._run(category="federal_account")
+        assert "federal_accounts_funding_this_award" in columns
+
+    def test_unverified_category_adds_no_column(self):
+        """district and defc have no live-verified download column (see
+        _DOWNLOAD_COLUMN_BY_CATEGORY's own docstring) - must not guess one."""
+        columns = self._run(category="district")
+        assert "district" not in columns
+        columns = self._run(category="defc")
+        assert "disaster_emergency_fund_codes" not in columns
+
+    def test_naics_filter_and_naics_category_together_dont_duplicate_column(self):
+        columns = self._run(naics_code="518210", category="naics")
+        assert columns.count("naics_code") == 1
+
+    def test_awarding_agency_and_recipient_categories_need_no_extra_column(self):
+        """awarding_agency_name/recipient_name are already in the base column set for
+        every "awards"/"transactions" download - no entry needed in
+        _DOWNLOAD_COLUMN_BY_CATEGORY for these two categories."""
+        columns = self._run(category="awarding_agency")
+        assert columns.count("awarding_agency_name") == 1
+        columns = self._run(category="recipient")
+        assert columns.count("recipient_name") == 1
 
 
 class TestAwardIdEndpoint:

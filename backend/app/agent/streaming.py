@@ -37,6 +37,7 @@ from .orchestrator import (
     NOT_FOUND_MESSAGE,
     AgentResult,
     _build_result,
+    _download_tool_loop_enabled,
     _persist_download_turn,
 )
 from .scope import _is_in_scope
@@ -51,13 +52,8 @@ logger = logging.getLogger(__name__)
 # to send, so the connection needs its own liveness signal in that gap.
 _KEEPALIVE_INTERVAL_SECONDS = 15.0
 
-# Every data tool's `except USASpendingAPIError as e: return f"This query
-# failed: {e}."` pattern (spending.py, awards.py, recipients.py, and now
-# location.py) is the only signal available here that a ToolMessage is an
-# error vs. a normal result - _record_tool_call (and so _tool_call_log) is
-# never populated on this path, only on success, so it can't be used to
-# distinguish the two.
-_TOOL_ERROR_PREFIX = "This query failed:"
+# Tool wrappers return these prefixes when they fail before recording a result.
+_TOOL_ERROR_PREFIX = ("This query failed:", "This download failed:")
 
 _SUMMARY_MAX_CHARS = 200
 
@@ -111,7 +107,9 @@ def _run_graph_stream(question: str, conversation_id: str, event_queue: queue.Qu
             event_queue.put(("done", _build_done_payload(result)))
             return
 
-        if _looks_like_download_request(question) or _is_download_followup(recent_messages):
+        if not _download_tool_loop_enabled() and (
+            _looks_like_download_request(question) or _is_download_followup(recent_messages)
+        ):
             event_queue.put(("tool_call_start", {"tool_name": "download_search", "args": {}}))
             download_result = handle_download_request(question, conversation_id, recent_messages)
             if download_result is not None:

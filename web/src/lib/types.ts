@@ -35,6 +35,13 @@ export interface DownloadSpec {
   total_rows: number | null;
 }
 
+// Follow-up action offered after a tool result (only kind "download" so far); filters is posted as-is to /api/ask/download.
+export interface FollowUp {
+  kind: "download";
+  label: string;
+  filters: Record<string, string | number | string[]>;
+}
+
 export interface AskRequest {
   question: string;
   conversation_id: string | null;
@@ -48,6 +55,7 @@ export interface AskResponse {
   citations: Citation[];
   tool_citations: ToolCitation[];
   downloads: DownloadSpec[];
+  follow_ups: FollowUp[];
 }
 
 // The in-flight status of a turn being streamed from POST /ask/stream

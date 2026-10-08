@@ -16,6 +16,8 @@ from pydantic import BaseModel
 
 from backend.app.usaspending import BASE_URL, USASpendingAPIError
 
+from .download_filters import TOOL_ARG_TO_DOWNLOAD_FIELD
+
 
 def current_fiscal_year(today: date | None = None) -> int:
     """The federal fiscal year in progress on `today` (defaults to the real
@@ -141,6 +143,14 @@ class DownloadSpec(BaseModel):
     status_url: str
     status: str
     total_rows: int | None = None
+
+
+class FollowUp(BaseModel):
+    """A follow-up action offered after a tool result (only kind="download" so far); `filters` is a structured DownloadIntent-shaped dict."""
+
+    kind: Literal["download"]
+    label: str
+    filters: dict[str, str | int | float | list[str]]
 
 
 class Citation(BaseModel):
@@ -459,6 +469,65 @@ def should_chart(tool_name: str, structured_result, context: dict | None = None)
         )
 
     return None
+
+
+# Excludes get_agency_budget*: budgetary-resources data has no award-level CSV equivalent.
+_DOWNLOADABLE_FOLLOW_UP_TOOLS = {
+    "search_awards", "search_subawards", "search_transactions",
+    "get_spending_by_category", "get_spending_over_time",
+    "get_award_type_breakdown", "get_spending_by_geography",
+}
+
+# The search_* tools imply a fixed spending_level by which tool ran, not via a context param.
+_FIXED_SPENDING_LEVEL_BY_TOOL = {
+    "search_awards": "awards",
+    "search_subawards": "subawards",
+    "search_transactions": "transactions",
+}
+
+# Keys excluded from the "has real scope" check below.
+_FOLLOW_UP_CORE_FIELDS = {"agency_name", "award_type", "start_year", "end_year", "time_period_type"}
+
+
+def follow_ups_for(tool_name: str, result, context: dict | None) -> list[FollowUp]:
+    """Derives follow-up buttons from the tool call's recorded context, like should_chart; no LLM call."""
+    if tool_name not in _DOWNLOADABLE_FOLLOW_UP_TOOLS or not context:
+        return []
+
+    start_year = context.get("start_year")
+    end_year = context.get("end_year")
+    if start_year is None or end_year is None:
+        return []
+
+    filters: dict = {"start_year": start_year, "end_year": end_year}
+    time_period_type = context.get("time_period_type")
+    if time_period_type:
+        filters["time_period_type"] = time_period_type
+    agency_name = context.get("agency_name")
+    if agency_name:
+        filters["agency_raw"] = agency_name
+    award_type = context.get("award_type")
+    if award_type:
+        filters["award_type"] = award_type
+
+    for arg_name, field in TOOL_ARG_TO_DOWNLOAD_FIELD.items():
+        if arg_name in _FOLLOW_UP_CORE_FIELDS:
+            continue
+        value = context.get(arg_name)
+        if value is not None:
+            filters[field] = value
+
+    # recipient_id can't be honored by the download endpoint; alone, a button would download unscoped data.
+    has_other_scope = any(key not in ("start_year", "end_year", "time_period_type") for key in filters)
+    if context.get("recipient_id") and not has_other_scope:
+        return []
+
+    # Default "transactions" matches what the citation showed, not DownloadIntent's "awards" default.
+    filters["spending_level"] = (
+        _FIXED_SPENDING_LEVEL_BY_TOOL.get(tool_name) or context.get("spending_level", "transactions")
+    )
+
+    return [FollowUp(kind="download", label="Download this data as a CSV", filters=filters)]
 
 
 # The six optional filter params get_spending_by_category, get_spending_over_time,

@@ -1,5 +1,5 @@
 import { createParser } from "eventsource-parser";
-import type { AskResponse } from "./types";
+import type { AskResponse, FollowUp } from "./types";
 
 // One tool-status event from POST /api/ask/stream's SSE body - see
 // backend/app/agent/streaming.py's event protocol. Named "tool_name" (not
@@ -119,6 +119,31 @@ export async function askQuestion(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question, conversation_id: conversationId }),
+      signal: controller.signal,
+    });
+    if (!resp.ok) {
+      throw new Error(`Server error: ${resp.status}`);
+    }
+    return (await resp.json()) as AskResponse;
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Request timed out - the server may be unresponsive.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Posts the follow-up's structured filters to /api/ask/download, skipping backend intent extraction.
+export async function requestDownloadFollowUp(followUp: FollowUp, conversationId: string): Promise<AskResponse> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const resp = await fetch("/api/ask/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filters: followUp.filters, conversation_id: conversationId }),
       signal: controller.signal,
     });
     if (!resp.ok) {

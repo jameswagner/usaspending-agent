@@ -16,11 +16,12 @@ from slowapi.util import get_remote_address
 load_dotenv()
 
 from backend.app.agent import ask as agent_ask
-from backend.app.agent.orchestrator import NOT_FOUND_MESSAGE
-from backend.app.agent.singletons import warm_up
+from backend.app.agent.download_handler import handle_download_followup
+from backend.app.agent.orchestrator import NOT_FOUND_MESSAGE, _persist_download_turn
+from backend.app.agent.singletons import _get_conversation_graph, warm_up
 from backend.app.agent.streaming import sse_event_generator
 from backend.app.logging_config import configure_logging
-from backend.app.schemas import AskRequest, AskResponse
+from backend.app.schemas import AskRequest, AskResponse, DownloadFollowUpRequest
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,36 @@ def ask(request: Request, response: Response, payload: AskRequest) -> AskRespons
         citations=result.citations,
         tool_citations=result.tool_citations,
         downloads=result.downloads,
+        follow_ups=result.follow_ups,
+    )
+
+
+@app.post("/ask/download", response_model=AskResponse)
+@limiter.limit(f"{ASK_RATE_LIMIT_PER_MINUTE}/minute")
+def ask_download(request: Request, response: Response, payload: DownloadFollowUpRequest) -> AskResponse:
+    """Click path for the "Download this" button; skips intent extraction and the text gate."""
+    logger.info("Received download follow-up for conversation_id=%s", payload.conversation_id)
+    try:
+        result = handle_download_followup(payload.filters, payload.conversation_id)
+    except Exception:
+        logger.exception("handle_download_followup raised for conversation_id=%s", payload.conversation_id)
+        raise
+    # Persisted like a text download turn so later "download that again" follow-ups have history.
+    graph = _get_conversation_graph()
+    config = {"configurable": {"thread_id": payload.conversation_id}}
+    _persist_download_turn(
+        graph, config, "Download this data as a CSV", result.answer_text, result.download_intent_context
+    )
+    source_type = "not_found" if result.answer_text == NOT_FOUND_MESSAGE else "agent"
+    return AskResponse(
+        answer_text=result.answer_text,
+        source_type=source_type,
+        conversation_id=result.conversation_id,
+        charts=[c.model_dump() for c in result.charts],
+        citations=result.citations,
+        tool_citations=result.tool_citations,
+        downloads=result.downloads,
+        follow_ups=result.follow_ups,
     )
 
 

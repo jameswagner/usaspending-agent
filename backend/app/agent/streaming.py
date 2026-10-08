@@ -88,6 +88,7 @@ def _build_done_payload(result: AgentResult) -> dict:
         "citations": [c.model_dump() for c in result.citations],
         "tool_citations": [c.model_dump() for c in result.tool_citations],
         "downloads": [d.model_dump() for d in result.downloads],
+        "follow_ups": [f.model_dump() for f in result.follow_ups],
     }
 
 

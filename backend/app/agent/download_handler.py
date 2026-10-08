@@ -18,6 +18,11 @@ from backend.app.usaspending import (
     USASpendingClient,
 )
 
+from .download_filters import (
+    CARRYOVER_FILTER_FIELDS,
+    DOWNLOAD_UNSUPPORTED_SCOPE_ARGS,
+    TOOL_ARG_TO_DOWNLOAD_FIELD,
+)
 from .response_shaping import (
     DownloadSpec,
     ToolCitation,
@@ -259,79 +264,8 @@ def _resolve_single_award_id(question: str, recent_messages: list | None) -> str
     return None
 
 
-# Maps a spending tool's own argument names to the DownloadIntent field they
-# correspond to - only fields DownloadIntent understands. Deliberately excludes
-# display-only args like `limit`/`category`/`sort_by`/`group`/`geo_layer`/
-# `geo_layer_filters`/`scope` (get_spending_by_geography's grouping axis) - a
-# breakdown's top-N, sort order, or grouping dimension is not a scope filter
-# and must never be carried into a download.
-#
-# subrecipient_name/subrecipient_in_* (search_subawards's own arg names) map
-# onto the same recipient_name/recipient_in_* download fields - confirmed in
-# search_subawards_raw that they're passed into _build_filters's
-# recipient_name/recipient_in_* parameters directly, same underlying filter.
-#
-# recipient_id is deliberately absent - see _DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.
-_TOOL_ARG_TO_DOWNLOAD_FIELD = {
-    "agency_name": "agency_raw",
-    "award_type": "award_type",
-    "start_year": "start_year",
-    "end_year": "end_year",
-    "time_period_type": "time_period_type",
-    "recipient_name": "recipient_name",
-    "subrecipient_name": "recipient_name",
-    "min_amount": "min_amount",
-    "max_amount": "max_amount",
-    "performed_in_state": "performed_in_state",
-    "recipient_in_state": "recipient_in_state",
-    "subrecipient_in_state": "recipient_in_state",
-    "performed_in_county": "performed_in_county",
-    "recipient_in_county": "recipient_in_county",
-    "subrecipient_in_county": "recipient_in_county",
-    "performed_in_city": "performed_in_city",
-    "recipient_in_city": "recipient_in_city",
-    "subrecipient_in_city": "recipient_in_city",
-    "performed_in_zip": "performed_in_zip",
-    "recipient_in_zip": "recipient_in_zip",
-    "subrecipient_in_zip": "recipient_in_zip",
-    "performed_in_district": "performed_in_district",
-    "recipient_in_district": "recipient_in_district",
-    "subrecipient_in_district": "recipient_in_district",
-    "keywords": "keywords",
-    "date_type": "date_type",
-    "place_of_performance_scope": "place_of_performance_scope",
-    "recipient_scope": "recipient_scope",
-    "naics_code": "naics_code",
-    "psc_code": "psc_code",
-    "cfda_program": "cfda_program",
-    "award_id": "award_id",
-    "recipient_type": "recipient_type",
-    "description": "description",
-    "tas_code": "tas_code",
-    "federal_account": "federal_account",
-    "def_codes": "def_codes",
-    "contract_pricing_type": "contract_pricing_type",
-    "set_aside_type": "set_aside_type",
-    "extent_competed_type": "extent_competed_type",
-}
-
-# Real scoping filters a spending tool can resolve that /api/v2/download/search/'s
-# own Filters object has no field for. Live-verified 2026-09-30: posting a job with
-# a bogus recipient_id alongside a real agency+time_period scope produced the exact
-# same file_name/job as the identical request with recipient_id omitted entirely -
-# the field is silently dropped before the query ever runs, not merely ignored
-# server-side after being recorded. Carrying it forward would silently widen the
-# download past what the answer it continues was scoped to, so it's excluded from
-# _TOOL_ARG_TO_DOWNLOAD_FIELD above and instead surfaced as a caveat.
-_DOWNLOAD_UNSUPPORTED_SCOPE_ARGS = {
-    "recipient_id": "the recipient ID filter",
-}
-
-
 def _scope_caveat(dropped_filter_labels: list[str], naics_note: str | None = None) -> str:
-    """Builds the caveat suffix appended to a download's answer_text when part of the
-    prior answer's scope couldn't be carried through - see _DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.
-    Returns "" when there's nothing to say, so this is safe to always append."""
+    """Caveat suffix for scope that couldn't be carried into the download; "" if none."""
     notes = []
     if dropped_filter_labels:
         notes.append(
@@ -354,10 +288,7 @@ def _extract_prior_tool_context(
     Gives a follow-up extraction real values to copy instead of re-deriving
     everything from text, which left room to invent fields nothing ever stated.
 
-    Also returns the human-readable labels of any real scope filter the prior
-    call used that has no download-side equivalent (see
-    _DOWNLOAD_UNSUPPORTED_SCOPE_ARGS), so the caller can say so rather than
-    silently dropping it."""
+    Also returns labels of prior scope filters with no download-side equivalent."""
     for message in reversed((recent_messages or [])[-max_messages:]):
         if getattr(message, "type", None) != "ai":
             continue
@@ -369,7 +300,7 @@ def _extract_prior_tool_context(
             args = tool_calls[-1].get("args", {})
             context = {
                 field: args[arg_name]
-                for arg_name, field in _TOOL_ARG_TO_DOWNLOAD_FIELD.items()
+                for arg_name, field in TOOL_ARG_TO_DOWNLOAD_FIELD.items()
                 if args.get(arg_name) is not None
             }
             # category (get_spending_by_category's grouping dimension) is NOT a scope
@@ -380,29 +311,11 @@ def _extract_prior_tool_context(
             if args.get("category") is not None:
                 context["category"] = args["category"]
             dropped = [
-                label for arg_name, label in _DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.items()
+                label for arg_name, label in DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.items()
                 if args.get(arg_name) is not None
             ]
             return (context or None), dropped
     return None, []
-
-
-# Every DownloadIntent field _build_filters can actually consume, beyond the
-# original agency/time/award_type/spending_level fields _download_intent_context
-# already handles by hand above - kept as one list so both that function and the
-# _build_filters(**filters) call below stay in sync with DownloadIntent's fields.
-_CARRYOVER_FILTER_FIELDS = [
-    "recipient_name", "min_amount", "max_amount",
-    "performed_in_state", "recipient_in_state",
-    "performed_in_county", "recipient_in_county",
-    "performed_in_city", "recipient_in_city",
-    "performed_in_zip", "recipient_in_zip",
-    "performed_in_district", "recipient_in_district",
-    "keywords", "date_type", "place_of_performance_scope", "recipient_scope",
-    "naics_code", "psc_code", "cfda_program", "award_id", "recipient_type",
-    "description", "tas_code", "federal_account", "def_codes",
-    "contract_pricing_type", "set_aside_type", "extent_competed_type",
-]
 
 
 def _download_intent_context(intent: DownloadIntent, agency_name: str | None) -> dict:
@@ -420,7 +333,7 @@ def _download_intent_context(intent: DownloadIntent, agency_name: str | None) ->
         context["end_year"] = intent.end_year
     if intent.award_type:
         context["award_type"] = intent.award_type
-    for field in _CARRYOVER_FILTER_FIELDS:
+    for field in CARRYOVER_FILTER_FIELDS:
         value = getattr(intent, field)
         if value is not None:
             context[field] = value
@@ -441,11 +354,7 @@ class DownloadIntent(BaseModel):
     end_date: str | None = None
     award_type: str | None = None
     spending_level: Literal["awards", "transactions", "subawards"] = "awards"
-    # Every field below mirrors a SpendingFilterParams field _build_filters already
-    # accepts (see tool_filters.py) - widened alongside _TOOL_ARG_TO_DOWNLOAD_FIELD
-    # so a download following a scoped answer can actually carry that scope, not
-    # just agency/time/award_type. recipient_id is the one SpendingFilterParams
-    # field deliberately absent here - see _DOWNLOAD_UNSUPPORTED_SCOPE_ARGS.
+    # Mirrors SpendingFilterParams except recipient_id (see download_filters.DOWNLOAD_UNSUPPORTED_SCOPE_ARGS).
     recipient_name: str | None = None
     min_amount: float | None = None
     max_amount: float | None = None
@@ -684,7 +593,7 @@ def _build_download_citation(
     # has no list type, so a list-valued filter (def_codes/contract_pricing_type/etc.) is
     # comma-joined here the same lossy-for-display-only way _merge_optional_filter_params does
     # for the other spending tools' citations.
-    for field in _CARRYOVER_FILTER_FIELDS:
+    for field in CARRYOVER_FILTER_FIELDS:
         value = getattr(intent, field)
         if value is None:
             continue
@@ -747,6 +656,72 @@ def _handle_single_award_download(award_id: str, conversation_id: str):
     )
 
 
+def _execute_download(
+    intent: DownloadIntent, agency_name: str | None, conversation_id: str,
+    dropped_filter_labels: list[str] | None = None,
+):
+    """Shared back half of the text and button download paths; agency resolution stays with each caller."""
+    from .orchestrator import AgentResult
+
+    dropped_filter_labels = dropped_filter_labels or []
+    client = _get_usaspending_client()
+    intent_context = _download_intent_context(intent, agency_name)
+    carryover_filters = {field: getattr(intent, field) for field in CARRYOVER_FILTER_FIELDS}
+
+    try:
+        # Placeholder when start_date is set - real scope is applied below by overwriting time_period.
+        year_for_filters = int(intent.start_date[:4]) if intent.start_date else intent.start_year
+        filters = _build_filters(
+            client,
+            agency_name,
+            intent.time_period_type,
+            year_for_filters,
+            year_for_filters,
+            award_type=intent.award_type,
+            scope_required=False,
+            **carryover_filters,
+        )
+        naics_note = _pop_naics_disclosure()
+        if intent.start_date and intent.end_date:
+            filters.time_period = [TimePeriod(start_date=intent.start_date, end_date=intent.end_date)]
+        columns = _download_columns_for(
+            intent.spending_level, intent.award_type, intent.naics_code, intent.psc_code, intent.category
+        )
+        api_spending_level = _SPENDING_LEVEL_TO_API_ARRAY[intent.spending_level]
+        job = client.download_search(filters, columns, api_spending_level)
+        citation = _build_download_citation(agency_name, intent, filters, columns, api_spending_level)
+        status = _poll_until_finished(client, job.file_name)
+    except USASpendingAPIError as e:
+        logger.warning("Download pipeline failed: %s", e)
+        return AgentResult(
+            answer_text=f"This download failed: {e}.{_scope_caveat(dropped_filter_labels)}",
+            conversation_id=conversation_id,
+            download_intent_context=intent_context,
+        )
+
+    download = DownloadSpec(
+        file_name=status.file_name, url=status.file_url, status_url=job.status_url,
+        status=status.status, total_rows=status.total_rows,
+    )
+    if status.status == "finished":
+        answer_text = (
+            f"Your download is ready: {status.total_rows or 0} rows in {status.file_name}.\n{status.file_url}"
+        )
+    elif status.status == "failed":
+        answer_text = f"This download failed to generate: {status.message or 'no further detail from the API.'}"
+    else:
+        answer_text = (
+            f"Your download is still generating ({status.file_name}). It'll appear at the link below "
+            "once ready - check back shortly."
+        )
+    answer_text += _scope_caveat(dropped_filter_labels, naics_note)
+
+    return AgentResult(
+        answer_text=answer_text, conversation_id=conversation_id, downloads=[download], tool_citations=[citation],
+        download_intent_context=intent_context,
+    )
+
+
 def handle_download_request(question: str, conversation_id: str, recent_messages: list | None = None):
     """Returns None to signal "fall through to the normal tool loop unchanged"."""
     from .orchestrator import AgentResult
@@ -794,58 +769,22 @@ def handle_download_request(question: str, conversation_id: str, recent_messages
             return None
         agency_name = match.agency_name
 
-    intent_context = _download_intent_context(intent, agency_name)
-    carryover_filters = {field: getattr(intent, field) for field in _CARRYOVER_FILTER_FIELDS}
+    return _execute_download(intent, agency_name, conversation_id, dropped_filter_labels)
 
-    try:
-        # Placeholder when start_date is set - real scope is applied below by overwriting time_period.
-        year_for_filters = int(intent.start_date[:4]) if intent.start_date else intent.start_year
-        filters = _build_filters(
-            client,
-            agency_name,
-            intent.time_period_type,
-            year_for_filters,
-            year_for_filters,
-            award_type=intent.award_type,
-            scope_required=False,
-            **carryover_filters,
-        )
-        naics_note = _pop_naics_disclosure()
-        if intent.start_date and intent.end_date:
-            filters.time_period = [TimePeriod(start_date=intent.start_date, end_date=intent.end_date)]
-        columns = _download_columns_for(
-            intent.spending_level, intent.award_type, intent.naics_code, intent.psc_code, intent.category
-        )
-        api_spending_level = _SPENDING_LEVEL_TO_API_ARRAY[intent.spending_level]
-        job = client.download_search(filters, columns, api_spending_level)
-        citation = _build_download_citation(agency_name, intent, filters, columns, api_spending_level)
-        status = _poll_until_finished(client, job.file_name)
-    except USASpendingAPIError as e:
-        logger.warning("Download pipeline failed for question %r: %s", question, e)
-        return AgentResult(
-            answer_text=f"This download failed: {e}.{_scope_caveat(dropped_filter_labels)}",
-            conversation_id=conversation_id,
-            download_intent_context=intent_context,
-        )
+def handle_download_followup(filters: dict, conversation_id: str):
+    """Click path for the "Download this" button: builds the intent straight from structured filters, no NL extraction."""
+    from .orchestrator import AgentResult
 
-    download = DownloadSpec(
-        file_name=status.file_name, url=status.file_url, status_url=job.status_url,
-        status=status.status, total_rows=status.total_rows,
-    )
-    if status.status == "finished":
-        answer_text = (
-            f"Your download is ready: {status.total_rows or 0} rows in {status.file_name}.\n{status.file_url}"
-        )
-    elif status.status == "failed":
-        answer_text = f"This download failed to generate: {status.message or 'no further detail from the API.'}"
-    else:
-        answer_text = (
-            f"Your download is still generating ({status.file_name}). It'll appear at the link below "
-            "once ready - check back shortly."
-        )
-    answer_text += _scope_caveat(dropped_filter_labels, naics_note)
+    intent = DownloadIntent(**filters)
+    agency_name = None
+    if intent.agency_raw:
+        client = _get_usaspending_client()
+        match = client.find_agency_by_name(intent.agency_raw)
+        if match is None:
+            return AgentResult(
+                answer_text=f"No agency found matching '{intent.agency_raw}'.",
+                conversation_id=conversation_id,
+            )
+        agency_name = match.agency_name
 
-    return AgentResult(
-        answer_text=answer_text, conversation_id=conversation_id, downloads=[download], tool_citations=[citation],
-        download_intent_context=intent_context,
-    )
+    return _execute_download(intent, agency_name, conversation_id)

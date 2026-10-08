@@ -122,6 +122,24 @@ def test_two_psc_codes_share_one_awards_only_download_job():
     assert client.download_search.call_args.args[2] == ["awards"]
 
 
+def test_non_contract_awards_use_identifier_and_scope_category_columns():
+    client = MagicMock()
+    client.download_search.return_value = JOB
+    filters = MagicMock()
+    filters.award_type_codes = ["02", "03"]
+    with patch("backend.app.agent.tools.download._get_usaspending_client", return_value=client), patch(
+        "backend.app.agent.tools.download._build_filters", return_value=filters
+    ), patch("backend.app.agent.tools.download._poll_until_finished", return_value=STATUS), patch(
+        "backend.app.agent.tools.download._pop_naics_disclosure", return_value=None
+    ):
+        download_records.func(
+            start_fiscal_year=2024, end_fiscal_year=2024, award_type="grants", psc_code="DA01",
+        )
+    columns = client.download_search.call_args.args[1]
+    assert "award_id_fain" in columns and "award_id_piid" not in columns
+    assert "product_or_service_code" in columns
+
+
 def test_psc_code_and_codes_cannot_be_combined():
     client = MagicMock()
     with patch("backend.app.agent.tools.download._get_usaspending_client", return_value=client):

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { ConversationTurn } from "@/lib/types";
+import type { ConversationTurn, FollowUp } from "@/lib/types";
 import { MessageBubble } from "./MessageBubble";
 import { QuickQuestions } from "./QuickQuestions";
 
@@ -9,10 +9,11 @@ interface MessageListProps {
   turns: ConversationTurn[];
   error: string | null;
   onSend: (question: string) => Promise<void>;
+  onDownload: (followUp: FollowUp) => Promise<void>;
   disabled: boolean;
 }
 
-export function MessageList({ turns, error, onSend, disabled }: MessageListProps) {
+export function MessageList({ turns, error, onSend, onDownload, disabled }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Ref-based bottom scroll, not flex-direction: column-reverse - reverse
@@ -34,7 +35,7 @@ export function MessageList({ turns, error, onSend, disabled }: MessageListProps
           </div>
         )}
         {turns.map((turn) => (
-          <MessageBubble key={turn.id} turn={turn} />
+          <MessageBubble key={turn.id} turn={turn} onDownload={onDownload} />
         ))}
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div ref={bottomRef} />

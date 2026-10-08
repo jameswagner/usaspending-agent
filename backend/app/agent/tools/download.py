@@ -10,10 +10,10 @@ from pydantic import Field
 from backend.app.usaspending import TimePeriod, USASpendingAPIError
 
 from ..download_handler import (
-    _DOWNLOAD_COLUMNS_BY_LEVEL,
     _SINGLE_AWARD_CLIENT_METHOD,
     _SPENDING_LEVEL_TO_API_ARRAY,
     _award_id_endpoint,
+    _download_columns_for,
     _poll_until_finished,
 )
 from ..response_shaping import DownloadSpec
@@ -131,7 +131,9 @@ def _records(args: dict) -> str:
             level == "awards" and filters.award_type_codes
             and set(filters.award_type_codes) <= {"A", "B", "C", "D"}
         )
-        columns = _CONTRACT_AWARD_COLUMNS if contract_awards else _DOWNLOAD_COLUMNS_BY_LEVEL[level]
+        columns = _CONTRACT_AWARD_COLUMNS if contract_awards else _download_columns_for(
+            level, args["award_type"], args["naics_code"], args["psc_code"] or (args["psc_codes"] or [None])[0]
+        )
         api_levels = (
             [level] if not args["include_subawards"] and level != "subawards"
             else _SPENDING_LEVEL_TO_API_ARRAY[level]

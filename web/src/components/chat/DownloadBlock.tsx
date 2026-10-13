@@ -7,6 +7,7 @@ interface DownloadBlockProps {
 export function DownloadBlock({ download }: DownloadBlockProps) {
   const ready = download.status === "finished";
   const failed = download.status === "failed";
+  const archive = download.file_name.toLowerCase().endsWith(".zip");
 
   return (
     <div className="w-full max-w-xl rounded-lg border border-black/10 p-3 dark:border-white/10">
@@ -34,7 +35,7 @@ export function DownloadBlock({ download }: DownloadBlockProps) {
             className="shrink-0 rounded bg-black/5 px-3 py-1 text-xs font-medium hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15"
             style={{ color: "var(--chart-ink)" }}
           >
-            {ready ? "Download CSV" : "Check status"}
+            {ready ? (archive ? "Download ZIP" : "Download CSV") : "Check status"}
           </a>
         )}
       </div>

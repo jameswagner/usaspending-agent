@@ -140,6 +140,28 @@ def test_non_contract_awards_use_identifier_and_scope_category_columns():
     assert "product_or_service_code" in columns
 
 
+def test_download_result_includes_file_check_and_flags_problems():
+    from backend.app.agent.download_inspect import DownloadInspection, FileSummary
+
+    client = MagicMock()
+    client.download_search.return_value = JOB
+    filters = MagicMock()
+    filters.award_type_codes = ["A", "B", "C", "D"]
+    inspection = DownloadInspection(
+        files=[FileSummary("a.csv", 3, ["award_id_piid"], [["1"]]), FileSummary("b.csv", 0, [], [])],
+        problems=["b.csv is empty even though other files have rows; that part of the request returned nothing."],
+    )
+    with patch("backend.app.agent.tools.download._get_usaspending_client", return_value=client), patch(
+        "backend.app.agent.tools.download._build_filters", return_value=filters
+    ), patch("backend.app.agent.tools.download._poll_until_finished", return_value=STATUS), patch(
+        "backend.app.agent.tools.download._pop_naics_disclosure", return_value=None
+    ), patch("backend.app.agent.tools.download.inspect_download", return_value=inspection):
+        text = download_records.func(start_fiscal_year=2024, end_fiscal_year=2024, award_type="contracts")
+    assert "File check (what the ZIP actually contains)" in text
+    assert "b.csv: 0 rows (empty)" in text
+    assert "Problems:" in text and "retry once" in text
+
+
 def test_psc_code_and_codes_cannot_be_combined():
     client = MagicMock()
     with patch("backend.app.agent.tools.download._get_usaspending_client", return_value=client):

@@ -52,8 +52,8 @@ class TestFollowUpFilterCarryover:
         }
         follow_ups = follow_ups_for("get_spending_by_category", None, context)
         assert follow_ups[0].filters["naics_code"] == "518210"
-        # Display-only args must never leak in as scope filters.
-        assert "category" not in follow_ups[0].filters
+        # The breakdown dimension is not a scope filter, but it selects the category column.
+        assert follow_ups[0].filters["category"] == "naics"
 
     def test_def_codes_list_survives_structured_not_flattened(self):
         """ToolCitation.parameters comma-joins list filters for
@@ -66,13 +66,12 @@ class TestFollowUpFilterCarryover:
         follow_ups = follow_ups_for("get_spending_over_time", None, context)
         assert follow_ups[0].filters["def_codes"] == ["L", "M"]
 
-    def test_display_only_args_excluded(self):
+    def test_category_is_only_carried_for_the_category_tool(self):
         context = {
             "agency_name": "NSF", "start_year": 2024, "end_year": 2024,
             "category": "naics", "spending_level": "transactions",
         }
-        follow_ups = follow_ups_for("get_spending_by_category", None, context)
-        assert "category" not in follow_ups[0].filters
+        assert follow_ups_for("get_spending_over_time", None, context)[0].filters.get("category") is None
 
     def test_geography_axis_args_excluded(self):
         context = {

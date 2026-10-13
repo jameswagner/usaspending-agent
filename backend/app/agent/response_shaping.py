@@ -524,6 +524,9 @@ def follow_ups_for(tool_name: str, result, context: dict | None) -> list[FollowU
         return []
 
     # Default "transactions" matches what the citation showed, not DownloadIntent's "awards" default.
+    if tool_name == "get_spending_by_category" and context.get("category"):
+        filters["category"] = context["category"]
+
     filters["spending_level"] = (
         _FIXED_SPENDING_LEVEL_BY_TOOL.get(tool_name) or context.get("spending_level", "transactions")
     )

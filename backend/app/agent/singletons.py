@@ -9,8 +9,9 @@ import types
 
 import anthropic
 from dotenv import load_dotenv
+from langchain.agents import create_agent
+from langchain.agents.middleware import ModelRequest, dynamic_prompt, wrap_model_call
 from langchain_anthropic import ChatAnthropic
-from langchain_anthropic.chat_models import convert_to_anthropic_tool
 from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
@@ -18,7 +19,6 @@ from langchain_core.messages import (
     trim_messages,
 )
 from langgraph.checkpoint.sqlite import SqliteSaver
-from langgraph.prebuilt import create_react_agent
 from langsmith.wrappers import wrap_anthropic
 
 from backend.app.retrieval.hybrid import HybridRetriever
@@ -141,16 +141,17 @@ def _count_human_turns(messages: list[BaseMessage]) -> int:
     return sum(1 for m in messages if isinstance(m, HumanMessage))
 
 
-def _trim_history(state: dict) -> dict:
-    """Must return llm_input_messages, not messages - the latter overwrites the checkpointer's persisted history."""
+@wrap_model_call
+def _trim_history(request: ModelRequest, handler):
+    """Trims only the model's input; editing state messages would overwrite the checkpointer's persisted history."""
     trimmed = trim_messages(
-        state["messages"],
+        request.messages,
         max_tokens=CONVERSATION_HISTORY_TURNS,
         token_counter=_count_human_turns,
         strategy="last",
         start_on="human",
     )
-    return {"llm_input_messages": trimmed}
+    return handler(request.override(messages=trimmed))
 
 
 def _get_conversation_graph():
@@ -189,40 +190,19 @@ def warm_up() -> None:
     headers = {"anthropic-workspace-id": ANTHROPIC_WORKSPACE_ID} if ANTHROPIC_WORKSPACE_ID else None
     _chat_model = ChatAnthropic(model=MODEL, max_tokens=2048, default_headers=headers)
 
-    # LANGGRAPH_TOOLS never changes at runtime, so its schema is cached once
-    # here rather than re-billed at full price on every turn of every
-    # conversation - the tool list was previously the one big per-turn cost
-    # that wasn't cached (only the system prompt was). cache_control on the
-    # last tool caches the whole tools array up through it, same mechanism
-    # as the system prompt below. The model is bound separately from the
-    # tools= passed to create_react_agent (which still needs the real
-    # BaseTool objects to dispatch a call to the actual Python function) -
-    # create_react_agent accepts this split as long as the tool names match.
-    tool_dicts = [convert_to_anthropic_tool(t) for t in LANGGRAPH_TOOLS]
-    tool_dicts[-1] = dict(tool_dicts[-1], cache_control={"type": "ephemeral", "ttl": CACHE_TTL})
-    _bound_chat_model = _chat_model.bind_tools(tool_dicts)
+    cache_control = {"type": "ephemeral", "ttl": CACHE_TTL}
+    # One breakpoint on the last tool caches the whole tools array.
+    last_tool = LANGGRAPH_TOOLS[-1]
+    tools = [*LANGGRAPH_TOOLS[:-1], last_tool.model_copy(update={"extras": {**(last_tool.extras or {}), "cache_control": cache_control}})]
 
-    def _prompt(state: dict) -> list:
-        # Recomputed fresh per call so date grounding stays correct.
-        # cache_control must be a block-level field, not a bare string -
-        # a plain SystemMessage(content=str) silently disables caching.
-        return [
-            SystemMessage(
-                content=[
-                    {
-                        "type": "text",
-                        "text": _build_system_prompt(),
-                        "cache_control": {"type": "ephemeral", "ttl": CACHE_TTL},
-                    }
-                ]
-            ),
-            *state["messages"],
-        ]
+    @dynamic_prompt
+    def _system_prompt(request: ModelRequest) -> SystemMessage:
+        # Rebuilt per call for date grounding; caching needs a content block, not a bare string.
+        return SystemMessage(content=[{"type": "text", "text": _build_system_prompt(), "cache_control": cache_control}])
 
-    _conversation_graph = create_react_agent(
-        model=_bound_chat_model,
-        tools=LANGGRAPH_TOOLS,
+    _conversation_graph = create_agent(
+        model=_chat_model,
+        tools=tools,
+        middleware=[_system_prompt, _trim_history],
         checkpointer=_checkpointer,
-        prompt=_prompt,
-        pre_model_hook=_trim_history,
     )

@@ -61,7 +61,9 @@ def _build_system_prompt() -> str:
         "not sum to a fiscal-year obligation total; explain that distinction when giving both. "
         "For a follow-up download, reuse prior filters without inventing an award type. "
         "The download endpoint cannot filter by recipient ID; pass that ID so download_records "
-        "returns its scope error instead of generating a broader file."
+        "returns its scope error instead of generating a broader file. Each download result ends with "
+        "a file check of what the ZIP actually contains; if it lists problems, say so plainly and, when "
+        "you can fix the request, retry once instead of presenting the link as correct."
     )
 
     return (

@@ -19,6 +19,7 @@ from backend.app.usaspending import (
 from .download_filters import (
     CARRYOVER_FILTER_FIELDS,
 )
+from .download_inspect import inspect_download
 from .response_shaping import (
     DownloadSpec,
     ToolCitation,
@@ -320,7 +321,7 @@ def _execute_download(intent: DownloadIntent, agency_name: str | None, conversat
         columns = _download_columns_for(
             intent.spending_level, intent.award_type, intent.naics_code, intent.psc_code, intent.category
         )
-        api_spending_level = _SPENDING_LEVEL_TO_API_ARRAY[intent.spending_level]
+        api_spending_level = [intent.spending_level]
         job = client.download_search(filters, columns, api_spending_level)
         citation = _build_download_citation(agency_name, intent, filters, columns, api_spending_level)
         status = _poll_until_finished(client, job.file_name)
@@ -348,6 +349,10 @@ def _execute_download(intent: DownloadIntent, agency_name: str | None, conversat
         )
     if naics_note:
         answer_text += f"\n\nNote: {naics_note}"
+    if status.status == "finished":
+        inspection = inspect_download(status.file_url, columns, status.total_rows)
+        if inspection.problems:
+            answer_text += f"\n\n{inspection.render()}"
 
     return AgentResult(
         answer_text=answer_text, conversation_id=conversation_id, downloads=[download], tool_citations=[citation]

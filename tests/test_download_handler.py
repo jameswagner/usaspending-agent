@@ -5,6 +5,7 @@ from backend.app.agent.download_handler import (
     _award_id_endpoint,
     handle_download_followup,
 )
+from backend.app.agent.download_inspect import DownloadInspection, FileSummary
 from backend.app.usaspending import (
     DownloadJobResponse,
     DownloadStatusResponse,
@@ -108,8 +109,7 @@ class TestHandleDownloadFollowup:
         assert result.tool_citations[0].tool_name == "download_search"
         assert result.tool_citations[0].parameters["agency_name"] == "National Science Foundation"
         assert result.tool_citations[0].parameters["spending_level"] == "awards"
-        # Compatibility table: "awards" preserves the legacy /download/awards/ bundling.
-        assert client.last_spending_level == ["awards", "subawards"]
+        assert client.last_spending_level == ["awards"]
 
     def test_month_level_intent_scopes_filter_to_that_month_not_the_whole_year(self):
         # Regression (live-reported): month-less extraction silently expanded "January 2024" to all of 2024.
@@ -261,13 +261,13 @@ class TestSpendingLevel:
             result = handle_download_followup(intent.model_dump(), "conv-1")
         return result, client
 
-    def test_awards_maps_to_awards_and_subawards(self):
+    def test_awards_requests_only_awards(self):
         _, client = self._run("awards")
-        assert client.last_spending_level == ["awards", "subawards"]
+        assert client.last_spending_level == ["awards"]
 
-    def test_transactions_maps_to_transactions_and_subawards(self):
+    def test_transactions_requests_only_transactions(self):
         _, client = self._run("transactions")
-        assert client.last_spending_level == ["transactions", "subawards"]
+        assert client.last_spending_level == ["transactions"]
 
     def test_subawards_maps_to_subawards_only(self):
         # Net-new - no legacy single-purpose endpoint to preserve parity with here.
@@ -498,3 +498,38 @@ class TestAwardIdEndpoint:
         assert _award_id_endpoint("N0002404C2105") is None
 
 
+class TestButtonDownloadChecks:
+    def _run(self, filters, inspection=None):
+        job = DownloadJobResponse(
+            status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+            file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+        )
+        finished = DownloadStatusResponse(
+            status="finished", file_name="x.zip",
+            file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=5,
+        )
+        client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
+        with patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client), patch(
+            "backend.app.agent.download_handler.inspect_download", return_value=inspection or DownloadInspection()
+        ):
+            result = handle_download_followup(filters, "conv-1")
+        return result, client
+
+    def test_category_breakdown_adds_its_column_and_only_the_requested_level(self):
+        _, client = self._run(
+            {"agency_raw": "NSF", "start_year": 2024, "end_year": 2024, "spending_level": "transactions",
+             "category": "naics"}
+        )
+        assert "naics_code" in client.last_columns
+        assert client.last_spending_level == ["transactions"]
+
+    def test_problems_are_appended_to_the_answer(self):
+        inspection = DownloadInspection(
+            files=[FileSummary("b.csv", 0, [], [])], problems=["b.csv is empty even though other files have rows."]
+        )
+        result, _ = self._run({"agency_raw": "NSF", "start_year": 2024, "end_year": 2024}, inspection)
+        assert "File check" in result.answer_text and "b.csv is empty" in result.answer_text
+
+    def test_clean_file_adds_nothing_to_the_answer(self):
+        result, _ = self._run({"agency_raw": "NSF", "start_year": 2024, "end_year": 2024})
+        assert "File check" not in result.answer_text

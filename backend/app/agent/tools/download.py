@@ -16,6 +16,7 @@ from ..download_handler import (
     _download_columns_for,
     _poll_until_finished,
 )
+from ..download_inspect import inspect_download
 from ..response_shaping import DownloadSpec
 from ..singletons import _get_usaspending_client
 from ..tool_filters import (
@@ -66,7 +67,15 @@ def _complete_download(job, client, tool_name: str, context: dict) -> str:
             level_note = f" Requested levels: {', '.join(levels)} only; the ZIP filename is generic."
         else:
             level_note = ""
-        return f"CSV download ready: {status.file_name}, {status.total_rows or 0} rows. {status.file_url}.{level_note}"
+        inspection = inspect_download(status.file_url, context.get("columns"), status.total_rows)
+        retry_hint = (
+            " Fix the request and retry once if the problem is something you can change, otherwise tell the user plainly."
+            if inspection.problems else ""
+        )
+        return (
+            f"CSV download ready: {status.file_name}, {status.total_rows or 0} rows. {status.file_url}.{level_note}"
+            f"\n\n{inspection.render()}{retry_hint}"
+        )
     if status.status == "failed":
         detail = status.message or "no further detail from the API."
         if detail.strip().lower().rstrip(".") == "an error occurred":

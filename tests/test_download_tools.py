@@ -166,24 +166,20 @@ def test_download_schema_covers_shared_spending_filters():
     assert set(SpendingFilterParams.__annotations__) <= actual
 
 
-def test_opt_in_prompt_exposes_download_tools(monkeypatch):
-    monkeypatch.delenv("DOWNLOAD_TOOL_LOOP_ENABLED", raising=False)
-    assert "handled automatically outside this tool loop" in _build_system_prompt()
-    monkeypatch.setenv("DOWNLOAD_TOOL_LOOP_ENABLED", "1")
+def test_prompt_describes_download_tools():
     prompt = _build_system_prompt()
     assert "Use download_single_award" in prompt
     assert "never invent PSC meanings" in prompt
     assert "handled automatically outside this tool loop" not in prompt
 
 
-def test_opt_in_synchronous_download_bypasses_legacy_gate(monkeypatch):
-    monkeypatch.setenv("DOWNLOAD_TOOL_LOOP_ENABLED", "1")
+def test_download_question_goes_through_the_graph():
     graph = MagicMock()
     graph.get_state.return_value.values = {"messages": []}
     graph.invoke.return_value = {"messages": [AIMessage(content="Download routed through the graph.")]}
     with patch("backend.app.agent.orchestrator._get_conversation_graph", return_value=graph), patch(
         "backend.app.agent.orchestrator._is_in_scope", return_value=True
-    ), patch("backend.app.agent.orchestrator.handle_download_request", side_effect=AssertionError("legacy gate")):
+    ):
         result = _ask_langgraph("Download NSF's FY2024 awards as CSV.", "conversation")
     assert result.answer_text == "Download routed through the graph."
     graph.invoke.assert_called_once()
@@ -192,8 +188,7 @@ def test_opt_in_synchronous_download_bypasses_legacy_gate(monkeypatch):
 @pytest.mark.parametrize(("status", "expected_event"), [
     (STATUS, "tool_result"), (FAILED_STATUS, "tool_error"),
 ])
-def test_real_graph_stream_done_contains_download_and_citation(monkeypatch, status, expected_event):
-    monkeypatch.setenv("DOWNLOAD_TOOL_LOOP_ENABLED", "1")
+def test_real_graph_stream_done_contains_download_and_citation(status, expected_event):
     class ScriptedModel(FakeMessagesListChatModel):
         def bind_tools(self, tools, **kwargs):
             return self
@@ -222,7 +217,6 @@ def test_real_graph_stream_done_contains_download_and_citation(monkeypatch, stat
 
     with patch("backend.app.agent.streaming._get_conversation_graph", return_value=graph), patch(
         "backend.app.agent.streaming._is_in_scope", return_value=True
-    ), patch("backend.app.agent.streaming.handle_download_request", side_effect=AssertionError("legacy gate")
     ), patch("backend.app.agent.tools.download._get_usaspending_client", return_value=client), patch(
         "backend.app.agent.tools.download._build_filters", return_value=filters
     ), patch("backend.app.agent.tools.download._poll_until_finished", return_value=status), patch(

@@ -107,9 +107,7 @@ def ask_download(request: Request, response: Response, payload: DownloadFollowUp
     # Persisted like a text download turn so later "download that again" follow-ups have history.
     graph = _get_conversation_graph()
     config = {"configurable": {"thread_id": payload.conversation_id}}
-    _persist_download_turn(
-        graph, config, "Download this data as a CSV", result.answer_text, result.download_intent_context
-    )
+    _persist_download_turn(graph, config, "Download this data as a CSV", result.answer_text)
     source_type = "not_found" if result.answer_text == NOT_FOUND_MESSAGE else "agent"
     return AskResponse(
         answer_text=result.answer_text,

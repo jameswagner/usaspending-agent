@@ -1,4 +1,4 @@
-"""Download-handler eval, same shape as eval_tool_selection.py. Real billed calls - not part of CI."""
+"""Download eval through ask(), same shape as eval_tool_selection.py. Real billed calls - not part of CI."""
 from __future__ import annotations
 
 import json
@@ -85,14 +85,16 @@ def _result_to_outputs(result) -> dict:
     spending_level = None
     award_type = None
     citation_parameters: dict = {}
-    if result.tool_citations:
-        citation_parameters = result.tool_citations[0].parameters
+    download_citations = [c for c in result.tool_citations if c.tool_name.startswith("download_")]
+    if download_citations:
+        citation_parameters = download_citations[0].parameters
         spending_level = citation_parameters.get("spending_level")
         award_type = citation_parameters.get("award_type")
     return {
         "answer": result.answer_text,
         "got_download": bool(result.downloads),
-        "not_supported": "isn't supported yet" in result.answer_text,
+        # The model words refusals freely now; what matters is that no substitute file was produced.
+        "not_supported": not result.downloads and result.answer_text != NOT_FOUND_MESSAGE,
         "fell_back_to_loop": not result.downloads and result.answer_text != NOT_FOUND_MESSAGE,
         "spending_level": spending_level,
         "award_type": award_type,

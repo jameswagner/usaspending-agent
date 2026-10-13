@@ -1,6 +1,6 @@
 # Download tools follow-up
 
-The two-tool design from the download spike is implemented alongside the existing download handler. The production keyword and follow-up gate remains in place by default. The normal tool loop now has `download_records` and `download_single_award`; set `DOWNLOAD_TOOL_LOOP_ENABLED=1` on the backend to send explicit download requests through those tools for local trials. The flag switches both `/ask` and `/ask/stream` and changes the system prompt to describe the tool path.
+The two-tool design from the download spike is now the only text download path: `download_records` and `download_single_award` are bound in the normal tool loop, and the keyword gate, LLM intent extractor, and history-scraping follow-up handler are removed. The "Download this" button still posts structured filters straight to the download pipeline in `download_handler.py`.
 
 ## Endpoint and schema decisions
 
@@ -34,4 +34,4 @@ A three-turn UI trial then kept NSF, contracts, and both PSCs across a March 202
 
 The first repeated FY2025 prompt explained that accounting difference but invented descriptions for the two exact PSC codes. The opt-in prompt now requires code-only labels unless a tool returned the descriptions. A final live replay used `sum_values`, returned one 36-row awards ZIP, explained the accounting difference, and left DA01 and D302 unlabeled.
 
-Keep the legacy gate for now. The compound broad-topic prompt remains unreliable even with a focused tool docstring and system guidance, and the exact-PSC compound prompt still violated the application's arithmetic-tool rule in the full-surface run. A production cutover needs a deterministic scope choice for broad topics and a guard against unsupported or unmatched compound answers. The existing pre-loop handler and follow-up state should remain until those behaviors are validated end to end.
+The initial recommendation was to keep the legacy gate until compound broad-topic prompts were reliable. The cutover was made anyway, accepting that risk: compound broad-topic prompts can still mismatch the amount and CSV scopes or skip the arithmetic tool, and topic downloads depend on whether the model picks a keyword or a resolved PSC scope.

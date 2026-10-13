@@ -5,7 +5,6 @@ capture buffer afterward.
 from __future__ import annotations
 
 import logging
-import os
 import uuid
 from datetime import datetime, timezone
 
@@ -13,11 +12,6 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langsmith import traceable
 from pydantic import BaseModel
 
-from .download_handler import (
-    _is_download_followup,
-    _looks_like_download_request,
-    handle_download_request,
-)
 from .response_shaping import (
     ChartSpec,
     Citation,
@@ -42,11 +36,6 @@ NOT_FOUND_MESSAGE = (
 )
 
 
-def _download_tool_loop_enabled() -> bool:
-    """Enable the opt-in download tool path for local trials."""
-    return os.environ.get("DOWNLOAD_TOOL_LOOP_ENABLED", "").lower() in {"1", "true", "yes"}
-
-
 def _build_system_prompt() -> str:
     """Rebuilt on every ask() call (not a module-level constant) so the date
     grounding below is never stale in a long-running server process - see
@@ -58,13 +47,6 @@ def _build_system_prompt() -> str:
     today = datetime.now(timezone.utc).date()
     current_fy = current_fiscal_year(today)
     most_recent_completed_fy = current_fy - 1
-    tool_intro = (
-        "have tools for data retrieval and CSV downloads: "
-        if _download_tool_loop_enabled() else "have twenty-three tools. Twenty-two retrieve data: "
-    )
-    required_tool = (
-        "data or download tools" if _download_tool_loop_enabled() else "twenty-two data tools"
-    )
     download_guidance = (
         "Use download_single_award for one known full internal award ID and download_records for "
         "filtered CSV records. For an amount and matching CSV, use the same agency, period, award "
@@ -80,18 +62,11 @@ def _build_system_prompt() -> str:
         "For a follow-up download, reuse prior filters without inventing an award type. "
         "The download endpoint cannot filter by recipient ID; pass that ID so download_records "
         "returns its scope error instead of generating a broader file."
-        if _download_tool_loop_enabled() else
-        "Separately from these tools, a CSV download of an agency's awards "
-        "IS available - it's handled automatically outside this tool loop "
-        "when a question explicitly asks to download/export the data, so "
-        "never claim this app can't produce a CSV; if you're here for a "
-        "download request, ask the user to rephrase explicitly (e.g. "
-        "'download NSF's FY2024 awards as a CSV') rather than pointing them to usaspending.gov."
     )
 
     return (
         "You answer questions about USASpending.gov federal spending data. You "
-        f"{tool_intro}search_guide "
+        "have tools for data retrieval and CSV downloads: search_guide "
         "(conceptual/definitional questions about USASpending data, terms, and "
         "fields), lookup_agency (what a specific federal agency is, or its "
         "toptier code), resolve_naics_code (candidates for an ambiguous "
@@ -225,7 +200,7 @@ def _build_system_prompt() -> str:
         "child-level recipient has no children of its own). Six do arithmetic: "
         "sum_values, average, percentage_of, delta, ratio, and rank_values. "
         "One more, code_execution, is a general-purpose Python/Bash sandbox. "
-        f"You must call at least one of the {required_tool} before writing any "
+        "You must call at least one of the data or download tools before writing any "
         "answer, every question, with no exceptions — including questions "
         "that seem "
         "unrelated to federal spending, general-knowledge questions, "
@@ -306,10 +281,6 @@ class AgentResult(BaseModel):
     tool_citations: list[ToolCitation] = []
     downloads: list[DownloadSpec] = []
     follow_ups: list[FollowUp] = []
-    # Internal only (not surfaced by AskResponse) - the resolved download intent, stashed via
-    # _persist_download_turn so a later download follow-up's _extract_prior_tool_context can
-    # recover it instead of re-deriving everything from prose. See download_handler.py.
-    download_intent_context: dict | None = None
 
 
 def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
@@ -375,17 +346,11 @@ def _build_result(answer_text: str, conversation_id: str) -> AgentResult:
     )
 
 
-def _persist_download_turn(
-    graph, config: dict, question: str, answer_text: str, intent_context: dict | None = None
-) -> None:
-    """download_handler.py's early return skips graph.invoke(), so without this the turn never enters
-    the checkpointer. intent_context (when given) is stashed on the AIMessage's additional_kwargs so
-    a later download follow-up's _extract_prior_tool_context recovers the exact resolved values
-    instead of re-deriving them from rendered text - see download_handler.py._download_intent_context."""
-    ai_kwargs = {"additional_kwargs": {"download_intent": intent_context}} if intent_context else {}
+def _persist_download_turn(graph, config: dict, question: str, answer_text: str) -> None:
+    """The "Download this" button skips graph.invoke(); this records its turn in the conversation history."""
     graph.update_state(
         config,
-        {"messages": [HumanMessage(content=question), AIMessage(content=answer_text, **ai_kwargs)]},
+        {"messages": [HumanMessage(content=question), AIMessage(content=answer_text)]},
     )
 
 
@@ -406,16 +371,6 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
         # out-of-scope question shouldn't poison what the next in-scope
         # question's history contains.
         return AgentResult(answer_text=NOT_FOUND_MESSAGE, conversation_id=conversation_id)
-
-    if not _download_tool_loop_enabled() and (
-        _looks_like_download_request(question) or _is_download_followup(recent_messages)
-    ):
-        download_result = handle_download_request(question, conversation_id, recent_messages)
-        if download_result is not None:
-            _persist_download_turn(
-                graph, config, question, download_result.answer_text, download_result.download_intent_context
-            )
-            return download_result
 
     _tool_call_log.set([])
 

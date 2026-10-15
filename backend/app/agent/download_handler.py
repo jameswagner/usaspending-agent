@@ -302,14 +302,15 @@ def _execute_download(intent: DownloadIntent, agency_name: str | None, conversat
     carryover_filters = {field: getattr(intent, field) for field in CARRYOVER_FILTER_FIELDS}
 
     try:
-        # Placeholder when start_date is set - real scope is applied below by overwriting time_period.
-        year_for_filters = int(intent.start_date[:4]) if intent.start_date else intent.start_year
+        # Placeholder years when start_date is set - real scope is applied below by overwriting time_period.
+        start_year = int(intent.start_date[:4]) if intent.start_date else intent.start_year
+        end_year = start_year if intent.start_date else intent.end_year
         filters = _build_filters(
             client,
             agency_name,
             intent.time_period_type,
-            year_for_filters,
-            year_for_filters,
+            start_year,
+            end_year,
             award_type=intent.award_type,
             scope_required=False,
             **carryover_filters,

@@ -498,3 +498,20 @@ class TestAwardIdEndpoint:
         assert _award_id_endpoint("N0002404C2105") is None
 
 
+
+
+def test_multi_year_intent_scopes_filter_to_the_whole_range_not_just_the_start_year():
+    intent = DownloadIntent(agency_raw="NSF", start_year=2022, end_year=2024)
+    job = DownloadJobResponse(
+        status_url="https://api.usaspending.gov/api/v2/download/status?file_name=x.zip",
+        file_name="x.zip", file_url="https://files.usaspending.gov/generated_downloads/x.zip",
+    )
+    finished = DownloadStatusResponse(
+        status="finished", file_name="x.zip",
+        file_url="https://files.usaspending.gov/generated_downloads/x.zip", total_rows=1,
+    )
+    client = FakeDownloadClient(agency=make_agency(), job=job, statuses=[finished])
+    with patch("backend.app.agent.download_handler._get_usaspending_client", return_value=client):
+        handle_download_followup(intent.model_dump(), "conv-1")
+    assert client.last_filters.time_period[0].start_date == "2021-10-01"
+    assert client.last_filters.time_period[0].end_date == "2024-09-30"

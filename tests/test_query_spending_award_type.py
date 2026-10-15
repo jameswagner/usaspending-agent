@@ -24,7 +24,14 @@ def test_aggregate_with_award_type_keeps_it():
     assert agg.call_args.kwargs["award_type"] == "grants"
 
 
-def test_records_without_award_type_default_to_contracts():
+def test_records_without_award_type_are_rejected_not_defaulted():
     with patch.object(consolidated, "search_awards", return_value="ok") as rec:
-        _call(level="award", **_BASE)
-    assert rec.call_args.kwargs["award_type"] == "contracts"
+        result = _call(level="award", **_BASE)
+    assert result.startswith("This query failed: award_type is required for record searches")
+    rec.assert_not_called()
+
+
+def test_records_with_award_type_keep_it():
+    with patch.object(consolidated, "search_awards", return_value="ok") as rec:
+        _call(level="award", award_type="grants", **_BASE)
+    assert rec.call_args.kwargs["award_type"] == "grants"

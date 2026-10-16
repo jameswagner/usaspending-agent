@@ -215,7 +215,7 @@ def query_spending(
     time_period_type: Literal["fiscal", "calendar"] = "fiscal",
     start_year: int,
     end_year: int,
-    award_type: AwardType = "contracts",
+    award_type: AwardType | None = None,
     limit: int = 5,
     sort_by: SortBy = "amount",
     time_grouping: Group = "fiscal_year",
@@ -325,7 +325,8 @@ def query_spending(
         time_period_type: "fiscal" (default) or "calendar".
         start_year: First year to include.
         end_year: Last year to include.
-        award_type: contracts/grants/loans or a specific sub-type (default contracts).
+        award_type: contracts/grants/loans or a specific sub-type. Omit for aggregates
+            (group_by set) to cover ALL award types. Required for records (group_by omitted).
         limit: Max rows/categories to return (default 5). Ignored for group_by="time" and
             group_by="geography" (always capped at 20 regions internally, not this value).
         sort_by: Ranking field for record rows only (amount default, outlays, subsidy_cost,
@@ -372,7 +373,7 @@ def query_spending(
         cfda_program: Optional. Exact CFDA number, NN.NNN.
         award_id: Optional. Fuzzy PIID/FAIN/URI match, records only. For an IDV's own PIID
             (a contract vehicle, not a plain contract), pass award_type="idv" too - IDV codes
-            are disjoint from A/B/C/D, so the default award_type="contracts" won't find it.
+            are disjoint from A/B/C/D, so award_type="contracts" won't find it.
         recipient_type: Optional. Business/recipient type tag - sufficient scope on its own for
             aggregates, unlike award_type. NOT reversed for level="subaward" (unlike
             recipient_name/recipient_in_*/description above/below) - still describes the PRIME
@@ -390,6 +391,12 @@ def query_spending(
         extent_competed_type: Optional. Records only, level="award". Contract-only.
     """
     if group_by is None:
+        if award_type is None:
+            return (
+                "This query failed: award_type is required for record searches (the API "
+                "can't mix award type groups in one search) - pick one, e.g. contracts, "
+                "grants, loans, idv, or a sub-type, and query each separately if needed."
+            )
         return _route_records(
             level,
             time_period_type=time_period_type, start_year=start_year, end_year=end_year,

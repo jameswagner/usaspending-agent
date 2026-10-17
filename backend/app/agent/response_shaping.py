@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Callable
 from datetime import date, datetime, timezone
 from typing import Literal
 
@@ -652,403 +653,394 @@ def _with_naics_disclosure(description: str, context: dict) -> str:
     return f"{description} ({note})" if note else description
 
 
-def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitation | None:
-    """Deterministic, unit-testable citation builder for the four live-data
-    tools - the same role should_chart plays for charts. Keyed mainly on
-    the context dict each tool records (_record_tool_call's third
-    element), not the structured result, since what needs citing here is
-    the query that was run, not the shape of what came back. result is
-    optional and only used where a citation needs something from the
-    result itself (e.g. resolve_naics_code's resolved code, for its url).
+_CITATION_BUILDERS: dict[str, Callable[[str, dict, object], ToolCitation]] = {}
 
-    Returns None for search_guide (cited separately, by chunk id/page - see
-    ask()) and for a call with no context recorded (e.g. a failed lookup
-    that returned early before _record_tool_call ran).
+
+def _citation_builder(*tool_names: str):
+    def register(fn):
+        for name in tool_names:
+            _CITATION_BUILDERS[name] = fn
+        return fn
+
+    return register
+
+
+def _year_span(context: dict, params: dict, start_key: str = "start_year", end_key: str = "end_year") -> str:
+    time_period_type = context.get("time_period_type", "fiscal")
+    return f"{year_label(time_period_type, params[start_key])}-{year_label(time_period_type, params[end_key])}"
+
+
+def _id_citation(tool_name: str, context: dict, description: str, **extra) -> ToolCitation:
+    award_id = context["award_id"]
+    return ToolCitation(
+        tool_name=tool_name, parameters={"award_id": award_id}, description=description.format(award_id), **extra
+    )
+
+
+@_citation_builder("download_records", "download_single_award")
+def _download_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    params = {
+        key: ", ".join(value) if isinstance(value, list) else str(value).lower() if isinstance(value, bool) else value
+        for key, value in context.items()
+        if key not in {"filters", "columns", "api_spending_level"} and not key.startswith("_")
+    }
+    requests_made = [
+        request for request in context.get("_requests", [])
+        if request[0] == "POST" and "/download/" in request[1]
+    ]
+    if requests_made:
+        curl = _curl_from_context({"_requests": requests_made[:1]})
+    elif tool_name == "download_single_award":
+        body = {"award_id": context["award_id"], "file_format": "csv"}
+        url = f"{BASE_URL}/api/v2/download/{context['endpoint']}/"
+        curl = f"curl -X POST '{url}' -H 'Content-Type: application/json' -d '{json.dumps(body)}'"
+    else:
+        body = {
+            "filters": context["filters"].model_dump(exclude_none=True),
+            "columns": context["columns"],
+            "file_format": "csv",
+            "spending_level": context["api_spending_level"],
+        }
+        url = f"{BASE_URL}/api/v2/download/search/"
+        curl = f"curl -X POST '{url}' -H 'Content-Type: application/json' -d '{json.dumps(body)}'"
+    label = "Single-award" if tool_name == "download_single_award" else context["spending_level"].capitalize()
+    scope = context.get("award_id") or context.get("agency_name") or "all agencies"
+    return ToolCitation(
+        tool_name=tool_name, parameters=params, description=f"{label} CSV download, {scope}", curl=curl,
+    )
+
+
+@_citation_builder("lookup_agency")
+def _lookup_agency_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    name = context["name"]
+    url = f"{BASE_URL}/api/v2/agency/{result.toptier_code}/" if result else None
+    return ToolCitation(
+        tool_name=tool_name, parameters={"name": name}, description=f"Agency lookup: {name}", url=url,
+    )
+
+
+_CODE_LOOKUP_LABELS = {"resolve_naics_code": "NAICS", "resolve_psc_code": "PSC", "resolve_cfda_program": "CFDA"}
+_CODE_LOOKUP_URL_BASES = {"resolve_naics_code": NAICS_URL_BASE, "resolve_psc_code": PSC_URL_BASE}
+
+
+@_citation_builder("resolve_naics_code", "resolve_psc_code", "resolve_cfda_program")
+def _code_lookup_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    description = context["description"]
+    url_base = _CODE_LOOKUP_URL_BASES.get(tool_name)
+    url = f"{url_base}{result[0]['slug']}" if result and url_base else None
+    return ToolCitation(
+        tool_name=tool_name,
+        parameters={"description": description},
+        description=f"{_CODE_LOOKUP_LABELS[tool_name]} code lookup: {description}",
+        url=url,
+    )
+
+
+@_citation_builder("resolve_budget_function")
+def _budget_function_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    description = context["description"]
+    return ToolCitation(
+        tool_name=tool_name,
+        parameters={"description": description},
+        description=f"Budget function/subfunction lookup: {description}",
+    )
+
+
+@_citation_builder("resolve_county_fips")
+def _county_fips_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    description = context["description"]
+    return ToolCitation(
+        tool_name=tool_name,
+        parameters={"description": description},
+        description=f"County FIPS lookup: {description}",
+        curl=_curl_from_context(context),
+    )
+
+
+@_citation_builder("get_agency_budget")
+def _agency_budget_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    params = {
+        "agency_name": context["agency_name"],
+        "start_fiscal_year": context["start_fiscal_year"],
+        "end_fiscal_year": context["end_fiscal_year"],
+    }
+    description = (
+        f"Budgetary resources, {params['agency_name']}, "
+        f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
+    )
+    url = f"{BASE_URL}/api/v2/agency/{context['toptier_code']}/budgetary_resources/"
+    return ToolCitation(tool_name=tool_name, parameters=params, description=description, url=url)
+
+
+@_citation_builder("get_agency_award_breakdown")
+def _agency_award_breakdown_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    params = {"agency_name": context["agency_name"], "fiscal_year": context["fiscal_year"]}
+    if context.get("award_type"):
+        params["award_type"] = context["award_type"]
+    group_by = context.get("group_by", "sub_agency")
+    params["group_by"] = group_by
+    sub_agency = context.get("sub_agency")
+    label = {
+        "sub_agency": "Award breakdown by sub-agency",
+        "award_category": "Award obligations by category",
+        "whole_agency": "Award activity",
+    }[group_by]
+    if sub_agency:
+        params["sub_agency"] = sub_agency
+        label = f"Awarding offices, {sub_agency}"
+    description = f"{label}, {params['agency_name']}, FY{params['fiscal_year']}"
+    return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+
+
+@_citation_builder("get_agency_budget_by_subcomponent")
+def _agency_subcomponent_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    params = {"agency_name": context["agency_name"], "fiscal_year": context["fiscal_year"]}
+    bureau = context.get("bureau")
+    if bureau:
+        params["bureau"] = bureau
+        description = f"Federal accounts, {bureau} ({params['agency_name']}), FY{params['fiscal_year']}"
+    else:
+        description = f"Budgetary resources by sub-component, {params['agency_name']}, FY{params['fiscal_year']}"
+    return ToolCitation(tool_name=tool_name, parameters=params, description=description)
+
+
+@_citation_builder("get_disaster_spending_overview")
+def _disaster_overview_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    def_codes = context.get("def_codes")
+    params = {"def_codes": ", ".join(def_codes)} if def_codes else {}
+    description = (
+        f"Disaster spending overview, DEFC {', '.join(def_codes)}"
+        if def_codes else "Disaster spending overview, all DEFCs"
+    )
+    url = f"{BASE_URL}/api/v2/disaster/overview/"
+    # Comma-joined, matching USASpendingClient.get_disaster_overview's wire format.
+    if def_codes:
+        url += f"?def_codes={','.join(def_codes)}"
+    return ToolCitation(tool_name=tool_name, parameters=params, description=description, url=url)
+
+
+@_citation_builder("get_award_type_breakdown")
+def _award_type_breakdown_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    params = {"start_year": context["start_year"], "end_year": context["end_year"]}
+    _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
+    description = f"Award type breakdown, {_citation_scope_label(context)}, {_year_span(context, params)}"
+    return ToolCitation(
+        tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+    )
+
+
+@_citation_builder("get_spending_by_category")
+def _spending_by_category_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    spending_level = context.get("spending_level", "transactions")
+    params = {
+        "category": context["category"],
+        "start_year": context["start_year"],
+        "end_year": context["end_year"],
+        "spending_level": spending_level,
+    }
+    _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
+    level_suffix = f" ({spending_level})" if spending_level != "transactions" else ""
+    description = _with_naics_disclosure(
+        f"{params['category']} breakdown, {_citation_scope_label(context)}, {_year_span(context, params)}"
+        f"{level_suffix}",
+        context,
+    )
+    return ToolCitation(
+        tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+    )
+
+
+@_citation_builder("get_spending_over_time")
+def _spending_over_time_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    spending_level = context.get("spending_level", "transactions")
+    params = {
+        "start_year": context["start_year"],
+        "end_year": context["end_year"],
+        "group": context["group"],
+        "spending_level": spending_level,
+    }
+    _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
+    level_suffix = f" ({spending_level})" if spending_level != "transactions" else ""
+    description = _with_naics_disclosure(
+        f"Spending over time ({params['group']}), {_citation_scope_label(context)}, "
+        f"{_year_span(context, params)}{level_suffix}",
+        context,
+    )
+    return ToolCitation(
+        tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+    )
+
+
+@_citation_builder("get_spending_by_geography")
+def _spending_by_geography_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    params = {
+        "scope": context["scope"], "geo_layer": context["geo_layer"],
+        "start_year": context["start_year"], "end_year": context["end_year"],
+    }
+    if "sort_by" in context:
+        params["sort_by"] = context["sort_by"]
+    _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
+    description = _with_naics_disclosure(
+        f"Spending by {params['geo_layer']} ({params['scope']}), {_citation_scope_label(context)}, "
+        f"{_year_span(context, params)}",
+        context,
+    )
+    return ToolCitation(
+        tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+    )
+
+
+_RECORD_SEARCH_NOUNS = {
+    "search_awards": "awards search",
+    "search_subawards": "subawards search",
+    "search_transactions": "transactions search",
+}
+
+
+@_citation_builder(*_RECORD_SEARCH_NOUNS)
+def _record_search_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    params = {
+        "start_year": context["start_year"],
+        "end_year": context["end_year"],
+        "award_type": context["award_type"],
+    }
+    # award_type is set above unconditionally - merge everything else.
+    _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
+    description = _with_naics_disclosure(
+        f"{params['award_type']} {_RECORD_SEARCH_NOUNS[tool_name]}, {_citation_scope_label(context)}, "
+        f"{_year_span(context, params)}",
+        context,
+    )
+    return ToolCitation(
+        tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+    )
+
+
+@_citation_builder("get_award_details")
+def _award_details_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    award_id = context["award_id"]
+    # piid falls back to the raw internal_id only if the response carried neither piid/fain/uri.
+    label = context.get("piid") or award_id
+    return ToolCitation(
+        tool_name=tool_name,
+        parameters={"award_id": award_id},
+        description=f"Award details: {label}",
+        url=f"{BASE_URL}/api/v2/awards/{award_id}/",
+    )
+
+
+@_citation_builder("get_award_subawards")
+def _award_subawards_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    return _id_citation(tool_name, context, "Subawards for award: {}", curl=_curl_from_context(context))
+
+
+@_citation_builder("get_award_funding_breakdown")
+def _award_funding_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    return _id_citation(
+        tool_name, context, "Federal account funding breakdown for award: {}", curl=_curl_from_context(context)
+    )
+
+
+@_citation_builder("get_award_transaction_history")
+def _award_transactions_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    return _id_citation(tool_name, context, "Transaction history for award: {}", curl=_curl_from_context(context))
+
+
+@_citation_builder("list_top_agencies_by_budget")
+def _top_agencies_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    limit = context["limit"]
+    return ToolCitation(
+        tool_name=tool_name,
+        parameters={"limit": limit},
+        description=f"Top {limit} agencies by budget",
+        url=f"{BASE_URL}/api/v2/references/toptier_agencies/",
+    )
+
+
+@_citation_builder("get_spending_explorer_breakdown")
+def _spending_explorer_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    params = {
+        "group_by": context["group_by"],
+        "fiscal_year": context["fiscal_year"],
+        "quarter": context["quarter"],
+    }
+    for key in (
+        "agency", "budget_function", "budget_subfunction",
+        "federal_account", "object_class", "recipient", "program_activity",
+    ):
+        if context.get(key):
+            params[key] = context[key]
+    description = f"Spending explorer, group by {params['group_by']}, FY{params['fiscal_year']} Q{params['quarter']}"
+    return ToolCitation(
+        tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
+    )
+
+
+@_citation_builder("search_recipients")
+def _search_recipients_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    keyword = context["keyword"]
+    return ToolCitation(
+        tool_name=tool_name,
+        parameters={"keyword": keyword},
+        description=f"Recipient search: {keyword}",
+        curl=_curl_from_context(context),
+    )
+
+
+@_citation_builder("get_recipient_details")
+def _recipient_details_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    recipient_id = context["recipient_id"]
+    year = context.get("year", "all")
+    # name falls back to the raw recipient_id only if the response carried no name at all.
+    label = context.get("name") or recipient_id
+    return ToolCitation(
+        tool_name=tool_name,
+        parameters={"recipient_id": recipient_id, "year": year},
+        description=f"Recipient details: {label} ({year})",
+        url=f"{BASE_URL}/api/v2/recipient/{recipient_id}/?year={year}",
+    )
+
+
+@_citation_builder("get_recipient_children")
+def _recipient_children_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    recipient_id = context["recipient_id"]
+    year = context.get("year", "all")
+    label = context.get("name") or recipient_id
+    return ToolCitation(
+        tool_name=tool_name,
+        parameters={"recipient_id": recipient_id, "year": year},
+        description=f"Recipient children: {label} ({year})",
+    )
+
+
+@_citation_builder("code_execution")
+def _code_execution_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
+    command = context.get("command", "")
+    shown_command = command if len(command) <= 200 else f"{command[:200]}..."
+    return ToolCitation(
+        tool_name=tool_name,
+        parameters={"command": command},
+        description=f"Code execution: {shown_command}",
+    )
+
+
+def build_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitation | None:
+    """Deterministic, unit-testable citation builder for the live-data
+    tools - the same role should_chart plays for charts. Dispatches on
+    tool_name to the builder registered with @_citation_builder, which
+    reads mainly the context dict each tool records (_record_tool_call's
+    third element), not the structured result, since what needs citing
+    here is the query that was run, not the shape of what came back.
+    result is optional and only used where a citation needs something
+    from the result itself (e.g. resolve_naics_code's resolved code, for
+    its url).
+
+    Returns None for a tool with no registered builder (search_guide is
+    cited separately, by chunk id/page - see ask()) and for a call with no
+    context recorded (e.g. a failed lookup that returned early before
+    _record_tool_call ran).
     """
     if not context:
         return None
-
-    if tool_name in {"download_records", "download_single_award"}:
-        params = {
-            key: ", ".join(value) if isinstance(value, list) else str(value).lower() if isinstance(value, bool) else value
-            for key, value in context.items()
-            if key not in {"filters", "columns", "api_spending_level"} and not key.startswith("_")
-        }
-        requests_made = [
-            request for request in context.get("_requests", [])
-            if request[0] == "POST" and "/download/" in request[1]
-        ]
-        if requests_made:
-            curl = _curl_from_context({"_requests": requests_made[:1]})
-        elif tool_name == "download_single_award":
-            body = {"award_id": context["award_id"], "file_format": "csv"}
-            url = f"{BASE_URL}/api/v2/download/{context['endpoint']}/"
-            curl = f"curl -X POST '{url}' -H 'Content-Type: application/json' -d '{json.dumps(body)}'"
-        else:
-            body = {
-                "filters": context["filters"].model_dump(exclude_none=True),
-                "columns": context["columns"],
-                "file_format": "csv",
-                "spending_level": context["api_spending_level"],
-            }
-            url = f"{BASE_URL}/api/v2/download/search/"
-            curl = f"curl -X POST '{url}' -H 'Content-Type: application/json' -d '{json.dumps(body)}'"
-        label = "Single-award" if tool_name == "download_single_award" else context["spending_level"].capitalize()
-        scope = context.get("award_id") or context.get("agency_name") or "all agencies"
-        return ToolCitation(
-            tool_name=tool_name, parameters=params, description=f"{label} CSV download, {scope}", curl=curl,
-        )
-
-    if tool_name == "lookup_agency":
-        name = context["name"]
-        url = f"{BASE_URL}/api/v2/agency/{result.toptier_code}/" if result else None
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"name": name},
-            description=f"Agency lookup: {name}",
-            url=url,
-        )
-
-    if tool_name in ("resolve_naics_code", "resolve_psc_code", "resolve_cfda_program"):
-        description = context["description"]
-        label = {"resolve_naics_code": "NAICS", "resolve_psc_code": "PSC", "resolve_cfda_program": "CFDA"}[tool_name]
-        url = None
-        if result:
-            if tool_name == "resolve_naics_code":
-                url = f"{NAICS_URL_BASE}{result[0]['slug']}"
-            elif tool_name == "resolve_psc_code":
-                url = f"{PSC_URL_BASE}{result[0]['slug']}"
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"description": description},
-            description=f"{label} code lookup: {description}",
-            url=url,
-        )
-
-    if tool_name == "resolve_budget_function":
-        description = context["description"]
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"description": description},
-            description=f"Budget function/subfunction lookup: {description}",
-        )
-
-    if tool_name == "resolve_county_fips":
-        description = context["description"]
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"description": description},
-            description=f"County FIPS lookup: {description}",
-            curl=_curl_from_context(context),
-        )
-
-    if tool_name == "get_agency_budget":
-        params = {
-            "agency_name": context["agency_name"],
-            "start_fiscal_year": context["start_fiscal_year"],
-            "end_fiscal_year": context["end_fiscal_year"],
-        }
-        description = (
-            f"Budgetary resources, {params['agency_name']}, "
-            f"FY{params['start_fiscal_year']}-FY{params['end_fiscal_year']}"
-        )
-        url = f"{BASE_URL}/api/v2/agency/{context['toptier_code']}/budgetary_resources/"
-        return ToolCitation(tool_name=tool_name, parameters=params, description=description, url=url)
-
-    if tool_name == "get_agency_award_breakdown":
-        params = {"agency_name": context["agency_name"], "fiscal_year": context["fiscal_year"]}
-        if context.get("award_type"):
-            params["award_type"] = context["award_type"]
-        group_by = context.get("group_by", "sub_agency")
-        params["group_by"] = group_by
-        sub_agency = context.get("sub_agency")
-        label = {
-            "sub_agency": "Award breakdown by sub-agency",
-            "award_category": "Award obligations by category",
-            "whole_agency": "Award activity",
-        }[group_by]
-        if sub_agency:
-            params["sub_agency"] = sub_agency
-            label = f"Awarding offices, {sub_agency}"
-        description = f"{label}, {params['agency_name']}, FY{params['fiscal_year']}"
-        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
-
-    if tool_name == "get_agency_budget_by_subcomponent":
-        params = {"agency_name": context["agency_name"], "fiscal_year": context["fiscal_year"]}
-        bureau = context.get("bureau")
-        if bureau:
-            params["bureau"] = bureau
-            description = f"Federal accounts, {bureau} ({params['agency_name']}), FY{params['fiscal_year']}"
-        else:
-            description = f"Budgetary resources by sub-component, {params['agency_name']}, FY{params['fiscal_year']}"
-        return ToolCitation(tool_name=tool_name, parameters=params, description=description)
-
-    if tool_name == "get_disaster_spending_overview":
-        def_codes = context.get("def_codes")
-        params = {"def_codes": ", ".join(def_codes)} if def_codes else {}
-        description = (
-            f"Disaster spending overview, DEFC {', '.join(def_codes)}"
-            if def_codes else "Disaster spending overview, all DEFCs"
-        )
-        url = f"{BASE_URL}/api/v2/disaster/overview/"
-        # Comma-joined, matching USASpendingClient.get_disaster_overview's wire format.
-        if def_codes:
-            url += f"?def_codes={','.join(def_codes)}"
-        return ToolCitation(tool_name=tool_name, parameters=params, description=description, url=url)
-
-    if tool_name == "get_award_type_breakdown":
-        params = {
-            "start_year": context["start_year"],
-            "end_year": context["end_year"],
-        }
-        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
-        scope = _citation_scope_label(context)
-        time_period_type = context.get("time_period_type", "fiscal")
-        description = (
-            f"Award type breakdown, {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
-        )
-        return ToolCitation(
-            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
-        )
-
-    if tool_name == "get_spending_by_category":
-        spending_level = context.get("spending_level", "transactions")
-        params = {
-            "category": context["category"],
-            "start_year": context["start_year"],
-            "end_year": context["end_year"],
-            "spending_level": spending_level,
-        }
-        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
-        scope = _citation_scope_label(context)
-        time_period_type = context.get("time_period_type", "fiscal")
-        level_suffix = f" ({spending_level})" if spending_level != "transactions" else ""
-        description = _with_naics_disclosure(
-            f"{params['category']} breakdown, {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
-            f"{level_suffix}",
-            context,
-        )
-        return ToolCitation(
-            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
-        )
-
-    if tool_name == "get_spending_over_time":
-        spending_level = context.get("spending_level", "transactions")
-        params = {
-            "start_year": context["start_year"],
-            "end_year": context["end_year"],
-            "group": context["group"],
-            "spending_level": spending_level,
-        }
-        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
-        scope = _citation_scope_label(context)
-        time_period_type = context.get("time_period_type", "fiscal")
-        level_suffix = f" ({spending_level})" if spending_level != "transactions" else ""
-        description = _with_naics_disclosure(
-            f"Spending over time ({params['group']}), {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}"
-            f"{level_suffix}",
-            context,
-        )
-        return ToolCitation(
-            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
-        )
-
-    if tool_name == "get_spending_by_geography":
-        params = {
-            "scope": context["scope"], "geo_layer": context["geo_layer"],
-            "start_year": context["start_year"], "end_year": context["end_year"],
-        }
-        if "sort_by" in context:
-            params["sort_by"] = context["sort_by"]
-        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS)
-        scope = _citation_scope_label(context)
-        time_period_type = context.get("time_period_type", "fiscal")
-        description = _with_naics_disclosure(
-            f"Spending by {params['geo_layer']} ({params['scope']}), {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
-            context,
-        )
-        return ToolCitation(
-            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
-        )
-
-    if tool_name == "search_awards":
-        params = {
-            "start_year": context["start_year"],
-            "end_year": context["end_year"],
-            "award_type": context["award_type"],
-        }
-        # award_type is already set above (unconditionally, unlike every
-        # other key here including agency_name, which is now optional
-        # too - see tool_filters.py's _build_filters) - merge everything
-        # else.
-        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
-        scope = _citation_scope_label(context)
-        time_period_type = context.get("time_period_type", "fiscal")
-        description = _with_naics_disclosure(
-            f"{params['award_type']} awards search, {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
-            context,
-        )
-        return ToolCitation(
-            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
-        )
-
-    if tool_name == "search_subawards":
-        params = {
-            "start_year": context["start_year"],
-            "end_year": context["end_year"],
-            "award_type": context["award_type"],
-        }
-        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
-        scope = _citation_scope_label(context)
-        time_period_type = context.get("time_period_type", "fiscal")
-        description = _with_naics_disclosure(
-            f"{params['award_type']} subawards search, {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
-            context,
-        )
-        return ToolCitation(
-            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
-        )
-
-    if tool_name == "search_transactions":
-        params = {
-            "start_year": context["start_year"],
-            "end_year": context["end_year"],
-            "award_type": context["award_type"],
-        }
-        _merge_optional_filter_params(params, context, _ALL_OPTIONAL_FILTER_KEYS - {"award_type"})
-        scope = _citation_scope_label(context)
-        time_period_type = context.get("time_period_type", "fiscal")
-        description = _with_naics_disclosure(
-            f"{params['award_type']} transactions search, {scope}, "
-            f"{year_label(time_period_type, params['start_year'])}-{year_label(time_period_type, params['end_year'])}",
-            context,
-        )
-        return ToolCitation(
-            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
-        )
-
-    if tool_name == "get_award_details":
-        award_id = context["award_id"]
-        # piid falls back to the raw internal_id (context["award_id"])
-        # only if the response somehow carried neither piid/fain/uri -
-        # shouldn't happen per the live award_id.md contract, but keeps
-        # the citation from showing "None" instead of something real.
-        label = context.get("piid") or award_id
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"award_id": award_id},
-            description=f"Award details: {label}",
-            url=f"{BASE_URL}/api/v2/awards/{award_id}/",
-        )
-
-    if tool_name == "get_award_subawards":
-        award_id = context["award_id"]
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"award_id": award_id},
-            description=f"Subawards for award: {award_id}",
-            curl=_curl_from_context(context),
-        )
-
-    if tool_name == "get_award_funding_breakdown":
-        award_id = context["award_id"]
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"award_id": award_id},
-            description=f"Federal account funding breakdown for award: {award_id}",
-            curl=_curl_from_context(context),
-        )
-
-    if tool_name == "get_award_transaction_history":
-        award_id = context["award_id"]
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"award_id": award_id},
-            description=f"Transaction history for award: {award_id}",
-            curl=_curl_from_context(context),
-        )
-
-    if tool_name == "list_top_agencies_by_budget":
-        limit = context["limit"]
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"limit": limit},
-            description=f"Top {limit} agencies by budget",
-            url=f"{BASE_URL}/api/v2/references/toptier_agencies/",
-        )
-
-    if tool_name == "get_spending_explorer_breakdown":
-        params = {
-            "group_by": context["group_by"],
-            "fiscal_year": context["fiscal_year"],
-            "quarter": context["quarter"],
-        }
-        for key in (
-            "agency", "budget_function", "budget_subfunction",
-            "federal_account", "object_class", "recipient", "program_activity",
-        ):
-            if context.get(key):
-                params[key] = context[key]
-        description = (
-            f"Spending explorer, group by {params['group_by']}, FY{params['fiscal_year']} Q{params['quarter']}"
-        )
-        return ToolCitation(
-            tool_name=tool_name, parameters=params, description=description, curl=_curl_from_context(context)
-        )
-
-    if tool_name == "search_recipients":
-        keyword = context["keyword"]
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"keyword": keyword},
-            description=f"Recipient search: {keyword}",
-            curl=_curl_from_context(context),
-        )
-
-    if tool_name == "get_recipient_details":
-        recipient_id = context["recipient_id"]
-        year = context.get("year", "all")
-        # name falls back to the raw recipient_id only if the response
-        # somehow carried no name at all - shouldn't happen per the live
-        # recipient_id.md contract (name is nullable but real-world
-        # recipients always have one, even the redacted/aggregate bucket
-        # case, which has its own real sentinel string), but keeps the
-        # citation from showing "None" instead of something real.
-        label = context.get("name") or recipient_id
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"recipient_id": recipient_id, "year": year},
-            description=f"Recipient details: {label} ({year})",
-            url=f"{BASE_URL}/api/v2/recipient/{recipient_id}/?year={year}",
-        )
-
-    if tool_name == "get_recipient_children":
-        recipient_id = context["recipient_id"]
-        year = context.get("year", "all")
-        label = context.get("name") or recipient_id
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"recipient_id": recipient_id, "year": year},
-            description=f"Recipient children: {label} ({year})",
-        )
-
-    if tool_name == "code_execution":
-        # Cite the actual command that ran, not just "code was run" - a
-        # user or auditor should be able to see what was computed and from
-        # what, the same way a spending tool's citation shows the query
-        # that was run, not just that a call succeeded.
-        command = context.get("command", "")
-        shown_command = command if len(command) <= 200 else f"{command[:200]}..."
-        return ToolCitation(
-            tool_name=tool_name,
-            parameters={"command": command},
-            description=f"Code execution: {shown_command}",
-        )
-
-    return None
+    builder = _CITATION_BUILDERS.get(tool_name)
+    return builder(tool_name, context, result) if builder else None

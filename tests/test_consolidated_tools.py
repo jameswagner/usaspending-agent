@@ -118,6 +118,12 @@ def test_agency_profile_award_sections(fake, section, group_by):
     assert recorder.calls[0]["group_by"] == group_by
 
 
+def test_agency_profile_rewrites_group_by_hints_as_sections(fake):
+    fake("get_agency_award_breakdown", reply='This query failed: use group_by="sub_agency" instead of group_by="whole_agency".')
+    out = TOOLS["agency_profile"].invoke({"section": "award_activity", "agency_name": "NIH", "fiscal_year": 2024})
+    assert out == 'This query failed: use section="awards_by_sub_agency" instead of section="award_activity".'
+
+
 def test_agency_profile_overview_and_ranking(fake):
     overview = fake("lookup_agency")
     ranking = fake("list_top_agencies_by_budget")

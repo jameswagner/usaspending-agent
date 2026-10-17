@@ -164,7 +164,7 @@ def agency_profile(
     Two different kinds of number live here; never present one as the other. The budget sections ("budget", "budget_by_bureau", "rank_all_agencies") report budgetary resources, obligations, and outlays from the agency's accounts: use them for "what is X's budget" or "how much money does X have", never query_spending. The award sections ("awards_by_sub_agency", "awards_by_category", "award_activity") report obligations on specific contracts, grants, and loans, with transaction and new-award counts by sub-agency. For a count of awards by type under any other filter (a place, a recipient, new awards only), use query_spending(group_by="award_type"). An agency's budgetary resources and its award obligations for the same year are different figures.
 
     Args:
-        section: "overview": what the agency is - toptier code, abbreviation, mission, website, budget justification link, subtier count. "budget": yearly budgetary resources, obligations, and outlays for fiscal_year through end_fiscal_year (data from FY2017 on). "budget_by_bureau": the same figures for one fiscal year broken down by sub-component/bureau (e.g. NIH or CDC within HHS), or one bureau's own federal accounts when bureau is set. "awards_by_sub_agency": one fiscal year's award obligations plus transaction and new-award counts by sub-agency. "awards_by_category": one fiscal year's award obligations split by contracts/IDVs/grants/loans/direct payments/other. "award_activity": the agency's whole-agency award totals and counts for one fiscal year. "rank_all_agencies": all agencies ranked by budgetary resources with their share of the federal total, current fiscal year only (agency_name not used).
+        section: "overview": what the agency is - toptier code, abbreviation, mission, website, budget justification link, subtier count. "budget": yearly budgetary resources, obligations, and outlays for fiscal_year through end_fiscal_year (data from FY2017 on). "budget_by_bureau": the same figures for one fiscal year broken down by sub-component/bureau (e.g. NIH or CDC within HHS), or one bureau's own federal accounts when bureau is set. "awards_by_sub_agency": one fiscal year's award obligations plus transaction and new-award counts by sub-agency. "awards_by_category": one fiscal year's award obligations split by contracts/IDVs/grants/loans/direct payments/other. "award_activity": the agency's whole-agency award obligations and transaction count for one fiscal year (no new-award count; a top-tier agency only, not a sub-agency like NIH). "rank_all_agencies": all agencies ranked by budgetary resources with their share of the federal total, current fiscal year only (agency_name not used).
         agency_name: The agency's name, e.g. "National Science Foundation" or "NSF". Required for every section except "rank_all_agencies". A sub-agency name also works for the award sections.
         fiscal_year: The fiscal year, e.g. 2024 for FY2024. Required for every section except "overview" and "rank_all_agencies". For "budget" it is the first year of the range.
         end_fiscal_year: "budget" only. Last fiscal year of the range; defaults to fiscal_year.
@@ -209,12 +209,19 @@ def agency_profile(
             agency_name=agency_name, start_fiscal_year=fiscal_year, end_fiscal_year=fiscal_year,
             group_by="sub_component", bureau=bureau,
         )
-    group_by = {"awards_by_sub_agency": "sub_agency", "awards_by_category": "award_category", "award_activity": "whole_agency"}[section]
-    return get_agency_award_breakdown.func(
+    group_by = {section_name: mode for mode, section_name in _AWARD_SECTION_BY_GROUP_BY.items()}[section]
+    result = get_agency_award_breakdown.func(
         agency_name=agency_name, fiscal_year=fiscal_year, award_type=award_type,
         include_offices=include_offices, group_by=group_by, sub_agency=sub_agency,
     )
+    for mode, section_name in _AWARD_SECTION_BY_GROUP_BY.items():
+        result = result.replace(f'group_by="{mode}"', f'section="{section_name}"')
+    return result
 
+
+_AWARD_SECTION_BY_GROUP_BY = {
+    "sub_agency": "awards_by_sub_agency", "award_category": "awards_by_category", "whole_agency": "award_activity",
+}
 
 AwardSection = Literal["summary", "transactions", "subawards", "funding"]
 

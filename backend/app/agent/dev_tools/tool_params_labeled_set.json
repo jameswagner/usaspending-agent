@@ -1,0 +1,422 @@
+{
+  "_notes": [
+    "Labeled set for eval_tool_params.py. 'action' uses the consolidated vocabulary (tool or tool.section/kind); calls from the current tool set are mapped onto it first.",
+    "'args' values must match (case-insensitive; a one-item list equals its item); {\"any_of\": [...]} accepts any option; \"__present__\" requires any non-null value. 'absent' args must be unset.",
+    "'every_call' constraints apply to every call of that action; 'forbid_actions' must not appear; 'ordered' requires the expected calls in order; 'expect_error' allows rejected calls.",
+    "An 'expect' step may be {\"one_of\": [step, ...]}: any one alternative satisfies it."
+  ],
+  "entries": [
+    {
+      "category": "category_breakdown",
+      "question": "How is NSF's FY2023 contract spending broken down by NAICS code?",
+      "expect": [
+        {
+          "action": "query_spending",
+          "args": {
+            "group_by": "naics",
+            "award_type": "contracts",
+            "agency_name": {
+              "any_of": [
+                "National Science Foundation",
+                "NSF"
+              ]
+            },
+            "start_year": 2023,
+            "end_year": 2023
+          }
+        }
+      ]
+    },
+    {
+      "category": "time_breakdown",
+      "question": "How has NSF's contract spending trended from FY2019 through FY2023?",
+      "expect": [
+        {
+          "action": "query_spending",
+          "args": {
+            "group_by": "time",
+            "award_type": "contracts",
+            "agency_name": {
+              "any_of": [
+                "National Science Foundation",
+                "NSF"
+              ]
+            },
+            "start_year": 2019,
+            "end_year": 2023
+          }
+        }
+      ]
+    },
+    {
+      "category": "geography_breakdown",
+      "question": "Which states received the most NSF funding in FY2023?",
+      "expect": [
+        {
+          "action": "query_spending",
+          "args": {
+            "group_by": "geography",
+            "geo_layer": "state",
+            "scope": {
+              "any_of": [
+                "place_of_performance",
+                "recipient_location"
+              ]
+            },
+            "agency_name": {
+              "any_of": [
+                "National Science Foundation",
+                "NSF"
+              ]
+            },
+            "start_year": 2023,
+            "end_year": 2023
+          },
+          "absent": [
+            "award_type"
+          ]
+        }
+      ],
+      "notes": "'NSF funding' means all award types. Either scope is defensible; 'received' leans recipient_location."
+    },
+    {
+      "category": "budget_vs_spending",
+      "question": "What is NSF's total budget for FY2024?",
+      "expect": [
+        {
+          "action": "agency_profile.budget",
+          "args": {
+            "agency_name": {
+              "any_of": [
+                "National Science Foundation",
+                "NSF"
+              ]
+            },
+            "fiscal_year": 2024
+          }
+        }
+      ],
+      "forbid_actions": [
+        "query_spending"
+      ],
+      "notes": "A budget question is account-based; award spending is a different number."
+    },
+    {
+      "category": "agency_award_breakdown",
+      "question": "How many new grant awards did NIH issue in FY2024, and what did they total?",
+      "expect": [
+        {
+          "one_of": [
+            {
+              "action": "agency_profile.awards_by_sub_agency",
+              "args": {
+                "agency_name": {
+                  "any_of": [
+                    "National Institutes of Health",
+                    "NIH"
+                  ]
+                },
+                "fiscal_year": 2024,
+                "award_type": "grants"
+              }
+            },
+            {
+              "action": "query_spending",
+              "args": {
+                "group_by": "award_type",
+                "agency_name": {
+                  "any_of": [
+                    "National Institutes of Health",
+                    "NIH"
+                  ]
+                },
+                "date_type": "new_awards_only",
+                "start_year": 2024,
+                "end_year": 2024
+              }
+            }
+          ]
+        },
+        {
+          "action": "query_spending",
+          "args": {
+            "agency_name": {
+              "any_of": [
+                "National Institutes of Health",
+                "NIH"
+              ]
+            },
+            "award_type": "grants",
+            "date_type": "new_awards_only",
+            "start_year": 2024,
+            "end_year": 2024
+          }
+        }
+      ],
+      "notes": "Count from the sub-agency breakdown or award-type counts with new_awards_only; dollars from new_awards_only. Both give 14,986 / $7.63B once the agency filter fixes are in."
+    },
+    {
+      "category": "agency_budget_by_subcomponent",
+      "question": "Which part of HHS has the most funding?",
+      "expect": [
+        {
+          "action": "agency_profile.budget_by_bureau",
+          "args": {
+            "agency_name": {
+              "any_of": [
+                "Department of Health and Human Services",
+                "HHS",
+                "Health and Human Services"
+              ]
+            },
+            "fiscal_year": {
+              "any_of": [
+                2025,
+                2026
+              ]
+            }
+          }
+        }
+      ],
+      "notes": "No year given: the most recent complete fiscal year. FY2026 ended 2026-09-30, so 2025 or 2026 depending on run date."
+    },
+    {
+      "category": "spending_explorer_breakdown",
+      "question": "How was federal spending broken down by budget function in FY2023?",
+      "expect": [
+        {
+          "action": "get_spending_explorer_breakdown",
+          "args": {
+            "group_by": "budget_function",
+            "fiscal_year": 2023,
+            "quarter": "4"
+          }
+        }
+      ]
+    },
+    {
+      "category": "resolve_tools",
+      "question": "What NAICS code covers custom software development businesses?",
+      "expect": [
+        {
+          "action": "resolve_entity.naics",
+          "args": {
+            "query": "__present__"
+          }
+        }
+      ]
+    },
+    {
+      "category": "agency_budget_ranking",
+      "question": "Which federal agency has the biggest budget?",
+      "expect": [
+        {
+          "action": "agency_profile.rank_all_agencies"
+        }
+      ],
+      "forbid_actions": [
+        "query_spending"
+      ]
+    },
+    {
+      "category": "subaward_tools",
+      "question": "Who did Electric Boat subcontract work to on their submarine contract?",
+      "ordered": true,
+      "expect": [
+        {
+          "action": "resolve_entity.recipient",
+          "args": {
+            "query": "__present__"
+          }
+        },
+        {
+          "action": "query_spending",
+          "args": {
+            "level": "award",
+            "award_type": "contracts",
+            "recipient_id": "__present__"
+          }
+        },
+        {
+          "action": "award_detail.subawards",
+          "args": {
+            "award_id": "__present__"
+          }
+        }
+      ],
+      "notes": "Once the recipient is resolved, scope by recipient_id, not the recipient_name text filter."
+    },
+    {
+      "category": "guide_and_lookup_tools",
+      "question": "What does 'obligation' mean in USASpending data?",
+      "expect": [
+        {
+          "action": "search_guide",
+          "args": {
+            "query": "__present__"
+          }
+        }
+      ]
+    },
+    {
+      "category": "search_vs_breakdown",
+      "question": "Show me NSF's five biggest contracts in FY2023.",
+      "expect": [
+        {
+          "action": "query_spending",
+          "args": {
+            "level": "award",
+            "award_type": "contracts",
+            "agency_name": {
+              "any_of": [
+                "National Science Foundation",
+                "NSF"
+              ]
+            },
+            "start_year": 2023,
+            "end_year": 2023,
+            "limit": 5,
+            "sort_by": "amount"
+          },
+          "absent": [
+            "group_by"
+          ]
+        }
+      ],
+      "notes": "Ambiguous whether 'in FY2023' means active or newly awarded; date_type is not checked. Results rank by lifetime value either way."
+    },
+    {
+      "category": "followup_chains",
+      "question": "Tell me the competition details and period of performance for NSF's single largest FY2023 contract.",
+      "ordered": true,
+      "expect": [
+        {
+          "action": "query_spending",
+          "args": {
+            "level": "award",
+            "award_type": "contracts",
+            "agency_name": {
+              "any_of": [
+                "National Science Foundation",
+                "NSF"
+              ]
+            },
+            "start_year": 2023,
+            "end_year": 2023
+          },
+          "absent": [
+            "group_by"
+          ]
+        },
+        {
+          "action": "award_detail.summary",
+          "args": {
+            "award_id": "__present__"
+          }
+        }
+      ]
+    },
+    {
+      "category": "transaction_tools",
+      "question": "Show me every individual transaction matching \"ventilators\" in FY2020 contracts, with each one's date and amount.",
+      "expect": [
+        {
+          "action": "query_spending",
+          "args": {
+            "level": "transaction",
+            "award_type": "contracts",
+            "keywords": "ventilators",
+            "start_year": 2020,
+            "end_year": 2020
+          },
+          "absent": [
+            "group_by"
+          ]
+        }
+      ]
+    },
+    {
+      "category": "award_type_breakdown",
+      "question": "How many federal contracts vs. grants vs. loans were awarded government-wide in FY2024?",
+      "expect": [
+        {
+          "action": "query_spending",
+          "args": {
+            "group_by": "award_type",
+            "start_year": 2024,
+            "end_year": 2024
+          },
+          "absent": [
+            "agency_name",
+            "award_type"
+          ]
+        }
+      ],
+      "notes": "Government-wide: no agency or award_type filter."
+    },
+    {
+      "category": "disaster_spending",
+      "question": "How much has the federal government spent on COVID-19 relief overall?",
+      "expect": [
+        {
+          "action": "get_disaster_spending_overview",
+          "args": {
+            "def_codes": {
+              "any_of": [
+                "covid",
+                "covid_19"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "ambiguous_intentional",
+      "question": "How did NSF spend its money in FY2023?",
+      "expect": [
+        {
+          "action": [
+            "agency_profile.awards_by_category",
+            "agency_profile.budget",
+            "agency_profile.awards_by_sub_agency",
+            "get_spending_explorer_breakdown",
+            "query_spending"
+          ]
+        }
+      ],
+      "every_call": [
+        {
+          "action": "query_spending",
+          "absent": [
+            "award_type"
+          ]
+        }
+      ],
+      "notes": "Any reasonable breakdown passes; narrowing to one award type without being asked fails."
+    },
+    {
+      "category": "error_paths",
+      "question": "How many new awards did EPA issue in FY2005?",
+      "expect": [
+        {
+          "action": [
+            "agency_profile.awards_by_sub_agency",
+            "agency_profile.award_activity",
+            "query_spending"
+          ],
+          "args": {
+            "agency_name": {
+              "any_of": [
+                "Environmental Protection Agency",
+                "EPA"
+              ]
+            }
+          }
+        }
+      ],
+      "expect_error": true,
+      "notes": "FY2005 is before the data starts (FY2008); a tool error is expected and the answer should say so."
+    }
+  ]
+}

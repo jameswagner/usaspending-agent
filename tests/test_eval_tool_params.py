@@ -96,6 +96,16 @@ def test_rejected_call_fails_unless_errors_expected():
     assert score_trajectory(trajectory, {**entry, "expect_error": True})["params_ok"]
 
 
+def test_one_of_accepts_any_alternative():
+    entry = {"expect": [{"one_of": [
+        {"action": "agency_profile.awards_by_sub_agency"},
+        {"action": "query_spending", "args": {"group_by": "award_type"}},
+    ]}]}
+    assert score_trajectory([_step("query_spending", {"group_by": "award_type"})], entry)["params_ok"]
+    assert score_trajectory([_step("get_agency_award_breakdown", {"agency_name": "NIH"})], entry)["params_ok"]
+    assert not score_trajectory([_step("query_spending", {"group_by": "time"})], entry)["params_ok"]
+
+
 def test_ordered_expectations():
     entry = {"ordered": True, "expect": [{"action": "query_spending"}, {"action": "award_detail.summary"}]}
     in_order = [_step("query_spending", {}), _step("get_award_details", {"award_id": "X"})]
@@ -111,6 +121,7 @@ def test_labeled_set_loads_and_uses_known_actions():
         "rank_all_agencies", "summary", "transactions", "subawards", "funding", "details", "children",
     )}
     for entry in load_labeled_set().values():
-        for step in entry.get("expect", []) + entry.get("every_call", []):
+        steps = [option for step in entry.get("expect", []) for option in step.get("one_of", [step])]
+        for step in steps + entry.get("every_call", []):
             actions = step["action"] if isinstance(step["action"], list) else [step["action"]]
             assert set(actions) <= known, (entry["category"], actions)

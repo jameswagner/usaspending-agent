@@ -2,7 +2,8 @@
   "_notes": [
     "Labeled set for eval_tool_params.py. 'action' uses the consolidated vocabulary (tool or tool.section/kind); calls from the current tool set are mapped onto it first.",
     "'args' values must match (case-insensitive; a one-item list equals its item); {\"any_of\": [...]} accepts any option; \"__present__\" requires any non-null value. 'absent' args must be unset.",
-    "'every_call' constraints apply to every call of that action; 'forbid_actions' must not appear; 'ordered' requires the expected calls in order; 'expect_error' allows rejected calls."
+    "'every_call' constraints apply to every call of that action; 'forbid_actions' must not appear; 'ordered' requires the expected calls in order; 'expect_error' allows rejected calls.",
+    "An 'expect' step may be {\"one_of\": [step, ...]}: any one alternative satisfies it."
   ],
   "entries": [
     {
@@ -105,17 +106,36 @@
       "question": "How many new grant awards did NIH issue in FY2024, and what did they total?",
       "expect": [
         {
-          "action": "agency_profile.awards_by_sub_agency",
-          "args": {
-            "agency_name": {
-              "any_of": [
-                "National Institutes of Health",
-                "NIH"
-              ]
+          "one_of": [
+            {
+              "action": "agency_profile.awards_by_sub_agency",
+              "args": {
+                "agency_name": {
+                  "any_of": [
+                    "National Institutes of Health",
+                    "NIH"
+                  ]
+                },
+                "fiscal_year": 2024,
+                "award_type": "grants"
+              }
             },
-            "fiscal_year": 2024,
-            "award_type": "grants"
-          }
+            {
+              "action": "query_spending",
+              "args": {
+                "group_by": "award_type",
+                "agency_name": {
+                  "any_of": [
+                    "National Institutes of Health",
+                    "NIH"
+                  ]
+                },
+                "date_type": "new_awards_only",
+                "start_year": 2024,
+                "end_year": 2024
+              }
+            }
+          ]
         },
         {
           "action": "query_spending",
@@ -133,7 +153,7 @@
           }
         }
       ],
-      "notes": "Count from the agency breakdown, dollars from new_awards_only. Known tool gap: agency_name='NIH' is sent to the API as the HHS toptier filter, and the breakdown's 669 new-award count disagrees with spending_by_award_count's 14,986 - correct parameters still produce questionable data here."
+      "notes": "Count from the sub-agency breakdown or award-type counts with new_awards_only; dollars from new_awards_only. Both give 14,986 / $7.63B once the agency filter fixes are in."
     },
     {
       "category": "agency_budget_by_subcomponent",

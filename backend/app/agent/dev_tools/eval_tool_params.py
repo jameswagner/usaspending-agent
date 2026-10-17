@@ -115,17 +115,18 @@ def score_trajectory(trajectory: list[dict], entry: dict) -> dict:
     action_ok = True
     matched_positions = []
     for step in entry.get("expect", []):
-        candidates = [i for i, c in enumerate(calls) if c["action"] in _actions(step)]
+        options = step.get("one_of", [step])
+        candidates = [(i, option) for option in options for i, c in enumerate(calls) if c["action"] in _actions(option)]
         if not candidates:
             action_ok = False
-            problems.append(f"no call to {'/'.join(sorted(_actions(step)))}")
+            problems.append(f"no call to {'/'.join(sorted(set().union(*(_actions(o) for o in options))))}")
             continue
-        exact = [i for i in candidates if not _call_satisfies(calls[i], step)]
+        exact = [i for i, option in candidates if not _call_satisfies(calls[i], option)]
         if exact:
             matched_positions.append(exact[0])
         else:
-            closest = calls[candidates[0]]
-            problems.append(f"{closest['action']}: " + "; ".join(_call_satisfies(closest, step)))
+            index, option = candidates[0]
+            problems.append(f"{calls[index]['action']}: " + "; ".join(_call_satisfies(calls[index], option)))
     if entry.get("ordered") and matched_positions != sorted(matched_positions):
         problems.append("expected calls out of order")
     for rule in entry.get("every_call", []):

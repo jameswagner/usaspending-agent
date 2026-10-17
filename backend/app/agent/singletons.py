@@ -28,9 +28,8 @@ load_dotenv()
 
 ANTHROPIC_WORKSPACE_ID = os.environ.get("ANTHROPIC_WORKSPACE_ID")
 
-# Swappable via env var so Haiku 4.5 vs Sonnet 5 can be compared on the same
-# test questions before picking one for tool-calling specifically.
-MODEL = os.environ.get("AGENT_MODEL", "claude-haiku-4-5")
+# Swappable via env var so models can be compared on the same test questions.
+MODEL = os.environ.get("AGENT_MODEL", "claude-haiku-5-5")
 
 # Same floor as main.py, calibrated via dev_tools/calibrate_threshold.py
 # (data-driven optimum -1.89, using -2.0 for a small safety margin).

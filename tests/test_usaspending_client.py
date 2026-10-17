@@ -753,7 +753,21 @@ class TestGetAgencySubAgencyBreakdown:
 
         monkeypatch.setattr(client, "_get", fake_get)
         client.get_agency_sub_agency_breakdown("073", award_type_codes=["02", "03", "04", "05"])
-        assert captured["award_type_codes"] == ["02", "03", "04", "05"]
+        # The endpoint keeps only the last repeated param, so a list would filter to "05" alone.
+        assert captured["award_type_codes"] == "[02,03,04,05]"
+
+    def test_agency_awards_sends_codes_as_one_bracketed_param(self, monkeypatch):
+        client = USASpendingClient()
+        captured: dict = {}
+
+        def fake_get(path, params=None):
+            captured.update(params or {})
+            raise RuntimeError("stop after capture")
+
+        monkeypatch.setattr(client, "_get", fake_get)
+        with pytest.raises(RuntimeError):
+            client.get_agency_awards("075", fiscal_year=2024, award_type_codes=["A", "B", "C", "D"])
+        assert captured["award_type_codes"] == "[A,B,C,D]"
 
 
 class TestAdvancedFilters:

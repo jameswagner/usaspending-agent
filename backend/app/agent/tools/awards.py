@@ -23,7 +23,6 @@ from backend.app.usaspending import (
 
 from ..singletons import _get_usaspending_client
 from ._shared import (
-    _check_tool_call_budget,
     _record_tool_call,
     _truncation_note,
     _wrap_untrusted,
@@ -405,8 +404,6 @@ def get_award_details(award_id: str, include_child_orders: bool = False) -> str:
             actual rollup: how many child orders (and, for a nested vehicle, grandchild orders)
             exist and what they total.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     try:
         data = get_award_details_raw(award_id)
     except USASpendingAPIError as e:
@@ -441,8 +438,6 @@ def get_award_subawards(award_id: str, limit: int = 10) -> str:
             Do not guess or construct one.
         limit: Max number of subawards to return, ranked by amount descending (default 10).
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     client = _get_usaspending_client()
     try:
         response = client.get_award_subawards(award_id, limit=limit)
@@ -501,8 +496,6 @@ def get_award_funding_breakdown(award_id: str, limit: int = 10) -> str:
             Do not guess or construct one.
         limit: Max number of funding rows to return, ranked by reporting period descending (default 10).
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     try:
         response = get_award_funding_breakdown_raw(award_id, limit=limit)
     except USASpendingAPIError as e:
@@ -552,8 +545,6 @@ def get_award_transaction_history(award_id: str, limit: int = 10) -> str:
             isn't proof the award genuinely has no transactions.
         limit: Max number of transactions to return, most recent action_date first (default 10).
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     try:
         response = get_award_transaction_history_raw(award_id, limit=limit)
     except USASpendingAPIError as e:

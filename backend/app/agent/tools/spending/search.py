@@ -38,7 +38,6 @@ from ...tool_filters import (
     _transaction_amount_field_for_award_type,
 )
 from .._shared import (
-    _check_tool_call_budget,
     _format_api_messages,
     _record_tool_call,
     _scope_label,
@@ -369,8 +368,6 @@ def search_awards(
             ["full_and_open_competition"] (multiple values are OR'd together).
             Contract-only. Sufficient scope on its own.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     # Wrapper-level, not inside search_awards_raw - see the identical
     # comment on get_spending_by_category's clamp for why.
     limit = _clamp_limit(limit)
@@ -743,8 +740,6 @@ def search_subawards(
             phrase, e.g. "climate research" - this IS the sub-award's own description, unlike
             recipient_type above. Distinct from keywords, which also matches other text fields.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     limit = _clamp_limit(limit)
     scope = _scope_label(
         agency_name, subrecipient_name, None,
@@ -1051,8 +1046,6 @@ def search_transactions(
             Fund Codes (DEFC), e.g. ["L"]. Use the group alias "covid" or "infrastructure"
             instead of listing every individual code in that group.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     limit = _clamp_limit(limit)
     scope = _scope_label(
         agency_name, recipient_name, None,

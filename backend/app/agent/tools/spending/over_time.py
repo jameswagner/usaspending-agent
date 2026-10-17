@@ -23,7 +23,6 @@ from ...tool_filters import (
     _record_optional_filter_context,
 )
 from .._shared import (
-    _check_tool_call_budget,
     _format_api_messages,
     _record_tool_call,
     _scope_label,
@@ -266,8 +265,6 @@ def get_spending_over_time(
             returns individual subaward records, not a period-bucketed sum. "awards" sums by
             award instead of by transaction.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     scope = _scope_label(
         agency_name, recipient_name, recipient_id,
         performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,

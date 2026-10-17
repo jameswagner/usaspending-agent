@@ -43,8 +43,6 @@ def my_tool(
     describing when to use this tool. Include all parameters in the docstring's
     Args section.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     try:
         response = my_tool_raw(client, agency_name, start_fiscal_year, end_fiscal_year)
     except USASpendingAPIError as e:

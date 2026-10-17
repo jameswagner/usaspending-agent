@@ -32,7 +32,7 @@ import difflib
 
 from anthropic import beta_tool
 
-from ._shared import _check_tool_call_budget, _record_tool_call, _wrap_untrusted
+from ._shared import _record_tool_call, _wrap_untrusted
 
 # code -> title
 BUDGET_FUNCTIONS: dict[str, str] = {
@@ -152,8 +152,6 @@ def resolve_budget_function(description: str) -> str:
     Args:
         description: A plain-English budget function or subfunction name, e.g. "National Defense" or "Unemployment compensation".
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
 
     function_hits = _matches(description, BUDGET_FUNCTIONS)
     subfunction_hits = _matches(description, BUDGET_SUBFUNCTIONS)

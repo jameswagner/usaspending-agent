@@ -45,6 +45,7 @@ from .tools import (
     search_guide,
     search_recipients,
 )
+from .tool_filters import AWARD_TYPE_GROUPS, _normalize_award_type
 from .tools.spending.consolidated import SpendingGroupBy
 
 _RENAMES = {
@@ -160,7 +161,7 @@ def agency_profile(
 ) -> str:
     """Everything about one federal agency as an organization: what it is, its appropriated budget, its bureaus, and its award obligations and counts by sub-agency or award category - or a ranking of all agencies by budget.
 
-    Two different kinds of number live here; never present one as the other. The budget sections ("budget", "budget_by_bureau", "rank_all_agencies") report budgetary resources, obligations, and outlays from the agency's accounts: use them for "what is X's budget" or "how much money does X have", never query_spending. The award sections ("awards_by_sub_agency", "awards_by_category", "award_activity") report obligations on specific contracts, grants, and loans, and are the only place with transaction and new-award COUNTS (query_spending's breakdowns have dollar amounts only). An agency's budgetary resources and its award obligations for the same year are different figures.
+    Two different kinds of number live here; never present one as the other. The budget sections ("budget", "budget_by_bureau", "rank_all_agencies") report budgetary resources, obligations, and outlays from the agency's accounts: use them for "what is X's budget" or "how much money does X have", never query_spending. The award sections ("awards_by_sub_agency", "awards_by_category", "award_activity") report obligations on specific contracts, grants, and loans, with transaction and new-award counts by sub-agency. For a count of awards by type under any other filter (a place, a recipient, new awards only), use query_spending(group_by="award_type"). An agency's budgetary resources and its award obligations for the same year are different figures.
 
     Args:
         section: "overview": what the agency is - toptier code, abbreviation, mission, website, budget justification link, subtier count. "budget": yearly budgetary resources, obligations, and outlays for fiscal_year through end_fiscal_year (data from FY2017 on). "budget_by_bureau": the same figures for one fiscal year broken down by sub-component/bureau (e.g. NIH or CDC within HHS), or one bureau's own federal accounts when bureau is set. "awards_by_sub_agency": one fiscal year's award obligations plus transaction and new-award counts by sub-agency. "awards_by_category": one fiscal year's award obligations split by contracts/IDVs/grants/loans/direct payments/other. "award_activity": the agency's whole-agency award totals and counts for one fiscal year. "rank_all_agencies": all agencies ranked by budgetary resources with their share of the federal total, current fiscal year only (agency_name not used).
@@ -275,31 +276,60 @@ _AWARD_TYPE_COUNT_DOC = (
     ' "award_type" for the COUNT of awards by type (Contracts, Contract IDVs, Grants, Direct Payments, '
     "Loans, Other) - use it for \"how many contracts vs. grants\" or award-type-mix questions instead of "
     "querying once per award type; it needs no scoping filter (a bare year range is a government-wide split), "
-    "ignores level, and cannot be combined with award_type, scope/geo_layer, tas_code, federal_account, "
-    "def_codes, or the contract-only filters."
+    "ignores level and award_type (the counts are already split by type), and cannot be combined with "
+    "scope/geo_layer, tas_code, federal_account, def_codes, or the contract-only filters."
 )
+
+_AWARD_TYPE_SCOPE_DOC = (
+    " On a breakdown (group_by set), set award_type only when the question is about one award type: "
+    "it narrows every figure to that type."
+)
+_CONTRACT_ONLY_GROUP_BYS = {"naics", "psc"}
+
+
+def _is_assistance(award_type: str) -> bool:
+    codes = AWARD_TYPE_GROUPS.get(_normalize_award_type(award_type), [])
+    return bool(codes) and all(code.isdigit() for code in codes)
 
 
 def _query_spending(**kwargs) -> str:
-    if kwargs.get("group_by") != "award_type":
+    group_by, award_type = kwargs.get("group_by"), kwargs.get("award_type")
+    if group_by in _CONTRACT_ONLY_GROUP_BYS and award_type and _is_assistance(award_type):
+        return (
+            f"This query failed: {group_by.upper()} codes exist only on contracts and IDVs, so a {group_by} "
+            f"breakdown of award_type={award_type!r} is always empty. Use group_by='cfda' for assistance "
+            "programs, or omit award_type to cover every award type."
+        )
+    if group_by != "award_type":
         return query_spending.func(**kwargs)
+    note = ""
+    if award_type is not None:
+        kwargs = {**kwargs, "award_type": None}
+        note = (
+            f"Note: award_type={award_type!r} was not applied as a filter. group_by='award_type' already "
+            "splits the counts by type, so read the matching line below.\n\n"
+        )
     unsupported = sorted(
         name for name, value in kwargs.items()
         if value is not None and name not in _AWARD_TYPE_COUNT_PARAMS | _AWARD_TYPE_COUNT_IGNORED
     )
     if unsupported:
         return f"This query failed: {', '.join(unsupported)} cannot be combined with group_by='award_type'."
-    return get_award_type_breakdown.func(**{k: v for k, v in kwargs.items() if k in _AWARD_TYPE_COUNT_PARAMS})
+    return note + get_award_type_breakdown.func(**{k: v for k, v in kwargs.items() if k in _AWARD_TYPE_COUNT_PARAMS})
 
 
 def _build_query_spending_tool():
     tool = _bind(_with_renamed_doc(query_spending.func))
     base_schema = tool.args_schema
     base_doc = base_schema.model_fields["group_by"].description or ""
+    award_type_field = base_schema.model_fields["award_type"]
 
     class ConsolidatedQuerySpendingArgs(base_schema):
         model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
         group_by: ConsolidatedGroupBy | None = Field(None, description=base_doc + _AWARD_TYPE_COUNT_DOC)
+        award_type: award_type_field.annotation = Field(
+            None, description=(award_type_field.description or "") + _AWARD_TYPE_SCOPE_DOC
+        )
 
     tool.args_schema = ConsolidatedQuerySpendingArgs
     tool.func = _with_budget_guard(_renaming_results(_query_spending))

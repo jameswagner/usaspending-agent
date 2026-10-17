@@ -110,7 +110,7 @@ def _run_graph_stream(question: str, conversation_id: str, event_queue: queue.Qu
                 messages = (data or {}).get("messages")
                 if not messages:
                     continue
-                if node == "agent":
+                if node == "model":
                     last_ai_message = messages[-1]
                     for tool_call in getattr(last_ai_message, "tool_calls", None) or []:
                         event_queue.put(

@@ -1,5 +1,5 @@
 """LangChain-compatible equivalents of the @beta_tool-decorated functions,
-for create_react_agent. @beta_tool's BetaFunctionTool exposes the
+for create_agent. @beta_tool's BetaFunctionTool exposes the
 original callable via .func - re-wrapping that with
 tool(parse_docstring=True) reuses the same docstring/type hints.
 

@@ -20,6 +20,7 @@ from langchain_core.tools import tool as _lc_tool
 from pydantic import ConfigDict, Field
 
 from .langgraph_tools import _ARITHMETIC_TOOLS, _reject_invalid_args, _with_budget_guard
+from .tool_filters import AWARD_TYPE_GROUPS, _normalize_award_type
 from .tools import (
     download_records,
     download_single_award,
@@ -45,7 +46,6 @@ from .tools import (
     search_guide,
     search_recipients,
 )
-from .tool_filters import AWARD_TYPE_GROUPS, _normalize_award_type
 from .tools.spending.consolidated import SpendingGroupBy
 
 _RENAMES = {

@@ -1,19 +1,22 @@
-"""Side-by-side eval: the wrapper-tool agent (arm A) vs. the raw-API agent
-(arm B, backend/app/raw_api_agent) on tool_selection_labeled_set.json's
+"""Side-by-side eval: the wrapper-tool agent (arm A), the raw-API agent
+(arm B, backend/app/raw_api_agent), and the wrapper agent on the consolidated
+tool set (arm C, consolidated_tools.py) on tool_selection_labeled_set.json's
 questions.
 
 Each arm is graded on its own trajectory by the existing answer-correctness
 judge, and the two answers are compared against each other by an agreement
-judge - faithfulness alone can't catch an arm that faithfully reports the
-wrong endpoint's number.
+judge against arm A - faithfulness alone can't catch an arm that faithfully
+reports the wrong endpoint's number.
 
 Real, billed API calls. Not part of CI:
     uv run python -m backend.app.agent.dev_tools.compare_raw_api --limit 10
     uv run python -m backend.app.agent.dev_tools.compare_raw_api --arms b --categories resolve_tools
+    uv run python -m backend.app.agent.dev_tools.compare_raw_api --arms ac --workers 1
 """
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import statistics
 import threading
@@ -43,7 +46,7 @@ from backend.app.raw_api_agent.agent import ask as ask_raw_api
 
 OUTPUT_DIR = Path("data/raw_api_eval")
 
-# Arm A's local torch retrievers segfault when called from concurrent threads.
+# Arms A and C share local torch retrievers, which segfault when called from concurrent threads.
 _ARM_A_LOCK = threading.Lock()
 
 
@@ -53,7 +56,7 @@ class AgreementVerdict(BaseModel):
         "(rounding differences are fine). disagree: they state materially different figures, entities, "
         "or conclusions. not_comparable: at least one answer gives no substantive answer."
     )
-    better: Literal["a", "b", "tie", "unclear"] = Field(
+    better: Literal["first", "second", "tie", "unclear"] = Field(
         description="Which answer better answers the user's actual question - more precise scope, more "
         "relevant caveats, fewer unsupported claims."
     )
@@ -67,7 +70,7 @@ AGREEMENT_PROMPT = (
 )
 
 
-def judge_agreement(question: str, answer_a: str, answer_b: str) -> AgreementVerdict:
+def judge_agreement(question: str, first: str, second: str) -> AgreementVerdict:
     response = _get_client().messages.parse(
         model=JUDGE_MODEL,
         max_tokens=1024,
@@ -75,7 +78,7 @@ def judge_agreement(question: str, answer_a: str, answer_b: str) -> AgreementVer
         output_format=AgreementVerdict,
         messages=[{
             "role": "user",
-            "content": f"<question>{question}</question>\n<answer_a>{answer_a}</answer_a>\n<answer_b>{answer_b}</answer_b>",
+            "content": f"<question>{question}</question>\n<first>{first}</first>\n<second>{second}</second>",
         }],
     )
     return response.parsed_output
@@ -103,13 +106,13 @@ def _arm_a_usage(messages: list) -> dict[str, int]:
     return usage
 
 
-def _run_arm_a(question: str) -> dict:
+def _run_wrapper_arm(question: str, toolset: str) -> dict:
     with _ARM_A_LOCK:
         started = time.monotonic()
-        result = ask_wrapper_agent(question)
+        result = ask_wrapper_agent(question, toolset=toolset)
         latency = round(time.monotonic() - started, 2)
     config = {"configurable": {"thread_id": result.conversation_id}}
-    messages = _get_conversation_graph().get_state(config).values.get("messages", [])
+    messages = _get_conversation_graph(toolset).get_state(config).values.get("messages", [])
     trajectory = _trajectory_from_messages(messages)
     return {
         "answer": result.answer_text,
@@ -146,7 +149,12 @@ def _grade(question: str, arm: dict) -> None:
 def evaluate_entry(entry: dict, arms: set[str]) -> dict:
     question = entry["question"]
     row: dict = {"question": question, "category": entry["category"]}
-    for name, runner in (("a", _run_arm_a), ("b", _run_arm_b)):
+    runners = (
+        ("a", functools.partial(_run_wrapper_arm, toolset="current")),
+        ("b", _run_arm_b),
+        ("c", functools.partial(_run_wrapper_arm, toolset="consolidated")),
+    )
+    for name, runner in runners:
         if name not in arms:
             continue
         try:
@@ -154,9 +162,11 @@ def evaluate_entry(entry: dict, arms: set[str]) -> dict:
             _grade(question, row[name])
         except Exception as exc:  # noqa: BLE001 - one crashed case shouldn't sink the whole run
             row[name] = {"error": f"{type(exc).__name__}: {exc}"}
-    if {"a", "b"} <= arms and "answer" in row.get("a", {}) and "answer" in row.get("b", {}):
-        verdict = judge_agreement(question, row["a"]["answer"], row["b"]["answer"])
-        row["agreement"] = verdict.model_dump()
+    row["agreement"] = {}
+    for other in ("b", "c"):
+        if "answer" in row.get("a", {}) and "answer" in row.get(other, {}):
+            verdict = judge_agreement(question, row["a"]["answer"], row[other]["answer"])
+            row["agreement"][f"a{other}"] = verdict.model_dump()
     print(f"[{entry['category']}] {question[:90]}", flush=True)
     return row
 
@@ -194,30 +204,33 @@ def summarize(rows: list[dict], arms: set[str]) -> str:
     ):
         lines.append(f"| {label} | " + " | ".join(_mean([getter(r) for r in _arm_rows(rows, a)]) for a in ordered) + " |")
 
-    agreements = [r["agreement"] for r in rows if "agreement" in r]
-    if agreements:
+    pairs = sorted({pair for r in rows for pair in r.get("agreement", {})})
+    for pair in pairs:
         verdicts = defaultdict(int)
         better = defaultdict(int)
-        for a in agreements:
-            verdicts[a["verdict"]] += 1
-            better[a["better"]] += 1
-        lines += ["", f"A vs B agreement: {dict(verdicts)}; judged better: {dict(better)}"]
+        for r in rows:
+            if pair in r.get("agreement", {}):
+                verdicts[r["agreement"][pair]["verdict"]] += 1
+                better[r["agreement"][pair]["better"]] += 1
+        first, second = pair.upper()
+        lines += ["", f"{first} vs {second} agreement: {dict(verdicts)}; judged better (first={first}): {dict(better)}"]
 
     by_category: dict[str, list[dict]] = defaultdict(list)
     for r in rows:
         by_category[r["category"]].append(r)
-    lines += ["", "| category | n | " + " | ".join(f"{a.upper()} correct" for a in ordered) + " | agree |",
-              "|---" * (len(ordered) + 3) + "|"]
+    lines += ["", "| category | n | " + " | ".join(f"{a.upper()} correct" for a in ordered)
+              + "".join(f" | {p.upper()} agree" for p in pairs) + " |",
+              "|---" * (len(ordered) + len(pairs) + 2) + "|"]
     for category, cat_rows in sorted(by_category.items()):
         cells = [_rate([int(r[a]["judged_correct"]) if "judged_correct" in r.get(a, {}) else None for r in cat_rows]) for a in ordered]
-        agree = sum(1 for r in cat_rows if r.get("agreement", {}).get("verdict") == "agree")
-        lines.append(f"| {category} | {len(cat_rows)} | " + " | ".join(cells) + f" | {agree} |")
+        agree = [sum(1 for r in cat_rows if r.get("agreement", {}).get(p, {}).get("verdict") == "agree") for p in pairs]
+        lines.append(f"| {category} | {len(cat_rows)} | " + " | ".join(cells) + "".join(f" | {n}" for n in agree) + " |")
     return "\n".join(lines)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--arms", default="ab", help="'a', 'b', or 'ab'")
+    parser.add_argument("--arms", default="ab", help="any of 'a', 'b', 'c', e.g. 'ac'")
     parser.add_argument("--categories", nargs="*", help="limit to these labeled-set categories")
     parser.add_argument("--limit", type=int, help="first N questions after category filtering")
     parser.add_argument("--per-category", type=int, help="first N questions from each category")
@@ -239,7 +252,7 @@ def main() -> None:
     if args.limit:
         entries = entries[: args.limit]
 
-    if "a" in arms:
+    if arms & {"a", "c"}:
         warm_up()
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         rows = list(pool.map(lambda e: evaluate_entry(e, arms), entries))

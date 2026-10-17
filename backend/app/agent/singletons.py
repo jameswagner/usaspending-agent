@@ -31,6 +31,9 @@ ANTHROPIC_WORKSPACE_ID = os.environ.get("ANTHROPIC_WORKSPACE_ID")
 # Swappable via env var so models can be compared on the same test questions.
 MODEL = os.environ.get("AGENT_MODEL", "claude-haiku-5-5")
 
+# "current" (LANGGRAPH_TOOLS) or "consolidated" (CONSOLIDATED_TOOLS); both graphs are built at warm_up.
+AGENT_TOOLSET = os.environ.get("AGENT_TOOLSET", "current")
+
 # Same floor as main.py, calibrated via dev_tools/calibrate_threshold.py
 # (data-driven optimum -1.89, using -2.0 for a small safety margin).
 RERANK_CONFIDENCE_THRESHOLD = -2.0
@@ -64,7 +67,7 @@ _usaspending_client: USASpendingClient | None = None
 # request is served, so there's no request-time race to have.
 _checkpointer: SqliteSaver | None = None
 _chat_model: ChatAnthropic | None = None
-_conversation_graph = None
+_conversation_graphs: dict[str, object] = {}
 
 
 def _get_client() -> anthropic.Anthropic:
@@ -153,9 +156,9 @@ def _trim_history(request: ModelRequest, handler):
     return handler(request.override(messages=trimmed))
 
 
-def _get_conversation_graph():
-    assert _conversation_graph is not None, "warm_up() must run before _get_conversation_graph()"
-    return _conversation_graph
+def _get_conversation_graph(toolset: str | None = None):
+    assert _conversation_graphs, "warm_up() must run before _get_conversation_graph()"
+    return _conversation_graphs[toolset or AGENT_TOOLSET]
 
 
 def _get_checkpointer() -> SqliteSaver:
@@ -180,26 +183,32 @@ def warm_up() -> None:
     # load time would be circular. By call time (warm_up() only runs
     # from main.py's lifespan(), after every module has finished
     # importing) the cycle doesn't exist.
+    from .consolidated_tools import CONSOLIDATED_TOOLS
     from .langgraph_tools import LANGGRAPH_TOOLS
-    from .orchestrator import _build_system_prompt
+    from .orchestrator import _build_consolidated_system_prompt, _build_system_prompt
 
-    global _checkpointer, _chat_model, _conversation_graph
+    global _checkpointer, _chat_model
     conn = sqlite3.connect(CONVERSATIONS_DB_PATH, check_same_thread=False)
     _checkpointer = SqliteSaver(conn)
     headers = {"anthropic-workspace-id": ANTHROPIC_WORKSPACE_ID} if ANTHROPIC_WORKSPACE_ID else None
     _chat_model = ChatAnthropic(model=MODEL, max_tokens=2048, default_headers=headers)
 
+    _conversation_graphs["current"] = _build_conversation_graph(LANGGRAPH_TOOLS, _build_system_prompt)
+    _conversation_graphs["consolidated"] = _build_conversation_graph(CONSOLIDATED_TOOLS, _build_consolidated_system_prompt)
+
+
+def _build_conversation_graph(tool_list: list, build_prompt):
     cache_control = {"type": "ephemeral", "ttl": CACHE_TTL}
     # One breakpoint on the last tool caches the whole tools array.
-    last_tool = LANGGRAPH_TOOLS[-1]
-    tools = [*LANGGRAPH_TOOLS[:-1], last_tool.model_copy(update={"extras": {**(last_tool.extras or {}), "cache_control": cache_control}})]
+    last_tool = tool_list[-1]
+    tools = [*tool_list[:-1], last_tool.model_copy(update={"extras": {**(last_tool.extras or {}), "cache_control": cache_control}})]
 
     @dynamic_prompt
     def _system_prompt(request: ModelRequest) -> SystemMessage:
         # Rebuilt per call for date grounding; caching needs a content block, not a bare string.
-        return SystemMessage(content=[{"type": "text", "text": _build_system_prompt(), "cache_control": cache_control}])
+        return SystemMessage(content=[{"type": "text", "text": build_prompt(), "cache_control": cache_control}])
 
-    _conversation_graph = create_agent(
+    return create_agent(
         model=_chat_model,
         tools=tools,
         middleware=[_system_prompt, _trim_history],

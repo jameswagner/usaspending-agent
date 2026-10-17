@@ -5,10 +5,10 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
+from langchain.agents import create_agent
 from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
 from langchain_core.messages import AIMessage
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.prebuilt import create_react_agent
 
 from backend.app.agent.langgraph_tools import LANGGRAPH_TOOLS
 from backend.app.agent.orchestrator import (
@@ -201,7 +201,7 @@ def test_real_graph_stream_done_contains_download_and_citation(status, expected_
         }]),
         AIMessage(content="The CSV is ready."),
     ])
-    graph = create_react_agent(
+    graph = create_agent(
         model=model,
         tools=[tool for tool in LANGGRAPH_TOOLS if tool.name == "download_records"],
         checkpointer=InMemorySaver(),

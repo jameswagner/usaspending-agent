@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import sqlite3
 
+from langchain.agents import create_agent
 from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
 from langchain_core.messages import AIMessage
 from langgraph.checkpoint.base import empty_checkpoint
 from langgraph.checkpoint.sqlite import SqliteSaver
-from langgraph.prebuilt import create_react_agent
 
 from backend.app.agent.orchestrator import _persist_download_turn
 
@@ -49,7 +49,7 @@ class TestReactAgentRoundTrip:
     def _make_graph(self, tmp_path, responses):
         saver = _make_saver(tmp_path)
         model = FakeMessagesListChatModel(responses=responses)
-        return create_react_agent(model=model, tools=[], checkpointer=saver)
+        return create_agent(model=model, tools=[], checkpointer=saver)
 
     def test_same_thread_reuses_history(self, tmp_path):
         graph = self._make_graph(tmp_path, [AIMessage(content="first answer"), AIMessage(content="second answer")])
@@ -84,7 +84,7 @@ class TestPersistDownloadTurn:
     def _make_graph(self, tmp_path):
         saver = _make_saver(tmp_path)
         model = FakeMessagesListChatModel(responses=[AIMessage(content="unused")])
-        return create_react_agent(model=model, tools=[], checkpointer=saver)
+        return create_agent(model=model, tools=[], checkpointer=saver)
 
     def test_download_turn_is_visible_to_the_next_question(self, tmp_path):
         graph = self._make_graph(tmp_path)

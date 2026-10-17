@@ -69,6 +69,11 @@ from .models import (
 BASE_URL = "https://api.usaspending.gov"
 
 
+def _bracketed(codes: list[str] | None) -> str | None:
+    # The /agency/ endpoints read only the last repeated query param, then split it on commas.
+    return f"[{','.join(codes)}]" if codes else None
+
+
 class USASpendingClient:
     # Toptier agencies (name -> code) change essentially never - a
     # legislative reorg, not something that happens mid-request or even
@@ -356,7 +361,7 @@ class USASpendingClient:
         every-year-in-one-call shape."""
         params = {
             "fiscal_year": fiscal_year,
-            "award_type_codes": award_type_codes,
+            "award_type_codes": _bracketed(award_type_codes),
             "agency_type": agency_type,
             "limit": limit,
             "page": page,
@@ -426,7 +431,7 @@ class USASpendingClient:
     ) -> AgencyAwardsResponse:
         """Whole-agency, single-FY transaction count and obligations - no
         grouping, unlike get_agency_sub_agency_breakdown."""
-        params = {"fiscal_year": fiscal_year, "award_type_codes": award_type_codes}
+        params = {"fiscal_year": fiscal_year, "award_type_codes": _bracketed(award_type_codes)}
         data = self._get(
             f"/api/v2/agency/{toptier_code}/awards/",
             params={k: v for k, v in params.items() if v is not None},

@@ -690,6 +690,19 @@ class TestGetAgencyAwardBreakdownGroupBy:
         assert "5 transactions" in result
         assert "$10.00" in result
 
+    @pytest.mark.parametrize("group_by", ["whole_agency", "award_category"])
+    def test_parent_wide_modes_refuse_a_sub_agency_name(self, monkeypatch, group_by):
+        hhs = make_agency("Department of Health and Human Services")
+        client = self._mock_client(monkeypatch, hhs)
+        client.find_agency_by_name_with_subagency = lambda name: (hhs, "National Institutes of Health")
+        client.get_agency_awards = lambda *a, **kw: pytest.fail("parent-wide totals fetched for a sub-agency")
+        client.get_agency_obligations_by_award_category = client.get_agency_awards
+        result = get_agency_award_breakdown.func(
+            agency_name="National Institutes of Health", fiscal_year=2024, group_by=group_by,
+        )
+        assert "only reports the whole Department of Health and Human Services" in result
+        assert 'Use group_by="sub_agency" for National Institutes of Health' in result
+
     def test_whole_agency_rejects_include_offices(self):
         result = get_agency_award_breakdown.func(
             agency_name="Department of Agriculture", fiscal_year=2024, group_by="whole_agency", include_offices=True,
@@ -1908,6 +1921,21 @@ class TestBuildFilters:
     def test_unresolved_agency_raises(self):
         with pytest.raises(USASpendingAPIError, match="No agency found"):
             _build_filters(FakeClient(None), "Not A Real Agency", "fiscal", 2021, 2024)
+
+    def test_toptier_match_filters_the_whole_agency(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024)
+        agency = filters.model_dump(exclude_none=True)["agencies"][0]
+        assert agency == {"type": "awarding", "tier": "toptier", "name": make_agency().agency_name}
+
+    def test_subtier_match_filters_only_that_sub_agency(self):
+        hhs = make_agency()
+        client = FakeClient(hhs)
+        client.find_agency_by_name_with_subagency = lambda name: (hhs, "National Institutes of Health")
+        filters = _build_filters(client, "NIH", "fiscal", 2024, 2024)
+        agency = filters.model_dump(exclude_none=True)["agencies"][0]
+        assert agency == {
+            "type": "awarding", "tier": "subtier", "name": "National Institutes of Health", "toptier_name": hhs.agency_name,
+        }
 
     def test_award_type_resolves_to_codes(self):
         filters = _build_filters(

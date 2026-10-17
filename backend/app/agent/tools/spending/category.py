@@ -27,7 +27,6 @@ from ...tool_filters import (
     _record_optional_filter_context,
 )
 from .._shared import (
-    _check_tool_call_budget,
     _format_api_messages,
     _record_tool_call,
     _scope_label,
@@ -314,8 +313,6 @@ def get_spending_by_category(
             both work with every category; the difference between them is not yet live-verified
             here.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     # Clamped here, at the model-facing boundary, not inside
     # get_spending_by_category_raw - the _raw function is the trusted
     # internal API (dev_tools scripts, tests can legitimately want an

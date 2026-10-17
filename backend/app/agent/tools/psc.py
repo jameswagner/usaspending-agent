@@ -7,7 +7,7 @@ from __future__ import annotations
 from anthropic import beta_tool
 
 from ..singletons import RERANK_CONFIDENCE_THRESHOLD, _get_psc_retriever
-from ._shared import _check_tool_call_budget, _record_tool_call, _wrap_untrusted
+from ._shared import _record_tool_call, _wrap_untrusted
 
 
 @beta_tool
@@ -19,8 +19,6 @@ def resolve_psc_code(description: str) -> str:
     Args:
         description: A plain-English product or service description.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     results = _get_psc_retriever().retrieve(description, top_k=5)
     matches = [r for r in results if r["rerank_score"] > RERANK_CONFIDENCE_THRESHOLD]
     if not matches:

@@ -3,6 +3,11 @@ for create_agent. @beta_tool's BetaFunctionTool exposes the
 original callable via .func - re-wrapping that with
 tool(parse_docstring=True) reuses the same docstring/type hints.
 
+Every data tool is wrapped in _with_budget_guard (the per-turn call cap plus
+draining stale captured requests), so individual tools don't call
+_check_tool_call_budget themselves. Arithmetic tools make no API calls and
+are left unguarded.
+
 code_execution is deliberately not included: ChatAnthropic.bind_tools()
 passes its dict spec through fine, but the resulting result blocks land
 in AIMessage.content as plain dicts, not the attribute-access objects
@@ -22,6 +27,8 @@ query_spending above, but it isn't in _BETA_TOOLS itself.
 """
 from __future__ import annotations
 
+import functools
+
 from langchain_core.tools import tool as _lc_tool
 from pydantic import ConfigDict
 
@@ -34,6 +41,7 @@ from .arithmetic_tools import (
     sum_values,
 )
 from .tools import (
+    _check_tool_call_budget,
     download_records,
     download_single_award,
     get_agency_award_breakdown,
@@ -86,10 +94,22 @@ _BETA_TOOLS = [
 ]
 _ARITHMETIC_TOOLS = [average, delta, percentage_of, rank_values, ratio, sum_values]
 
+
+
+def _with_budget_guard(func):
+    @functools.wraps(func)
+    def guarded(*args, **kwargs):
+        if (over_budget := _check_tool_call_budget()) is not None:
+            return over_budget
+        return func(*args, **kwargs)
+
+    return guarded
+
+
 LANGGRAPH_TOOLS = [
-    _lc_tool(bt.func, parse_docstring=bt not in (download_records, download_single_award))
-    for bt in _BETA_TOOLS + _ARITHMETIC_TOOLS
-]
+    _lc_tool(_with_budget_guard(bt.func), parse_docstring=bt not in (download_records, download_single_award))
+    for bt in _BETA_TOOLS
+] + [_lc_tool(at.func, parse_docstring=True) for at in _ARITHMETIC_TOOLS]
 
 
 def _reject_invalid_args(error, prefix: str) -> str:

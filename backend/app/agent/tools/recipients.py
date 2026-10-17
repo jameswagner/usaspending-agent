@@ -23,7 +23,6 @@ from ..tool_filters import (
     _normalize_recipient_award_type,
 )
 from ._shared import (
-    _check_tool_call_budget,
     _record_tool_call,
     _truncation_note,
     _wrap_untrusted,
@@ -142,8 +141,6 @@ def search_recipients(keyword: str | None = None, award_type: RecipientAwardType
             no sub-type granularity (no cooperative_agreement, no bpa_call).
         limit: Max number of candidates to return (default 10).
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     limit = _clamp_limit(limit)
     try:
         normalized_award_type = _normalize_recipient_award_type(award_type)
@@ -181,8 +178,6 @@ def get_recipient_details(recipient_id: str, year: str = "all") -> str:
             history), or "latest" (trailing 12 months — the same window search_recipients
             already shows, so rarely useful here unless explicitly asked for).
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     try:
         client = _get_usaspending_client()
         overview = client.get_recipient(recipient_id, year=year)
@@ -219,8 +214,6 @@ def get_recipient_children(recipient_id: str, year: str = "all", limit: int = 25
             history), or "latest" (trailing 12 months).
         limit: Max number of children to return, sorted by amount descending (default 25).
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     limit = _clamp_limit(limit)
     try:
         client = _get_usaspending_client()

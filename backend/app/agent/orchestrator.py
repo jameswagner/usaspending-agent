@@ -377,7 +377,7 @@ def _ask_langgraph(question: str, conversation_id: str) -> AgentResult:
     final_state = graph.invoke({"messages": [{"role": "user", "content": question}]}, config=config)
 
     final_messages = final_state["messages"]
-    answer_text = final_messages[-1].content if final_messages else ""
+    answer_text = final_messages[-1].text if final_messages else ""
 
     return _build_result(answer_text, conversation_id)
 

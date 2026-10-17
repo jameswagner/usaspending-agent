@@ -83,7 +83,7 @@ def _render_recent_exchanges(recent_messages: list, max_exchanges: int = 2) -> s
     from a LangGraph conversation's message list, for folding into the
     scope classifier's context. A single human turn can produce more than
     one AIMessage (an intermediate tool-calling one, content a list of
-    content blocks, then a final plain-text one) plus ToolMessages in
+    content blocks, then a final one with no tool calls) plus ToolMessages in
     between - only the question and the final plain-text answer per turn
     are useful context here, so everything else is skipped."""
     exchanges: list[tuple[str, str]] = []
@@ -96,8 +96,8 @@ def _render_recent_exchanges(recent_messages: list, max_exchanges: int = 2) -> s
                 exchanges.append((pending_question, pending_answer or ""))
             pending_question = str(message.content)
             pending_answer = None
-        elif message_type == "ai" and isinstance(message.content, str) and message.content:
-            pending_answer = message.content
+        elif message_type == "ai" and not getattr(message, "tool_calls", None) and message.text:
+            pending_answer = message.text
     if pending_question is not None:
         exchanges.append((pending_question, pending_answer or ""))
 

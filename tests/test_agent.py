@@ -1909,6 +1909,21 @@ class TestBuildFilters:
         with pytest.raises(USASpendingAPIError, match="No agency found"):
             _build_filters(FakeClient(None), "Not A Real Agency", "fiscal", 2021, 2024)
 
+    def test_toptier_match_filters_the_whole_agency(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024)
+        agency = filters.model_dump(exclude_none=True)["agencies"][0]
+        assert agency == {"type": "awarding", "tier": "toptier", "name": make_agency().agency_name}
+
+    def test_subtier_match_filters_only_that_sub_agency(self):
+        hhs = make_agency()
+        client = FakeClient(hhs)
+        client.find_agency_by_name_with_subagency = lambda name: (hhs, "National Institutes of Health")
+        filters = _build_filters(client, "NIH", "fiscal", 2024, 2024)
+        agency = filters.model_dump(exclude_none=True)["agencies"][0]
+        assert agency == {
+            "type": "awarding", "tier": "subtier", "name": "National Institutes of Health", "toptier_name": hhs.agency_name,
+        }
+
     def test_award_type_resolves_to_codes(self):
         filters = _build_filters(
             FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, award_type="cooperative_agreement"

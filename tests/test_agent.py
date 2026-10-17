@@ -690,6 +690,19 @@ class TestGetAgencyAwardBreakdownGroupBy:
         assert "5 transactions" in result
         assert "$10.00" in result
 
+    @pytest.mark.parametrize("group_by", ["whole_agency", "award_category"])
+    def test_parent_wide_modes_refuse_a_sub_agency_name(self, monkeypatch, group_by):
+        hhs = make_agency("Department of Health and Human Services")
+        client = self._mock_client(monkeypatch, hhs)
+        client.find_agency_by_name_with_subagency = lambda name: (hhs, "National Institutes of Health")
+        client.get_agency_awards = lambda *a, **kw: pytest.fail("parent-wide totals fetched for a sub-agency")
+        client.get_agency_obligations_by_award_category = client.get_agency_awards
+        result = get_agency_award_breakdown.func(
+            agency_name="National Institutes of Health", fiscal_year=2024, group_by=group_by,
+        )
+        assert "only reports the whole Department of Health and Human Services" in result
+        assert 'Use group_by="sub_agency" for National Institutes of Health' in result
+
     def test_whole_agency_rejects_include_offices(self):
         result = get_agency_award_breakdown.func(
             agency_name="Department of Agriculture", fiscal_year=2024, group_by="whole_agency", include_offices=True,

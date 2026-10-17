@@ -472,6 +472,12 @@ def get_agency_award_breakdown_raw(
         raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
     agency, matched_subtier = resolved
     award_type_codes = AWARD_TYPE_GROUPS[_normalize_award_type(award_type)] if award_type else None
+    if matched_subtier is not None and group_by in ("award_category", "whole_agency"):
+        raise USASpendingAPIError(
+            f'group_by="{group_by}" only reports the whole {agency.agency_name}; it can\'t be narrowed to '
+            f'{matched_subtier}. Use group_by="sub_agency" for {matched_subtier}\'s own obligations, '
+            "transaction count, and new-award count"
+        )
     if group_by == "award_category":
         return client.get_agency_obligations_by_award_category(agency.toptier_code, fiscal_year=fiscal_year)
     if group_by == "whole_agency":

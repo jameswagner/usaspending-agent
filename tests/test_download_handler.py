@@ -37,6 +37,9 @@ class FakeDownloadClient:
     def find_agency_by_name(self, name):
         return self._agency
 
+    def find_agency_by_name_with_subagency(self, name):
+        return (self._agency, None) if self._agency is not None else None
+
     def download_search(self, filters, columns, spending_level, file_format="csv"):
         self.last_filters = filters
         self.last_columns = columns

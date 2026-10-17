@@ -24,7 +24,7 @@ from ..tool_filters import (
     _pop_naics_disclosure,
     _validate_psc_code,
 )
-from ._shared import _check_tool_call_budget, _record_tool_call
+from ._shared import _record_tool_call
 
 SpendingLevel = Literal["awards", "transactions", "subawards"]
 _CONTRACT_AWARD_COLUMNS = [
@@ -78,8 +78,6 @@ def _complete_download(job, client, tool_name: str, context: dict) -> str:
 @beta_tool
 def download_single_award(award_id: str) -> str:
     """Create a CSV of one known award using its full CONT_AWD_, CONT_IDV_, or ASST_ internal ID."""
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     endpoint = _award_id_endpoint(award_id)
     if endpoint is None:
         return "This download failed: award_id must begin CONT_AWD_, CONT_IDV_, or ASST_."
@@ -92,8 +90,6 @@ def download_single_award(award_id: str) -> str:
 
 
 def _records(args: dict) -> str:
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     if args["recipient_id"] is not None:
         return "This download failed: the download endpoint cannot filter by recipient ID; the file would include a wider scope."
     if args["psc_codes"] is not None and (not args["psc_codes"] or args["psc_code"] is not None):

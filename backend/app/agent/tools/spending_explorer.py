@@ -50,7 +50,7 @@ from backend.app.usaspending import (
 
 from ..singletons import _get_usaspending_client
 from ..tool_filters import _clamp_limit
-from ._shared import _check_tool_call_budget, _record_tool_call, _wrap_untrusted
+from ._shared import _record_tool_call, _wrap_untrusted
 
 logger = logging.getLogger(__name__)
 
@@ -247,8 +247,6 @@ def get_spending_explorer_breakdown(
             The "Unreported Data" row, if present, is always included on top of this and never
             counts against it.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     limit = _clamp_limit(limit)
     try:
         response = get_spending_explorer_breakdown_raw(

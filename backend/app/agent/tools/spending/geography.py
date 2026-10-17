@@ -27,7 +27,6 @@ from ...tool_filters import (
     _record_optional_filter_context,
 )
 from .._shared import (
-    _check_tool_call_budget,
     _format_api_messages,
     _record_tool_call,
     _scope_label,
@@ -214,8 +213,6 @@ def get_spending_by_geography(
             phrase, e.g. "vaccine research". Distinct from keywords, which also matches other
             text fields (recipient name, PIID/FAIN/URI, NAICS/PSC description).
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     scope_label_str = _scope_label(
         agency_name, recipient_name, recipient_id,
         performed_in_state=performed_in_state, recipient_in_state=recipient_in_state,

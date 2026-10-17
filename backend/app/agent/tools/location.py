@@ -23,7 +23,7 @@ from backend.app.usaspending import USASpendingAPIError
 
 from ..singletons import _get_usaspending_client
 from ..tool_filters import US_STATE_ABBREVIATIONS, _normalize_county_fips
-from ._shared import _check_tool_call_budget, _record_tool_call, _wrap_untrusted
+from ._shared import _record_tool_call, _wrap_untrusted
 
 _COUNTY_EQUIVALENT_SUFFIX_RE = re.compile(r"\s+(Parish|Borough|Census Area)$", re.IGNORECASE)
 
@@ -86,8 +86,6 @@ def resolve_county_fips(description: str) -> str:
     Args:
         description: A county name, e.g. "Yavapai County", "Jefferson Parish", or just "Orleans".
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     client = _get_usaspending_client()
 
     counties = []

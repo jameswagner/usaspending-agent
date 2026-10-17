@@ -229,8 +229,6 @@ def search_guide(query: str) -> str:
     Args:
         query: What to search for in the guide or glossary.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     results = _get_retriever().retrieve(query, top_k=3)
     matches = [r for r in results if r["rerank_score"] > RERANK_CONFIDENCE_THRESHOLD]
     if not matches:
@@ -253,8 +251,6 @@ def lookup_agency(name: str) -> str:
     Args:
         name: The agency name to search for, e.g. "National Science Foundation" or "NSF".
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     client = _get_usaspending_client()
     agency = client.find_agency_by_name(name)
     if agency is None:
@@ -359,8 +355,6 @@ def get_agency_budget(
             bureau, matched against the bureau names this tool itself returns when bureau is
             omitted. Omit to list all bureaus.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
 
     # Delegates to get_agency_budget_by_subcomponent, same pattern query_spending uses.
     if group_by == "sub_component":
@@ -433,8 +427,6 @@ def list_top_agencies_by_budget(limit: int = 10) -> str:
     Args:
         limit: Max number of agencies to return (default 10).
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     limit = _clamp_limit(limit)
     client = _get_usaspending_client()
     agencies = client.list_toptier_agencies()
@@ -586,8 +578,6 @@ def get_agency_award_breakdown(
             its offices by total obligations - instead of every sub-agency under agency_name. Omit
             when agency_name already names the sub-agency directly.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     if group_by == "award_category" and award_type is not None:
         return 'award_type is not valid with group_by="award_category".'
     if group_by != "sub_agency" and include_offices:
@@ -693,8 +683,6 @@ def get_agency_budget_by_subcomponent(agency_name: str, fiscal_year: int, bureau
             agency. Match against the bureau names this tool itself returns when bureau is
             omitted. Omit to list all bureaus.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     try:
         response = get_agency_budget_by_subcomponent_raw(agency_name, fiscal_year, bureau)
     except USASpendingAPIError as e:

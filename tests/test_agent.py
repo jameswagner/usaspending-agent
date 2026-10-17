@@ -4090,6 +4090,42 @@ class TestToolCallBudget:
         assert drain_request_capture() == []
 
 
+class TestBudgetGuardAppliedToEveryBoundTool:
+    def test_every_data_tool_returns_the_budget_message_at_the_cap(self):
+        from backend.app.agent.langgraph_tools import _ARITHMETIC_TOOLS, LANGGRAPH_TOOLS
+
+        arithmetic = {t.name for t in _ARITHMETIC_TOOLS}
+        data_tools = [t for t in LANGGRAPH_TOOLS if t.name not in arithmetic]
+        assert len(data_tools) == len(LANGGRAPH_TOOLS) - len(arithmetic) > 0
+        token = _tool_call_log.set([("lookup_agency", None, {})] * MAX_TOOL_CALLS_PER_TURN)
+        try:
+            for t in data_tools:
+                result = t.func()
+                assert isinstance(result, str) and "Tool call budget exceeded" in result, t.name
+        finally:
+            _tool_call_log.reset(token)
+
+    def test_guard_preserves_tool_schemas(self):
+        from backend.app.agent.langgraph_tools import LANGGRAPH_TOOLS
+
+        schema = {t.name: t.args for t in LANGGRAPH_TOOLS}["query_spending"]
+        assert "group_by" in schema and "level" in schema
+
+    def test_guarded_tool_runs_normally_under_the_cap(self, monkeypatch):
+        from types import SimpleNamespace
+
+        from backend.app.agent.langgraph_tools import LANGGRAPH_TOOLS
+
+        client = SimpleNamespace(find_agency_by_name=lambda name: None)
+        monkeypatch.setattr("backend.app.agent.tools._shared._get_usaspending_client", lambda: client)
+        tool = next(t for t in LANGGRAPH_TOOLS if t.name == "lookup_agency")
+        token = _tool_call_log.set([])
+        try:
+            assert tool.func(name="Nowhere") == "No agency found matching 'Nowhere'."
+        finally:
+            _tool_call_log.reset(token)
+
+
 class TestRecordToolCallAttachesRequests:
     def test_attaches_captured_requests_into_context(self):
         _record_request("POST", "https://api.usaspending.gov/api/v2/search/spending_by_category/naics/", {"a": 1})

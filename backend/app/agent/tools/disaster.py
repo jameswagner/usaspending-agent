@@ -18,7 +18,6 @@ from backend.app.usaspending import (
 from ..singletons import _get_usaspending_client
 from ..tool_filters import _normalize_def_codes
 from ._shared import (
-    _check_tool_call_budget,
     _record_tool_call,
     _wrap_untrusted,
 )
@@ -80,8 +79,6 @@ def get_disaster_spending_overview(def_codes: list[str] | None = None) -> str:
             for "how much has been spent on COVID-19 relief." Omit for the combined total
             across every disaster/relief DEFC ever issued, not just COVID-19/infrastructure.
     """
-    if (over_budget := _check_tool_call_budget()) is not None:
-        return over_budget
     try:
         response = get_disaster_spending_overview_raw(def_codes)
     except USASpendingAPIError as e:

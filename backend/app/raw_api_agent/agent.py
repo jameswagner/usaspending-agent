@@ -23,7 +23,7 @@ from .contracts import catalog_text, upstream_commit
 from .recipes import RECIPES_ENABLED, get_recipe, recipe_index
 from .tools import call_usaspending_api, drain_api_calls, get_api_contract
 
-MODEL = os.environ.get("RAW_API_AGENT_MODEL") or os.environ.get("AGENT_MODEL", "claude-haiku-4-5")
+MODEL = os.environ.get("RAW_API_AGENT_MODEL") or os.environ.get("AGENT_MODEL", "claude-haiku-5-5")
 MAX_ITERATIONS = int(os.environ.get("RAW_API_AGENT_MAX_ITERATIONS", "25"))
 TRAJECTORY_OUTPUT_CHARS = 20_000
 

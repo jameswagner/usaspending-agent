@@ -28,9 +28,8 @@ load_dotenv()
 
 ANTHROPIC_WORKSPACE_ID = os.environ.get("ANTHROPIC_WORKSPACE_ID")
 
-# Swappable via env var so Haiku 4.5 vs Sonnet 5 can be compared on the same
-# test questions before picking one for tool-calling specifically.
-MODEL = os.environ.get("AGENT_MODEL", "claude-haiku-4-5")
+# Swappable via env var so models can be compared on the same test questions.
+MODEL = os.environ.get("AGENT_MODEL", "claude-haiku-5-5")
 
 # "current" (LANGGRAPH_TOOLS) or "consolidated" (CONSOLIDATED_TOOLS); both graphs are built at warm_up.
 AGENT_TOOLSET = os.environ.get("AGENT_TOOLSET", "current")

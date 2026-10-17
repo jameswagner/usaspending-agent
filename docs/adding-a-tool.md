@@ -116,23 +116,23 @@ if tool_name == "my_tool":
     )
 ```
 
-#### In `build_tool_citation()` function (ALWAYS required):
+#### Register a citation builder (ALWAYS required):
 
-Even if a tool's results are never charted, it still needs a citation. Add a branch:
+Even if a tool's results are never charted, it still needs a citation. Add a builder next to the others in `response_shaping.py`; `build_tool_citation` looks it up by tool name:
 
 ```python
-if tool_name == "my_tool":
+@_citation_builder("my_tool")
+def _my_tool_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
     params = {"agency_name": context["agency_name"]}
-    description = f"My Tool: {params['agency_name']}"
     return ToolCitation(
         tool_name=tool_name,
         parameters=params,
-        description=description,
+        description=f"My Tool: {params['agency_name']}",
         url=...,  # optional
     )
 ```
 
-Forgetting this step silently returns `None` from `build_tool_citation`, so the tool call has no citation shown to the user — there's no test enforcing it yet (see the issue description), so it only fails if someone notices the missing citation manually. **This is the silent-miss failure mode mentioned in issue #180.**
+`tests/test_tool_citations.py` fails if a tool in `LANGGRAPH_TOOLS` has no registered builder. If the tool genuinely has no citation, add it to that test's `exempt` set with a reason. Also add a case for it to `CASES` and regenerate `tests/golden/tool_citations.json`.
 
 ## Adding or modifying filter parameters
 

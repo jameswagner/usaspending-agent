@@ -1,0 +1,557 @@
+{
+  "agency_award_breakdown_category": {
+    "curl": null,
+    "description": "Award obligations by category, NSF, FY2024",
+    "parameters": {
+      "agency_name": "NSF",
+      "award_type": "grants",
+      "fiscal_year": 2024,
+      "group_by": "award_category"
+    },
+    "tool_name": "get_agency_award_breakdown",
+    "url": null
+  },
+  "agency_award_breakdown_default": {
+    "curl": null,
+    "description": "Award breakdown by sub-agency, NSF, FY2024",
+    "parameters": {
+      "agency_name": "NSF",
+      "fiscal_year": 2024,
+      "group_by": "sub_agency"
+    },
+    "tool_name": "get_agency_award_breakdown",
+    "url": null
+  },
+  "agency_award_breakdown_office": {
+    "curl": null,
+    "description": "Awarding offices, Office X, NSF, FY2024",
+    "parameters": {
+      "agency_name": "NSF",
+      "fiscal_year": 2024,
+      "group_by": "sub_agency",
+      "sub_agency": "Office X"
+    },
+    "tool_name": "get_agency_award_breakdown",
+    "url": null
+  },
+  "agency_award_breakdown_whole": {
+    "curl": null,
+    "description": "Award activity, NSF, FY2024",
+    "parameters": {
+      "agency_name": "NSF",
+      "fiscal_year": 2024,
+      "group_by": "whole_agency"
+    },
+    "tool_name": "get_agency_award_breakdown",
+    "url": null
+  },
+  "award_details": {
+    "curl": null,
+    "description": "Award details: P1",
+    "parameters": {
+      "award_id": "CONT_AWD_1"
+    },
+    "tool_name": "get_award_details",
+    "url": "https://api.usaspending.gov/api/v2/awards/CONT_AWD_1/"
+  },
+  "award_details_no_piid": {
+    "curl": null,
+    "description": "Award details: CONT_AWD_1",
+    "parameters": {
+      "award_id": "CONT_AWD_1"
+    },
+    "tool_name": "get_award_details",
+    "url": "https://api.usaspending.gov/api/v2/awards/CONT_AWD_1/"
+  },
+  "award_funding": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "Federal account funding breakdown for award: CONT_AWD_1",
+    "parameters": {
+      "award_id": "CONT_AWD_1"
+    },
+    "tool_name": "get_award_funding_breakdown",
+    "url": null
+  },
+  "award_subawards": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "Subawards for award: CONT_AWD_1",
+    "parameters": {
+      "award_id": "CONT_AWD_1"
+    },
+    "tool_name": "get_award_subawards",
+    "url": null
+  },
+  "award_transactions": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "Transaction history for award: CONT_AWD_1",
+    "parameters": {
+      "award_id": "CONT_AWD_1"
+    },
+    "tool_name": "get_award_transaction_history",
+    "url": null
+  },
+  "award_type_breakdown": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "Award type breakdown, National Science Foundation, MIT, performed in CA, NAICS 541511, DEFC L, M, FY2021-FY2024",
+    "parameters": {
+      "agency_name": "National Science Foundation",
+      "def_codes": "L, M",
+      "end_year": 2024,
+      "naics_code": "541511",
+      "performed_in_state": "CA",
+      "recipient_name": "MIT",
+      "start_year": 2021
+    },
+    "tool_name": "get_award_type_breakdown",
+    "url": null
+  },
+  "award_type_breakdown_calendar": {
+    "curl": null,
+    "description": "Award type breakdown, NSF, CY2021-CY2024",
+    "parameters": {
+      "agency_name": "NSF",
+      "end_year": 2024,
+      "start_year": 2021
+    },
+    "tool_name": "get_award_type_breakdown",
+    "url": null
+  },
+  "category": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "naics breakdown, National Science Foundation, MIT, performed in CA, NAICS 541511, DEFC L, M, FY2021-FY2024 (auto-resolved from 'software')",
+    "parameters": {
+      "agency_name": "National Science Foundation",
+      "category": "naics",
+      "def_codes": "L, M",
+      "end_year": 2024,
+      "naics_code": "541511",
+      "performed_in_state": "CA",
+      "recipient_name": "MIT",
+      "spending_level": "transactions",
+      "start_year": 2021
+    },
+    "tool_name": "get_spending_by_category",
+    "url": null
+  },
+  "category_award_level": {
+    "curl": null,
+    "description": "psc breakdown, NSF, FY2021-FY2024 (awards)",
+    "parameters": {
+      "agency_name": "NSF",
+      "category": "psc",
+      "end_year": 2024,
+      "spending_level": "awards",
+      "start_year": 2021
+    },
+    "tool_name": "get_spending_by_category",
+    "url": null
+  },
+  "category_no_scope": {
+    "curl": null,
+    "description": "naics breakdown, unknown scope, FY2021-FY2024",
+    "parameters": {
+      "category": "naics",
+      "end_year": 2024,
+      "spending_level": "transactions",
+      "start_year": 2021
+    },
+    "tool_name": "get_spending_by_category",
+    "url": null
+  },
+  "code_execution_long": {
+    "curl": null,
+    "description": "Code execution: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...",
+    "parameters": {
+      "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "tool_name": "code_execution",
+    "url": null
+  },
+  "code_execution_short": {
+    "curl": null,
+    "description": "Code execution: print(1+1)",
+    "parameters": {
+      "command": "print(1+1)"
+    },
+    "tool_name": "code_execution",
+    "url": null
+  },
+  "disaster_missing_defc_key": {
+    "curl": null,
+    "description": "Disaster spending overview, all DEFCs",
+    "parameters": {},
+    "tool_name": "get_disaster_spending_overview",
+    "url": "https://api.usaspending.gov/api/v2/disaster/overview/"
+  },
+  "disaster_no_defc": {
+    "curl": null,
+    "description": "Disaster spending overview, all DEFCs",
+    "parameters": {},
+    "tool_name": "get_disaster_spending_overview",
+    "url": "https://api.usaspending.gov/api/v2/disaster/overview/"
+  },
+  "disaster_with_defc": {
+    "curl": null,
+    "description": "Disaster spending overview, DEFC L, M",
+    "parameters": {
+      "def_codes": "L, M"
+    },
+    "tool_name": "get_disaster_spending_overview",
+    "url": "https://api.usaspending.gov/api/v2/disaster/overview/?def_codes=L,M"
+  },
+  "download_search": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/download/search/' -H 'Content-Type: application/json' -d '{\"filters\": {\"f\": 1}, \"columns\": [\"a\", \"b\"], \"file_format\": \"csv\", \"spending_level\": \"awards\"}'",
+    "description": "Awards CSV download, NSF",
+    "parameters": {
+      "agency_name": "NSF",
+      "end_year": 2024,
+      "flag": "true",
+      "list_field": "x, y",
+      "spending_level": "awards",
+      "start_year": 2024
+    },
+    "tool_name": "download_records",
+    "url": null
+  },
+  "download_search_with_request": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/download/awards/' -H 'Content-Type: application/json' -d '{\"k\": 1}'",
+    "description": "Transactions CSV download, all agencies",
+    "parameters": {
+      "end_year": 2024,
+      "spending_level": "transactions",
+      "start_year": 2024
+    },
+    "tool_name": "download_records",
+    "url": null
+  },
+  "download_single_award": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/download/contract/' -H 'Content-Type: application/json' -d '{\"award_id\": \"CONT_AWD_1\", \"file_format\": \"csv\"}'",
+    "description": "Single-award CSV download, CONT_AWD_1",
+    "parameters": {
+      "award_id": "CONT_AWD_1",
+      "endpoint": "contract",
+      "spending_level": "awards"
+    },
+    "tool_name": "download_single_award",
+    "url": null
+  },
+  "empty_context": null,
+  "explorer_minimal": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "Spending explorer, group by agency, FY2024 Q3",
+    "parameters": {
+      "fiscal_year": 2024,
+      "group_by": "agency",
+      "quarter": "3"
+    },
+    "tool_name": "get_spending_explorer_breakdown",
+    "url": null
+  },
+  "explorer_scoped": {
+    "curl": null,
+    "description": "Spending explorer, group by object_class, FY2024 Q4",
+    "parameters": {
+      "agency": "049",
+      "budget_function": "270",
+      "fiscal_year": 2024,
+      "group_by": "object_class",
+      "quarter": "4"
+    },
+    "tool_name": "get_spending_explorer_breakdown",
+    "url": null
+  },
+  "geography": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "Spending by state (place_of_performance), National Science Foundation, MIT, performed in CA, NAICS 541511, DEFC L, M, FY2021-FY2024 (auto-resolved from 'software')",
+    "parameters": {
+      "agency_name": "National Science Foundation",
+      "def_codes": "L, M",
+      "end_year": 2024,
+      "geo_layer": "state",
+      "naics_code": "541511",
+      "performed_in_state": "CA",
+      "recipient_name": "MIT",
+      "scope": "place_of_performance",
+      "sort_by": "amount",
+      "start_year": 2021
+    },
+    "tool_name": "get_spending_by_geography",
+    "url": null
+  },
+  "geography_no_sort": {
+    "curl": null,
+    "description": "Spending by county (recipient_location), NSF, FY2021-FY2024",
+    "parameters": {
+      "agency_name": "NSF",
+      "end_year": 2024,
+      "geo_layer": "county",
+      "scope": "recipient_location",
+      "start_year": 2021
+    },
+    "tool_name": "get_spending_by_geography",
+    "url": null
+  },
+  "get_agency_budget": {
+    "curl": null,
+    "description": "Budgetary resources, NSF, FY2021-FY2024",
+    "parameters": {
+      "agency_name": "NSF",
+      "end_fiscal_year": 2024,
+      "start_fiscal_year": 2021
+    },
+    "tool_name": "get_agency_budget",
+    "url": "https://api.usaspending.gov/api/v2/agency/4900/budgetary_resources/"
+  },
+  "lookup_agency_no_result": {
+    "curl": null,
+    "description": "Agency lookup: NSF",
+    "parameters": {
+      "name": "NSF"
+    },
+    "tool_name": "lookup_agency",
+    "url": null
+  },
+  "lookup_agency_with_result": {
+    "curl": null,
+    "description": "Agency lookup: NSF",
+    "parameters": {
+      "name": "NSF"
+    },
+    "tool_name": "lookup_agency",
+    "url": "https://api.usaspending.gov/api/v2/agency/049/"
+  },
+  "over_time": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "Spending over time (fiscal_year), National Science Foundation, MIT, performed in CA, NAICS 541511, DEFC L, M, FY2021-FY2024 (auto-resolved from 'software')",
+    "parameters": {
+      "agency_name": "National Science Foundation",
+      "def_codes": "L, M",
+      "end_year": 2024,
+      "group": "fiscal_year",
+      "naics_code": "541511",
+      "performed_in_state": "CA",
+      "recipient_name": "MIT",
+      "spending_level": "transactions",
+      "start_year": 2021
+    },
+    "tool_name": "get_spending_over_time",
+    "url": null
+  },
+  "over_time_subawards": {
+    "curl": null,
+    "description": "Spending over time (month), MIT, FY2021-FY2024 (subawards)",
+    "parameters": {
+      "end_year": 2024,
+      "group": "month",
+      "recipient_name": "MIT",
+      "spending_level": "subawards",
+      "start_year": 2021
+    },
+    "tool_name": "get_spending_over_time",
+    "url": null
+  },
+  "recipient_children": {
+    "curl": null,
+    "description": "Recipient children: MIT (all)",
+    "parameters": {
+      "recipient_id": "abc-R",
+      "year": "all"
+    },
+    "tool_name": "get_recipient_children",
+    "url": null
+  },
+  "recipient_children_no_name": {
+    "curl": null,
+    "description": "Recipient children: abc-R (2023)",
+    "parameters": {
+      "recipient_id": "abc-R",
+      "year": 2023
+    },
+    "tool_name": "get_recipient_children",
+    "url": null
+  },
+  "recipient_details": {
+    "curl": null,
+    "description": "Recipient details: MIT (2024)",
+    "parameters": {
+      "recipient_id": "abc-R",
+      "year": 2024
+    },
+    "tool_name": "get_recipient_details",
+    "url": "https://api.usaspending.gov/api/v2/recipient/abc-R/?year=2024"
+  },
+  "recipient_details_defaults": {
+    "curl": null,
+    "description": "Recipient details: abc-R (all)",
+    "parameters": {
+      "recipient_id": "abc-R",
+      "year": "all"
+    },
+    "tool_name": "get_recipient_details",
+    "url": "https://api.usaspending.gov/api/v2/recipient/abc-R/?year=all"
+  },
+  "resolve_budget_function": {
+    "curl": null,
+    "description": "Budget function/subfunction lookup: defense",
+    "parameters": {
+      "description": "defense"
+    },
+    "tool_name": "resolve_budget_function",
+    "url": null
+  },
+  "resolve_cfda": {
+    "curl": null,
+    "description": "CFDA code lookup: research",
+    "parameters": {
+      "description": "research"
+    },
+    "tool_name": "resolve_cfda_program",
+    "url": null
+  },
+  "resolve_county_fips": {
+    "curl": "curl 'https://x/y'",
+    "description": "County FIPS lookup: Cook County",
+    "parameters": {
+      "description": "Cook County"
+    },
+    "tool_name": "resolve_county_fips",
+    "url": null
+  },
+  "resolve_county_fips_no_requests": {
+    "curl": null,
+    "description": "County FIPS lookup: Cook County",
+    "parameters": {
+      "description": "Cook County"
+    },
+    "tool_name": "resolve_county_fips",
+    "url": null
+  },
+  "resolve_naics_no_result": {
+    "curl": null,
+    "description": "NAICS code lookup: software",
+    "parameters": {
+      "description": "software"
+    },
+    "tool_name": "resolve_naics_code",
+    "url": null
+  },
+  "resolve_naics_with_result": {
+    "curl": null,
+    "description": "NAICS code lookup: software",
+    "parameters": {
+      "description": "software"
+    },
+    "tool_name": "resolve_naics_code",
+    "url": "https://www.naics.com/naics-code-description/?code=541511"
+  },
+  "resolve_psc_with_result": {
+    "curl": null,
+    "description": "PSC code lookup: chairs",
+    "parameters": {
+      "description": "chairs"
+    },
+    "tool_name": "resolve_psc_code",
+    "url": "https://samsearch.co/psc-lookup/7110"
+  },
+  "search_awards": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "grants awards search, National Science Foundation, MIT, performed in CA, NAICS 541511, DEFC L, M, FY2021-FY2024 (auto-resolved from 'software')",
+    "parameters": {
+      "agency_name": "National Science Foundation",
+      "award_type": "grants",
+      "def_codes": "L, M",
+      "end_year": 2024,
+      "naics_code": "541511",
+      "performed_in_state": "CA",
+      "recipient_name": "MIT",
+      "start_year": 2021
+    },
+    "tool_name": "search_awards",
+    "url": null
+  },
+  "search_guide_returns_none": null,
+  "search_recipients": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "Recipient search: MIT",
+    "parameters": {
+      "keyword": "MIT"
+    },
+    "tool_name": "search_recipients",
+    "url": null
+  },
+  "search_subawards": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "contracts subawards search, National Science Foundation, MIT, performed in CA, NAICS 541511, DEFC L, M, FY2021-FY2024 (auto-resolved from 'software')",
+    "parameters": {
+      "agency_name": "National Science Foundation",
+      "award_type": "contracts",
+      "def_codes": "L, M",
+      "end_year": 2024,
+      "naics_code": "541511",
+      "performed_in_state": "CA",
+      "recipient_name": "MIT",
+      "start_year": 2021
+    },
+    "tool_name": "search_subawards",
+    "url": null
+  },
+  "search_transactions": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "all transactions search, National Science Foundation, MIT, performed in CA, NAICS 541511, DEFC L, M, FY2021-FY2024 (auto-resolved from 'software')",
+    "parameters": {
+      "agency_name": "National Science Foundation",
+      "award_type": "all",
+      "def_codes": "L, M",
+      "end_year": 2024,
+      "naics_code": "541511",
+      "performed_in_state": "CA",
+      "recipient_name": "MIT",
+      "start_year": 2021
+    },
+    "tool_name": "search_transactions",
+    "url": null
+  },
+  "search_transactions_fy_default": {
+    "curl": null,
+    "description": "grants transactions search, keywords ai, ml, FY2021-FY2024",
+    "parameters": {
+      "award_type": "grants",
+      "end_year": 2024,
+      "keywords": "ai, ml",
+      "start_year": 2021
+    },
+    "tool_name": "search_transactions",
+    "url": null
+  },
+  "subcomponent_bureau": {
+    "curl": null,
+    "description": "Federal accounts, B1 (NSF), FY2024",
+    "parameters": {
+      "agency_name": "NSF",
+      "bureau": "B1",
+      "fiscal_year": 2024
+    },
+    "tool_name": "get_agency_budget_by_subcomponent",
+    "url": null
+  },
+  "subcomponent_plain": {
+    "curl": null,
+    "description": "Budgetary resources by sub-component, NSF, FY2024",
+    "parameters": {
+      "agency_name": "NSF",
+      "fiscal_year": 2024
+    },
+    "tool_name": "get_agency_budget_by_subcomponent",
+    "url": null
+  },
+  "top_agencies": {
+    "curl": null,
+    "description": "Top 5 agencies by budget",
+    "parameters": {
+      "limit": 5
+    },
+    "tool_name": "list_top_agencies_by_budget",
+    "url": "https://api.usaspending.gov/api/v2/references/toptier_agencies/"
+  },
+  "unknown_tool": null
+}

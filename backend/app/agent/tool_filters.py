@@ -744,10 +744,15 @@ def _build_filters(
     }
 
     if agency_name is not None:
-        agency = client.find_agency_by_name(agency_name)
-        if agency is None:
+        resolved = client.find_agency_by_name_with_subagency(agency_name)
+        if resolved is None:
             raise USASpendingAPIError(f"No agency found matching '{agency_name}'")
-        kwargs["agencies"] = [AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)]
+        agency, subtier_name = resolved
+        kwargs["agencies"] = [
+            AgencyFilter(type="awarding", tier="subtier", name=subtier_name, toptier_name=agency.agency_name)
+            if subtier_name
+            else AgencyFilter(type="awarding", tier="toptier", name=agency.agency_name)
+        ]
 
     if award_type is not None:
         award_type_codes = AWARD_TYPE_GROUPS.get(_normalize_award_type(award_type))

@@ -110,6 +110,7 @@ from backend.app.agent.tools import (
     get_agency_budget,
     get_agency_budget_by_subcomponent,
     get_spending_explorer_breakdown_raw,
+    search_recipients,
 )
 from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
 from backend.app.agent.tools.awards import (
@@ -150,6 +151,7 @@ from backend.app.usaspending import (
     RecipientLocation,
     RecipientOverview,
     SearchAwardsResponse,
+    SearchRecipientsResponse,
     SpendingByAwardCountResponse,
     SpendingByCategoryResponse,
     SpendingByGeographyResponse,
@@ -3797,6 +3799,36 @@ class TestNormalizeScope:
     def test_garbage_raises_with_the_right_param_name(self):
         with pytest.raises(USASpendingAPIError, match="Unrecognized recipient_scope 'martian'"):
             _normalize_scope("martian", "recipient_scope")
+
+
+class TestSearchRecipientsCollapse:
+    def _search(self, listings, monkeypatch):
+        client = FakeClient(make_agency())
+        client.search_recipients = lambda *a, **kw: SearchRecipientsResponse(results=listings)
+        monkeypatch.setattr("backend.app.agent.tools.recipients._get_usaspending_client", lambda: client)
+        return search_recipients.func(keyword="Lockheed")
+
+    def test_same_hash_collapses_to_parent_row(self, monkeypatch):
+        listings = [
+            RecipientListing(name="LOCKHEED", id="aaa-R", amount=5.0, recipient_level="R"),
+            RecipientListing(name="LOCKHEED", id="aaa-P", amount=5.0, recipient_level="P"),
+            RecipientListing(name="LOCKHEED", id="aaa-C", amount=5.0, recipient_level="C"),
+        ]
+        result = self._search(listings, monkeypatch)
+        assert result.count("recipient_id:") == 1
+        assert "aaa-P" in result
+
+    def test_stale_parent_flagged_and_unnamed_row_last(self, monkeypatch):
+        listings = [
+            RecipientListing(name=None, id="nul-R", amount=99.0, recipient_level="R"),
+            RecipientListing(name="LOCKHEED", id="old-P", amount=0.0, recipient_level="P"),
+            RecipientListing(name="LOCKHEED", id="new-P", amount=48.0, recipient_level="P"),
+        ]
+        result = self._search(listings, monkeypatch)
+        assert result.index("new-P") < result.index("old-P") < result.index("nul-R")
+        assert "[no spending in last 12 months]" in result
+        assert "unnamed record" in result
+        assert "never add their amounts together" in result
 
 
 class TestNormalizeRecipientType:

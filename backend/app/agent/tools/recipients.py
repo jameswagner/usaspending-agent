@@ -43,10 +43,44 @@ def _format_recipient_listing(listing: RecipientListing) -> str:
     get_recipient_details can give instead."""
     ids = [f"UEI {listing.uei}" if listing.uei else None, f"DUNS {listing.duns}" if listing.duns else None]
     id_str = f" ({', '.join(i for i in ids if i)})" if any(ids) else ""
+    stale = " [no spending in last 12 months]" if listing.recipient_level == "P" and listing.amount <= 0 else ""
     return (
-        f"{listing.name or 'unknown'} [{_format_recipient_level(listing.recipient_level)}]{id_str} - "
-        f"${listing.amount:,.2f} (last 12 months) [recipient_id: {listing.id}]"
+        f"{listing.name or 'unnamed record'} [{_format_recipient_level(listing.recipient_level)}]{id_str} - "
+        f"${listing.amount:,.2f} (last 12 months){stale} [recipient_id: {listing.id}]"
     )
+
+
+_LEVEL_PREFERENCE = {"P": 0, "C": 1, "R": 2}
+
+
+def _collapse_listings(listings: list[RecipientListing]) -> list[RecipientListing]:
+    """One row per recipient hash (the same hash often appears as separate
+    P, C and R rows), preferring the parent row; named rows sort ahead of
+    unnamed ones, each group by amount descending."""
+    by_hash: dict[str, RecipientListing] = {}
+    for listing in listings:
+        key = listing.id.rsplit("-", 1)[0]
+        kept = by_hash.get(key)
+        if kept is None or _LEVEL_PREFERENCE[listing.recipient_level] < _LEVEL_PREFERENCE[kept.recipient_level]:
+            by_hash[key] = listing
+    return sorted(by_hash.values(), key=lambda r: (not r.name, -r.amount))
+
+
+def _recipient_listing_notes(listings: list[RecipientListing]) -> str:
+    notes = []
+    parents = [r for r in listings if r.recipient_level == "P"]
+    if any(r.amount <= 0 for r in parents):
+        notes.append(
+            "A parent with $0 in the last 12 months is likely a stale record; its all-time figure "
+            "understates or misattributes current spending."
+        )
+    if len(parents) > 1:
+        notes.append(
+            "Several parent records appear; they can overlap (the same company registered under "
+            "different UEIs/DUNS), so never add their amounts together. The parent with the largest "
+            "current amount is listed first."
+        )
+    return "".join(f"\nNote: {n}" for n in notes)
 
 
 def _format_recipient_address(location: RecipientLocation | None) -> str:
@@ -102,6 +136,10 @@ def _format_recipient_overview(overview: RecipientOverview) -> str:
 
     if overview.parent_id and overview.parent_id != overview.recipient_id:
         lines.append(f"Parent: {overview.parent_name or 'unknown'} [recipient_id: {overview.parent_id}]")
+        lines.append(
+            "Note: this parent link can point at a stale parent record; confirm with search_recipients "
+            "(largest current amount) before reporting the parent's total."
+        )
 
     location_label = _format_recipient_state_only(overview.location) if is_redacted else _format_recipient_address(overview.location)
     lines.append(f"Location: {location_label}")
@@ -155,10 +193,11 @@ def search_recipients(keyword: str | None = None, award_type: RecipientAwardType
     if not response.results:
         return f"No recipients found matching '{keyword}'." if keyword else "No recipients found."
 
-    lines = [_format_recipient_listing(r) for r in response.results]
+    listings = _collapse_listings(response.results)
+    lines = [_format_recipient_listing(r) for r in listings]
     has_next = response.page_metadata.hasNext if response.page_metadata else False
-    note = _truncation_note(has_next, len(response.results))
-    return _wrap_untrusted("\n".join(lines) + note)
+    note = _truncation_note(has_next, len(listings))
+    return _wrap_untrusted("\n".join(lines) + note + _recipient_listing_notes(listings))
 
 
 @beta_tool
@@ -243,4 +282,8 @@ def get_recipient_children(recipient_id: str, year: str = "all", limit: int = 25
     shown = children[:limit]
     lines = [_format_child_recipient(c) for c in shown]
     note = _truncation_note(len(children) > limit, len(shown))
-    return _wrap_untrusted("\n".join(lines) + note)
+    overlap = (
+        "\nNote: child amounts are a subset of the parent's total, and a child can sit under more than "
+        "one parent hash; do not add these to any parent's amount or to another parent's children."
+    )
+    return _wrap_untrusted("\n".join(lines) + note + overlap)

@@ -26,7 +26,6 @@ from ...tool_filters import (
     _pop_naics_disclosure,
     _record_optional_filter_context,
 )
-from ..placeholders import format_with_placeholders
 from .._shared import (
     _format_api_messages,
     _record_tool_call,
@@ -34,6 +33,7 @@ from .._shared import (
     _truncation_note,
     _wrap_untrusted,
 )
+from ..placeholders import format_with_placeholders
 
 logger = logging.getLogger(__name__)
 

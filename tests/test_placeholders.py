@@ -1,6 +1,9 @@
 from types import SimpleNamespace
 
-from backend.app.agent.tools.placeholders import format_with_placeholders, placeholder_reason
+from backend.app.agent.tools.placeholders import (
+    format_with_placeholders,
+    placeholder_reason,
+)
 from backend.app.agent.tools.spending_explorer import _format_spending_explorer_results
 from backend.app.usaspending import SpendingExplorerResponse, SpendingExplorerResult
 

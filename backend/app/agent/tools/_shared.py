@@ -27,7 +27,6 @@ from backend.app.usaspending import (
     drain_request_capture,
 )
 
-from .placeholders import placeholder_reason
 from ..singletons import (
     RERANK_CONFIDENCE_THRESHOLD,
     _get_retriever,
@@ -40,6 +39,7 @@ from ..tool_filters import (
     _clamp_limit,
     _normalize_award_type,
 )
+from .placeholders import placeholder_reason
 
 logger = logging.getLogger(__name__)
 

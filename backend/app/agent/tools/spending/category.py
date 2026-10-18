@@ -26,6 +26,7 @@ from ...tool_filters import (
     _pop_naics_disclosure,
     _record_optional_filter_context,
 )
+from ..placeholders import format_with_placeholders
 from .._shared import (
     _format_api_messages,
     _record_tool_call,
@@ -419,9 +420,13 @@ def get_spending_by_category(
             f"{no_results_note}"
         )
 
-    lines = [f"{r.name or r.code or 'unknown'}: ${r.amount:,.2f}" for r in response.results]
+    body = format_with_placeholders(
+        response.results,
+        lambda r: (r.name, r.code),
+        lambda r: f"{r.name or r.code or 'unnamed'}: ${r.amount:,.2f}",
+    )
     has_next = response.page_metadata.hasNext if response.page_metadata else False
     note = _truncation_note(has_next, len(response.results)) + _format_api_messages(response.messages)
     if naics_note:
         note += f"\n\n({naics_note})"
-    return _wrap_untrusted("\n".join(lines) + note)
+    return _wrap_untrusted(body + note)

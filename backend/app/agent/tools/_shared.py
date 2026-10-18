@@ -27,6 +27,7 @@ from backend.app.usaspending import (
     drain_request_capture,
 )
 
+from .placeholders import placeholder_reason
 from ..singletons import (
     RERANK_CONFIDENCE_THRESHOLD,
     _get_retriever,
@@ -536,10 +537,13 @@ def _format_agency_award_breakdown(response: AgencySubAgencyResponse, include_of
                 # null - see SubAgencyOffice's docstring), unlike the
                 # sub-agency level above, which always has a real name.
                 label = office.name or f"(unnamed office, code {office.code})"
-                lines.append(
+                line = (
                     f"  {label} ({office.code}): ${office.total_obligations:,.2f} across "
                     f"{office.transaction_count:,} transactions, {office.new_award_count:,} new awards"
                 )
+                if reason := placeholder_reason(office.name, office.code):
+                    line += f" - placeholder, not a real office ({reason})"
+                lines.append(line)
     return "\n".join(lines)
 
 

@@ -47,6 +47,7 @@ from .models import (
     AgencySubComponentFederalAccountsResponse,
     AgencySubComponentsResponse,
     AwardFundingResponse,
+    IDVFundingRollup,
     ChildRecipient,
     DisasterOverviewResponse,
     DownloadJobResponse,
@@ -629,10 +630,22 @@ class USASpendingClient:
         hash-style generated_unique_award_id, not the plain PIID/FAIN).
         A separately-timed File C submission from the award's own File D2
         total_obligation (get_award) - not guaranteed to reconcile to the
-        penny, per usaspending-api's own C_to_D_Linkage.md."""
+        penny, per usaspending-api's own C_to_D_Linkage.md.
+
+        IDV ids (CONT_IDV_) go to /api/v2/idvs/funding/ instead, which covers
+        the IDV's children and grandchildren; /awards/funding/ returns
+        nothing for a vehicle whose money sits on its child awards."""
         body = {"award_id": award_id, "limit": limit, "page": page, "sort": sort, "order": order}
-        data = self._post("/api/v2/awards/funding/", body)
+        endpoint = "/api/v2/idvs/funding/" if award_id.startswith("CONT_IDV_") else "/api/v2/awards/funding/"
+        data = self._post(endpoint, body)
         return AwardFundingResponse(**data)
+
+    @traceable(run_type="tool", name="get_idv_funding_rollup")
+    def get_idv_funding_rollup(self, award_id: str) -> IDVFundingRollup:
+        """POST /api/v2/idvs/funding_rollup/ - distinct-account and agency
+        counts for an IDV's funding records, which are rows, not accounts."""
+        data = self._post("/api/v2/idvs/funding_rollup/", {"award_id": award_id})
+        return IDVFundingRollup(**data)
 
     @traceable(run_type="tool", name="get_award_transaction_history")
     def get_award_transaction_history(

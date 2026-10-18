@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class ToptierAgency(BaseModel):
@@ -432,6 +432,27 @@ class AwardFundingRow(BaseModel):
     reporting_fiscal_quarter: int | None = None
     reporting_fiscal_month: int | None = None
     is_quarterly_submission: bool | None = None
+    piid: str | None = None
+    agency_id: str | None = None
+    main_account_code: str | None = None
+
+    @model_validator(mode="after")
+    def _derive_federal_account(self):
+        # /idvs/funding/ rows carry agency_id + main_account_code instead of federal_account
+        if self.federal_account is None and self.agency_id and self.main_account_code:
+            self.federal_account = f"{self.agency_id}-{self.main_account_code}"
+        return self
+
+
+class IDVFundingRollup(BaseModel):
+    """POST /api/v2/idvs/funding_rollup/ - distinct counts across an IDV's children and grandchildren."""
+
+    model_config = ConfigDict(extra="allow")
+
+    total_transaction_obligated_amount: float | None = None
+    awarding_agency_count: int | None = None
+    funding_agency_count: int | None = None
+    federal_account_count: int | None = None
 
 
 class AwardFundingResponse(BaseModel):

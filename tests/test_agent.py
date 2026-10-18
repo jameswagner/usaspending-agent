@@ -71,7 +71,6 @@ from backend.app.agent.tool_filters import (
     _validate_psc_code,
 )
 from backend.app.agent.tools import (
-    search_recipients,
     MAX_TOOL_CALLS_PER_TURN,
     VALID_CATEGORIES,
     VALID_GROUPS,
@@ -111,6 +110,7 @@ from backend.app.agent.tools import (
     get_agency_budget,
     get_agency_budget_by_subcomponent,
     get_spending_explorer_breakdown_raw,
+    search_recipients,
 )
 from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
 from backend.app.agent.tools.awards import (
@@ -148,10 +148,10 @@ from backend.app.usaspending import (
     ObligationByPeriod,
     PageMetadata,
     RecipientListing,
-    SearchRecipientsResponse,
     RecipientLocation,
     RecipientOverview,
     SearchAwardsResponse,
+    SearchRecipientsResponse,
     SpendingByAwardCountResponse,
     SpendingByCategoryResponse,
     SpendingByGeographyResponse,

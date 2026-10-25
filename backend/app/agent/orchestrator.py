@@ -20,8 +20,8 @@ from .response_shaping import (
     ToolCitation,
     _build_guide_citation,
     build_tool_citation,
-    current_fiscal_year,
     follow_ups_for,
+    relative_year_guidance,
     should_chart,
 )
 from .scope import _is_in_scope
@@ -45,8 +45,6 @@ def _build_system_prompt() -> str:
     computed, and answered FY2024 when FY2025 data was already live.
     """
     today = datetime.now(timezone.utc).date()
-    current_fy = current_fiscal_year(today)
-    most_recent_completed_fy = current_fy - 1
     download_guidance = (
         "Use download_single_award for one known full internal award ID and download_records for "
         "filtered CSV records. For an amount and matching CSV, use the same agency, period, award "
@@ -259,16 +257,12 @@ def _build_system_prompt() -> str:
         "(e.g. 'CY2021' or 'calendar year 2021') years, matching whichever "
         "time_period_type was actually used for that tool call — never a "
         "bare year number, since it is easily confused between the two. "
-        f"Today's date is {today.isoformat()}, so the current (in-progress, "
-        f"incomplete) fiscal year is FY{current_fy} and the most recently "
-        f"*completed* fiscal year is FY{most_recent_completed_fy}. "
+        f"Today's date is {today.isoformat()}. {relative_year_guidance(today)}"
         "When a question says 'most recent,' 'latest,' 'current,' 'this "
         "year,' or similar with no fiscal year stated explicitly, use these "
         "values — do not guess a year from your own training data, since it "
         "does not know today's actual date. 'Most recent complete fiscal "
-        "year' normally means the one that just ended, not the one in "
-        "progress; only use the in-progress fiscal year if the question is "
-        "explicitly about data so far this year.\n\n"
+        "year' means the one that just ended, not the one in progress.\n\n"
         f"{download_guidance}"
     )
 

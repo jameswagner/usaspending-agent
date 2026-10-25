@@ -83,6 +83,35 @@ def _recipient_listing_notes(listings: list[RecipientListing]) -> str:
     return "".join(f"\nNote: {n}" for n in notes)
 
 
+def _current_parent(client, linked_id: str, uei: str | None, duns: str | None) -> RecipientListing | None:
+    """The same company's live parent record when linked_id is stale ($0 in the last 12 months), else None."""
+    keyword = duns or uei
+    if not keyword:
+        return None
+    try:
+        response = client.search_recipients(keyword, limit=10)
+    except USASpendingAPIError as e:
+        logger.warning("current-parent lookup failed for %s: %s", keyword, e)
+        return None
+    parents = [
+        r for r in response.results
+        if r.recipient_level == "P" and ((duns and r.duns == duns) or (uei and r.uei == uei))
+    ]
+    linked = next((r for r in parents if r.id == linked_id), None)
+    best = max(parents, key=lambda r: r.amount, default=None)
+    if linked is None or linked.amount > 0 or best is None or best.amount <= 0:
+        return None
+    return best
+
+
+def _resolve_current_parent(client, overview: RecipientOverview) -> RecipientListing | None:
+    if overview.parent_id and overview.parent_id != overview.recipient_id:
+        return _current_parent(client, overview.parent_id, overview.parent_uei, overview.parent_duns)
+    if overview.recipient_level == "P":
+        return _current_parent(client, overview.recipient_id, overview.uei, overview.duns)
+    return None
+
+
 def _format_recipient_address(location: RecipientLocation | None) -> str:
     """Full street address - the live API returns this in full for a
     normal business, unlike the award-side recipient/place-of-performance
@@ -113,7 +142,7 @@ def _format_recipient_state_only(location: RecipientLocation | None) -> str:
 _REDACTED_RECIPIENT_NAME = "REDACTED DUE TO PII"
 
 
-def _format_recipient_overview(overview: RecipientOverview) -> str:
+def _format_recipient_overview(overview: RecipientOverview, current_parent: RecipientListing | None = None) -> str:
     is_redacted = overview.name == _REDACTED_RECIPIENT_NAME
     lines: list[str] = []
 
@@ -135,10 +164,19 @@ def _format_recipient_overview(overview: RecipientOverview) -> str:
         lines.append(f"Legacy DUNS: {overview.duns}")
 
     if overview.parent_id and overview.parent_id != overview.recipient_id:
-        lines.append(f"Parent: {overview.parent_name or 'unknown'} [recipient_id: {overview.parent_id}]")
+        if current_parent:
+            lines.append(f"Parent: {current_parent.name or 'unknown'} [recipient_id: {current_parent.id}]")
+            lines.append(
+                f"Note: this record links to parent {overview.parent_id}, a stale record with no spending in "
+                "the last 12 months; the parent above is the same company's current record (same DUNS/UEI)."
+            )
+        else:
+            lines.append(f"Parent: {overview.parent_name or 'unknown'} [recipient_id: {overview.parent_id}]")
+    elif current_parent:
         lines.append(
-            "Note: this parent link can point at a stale parent record; confirm with search_recipients "
-            "(largest current amount) before reporting the parent's total."
+            f"Note: this parent record is stale (no spending in the last 12 months); the same company's "
+            f"current parent record is {current_parent.name or 'unknown'} [recipient_id: {current_parent.id}]. "
+            "Use that one for current totals."
         )
 
     location_label = _format_recipient_state_only(overview.location) if is_redacted else _format_recipient_address(overview.location)
@@ -227,7 +265,7 @@ def get_recipient_details(recipient_id: str, year: str = "all") -> str:
     _record_tool_call(
         "get_recipient_details", overview, {"recipient_id": recipient_id, "name": overview.name, "year": year}
     )
-    return _wrap_untrusted(_format_recipient_overview(overview))
+    return _wrap_untrusted(_format_recipient_overview(overview, _resolve_current_parent(client, overview)))
 
 
 def _format_child_recipient(child: ChildRecipient) -> str:
@@ -262,6 +300,14 @@ def get_recipient_children(recipient_id: str, year: str = "all", limit: int = 25
         return f"This query failed: {e}."
 
     duns_or_uei = overview.uei or overview.duns
+    redirect = ""
+    current = _resolve_current_parent(client, overview) if overview.recipient_level == "P" else None
+    if current:
+        duns_or_uei = current.uei or current.duns
+        redirect = (
+            f"Note: {recipient_id} is a stale parent record (no spending in the last 12 months); showing the "
+            f"children of the same company's current parent record {current.id} instead.\n"
+        )
     if not duns_or_uei:
         return f"'{overview.name or recipient_id}' has no UEI or DUNS on file, so its children can't be looked up."
 
@@ -286,4 +332,4 @@ def get_recipient_children(recipient_id: str, year: str = "all", limit: int = 25
         "\nNote: child amounts are a subset of the parent's total, and a child can sit under more than "
         "one parent hash; do not add these to any parent's amount or to another parent's children."
     )
-    return _wrap_untrusted("\n".join(lines) + note + overlap)
+    return _wrap_untrusted(redirect + "\n".join(lines) + note + overlap)

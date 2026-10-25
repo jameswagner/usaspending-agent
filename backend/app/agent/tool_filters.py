@@ -119,6 +119,11 @@ AWARD_TYPE_GROUPS: dict[str, list[str]] = {
     "delivery_order": ["C"],
     "definitive_contract": ["D"],
     "idv": ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"],
+    "idv_gwac": ["IDV_A"],
+    "idv_idc": ["IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C"],
+    "idv_fss": ["IDV_C"],
+    "idv_boa": ["IDV_D"],
+    "idv_bpa": ["IDV_E"],
     "direct_loan": ["07", "F003"],
     "guaranteed_loan": ["08", "F004"],
     "block_grant": ["02"],
@@ -147,6 +152,7 @@ AWARD_TYPE_GROUPS: dict[str, list[str]] = {
 AwardType = Literal[
     "contracts", "grants", "loans",
     "bpa_call", "purchase_order", "delivery_order", "definitive_contract", "idv",
+    "idv_gwac", "idv_idc", "idv_fss", "idv_boa", "idv_bpa",
     "direct_loan", "guaranteed_loan",
     "block_grant", "formula_grant", "project_grant", "cooperative_agreement",
     "insurance", "other_financial_assistance",
@@ -164,7 +170,7 @@ def _normalize_award_type(award_type: str) -> str:
 
 
 # The 8 non-overlapping "leaf" categories that together cover every
-# possible award. The other 10 AWARD_TYPE_GROUPS keys are sub-types whose
+# possible award. The other 15 AWARD_TYPE_GROUPS keys are sub-types whose
 # codes are already a subset of one of these eight's codes (e.g.
 # "contracts" = A,B,C,D, the same codes "bpa_call"/"purchase_order"/
 # "delivery_order"/"definitive_contract" split out individually) - so once
@@ -181,7 +187,7 @@ EXHAUSTIVE_AWARD_TYPE_CATEGORIES = [
 _BROAD_CATEGORY_FOR_AWARD_TYPE = {
     "contracts": "contracts", "bpa_call": "contracts", "purchase_order": "contracts",
     "delivery_order": "contracts", "definitive_contract": "contracts",
-    "idv": "idv",
+    "idv": "idv", "idv_gwac": "idv", "idv_idc": "idv", "idv_fss": "idv", "idv_boa": "idv", "idv_bpa": "idv",
     "grants": "grants", "block_grant": "grants", "formula_grant": "grants",
     "project_grant": "grants", "cooperative_agreement": "grants",
     "loans": "loans", "direct_loan": "loans", "guaranteed_loan": "loans",

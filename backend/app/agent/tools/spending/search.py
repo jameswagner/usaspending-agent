@@ -19,6 +19,7 @@ from ...recipient_types import RecipientType
 from ...response_shaping import year_label, year_range_to_date_range
 from ...singletons import _get_usaspending_client
 from ...tool_filters import (
+    _BROAD_CATEGORY_FOR_AWARD_TYPE,
     DISASTER_BREAKOUT_FIELDS,
     SEARCH_AWARDS_FIELDS_BASE,
     SUBAWARD_FIELDS,
@@ -31,6 +32,7 @@ from ...tool_filters import (
     _amount_field_for_award_type,
     _build_filters,
     _clamp_limit,
+    _normalize_award_type,
     _other_award_type_categories_to_try,
     _pop_naics_disclosure,
     _record_optional_filter_context,
@@ -208,12 +210,8 @@ def search_awards(
 ) -> str:
     """Search for individual award records (specific contracts, grants, or loans) for a fiscal year range, scoped by an awarding agency and/or a recipient. Use this for "show me awards/contracts/grants from X" or "who received money from X" questions — as opposed to an aggregate breakdown or trend, which get_spending_by_category / get_spending_over_time answer instead. Results are ranked largest-first by sort_by (default "amount") — use this directly for "biggest"/"top N" questions, including "top N by outlay/subsidy cost" or "most recently modified" with sort_by set accordingly.
 
-    No filter beyond the fiscal-year range and award_type is required - unlike
-    get_spending_by_category/get_spending_over_time, which need a real scoping
-    filter (agency, recipient, location, etc.) or they refuse to run at all, this
-    tool just returns a ranked/paginated list, which works fine with an
-    award-type + fiscal-year filter alone. Add agency_name/recipient_name/a
-    location/etc. to narrow further, but
+    No filter beyond the fiscal-year range and award_type is required. Add
+    agency_name/recipient_name/a location/etc. to narrow further, but
     don't invent a keywords value (e.g. restating award_type itself) just to
     satisfy a scope requirement this tool doesn't actually have.
 
@@ -260,7 +258,10 @@ def search_awards(
             delivery_order, definitive_contract (contract sub-types); idv (Indefinite Delivery
             Vehicle - a GWAC, BPA, or other contract vehicle that other awards get issued under,
             NOT itself under "contracts" - its codes are disjoint from A/B/C/D, so searching for
-            an IDV's own PIID under award_type="contracts" returns zero results); direct_loan,
+            an IDV's own PIID under award_type="contracts" returns zero results), or one kind of
+            IDV: idv_gwac (GWAC), idv_idc (indefinite delivery contract), idv_fss (Federal Supply
+            Schedule), idv_boa (basic ordering agreement), idv_bpa (blanket purchase agreement -
+            the vehicle itself, unlike bpa_call, an order placed under one); direct_loan,
             guaranteed_loan (loan sub-types); block_grant, formula_grant, project_grant,
             cooperative_agreement (grant sub-types - e.g. "cooperative agreement" is
             cooperative_agreement, NOT contracts); insurance, other_financial_assistance,
@@ -534,6 +535,13 @@ def search_awards(
             "shows that award's full lifetime total/outlays - not the amount specific to this range. "
             "State this distinction explicitly if reporting these figures as this period's spending; "
             "use get_spending_over_time instead for a genuinely period-scoped, non-duplicative total."
+        )
+    is_idv = _BROAD_CATEGORY_FOR_AWARD_TYPE.get(_normalize_award_type(award_type)) == "idv"
+    if is_idv and any(r.get(amount_field) == 0 for r in results.results):
+        note += (
+            "\n\nA $0 amount on a contract vehicle (IDV) is normal: the money is obligated on the "
+            "orders placed under it, not on the vehicle. Say so, and use award_detail/get_award_details "
+            "on the vehicle for its orders' totals."
         )
     if naics_note:
         note += f"\n\n({naics_note})"

@@ -1,0 +1,2717 @@
+{
+ "cases": [
+  {
+   "task": "Q001",
+   "question": "Which NASA contracts active in FY2025 have the largest award amounts?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q002",
+   "question": "Which NASA grants active in FY2025 have the largest award amounts?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q003",
+   "question": "Which loans active in FY2025 have the largest loan values?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Loan Value"
+    }
+   ]
+  },
+  {
+   "task": "Q004",
+   "question": "Which direct-payment awards active in FY2025 have the largest award amounts?",
+   "answers": [
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    },
+    {
+     "label": "says the top row pools many recipients, not one",
+     "kind": "mentions",
+     "any": [
+      "multiple recipients",
+      "aggregate",
+      "aggregated",
+      "many recipients",
+      "not a single recipient"
+     ]
+    }
+   ],
+   "confusion": "The top row is MULTIPLE RECIPIENTS, an aggregate record, not one recipient."
+  },
+  {
+   "task": "Q005",
+   "question": "Which other financial-assistance awards active in FY2025 have the largest award amounts?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q006",
+   "question": "Which NASA government-wide acquisition contracts (GWACs) were active in FY2025?",
+   "answers": [
+    {
+     "label": "top vehicle ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "explains the vehicle's own amount is $0 because the money is on its orders",
+     "kind": "mentions",
+     "any": [
+      "orders",
+      "child award",
+      "task order",
+      "delivery order",
+      "placed under",
+      "vehicle itself"
+     ]
+    }
+   ],
+   "confusion": "GWAC vehicles show $0 award amounts; the obligations sit on the orders placed under them."
+  },
+  {
+   "task": "Q007",
+   "question": "Find FY2025 contracts matching the keyword cybersecurity.",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q008",
+   "question": "Which FY2025 contracts awarded by the Department of Health and Human Services are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q009",
+   "question": "Which FY2025 contracts funded by NASA are largest, regardless of which agency awarded them?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q010",
+   "question": "Which FY2025 contracts performed in California are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q011",
+   "question": "Which FY2025 contracts awarded to recipients located in California are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q012",
+   "question": "Which FY2025 contracts performed outside the United States are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q013",
+   "question": "Which FY2025 contracts under NAICS 541512 (computer systems design) are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q014",
+   "question": "Which FY2025 contracts with product/service code D302 are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q015",
+   "question": "Which FY2025 contracts set aside for small businesses are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q016",
+   "question": "Which FY2025 firm-fixed-price contracts are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q017",
+   "question": "Which FY2025 contracts awarded with full and open competition are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q018",
+   "question": "Which FY2025 contracts between $1 million and $10 million are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    }
+   ]
+  },
+  {
+   "task": "Q019",
+   "question": "Which FY2025 contracts to Lockheed Martin are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q020",
+   "question": "Which FY2025 grants under Assistance Listing 93.575 are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q021",
+   "question": "Which FY2025 grants funded by the Infrastructure Investment and Jobs Act (DEF code Z) are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q022",
+   "question": "Which FY2025 contracts to woman-owned businesses are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q023",
+   "question": "Which FY2025 contracts charged to NASA Treasury accounts are largest?",
+   "answers": [
+    {
+     "label": "top award ID",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "top award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q024",
+   "question": "Look up contract NAS1510000. Who is the recipient and what is the award amount?",
+   "answers": [
+    {
+     "label": "recipient",
+     "kind": "text",
+     "extract": "results.0.Recipient Name"
+    },
+    {
+     "label": "award amount",
+     "kind": "amount",
+     "extract": "results.0.Award Amount"
+    },
+    {
+     "label": "says the award amount is the award's total value, not FY2025 spending",
+     "kind": "mentions",
+     "any": [
+      "lifetime",
+      "life of the award",
+      "over its life",
+      "cumulative",
+      "total to date",
+      "to date",
+      "since it began",
+      "since its start",
+      "all years",
+      "entire",
+      "total value",
+      "not just fy2025",
+      "not fy2025",
+      "multi-year",
+      "multiyear"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q025",
+   "question": "How many NASA awards were active in FY2025, split into contracts, grants and IDVs?",
+   "answers": [
+    {
+     "label": "contract count",
+     "kind": "amount",
+     "extract": "results.contracts"
+    },
+    {
+     "label": "grant count",
+     "kind": "amount",
+     "extract": "results.grants"
+    },
+    {
+     "label": "IDV count",
+     "kind": "amount",
+     "extract": "results.idvs"
+    }
+   ]
+  },
+  {
+   "task": "Q026",
+   "question": "How did NASA's contract obligations change month by month in FY2025?",
+   "answers": [
+    {
+     "label": "October 2024 obligations",
+     "kind": "amount",
+     "extract": "results.0.aggregated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q027",
+   "question": "How did NASA's contract obligations change quarter by quarter in FY2025?",
+   "answers": [
+    {
+     "label": "Q1 obligations",
+     "kind": "amount",
+     "extract": "results.0.aggregated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q028",
+   "question": "What were NASA's total contract obligations in FY2025?",
+   "answers": [
+    {
+     "label": "FY2025 obligations",
+     "kind": "amount",
+     "extract": "results.0.aggregated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q029",
+   "question": "Which agency awarded the most contract dollars in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "DOD",
+      "Defense"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q030",
+   "question": "Which agency funded the most contract dollars in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "DOD",
+      "Defense"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q031",
+   "question": "Which sub-agency awarded the most contract dollars in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "Navy"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q032",
+   "question": "Which sub-agency funded the most contract dollars in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "Navy"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q033",
+   "question": "Which recipient received the most contract obligations in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "Lockheed Martin"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q034",
+   "question": "Which NAICS industry received the most contract obligations in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name"
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q035",
+   "question": "Which product/service code received the most contract obligations in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "fixed wing"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q036",
+   "question": "Which federal account paid the most contract obligations in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name"
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q037",
+   "question": "Which Assistance Listings received the most grant obligations in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "Medicaid"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q038",
+   "question": "In which states was the most NASA contract work performed in FY2025?",
+   "answers": [
+    {
+     "label": "top area",
+     "kind": "text",
+     "extract": "results.max=aggregated_amount.display_name"
+    },
+    {
+     "label": "top area amount",
+     "kind": "amount",
+     "extract": "results.max=aggregated_amount.aggregated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q039",
+   "question": "In which states were the recipients of NASA's FY2025 contract obligations located?",
+   "answers": [
+    {
+     "label": "top area",
+     "kind": "text",
+     "extract": "results.max=aggregated_amount.display_name"
+    },
+    {
+     "label": "top area amount",
+     "kind": "amount",
+     "extract": "results.max=aggregated_amount.aggregated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q040",
+   "question": "Which counties had the most NASA contract work performed in FY2025?",
+   "answers": [
+    {
+     "label": "top area",
+     "kind": "text",
+     "extract": "results.max=aggregated_amount.display_name"
+    },
+    {
+     "label": "top area amount",
+     "kind": "amount",
+     "extract": "results.max=aggregated_amount.aggregated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q041",
+   "question": "Which congressional districts had the most NASA contract work performed in FY2025?",
+   "answers": [
+    {
+     "label": "top area",
+     "kind": "text",
+     "extract": "results.max=aggregated_amount.display_name"
+    },
+    {
+     "label": "top area amount",
+     "kind": "amount",
+     "extract": "results.max=aggregated_amount.aggregated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q043",
+   "question": "Which NASA prime contracts reported the largest subaward totals in FY2025?",
+   "answers": [
+    {
+     "label": "top prime contract",
+     "kind": "text",
+     "extract": "results.0.award_id"
+    },
+    {
+     "label": "its subaward total",
+     "kind": "amount",
+     "extract": "results.0.subaward_obligation"
+    }
+   ]
+  },
+  {
+   "task": "Q044",
+   "question": "What are the largest FY2025 subawards under NASA contracts?",
+   "answers": [
+    {
+     "label": "top subawardee",
+     "kind": "text",
+     "extract": "results.0.Sub-Awardee Name"
+    },
+    {
+     "label": "top subaward amount",
+     "kind": "amount",
+     "extract": "results.0.Sub-Award Amount"
+    }
+   ]
+  },
+  {
+   "task": "Q047",
+   "question": "What is NASA's official name and agency code on USAspending?",
+   "answers": [
+    {
+     "label": "toptier code",
+     "kind": "text",
+     "extract": "results.0.toptier_agency.toptier_code"
+    }
+   ]
+  },
+  {
+   "task": "Q048",
+   "question": "Can NASA be used as a funding agency on USAspending, and what is its agency code?",
+   "answers": [
+    {
+     "label": "toptier code",
+     "kind": "text",
+     "extract": "results.0.toptier_agency.toptier_code"
+    }
+   ]
+  },
+  {
+   "task": "Q049",
+   "question": "Which recipients match the name Lockheed?",
+   "answers": [
+    {
+     "label": "top match",
+     "kind": "text",
+     "extract": "results.0.recipient_name",
+     "aliases": [
+      "Lockheed Martin"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q050",
+   "question": "Is 'California' a state, a city, or both, as a location on USAspending?",
+   "answers": [
+    {
+     "label": "names the US state",
+     "kind": "mentions",
+     "any": [
+      "state"
+     ]
+    },
+    {
+     "label": "names the same-named foreign cities",
+     "kind": "mentions",
+     "any": [
+      "city",
+      "cities"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q051",
+   "question": "Which Assistance Listings relate to child care?",
+   "answers": [
+    {
+     "label": "finds a child care listing",
+     "kind": "mentions",
+     "any": [
+      "93.575",
+      "93.596",
+      "child care"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q052",
+   "question": "Which NAICS codes relate to computers?",
+   "answers": [
+    {
+     "label": "finds a computer NAICS code",
+     "kind": "mentions",
+     "any": [
+      "5415",
+      "3341",
+      "334111",
+      "541512",
+      "541511"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q054",
+   "question": "Which program activities have 'research' in their name?",
+   "answers": [
+    {
+     "label": "a matching program activity",
+     "kind": "text",
+     "extract": "results.0.program_activity_name"
+    }
+   ]
+  },
+  {
+   "task": "Q055",
+   "question": "What are the top-level NAICS industry sectors?",
+   "answers": [
+    {
+     "label": "first sector",
+     "kind": "text",
+     "extract": "results.0.naics_description"
+    }
+   ]
+  },
+  {
+   "task": "Q056",
+   "question": "What industries fall under NAICS 54, professional, scientific and technical services?",
+   "answers": [
+    {
+     "label": "a child industry",
+     "kind": "text",
+     "extract": "results.0.children.0.naics_description"
+    }
+   ]
+  },
+  {
+   "task": "Q061",
+   "question": "Tell me about NASA contract NAS1510000: recipient, awarding agency, dates and amounts.",
+   "answers": [
+    {
+     "label": "recipient",
+     "kind": "text",
+     "extract": "recipient.recipient_name",
+     "aliases": [
+      "Boeing"
+     ]
+    },
+    {
+     "label": "total obligation",
+     "kind": "amount",
+     "extract": "total_obligation"
+    },
+    {
+     "label": "start date",
+     "kind": "date",
+     "extract": "period_of_performance.start_date"
+    }
+   ]
+  },
+  {
+   "task": "Q062",
+   "question": "Tell me about NASA grant NNX16AO69A: recipient, awarding agency, dates and amounts.",
+   "answers": [
+    {
+     "label": "recipient",
+     "kind": "text",
+     "extract": "recipient.recipient_name",
+     "aliases": [
+      "Baylor"
+     ]
+    },
+    {
+     "label": "total obligation",
+     "kind": "amount",
+     "extract": "total_obligation"
+    }
+   ]
+  },
+  {
+   "task": "Q063",
+   "question": "Tell me about loan TSMC2: recipient, agency, and loan value.",
+   "answers": [
+    {
+     "label": "recipient",
+     "kind": "text",
+     "extract": "recipient.recipient_name",
+     "aliases": [
+      "TSMC"
+     ]
+    },
+    {
+     "label": "loan value",
+     "kind": "amount",
+     "extract": "total_loan_value"
+    }
+   ]
+  },
+  {
+   "task": "Q064",
+   "question": "What are the most recent modifications on NASA contract NAS1510000?",
+   "answers": [
+    {
+     "label": "latest modification date",
+     "kind": "date",
+     "extract": "results.0.action_date"
+    }
+   ]
+  },
+  {
+   "task": "Q065",
+   "question": "Which subawards are linked to NASA contract NAS1510000?",
+   "answers": [
+    {
+     "label": "latest subawardee",
+     "kind": "text",
+     "extract": "results.0.recipient_name"
+    }
+   ]
+  },
+  {
+   "task": "Q069",
+   "question": "Which federal accounts fund NASA contract NAS1510000?",
+   "answers": [
+    {
+     "label": "top funding account",
+     "kind": "text",
+     "extract": "results.0.federal_account"
+    },
+    {
+     "label": "its obligations",
+     "kind": "amount",
+     "extract": "results.0.total_transaction_obligated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q070",
+   "question": "How many agencies and federal accounts fund NASA contract NAS1510000, and how much have they obligated?",
+   "answers": [
+    {
+     "label": "federal account count",
+     "kind": "amount",
+     "extract": "federal_account_count"
+    },
+    {
+     "label": "total obligated",
+     "kind": "amount",
+     "extract": "total_transaction_obligated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q071",
+   "question": "Show the account-level funding records behind NASA contract NAS1510000.",
+   "answers": [
+    {
+     "label": "an account",
+     "kind": "text",
+     "extract": "results.0.federal_account"
+    }
+   ]
+  },
+  {
+   "task": "Q072",
+   "question": "Tell me about NASA's SEWP V contract vehicle NNG15SE16B.",
+   "answers": [
+    {
+     "label": "vehicle description",
+     "kind": "text",
+     "extract": "description",
+     "aliases": [
+      "SEWP"
+     ]
+    },
+    {
+     "label": "ceiling",
+     "kind": "amount",
+     "extract": "base_and_all_options"
+    },
+    {
+     "label": "explains the money is on orders, not the vehicle",
+     "kind": "mentions",
+     "any": [
+      "orders",
+      "child award",
+      "task order",
+      "delivery order"
+     ]
+    }
+   ],
+   "confusion": "The vehicle's own obligation is $0; its orders carry the money."
+  },
+  {
+   "task": "Q073",
+   "question": "How much has been obligated through orders under NASA's SEWP V contract vehicle NNG15SE16B?",
+   "answers": [
+    {
+     "label": "number of orders",
+     "kind": "amount",
+     "extract": "child_award_count"
+    },
+    {
+     "label": "order obligations",
+     "kind": "amount",
+     "extract": "child_award_total_obligation"
+    }
+   ]
+  },
+  {
+   "task": "Q074",
+   "question": "List the orders placed under NASA's SEWP V contract vehicle NNG15SE16B.",
+   "answers": [
+    {
+     "label": "an order",
+     "kind": "text",
+     "extract": "results.0.piid"
+    }
+   ]
+  },
+  {
+   "task": "Q075",
+   "question": "Are there any grandchild awards under NASA's SEWP V contract vehicle NNG15SE16B?",
+   "answers": [
+    {
+     "label": "says there are none",
+     "kind": "mentions",
+     "any": [
+      "no ",
+      "none",
+      "0 ",
+      "zero"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q076",
+   "question": "Show the timeline of orders placed under NASA's SEWP V contract vehicle NNG15SE16B.",
+   "answers": [
+    {
+     "label": "order count",
+     "kind": "amount",
+     "extract": "page_metadata.total"
+    }
+   ]
+  },
+  {
+   "task": "Q077",
+   "question": "Which federal accounts fund orders under NASA's SEWP V contract vehicle NNG15SE16B?",
+   "answers": [
+    {
+     "label": "account count",
+     "kind": "amount",
+     "extract": "page_metadata.count"
+    }
+   ]
+  },
+  {
+   "task": "Q078",
+   "question": "Summarize the funding across NASA's SEWP V contract vehicle NNG15SE16B and its orders.",
+   "answers": [
+    {
+     "label": "federal account count",
+     "kind": "amount",
+     "extract": "federal_account_count"
+    },
+    {
+     "label": "total obligated",
+     "kind": "amount",
+     "extract": "total_transaction_obligated_amount"
+    }
+   ],
+   "confusion": "Funding records (rows) outnumber distinct federal accounts; an answer should count accounts."
+  },
+  {
+   "task": "Q079",
+   "question": "Show the account funding records for NASA's SEWP V contract vehicle NNG15SE16B and its orders.",
+   "answers": [
+    {
+     "label": "an order with funding",
+     "kind": "text",
+     "extract": "results.0.piid"
+    }
+   ]
+  },
+  {
+   "task": "Q080",
+   "question": "What is NASA's toptier agency code and how much budget authority did it have in FY2026?",
+   "answers": [
+    {
+     "label": "toptier code",
+     "kind": "text",
+     "extract": "results.?abbreviation=NASA.0.toptier_code"
+    },
+    {
+     "label": "budget authority",
+     "kind": "amount",
+     "extract": "results.?abbreviation=NASA.0.budget_authority_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q081",
+   "question": "What is NASA's mission and what does its FY2025 agency profile say?",
+   "answers": [
+    {
+     "label": "website",
+     "kind": "text",
+     "extract": "website",
+     "aliases": [
+      "nasa.gov"
+     ]
+    },
+    {
+     "label": "sub-agency count",
+     "kind": "amount",
+     "extract": "subtier_agency_count"
+    }
+   ]
+  },
+  {
+   "task": "Q082",
+   "question": "How have NASA's budgetary resources, obligations and outlays changed over the years?",
+   "answers": [
+    {
+     "label": "FY2025 budgetary resources",
+     "kind": "amount",
+     "extract": "agency_data_by_year.?fiscal_year=2025.0.agency_budgetary_resources"
+    },
+    {
+     "label": "FY2025 obligations",
+     "kind": "amount",
+     "extract": "agency_data_by_year.?fiscal_year=2025.0.agency_total_obligated"
+    }
+   ]
+  },
+  {
+   "task": "Q083",
+   "question": "How were NASA's FY2025 award obligations split among contracts, grants and other award types?",
+   "answers": [
+    {
+     "label": "contracts",
+     "kind": "amount",
+     "extract": "results.?category=contracts.0.aggregated_amount"
+    },
+    {
+     "label": "grants",
+     "kind": "amount",
+     "extract": "results.?category=grants.0.aggregated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q084",
+   "question": "Which NASA offices awarded the most in FY2025?",
+   "answers": [
+    {
+     "label": "top office",
+     "kind": "text",
+     "extract": "results.0.children.0.name",
+     "aliases": [
+      "Johnson"
+     ]
+    },
+    {
+     "label": "its obligations",
+     "kind": "amount",
+     "extract": "results.0.children.0.total_obligations"
+    }
+   ]
+  },
+  {
+   "task": "Q086",
+   "question": "How many new awards did NASA make in FY2025?",
+   "answers": [
+    {
+     "label": "new award count",
+     "kind": "amount",
+     "extract": "new_award_count"
+    }
+   ]
+  },
+  {
+   "task": "Q087",
+   "question": "What were NASA's FY2025 award obligations and transaction count?",
+   "answers": [
+    {
+     "label": "award obligations",
+     "kind": "amount",
+     "extract": "obligations"
+    },
+    {
+     "label": "transaction count",
+     "kind": "amount",
+     "extract": "transaction_count"
+    }
+   ]
+  },
+  {
+   "task": "Q088",
+   "question": "How does NASA's FY2025 funding break down by bureau?",
+   "answers": [
+    {
+     "label": "bureau obligations",
+     "kind": "amount",
+     "extract": "results.0.total_obligations"
+    },
+    {
+     "label": "says this figure is account-based (budget) spending, not award spending",
+     "kind": "mentions",
+     "any": [
+      "account",
+      "budget",
+      "budgetary"
+     ]
+    }
+   ],
+   "confusion": "Bureau totals are account-based ($28.8B), larger than NASA's award obligations ($22.9B)."
+  },
+  {
+   "task": "Q089",
+   "question": "Which federal accounts are in NASA's main bureau in FY2025, and how much did each obligate?",
+   "answers": [
+    {
+     "label": "top account",
+     "kind": "text",
+     "extract": "results.0.id",
+     "aliases": [
+      "Exploration"
+     ]
+    },
+    {
+     "label": "its obligations",
+     "kind": "amount",
+     "extract": "results.0.total_obligations"
+    }
+   ]
+  },
+  {
+   "task": "Q091",
+   "question": "Find Lockheed Martin Corporation in the recipient directory.",
+   "answers": [
+    {
+     "label": "gives an identifier",
+     "kind": "mentions",
+     "any": [
+      "G4KDGE4JFFK7",
+      "recipient_id",
+      "UEI"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q092",
+   "question": "How much did Lockheed Martin Corporation (UEI G4KDGE4JFFK7) receive in FY2025?",
+   "answers": [
+    {
+     "label": "FY2025 amount",
+     "kind": "amount",
+     "extract": "total_transaction_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q093",
+   "question": "How much has Lockheed Martin Corporation (UEI G4KDGE4JFFK7) received across all years?",
+   "answers": [
+    {
+     "label": "all-time amount",
+     "kind": "amount",
+     "extract": "total_transaction_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q094",
+   "question": "Which child recipients roll up to Lockheed Martin's parent record (UEI JSQTW5L2SSM1) in FY2025?",
+   "answers": [
+    {
+     "label": "top child of the current parent",
+     "kind": "amount",
+     "extract": "max=amount.amount",
+     "request": {
+      "method": "GET",
+      "path": "/api/v2/recipient/children/ZFN2JJXBLZT3/",
+      "query": {
+       "year": 2025
+      }
+     }
+    },
+    {
+     "label": "flags that this parent record is stale",
+     "kind": "mentions",
+     "any": [
+      "stale",
+      "current parent",
+      "no spending",
+      "outdated",
+      "old record"
+     ]
+    }
+   ],
+   "confusion": "JSQTW5L2SSM1 is a stale parent record; the same company's current parent is ZFN2JJXBLZT3."
+  },
+  {
+   "task": "Q095",
+   "question": "How many new awards did Lockheed Martin Corporation (UEI G4KDGE4JFFK7) receive each quarter of FY2025?",
+   "answers": [
+    {
+     "label": "Q1 new awards",
+     "kind": "amount",
+     "extract": "results.0.new_award_count_in_period"
+    }
+   ]
+  },
+  {
+   "task": "Q096",
+   "question": "Which agencies gave Lockheed Martin Corporation (UEI G4KDGE4JFFK7) the most contract obligations in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "DOD",
+      "Defense"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q097",
+   "question": "Which federal accounts paid Lockheed Martin Corporation (UEI G4KDGE4JFFK7) the most contract obligations in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name"
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q098",
+   "question": "Which state or territory received the most federal award funding on USAspending's state directory?",
+   "answers": [
+    {
+     "label": "top state",
+     "kind": "text",
+     "extract": "max=amount.name"
+    },
+    {
+     "label": "its amount",
+     "kind": "amount",
+     "extract": "max=amount.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q099",
+   "question": "How much federal award funding went to California in FY2025?",
+   "answers": [
+    {
+     "label": "total prime award amount",
+     "kind": "amount",
+     "extract": "total_prime_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q100",
+   "question": "How was California's FY2025 award funding split among award types?",
+   "answers": [
+    {
+     "label": "contracts",
+     "kind": "amount",
+     "extract": "?type=contracts.0.amount"
+    },
+    {
+     "label": "grants",
+     "kind": "amount",
+     "extract": "?type=grants.0.amount"
+    },
+    {
+     "label": "direct payments",
+     "kind": "amount",
+     "extract": "?type=direct_payments.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q101",
+   "question": "Which California counties received the most federal award obligations in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "Los Angeles"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q102",
+   "question": "Which California congressional districts received the most federal award obligations in FY2025?",
+   "answers": [
+    {
+     "label": "largest real district",
+     "kind": "text",
+     "extract": "results.?name!=CA-MULTIPLE DISTRICTS.0.name"
+    },
+    {
+     "label": "its amount",
+     "kind": "amount",
+     "extract": "results.?name!=CA-MULTIPLE DISTRICTS.0.amount"
+    },
+    {
+     "label": "explains the MULTIPLE DISTRICTS row isn't a real district",
+     "kind": "mentions",
+     "any": [
+      "multiple districts",
+      "not a district",
+      "not a real district",
+      "catch-all",
+      "can't be assigned",
+      "cannot be assigned",
+      "unmapped",
+      "no district",
+      "unassigned",
+      "not assigned",
+      "left that row out",
+      "excluded"
+     ]
+    }
+   ],
+   "confusion": "The top row, CA-MULTIPLE DISTRICTS ($203B), is a catch-all bucket; the largest real district is far smaller."
+  },
+  {
+   "task": "Q103",
+   "question": "Which NASA federal accounts had the largest FY2025 budgetary resources?",
+   "answers": [
+    {
+     "label": "top account",
+     "kind": "text",
+     "extract": "results.0.account_number",
+     "aliases": [
+      "Exploration"
+     ]
+    },
+    {
+     "label": "its budgetary resources",
+     "kind": "amount",
+     "extract": "results.0.budgetary_resources"
+    }
+   ]
+  },
+  {
+   "task": "Q104",
+   "question": "Tell me about NASA's Exploration federal account (080-0124) in FY2025, including its Treasury accounts.",
+   "answers": [
+    {
+     "label": "FY2025 obligations",
+     "kind": "amount",
+     "extract": "total_obligated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q105",
+   "question": "What were the FY2025 budgetary resources, obligations and outlays of NASA's Exploration federal account (080-0124)?",
+   "answers": [
+    {
+     "label": "budgetary resources",
+     "kind": "amount",
+     "extract": "results.budget_authority"
+    },
+    {
+     "label": "obligations",
+     "kind": "amount",
+     "extract": "results.obligated"
+    },
+    {
+     "label": "outlays",
+     "kind": "amount",
+     "extract": "results.outlay"
+    }
+   ]
+  },
+  {
+   "task": "Q106",
+   "question": "Which object classes does NASA's Exploration federal account (080-0124) spend on?",
+   "answers": [
+    {
+     "label": "an object class",
+     "kind": "text",
+     "extract": "results.0.name"
+    }
+   ]
+  },
+  {
+   "task": "Q107",
+   "question": "Break down Treasury account 080-2010/2011-0124-000's FY2025 spending by program activity.",
+   "answers": [
+    {
+     "label": "top program activity",
+     "kind": "text",
+     "extract": "results.0.name"
+    },
+    {
+     "label": "its obligations",
+     "kind": "amount",
+     "extract": "results.0.obligated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q108",
+   "question": "Break down Treasury account 080-2010/2011-0124-000's FY2025 spending by object class.",
+   "answers": [
+    {
+     "label": "top object class",
+     "kind": "text",
+     "extract": "results.0.name"
+    },
+    {
+     "label": "its obligations",
+     "kind": "amount",
+     "extract": "results.0.obligated_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q110",
+   "question": "Which agencies had the most obligations in FY2025, counting all account spending?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "HHS",
+      "Health and Human Services"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q111",
+   "question": "How were FY2025 obligations divided across budget functions?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name"
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q112",
+   "question": "What did the government spend on by object class in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name"
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q113",
+   "question": "Which NASA federal accounts had the most FY2025 obligations?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "Exploration"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q114",
+   "question": "How did FY2025 spending on general science, space and technology break down by subfunction?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name"
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q115",
+   "question": "How did NASA's Exploration federal account (080-0124)'s FY2025 obligations break down by program activity?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name"
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q116",
+   "question": "Which recipients received the most from NASA's Exploration federal account (080-0124) in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "Boeing"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q117",
+   "question": "Which disaster and emergency funding (DEF) codes exist, and which law does code L refer to?",
+   "answers": [
+    {
+     "label": "law for code L",
+     "kind": "text",
+     "extract": "codes.?code=L.0.title"
+    }
+   ]
+  },
+  {
+   "task": "Q118",
+   "question": "What are the overall budget, obligations and outlays of COVID-19 relief funding?",
+   "answers": [
+    {
+     "label": "total budget authority",
+     "kind": "amount",
+     "extract": "total_budget_authority"
+    },
+    {
+     "label": "total obligations",
+     "kind": "amount",
+     "extract": "spending.total_obligations"
+    },
+    {
+     "label": "award obligations",
+     "kind": "amount",
+     "extract": "spending.award_obligations"
+    }
+   ],
+   "confusion": "Total obligations and award obligations are different numbers; an answer should name which is which."
+  },
+  {
+   "task": "Q119",
+   "question": "How much COVID-19 relief funding went to awards, and how many awards were there?",
+   "answers": [
+    {
+     "label": "award obligations",
+     "kind": "amount",
+     "extract": "obligation"
+    },
+    {
+     "label": "award count",
+     "kind": "amount",
+     "extract": "award_count"
+    }
+   ]
+  },
+  {
+   "task": "Q121",
+   "question": "Which agencies obligated the most COVID-19 relief funding through awards?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.description"
+    },
+    {
+     "label": "top entry obligation",
+     "kind": "amount",
+     "extract": "results.0.obligation"
+    }
+   ]
+  },
+  {
+   "task": "Q122",
+   "question": "Which Assistance Listings received the most COVID-19 relief funding?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.description"
+    },
+    {
+     "label": "top entry obligation",
+     "kind": "amount",
+     "extract": "results.0.obligation"
+    }
+   ]
+  },
+  {
+   "task": "Q123",
+   "question": "Which recipients received the most COVID-19 relief funding?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.description"
+    },
+    {
+     "label": "top entry obligation",
+     "kind": "amount",
+     "extract": "results.0.obligation"
+    }
+   ]
+  },
+  {
+   "task": "Q124",
+   "question": "Which federal accounts obligated the most COVID-19 relief funding through awards?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.description"
+    },
+    {
+     "label": "top entry obligation",
+     "kind": "amount",
+     "extract": "results.0.obligation"
+    }
+   ]
+  },
+  {
+   "task": "Q125",
+   "question": "Which object classes account for the most COVID-19 relief funding award obligations?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.description"
+    },
+    {
+     "label": "top entry obligation",
+     "kind": "amount",
+     "extract": "results.0.obligation"
+    }
+   ]
+  },
+  {
+   "task": "Q126",
+   "question": "Which agencies issued the largest COVID-19 relief funding loans by face value?",
+   "answers": [
+    {
+     "label": "top agency",
+     "kind": "text",
+     "extract": "results.0.description",
+     "aliases": [
+      "SBA"
+     ]
+    },
+    {
+     "label": "face value",
+     "kind": "amount",
+     "extract": "results.0.face_value_of_loan"
+    }
+   ]
+  },
+  {
+   "task": "Q127",
+   "question": "Which states' recipients received the most COVID-19 relief funding?",
+   "answers": [
+    {
+     "label": "top state",
+     "kind": "text",
+     "extract": "results.max=amount.display_name"
+    },
+    {
+     "label": "its amount",
+     "kind": "amount",
+     "extract": "results.max=amount.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q128",
+   "question": "What were total federal budgetary resources for FY2025 at period 12?",
+   "answers": [
+    {
+     "label": "total budgetary resources",
+     "kind": "amount",
+     "extract": "results.0.total_budgetary_resources"
+    }
+   ]
+  },
+  {
+   "task": "Q129",
+   "question": "Which agencies had the largest budgets in FY2025 period 12 reporting, and how many unlinked awards did each report?",
+   "answers": [
+    {
+     "label": "top agency",
+     "kind": "text",
+     "extract": "results.0.agency_name",
+     "aliases": [
+      "HHS"
+     ]
+    },
+    {
+     "label": "unlinked contract awards",
+     "kind": "amount",
+     "extract": "results.0.unlinked_contract_award_count"
+    }
+   ]
+  },
+  {
+   "task": "Q130",
+   "question": "When did the largest agencies publish their FY2025 spending data?",
+   "answers": [
+    {
+     "label": "an agency",
+     "kind": "text",
+     "extract": "results.0.agency_name",
+     "aliases": [
+      "HHS"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q131",
+   "question": "How complete is NASA's reporting to USAspending, based on its recent submissions?",
+   "answers": [
+    {
+     "label": "unlinked contract awards",
+     "kind": "amount",
+     "extract": "results.0.unlinked_contract_award_count"
+    }
+   ]
+  },
+  {
+   "task": "Q132",
+   "question": "When was NASA's FY2025 period 12 submission certified?",
+   "answers": [
+    {
+     "label": "latest certification date",
+     "kind": "date",
+     "extract": "results.0.certification_date"
+    }
+   ]
+  },
+  {
+   "task": "Q133",
+   "question": "Did NASA have any missing or discrepant account balances in FY2025 period 12?",
+   "answers": [
+    {
+     "label": "says there are none",
+     "kind": "mentions",
+     "any": [
+      "no ",
+      "none",
+      "zero",
+      "0 "
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q134",
+   "question": "Where do NASA's account obligations and award obligations differ in FY2025 period 12?",
+   "answers": [
+    {
+     "label": "an account with a difference",
+     "kind": "text",
+     "extract": "results.0.tas"
+    }
+   ]
+  },
+  {
+   "task": "Q135",
+   "question": "How many NASA procurement awards failed to link to account data in FY2025 period 12?",
+   "answers": [
+    {
+     "label": "unlinked award records",
+     "kind": "amount",
+     "extract": "unlinked_file_d_award_count"
+    },
+    {
+     "label": "unlinked account records",
+     "kind": "amount",
+     "extract": "unlinked_file_c_award_count"
+    }
+   ]
+  },
+  {
+   "task": "Q136",
+   "question": "Which agencies can I choose for a custom award data download?",
+   "answers": [
+    {
+     "label": "lists agencies",
+     "kind": "mentions",
+     "any": [
+      "Agriculture",
+      "Defense",
+      "NASA"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q137",
+   "question": "Which agencies can I choose for an account data download?",
+   "answers": [
+    {
+     "label": "lists agencies",
+     "kind": "mentions",
+     "any": [
+      "Agriculture",
+      "Defense",
+      "NASA"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q138",
+   "question": "What are the federal budget functions?",
+   "answers": [
+    {
+     "label": "lists budget functions",
+     "kind": "mentions",
+     "any": [
+      "National Defense",
+      "Medicare",
+      "Health"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q139",
+   "question": "Which budget subfunctions fall under general science, space and technology?",
+   "answers": [
+    {
+     "label": "a subfunction",
+     "kind": "text",
+     "extract": "results.0.budget_subfunction_title",
+     "aliases": [
+      "basic research"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q140",
+   "question": "Where can I download NASA's pre-built FY2025 contract data files?",
+   "answers": [
+    {
+     "label": "gives the file link",
+     "kind": "mentions",
+     "any": [
+      "files.usaspending.gov",
+      ".zip"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q141",
+   "question": "How many transactions would a download of NASA's FY2025 contracts include?",
+   "answers": [
+    {
+     "label": "transaction count",
+     "kind": "amount",
+     "extract": "calculated_transaction_count"
+    }
+   ]
+  },
+  {
+   "task": "Q142",
+   "question": "Download the data for NASA contract NAS1510000.",
+   "answers": [
+    {
+     "label": "produces an actual download file or job",
+     "kind": "mentions",
+     "any": [
+      "files.usaspending.gov",
+      "download ready",
+      "still generating",
+      "status_url",
+      "download/status"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q143",
+   "question": "Download the data for NASA grant NNX16AO69A.",
+   "answers": [
+    {
+     "label": "produces an actual download file or job",
+     "kind": "mentions",
+     "any": [
+      "files.usaspending.gov",
+      "download ready",
+      "still generating",
+      "status_url",
+      "download/status"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q144",
+   "question": "Download the data for NASA's SEWP V contract vehicle NNG15SE16B.",
+   "answers": [
+    {
+     "label": "produces an actual download file or job",
+     "kind": "mentions",
+     "any": [
+      "files.usaspending.gov",
+      "download ready",
+      "still generating",
+      "status_url",
+      "download/status"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q145",
+   "question": "Download NASA's FY2025 contract awards, transactions and subawards as CSV files.",
+   "answers": [
+    {
+     "label": "produces an actual download file or job",
+     "kind": "mentions",
+     "any": [
+      "files.usaspending.gov",
+      "download ready",
+      "still generating",
+      "status_url",
+      "download/status"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q146",
+   "question": "Download NASA's contract transactions from October 2024.",
+   "answers": [
+    {
+     "label": "produces an actual download file or job",
+     "kind": "mentions",
+     "any": [
+      "files.usaspending.gov",
+      "download ready",
+      "still generating",
+      "status_url",
+      "download/status"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q147",
+   "question": "Download NASA's FY2025 period 12 account balances.",
+   "answers": [
+    {
+     "label": "produces an actual download file or job",
+     "kind": "mentions",
+     "any": [
+      "files.usaspending.gov",
+      "download ready",
+      "still generating",
+      "status_url",
+      "download/status"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q149",
+   "question": "What does 'obligation' mean in federal spending?",
+   "answers": [
+    {
+     "label": "defines an obligation as a binding commitment to pay",
+     "kind": "mentions",
+     "any": [
+      "promise",
+      "commitment",
+      "legally binding",
+      "binding agreement"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q151",
+   "question": "What fields are in USAspending's downloaded award files, and what does 'Potential Award Amount' mean?",
+   "answers": [
+    {
+     "label": "explains the field",
+     "kind": "mentions",
+     "any": [
+      "ceiling",
+      "all options",
+      "potential"
+     ]
+    }
+   ]
+  },
+  {
+   "task": "Q154",
+   "question": "In which countries was work performed on Lockheed Martin Corporation (UEI G4KDGE4JFFK7)'s FY2025 awards?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "United States",
+      "USA"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q155",
+   "question": "In which states was work performed on Lockheed Martin Corporation (UEI G4KDGE4JFFK7)'s FY2025 awards?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name",
+     "aliases": [
+      "TX"
+     ]
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q156",
+   "question": "Which disaster and emergency funding laws supported awards performed in California in FY2025?",
+   "answers": [
+    {
+     "label": "top entry",
+     "kind": "text",
+     "extract": "results.0.name"
+    },
+    {
+     "label": "top entry amount",
+     "kind": "amount",
+     "extract": "results.0.amount"
+    }
+   ]
+  },
+  {
+   "task": "Q157",
+   "question": "How have NASA's Exploration federal account (080-0124)'s outlays moved quarter by quarter?",
+   "answers": [
+    {
+     "label": "largest quarter",
+     "kind": "amount",
+     "extract": "results.max=aggregate.aggregate"
+    }
+   ]
+  },
+  {
+   "task": "Q158",
+   "question": "Which program activities carry NASA's Exploration federal account (080-0124)'s obligations?",
+   "answers": [
+    {
+     "label": "top program activity",
+     "kind": "text",
+     "extract": "results.0.item"
+    }
+   ]
+  },
+  {
+   "task": "Q161",
+   "question": "How many prime awards and how much in obligations match the keyword cybersecurity?",
+   "answers": [
+    {
+     "label": "award count",
+     "kind": "amount",
+     "extract": "results.prime_awards_count"
+    },
+    {
+     "label": "obligations",
+     "kind": "amount",
+     "extract": "results.prime_awards_obligation_amount"
+    }
+   ]
+  },
+  {
+   "task": "Q163",
+   "question": "What are the largest contract transactions matching the keyword cybersecurity?",
+   "answers": [
+    {
+     "label": "top transaction's award",
+     "kind": "text",
+     "extract": "results.0.Award ID"
+    },
+    {
+     "label": "its amount",
+     "kind": "amount",
+     "extract": "results.0.Transaction Amount"
+    }
+   ]
+  }
+ ]
+}

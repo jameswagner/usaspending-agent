@@ -20,7 +20,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import time
 from collections import defaultdict
+from datetime import date
 from pathlib import Path
 
 import requests
@@ -171,21 +173,35 @@ _AMOUNT = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million|thousand
 
 
 def replay(request: dict) -> dict:
-    method = "POST" if request.get("body") is not None else "GET"
-    response = requests.request(method, API_BASE + request["path"], params=request.get("query"), json=request.get("body"), timeout=120)
+    method = request.get("method") or ("POST" if request.get("body") is not None else "GET")
+    body = request.get("body") if method == "POST" else None
+    for attempt in range(3):
+        response = requests.request(method, API_BASE + request["path"], params=request.get("query"), json=body, timeout=120)
+        if response.status_code < 500 or attempt == 2:
+            break
+        time.sleep(5 * (attempt + 1))
     response.raise_for_status()
     return response.json()
 
 
 def extract(data, path: str):
-    """Dotted path into a response; a '?key=value' or '?key!=value' component filters a list."""
+    """Dotted path into a response; '?key=value' / '?key!=value' filters a list, 'max=key' picks its largest item."""
     for part in path.split("."):
         if part.startswith("?"):
             key, negate, value = re.match(r"\?(\w+)(!?)=(.*)", part).groups()
             data = [item for item in data if (str(item.get(key)) == value) != bool(negate)]
+        elif part.startswith("max="):
+            key = part[4:]
+            data = max(data, key=lambda item: float(item.get(key) or 0))
         else:
             data = data[int(part)] if isinstance(data, list) else data[part]
     return data
+
+
+def _date_forms(value: str) -> list[str]:
+    day = date.fromisoformat(str(value)[:10])
+    return [day.strftime("%Y-%m-%d"), f"{day:%B} {day.day}, {day.year}", f"{day:%b} {day.day}, {day.year}",
+            f"{day:%b}. {day.day}, {day.year}", f"{day.month}/{day.day}/{day.year}", f"{day.day} {day:%B} {day.year}"]
 
 
 def answer_amounts(answer: str) -> list[float]:
@@ -204,13 +220,24 @@ def _replayed_value(ref: dict, cache: dict[str, dict]):
 
 def check_references(answer: str, entry: dict, cache: dict[str, dict]) -> dict:
     """Is each reference value, replayed live, stated in the answer?"""
-    problems = []
+    problems, errors = [], []
     for ref in entry["reference"]:
-        value = _replayed_value(ref, cache)
-        label = ref.get("label", ref["extract"])
         kind = ref.get("kind", "amount")
-        if kind == "text":
-            accepted = [str(value)] + ref.get("aliases", [])
+        label = ref.get("label", ref.get("extract"))
+        if kind == "mentions":
+            if not any(word.lower() in answer.lower() for word in ref["any"]):
+                problems.append(f"{label}: expected one of {ref['any']!r}")
+            continue
+        try:
+            value = _replayed_value(ref, cache)
+        except (requests.RequestException, KeyError, IndexError, TypeError, ValueError) as exc:
+            errors.append(f"{label}: {type(exc).__name__}: {exc}")
+            continue
+        if kind == "date":
+            if not any(form.lower() in answer.lower() for form in _date_forms(value)):
+                problems.append(f"{label}: expected the date {str(value)[:10]}")
+        elif kind == "text":
+            accepted = [str(value)] + ref.get("aliases", []) + ([str(value)[:30]] if len(str(value)) > 40 else [])
             if not any(a.lower() in answer.lower() for a in accepted):
                 problems.append(f"{label}: expected {value!r} in the answer")
         elif kind == "percent":
@@ -219,10 +246,13 @@ def check_references(answer: str, entry: dict, cache: dict[str, dict]) -> dict:
             if not any(abs(p - share) <= ref.get("tolerance", 0.5) for p in stated):
                 problems.append(f"{label}: expected about {share:.1f}%")
         else:
+            value = float(value)
             tolerance = ref.get("tolerance", 0.01)
             if not any(abs(a - value) <= tolerance * abs(value) for a in answer_amounts(answer)):
                 problems.append(f"{label}: expected about {value:,.0f}")
     problems += [f"answer says {text!r}" for text in entry.get("answer_excludes", []) if text.lower() in answer.lower()]
+    if errors:
+        return {"truth_ok": False, "truth_problems": problems, "reference_errors": errors}
     return {"truth_ok": not problems, "truth_problems": problems}
 
 

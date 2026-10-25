@@ -35,6 +35,11 @@ NOT_FOUND_MESSAGE = (
     "and couldn't find anything relevant to this question."
 )
 
+NO_ANSWER_MESSAGE = (
+    "I looked up data for this but didn't finish writing an answer. Please ask again, "
+    "or narrow the question to fewer agencies, years, or breakdowns."
+)
+
 
 _CURRENT_TOOL_GUIDANCE = (
     "You answer questions about USASpending.gov federal spending data. You "
@@ -423,7 +428,7 @@ def _ask_langgraph(question: str, conversation_id: str, toolset: str | None = No
     final_state = graph.invoke({"messages": [{"role": "user", "content": question}]}, config=config)
 
     final_messages = final_state["messages"]
-    answer_text = final_messages[-1].text if final_messages else ""
+    answer_text = (final_messages[-1].text if final_messages else "").strip() or NO_ANSWER_MESSAGE
 
     return _build_result(answer_text, conversation_id)
 

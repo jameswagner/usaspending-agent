@@ -12,12 +12,12 @@ AMOUNT_KEYS = ['Award Amount', 'Loan Value', 'Sub-Award Amount', 'Transaction Am
 BASIS = {'browser_observed': 'browser', 'source_traced': 'source', 'source_dead_code': 'dead code'}
 
 
-MONEY_KEY = re.compile(r'amount|obligat|outlay|budget|resource|value|aggregate|loan|total$', re.I)
+MONEY_KEY = re.compile(r'amount|obligat|outlay|budget|resource|value|aggregate|loan|total$', re.IGNORECASE)
 
 
 def money(value, key=''):
     if key and (not MONEY_KEY.search(key) or 'count' in key.lower()):
-        return f'{value:,}' if isinstance(value, int) and not re.search(r'year|id$|code', key, re.I) else str(value)
+        return f'{value:,}' if isinstance(value, int) and not re.search(r'year|id$|code', key, re.IGNORECASE) else str(value)
     if isinstance(value, (int, float)) and abs(value) >= 1000:
         for size, suffix in [(1e12, 'T'), (1e9, 'B'), (1e6, 'M'), (1e3, 'K')]:
             if abs(value) >= size:

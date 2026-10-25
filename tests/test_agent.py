@@ -109,7 +109,10 @@ from backend.app.agent.tools import (
     get_agency_award_breakdown,
     get_agency_budget,
     get_agency_budget_by_subcomponent,
+    get_recipient_children,
+    get_recipient_details,
     get_spending_explorer_breakdown_raw,
+    search_recipients,
 )
 from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
 from backend.app.agent.tools.awards import (
@@ -151,6 +154,7 @@ from backend.app.usaspending import (
     RecipientLocation,
     RecipientOverview,
     SearchAwardsResponse,
+    SearchRecipientsResponse,
     SpendingByAwardCountResponse,
     SpendingByCategoryResponse,
     SpendingByGeographyResponse,
@@ -3861,6 +3865,101 @@ class TestNormalizeScope:
     def test_garbage_raises_with_the_right_param_name(self):
         with pytest.raises(USASpendingAPIError, match="Unrecognized recipient_scope 'martian'"):
             _normalize_scope("martian", "recipient_scope")
+
+
+class TestSearchRecipientsCollapse:
+    def _search(self, listings, monkeypatch):
+        client = FakeClient(make_agency())
+        client.search_recipients = lambda *a, **kw: SearchRecipientsResponse(results=listings)
+        monkeypatch.setattr("backend.app.agent.tools.recipients._get_usaspending_client", lambda: client)
+        return search_recipients.func(keyword="Lockheed")
+
+    def test_same_hash_collapses_to_parent_row(self, monkeypatch):
+        listings = [
+            RecipientListing(name="LOCKHEED", id="aaa-R", amount=5.0, recipient_level="R"),
+            RecipientListing(name="LOCKHEED", id="aaa-P", amount=5.0, recipient_level="P"),
+            RecipientListing(name="LOCKHEED", id="aaa-C", amount=5.0, recipient_level="C"),
+        ]
+        result = self._search(listings, monkeypatch)
+        assert result.count("recipient_id:") == 1
+        assert "aaa-P" in result
+
+    def test_stale_parent_flagged_and_unnamed_row_last(self, monkeypatch):
+        listings = [
+            RecipientListing(name=None, id="nul-R", amount=99.0, recipient_level="R"),
+            RecipientListing(name="LOCKHEED", id="old-P", amount=0.0, recipient_level="P"),
+            RecipientListing(name="LOCKHEED", id="new-P", amount=48.0, recipient_level="P"),
+        ]
+        result = self._search(listings, monkeypatch)
+        assert result.index("new-P") < result.index("old-P") < result.index("nul-R")
+        assert "[no spending in last 12 months]" in result
+        assert "unnamed record" in result
+        assert "never add their amounts together" in result
+
+
+class TestCurrentParentResolution:
+    STALE = RecipientListing(name="LOCKHEED MARTIN CORPORATION", id="old-P", uei="OLDUEI", duns="834951691", amount=0.0, recipient_level="P")
+    LIVE = RecipientListing(name="LOCKHEED MARTIN CORP", id="new-P", uei="NEWUEI", duns="834951691", amount=50.5e9, recipient_level="P")
+
+    def _client(self, monkeypatch, overview, parents=None, search_error=False):
+        client = FakeClient(make_agency())
+        client.get_recipient = lambda *a, **kw: overview
+        client.children_keys = []
+
+        def search(*a, **kw):
+            if search_error:
+                raise USASpendingAPIError("boom")
+            return SearchRecipientsResponse(results=parents or [])
+
+        def children(key, year=None):
+            client.children_keys.append(key)
+            return [ChildRecipient(name="SIKORSKY", recipient_id="s-C", amount=1.0)]
+
+        client.search_recipients = search
+        client.get_recipient_children = children
+        monkeypatch.setattr("backend.app.agent.tools.recipients._get_usaspending_client", lambda: client)
+        return client
+
+    def _overview(self, **kw):
+        base = {
+            "recipient_id": "div-C", "recipient_level": "C", "name": "LOCKHEED DIVISION", "total_transaction_amount": 1.0,
+            "total_transactions": 1, "total_face_value_loan_amount": 0.0, "total_face_value_loan_transactions": 0,
+        }
+        return RecipientOverview(**(base | kw))
+
+    def test_child_linked_to_stale_parent_shows_current_parent(self, monkeypatch):
+        overview = self._overview(parent_id="old-P", parent_uei="OLDUEI", parent_duns="834951691")
+        self._client(monkeypatch, overview, [self.STALE, self.LIVE])
+        result = get_recipient_details.func(recipient_id="div-C")
+        assert "Parent: LOCKHEED MARTIN CORP [recipient_id: new-P]" in result
+        assert "links to parent old-P, a stale record" in result
+
+    def test_child_linked_to_live_parent_is_unchanged(self, monkeypatch):
+        overview = self._overview(parent_id="new-P", parent_name="LOCKHEED MARTIN CORP", parent_uei="NEWUEI", parent_duns="834951691")
+        self._client(monkeypatch, overview, [self.LIVE, self.STALE])
+        result = get_recipient_details.func(recipient_id="div-C")
+        assert "[recipient_id: new-P]" in result
+        assert "stale" not in result
+
+    def test_stale_parent_points_to_current_record(self, monkeypatch):
+        overview = self._overview(recipient_id="old-P", recipient_level="P", parent_id="old-P", uei="OLDUEI", duns="834951691")
+        self._client(monkeypatch, overview, [self.STALE, self.LIVE])
+        result = get_recipient_details.func(recipient_id="old-P")
+        assert "this parent record is stale" in result
+        assert "[recipient_id: new-P]" in result
+
+    def test_failed_lookup_falls_back_to_linked_parent(self, monkeypatch):
+        overview = self._overview(parent_id="old-P", parent_name="LOCKHEED MARTIN CORPORATION", parent_duns="834951691")
+        self._client(monkeypatch, overview, search_error=True)
+        result = get_recipient_details.func(recipient_id="div-C")
+        assert "[recipient_id: old-P]" in result
+
+    def test_children_of_stale_parent_come_from_current_parent(self, monkeypatch):
+        overview = self._overview(recipient_id="old-P", recipient_level="P", parent_id="old-P", uei="OLDUEI", duns="834951691")
+        client = self._client(monkeypatch, overview, [self.STALE, self.LIVE])
+        result = get_recipient_children.func(recipient_id="old-P")
+        assert client.children_keys == ["NEWUEI"]
+        assert "showing the children of the same company's current parent record new-P" in result
 
 
 class TestNormalizeRecipientType:

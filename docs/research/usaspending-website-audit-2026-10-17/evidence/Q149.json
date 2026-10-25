@@ -1,0 +1,1237 @@
+{
+  "task_id": "Q149",
+  "requested_at_utc": "2026-10-17T18:55:06.638786+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/references/glossary/",
+    "query": {
+      "limit": 500
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/references/glossary/?limit=500",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.374,
+  "response_bytes": 114407,
+  "response": {
+    "page_metadata": {
+      "page": 1,
+      "count": 151,
+      "next": null,
+      "previous": null,
+      "hasNext": false,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "term": "Submission Period",
+        "slug": "submission-period",
+        "data_act_term": null,
+        "plain": "The submission period shows when federal agencies submit their financial data. It is displayed as a fiscal year (e.g., \u201cFY 2020\u201d or \u201cFY20\u201d for fiscal year 2020, covering October 2019 through September 2020) followed by a month (e.g., \u201cP01\u201d for October, which is the first month of the fiscal year) or quarter (e.g., \u201cQ1\u201d for the first quarter of the fiscal year, covering October through December). For example, \u201cFY19 P10\u201d indicates a submission whose data covers the period of July 2019.\n\nStarting with the June 2020 reporting period, most federal agencies began submitting their account data (Files A, B, and C) to the Treasury DATA Act Broker on a monthly basis rather than on the previous quarterly schedule. As of October 2021 (FY22 Q1), all agencies are required to report on a monthly basis. More information about the agency account data reporting policy is found in OMB\u2019s Memorandum M-20-21 (Appendix A, Section III).",
+        "official": null,
+        "resources": "[Memorandum M-20-21](https://www.whitehouse.gov/wp-content/uploads/2020/04/Implementation-Guidance-for-Supplemental-Funding-Provided-in-Response.pdf)"
+      },
+      {
+        "term": "Task Order Contract",
+        "slug": "task-order-contract",
+        "data_act_term": null,
+        "plain": "An Indefinite Quantity Contract for services (not supplies) is sometimes referred to as a Task Order Contract. With this type of contract, the government promises to buy services over a period of time from a vendor. Instead of an exact amount, it sets a range with a minimum and maximum.",
+        "official": null,
+        "resources": "Learn more from the [FPDS IDC page](https://www.fpds.gov/help/Indefinite_Delivery_Contract.htm)"
+      },
+      {
+        "term": "Transaction",
+        "slug": "transaction",
+        "data_act_term": null,
+        "plain": "A transaction can be the initial contract, grant, loan, or insurance award or any amendment or modification to that award.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Transaction Description",
+        "slug": "transaction-description",
+        "data_act_term": null,
+        "plain": "A brief description of the purpose of the transaction.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Treasury Account Symbol (TAS)",
+        "slug": "treasury-account-symbol-tas",
+        "data_act_term": "Treasury Account Symbol",
+        "plain": "Treasury and OMB assign a code to each appropriation, receipt, or fund account. This code is similar to a bank account number. It helps identify financial transactions in the federal government. It also aids in reporting accuracy. TAS are sometimes referred as \u2018program source\u2019 in legislation. On this website, we group each set of Treasury Accounts that share an Agency Identifier and Main Account Code into a \"Federal Account\". \n\nSeven components make up the TAS:\n\n- Allocation Transfer Agency Identifier (ex. 089)\n- Agency Identifier (ex. 020)\n- Beginning Period of Availability (ex. 2017)\n- Ending Period of Availability (ex. 2018)\n- Availability Type Code (used if there are not specific beginning/ending years) (ex. X)\n- Main Account Code (ex. 0114)\n- Sub Account Code (ex. 000)\n\nExample TAS:\n\n- 089-020-2017/2018-0114-000\n- 089-020-2017/2017-0114-000\n- 089-020-X-0114-000",
+        "official": "Treasury Account Symbol: The account identification codes assigned by the Department of the Treasury to individual appropriation, receipt, or other fund accounts. All financial transactions of the Federal Government are classified by TAS for reporting to the Department of the Treasury and the Office of Management and Budget.\n\n(defined in OMB Circular A-11)",
+        "resources": "See also:\n\n- [Federal Account](?glossary=federal-account)"
+      },
+      {
+        "term": "Unique Entity Identifier (UEI)",
+        "slug": "unique-entity-identifier-uei",
+        "data_act_term": null,
+        "plain": "The Unique Entity Identifier (UEI) for an awardee or recipient is an alphanumeric code created in the System for Award Management (SAM.gov) that is used to uniquely identify specific commercial, nonprofit, or business entities registered to do business with the federal government.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Ultimate Parent Legal Entity Name",
+        "slug": "ultimate-parent-legal-entity-name",
+        "data_act_term": "Ultimate Parent Legal Entity Name",
+        "plain": "The name of the ultimate parent of the awardee or recipient.",
+        "official": "The name of the ultimate parent of the awardee or recipient.",
+        "resources": null
+      },
+      {
+        "term": "Unlinked Award",
+        "slug": "unlinked-award",
+        "data_act_term": null,
+        "plain": "There are two distinct datasets transmitted to USAspending for agency awards\u2014File C and Files D. File C is submitted and published on the site on a monthly or quarterly basis from audited agency financial systems. File D1 (procurement) and File D2 (financial assistance) data is generated from award reporting data submitted by agencies to other systems and updated on USAspending as frequently as daily.  Because these data originate from different communities and systems within agencies that are subject to different policies and reporting requirements, there are sometimes gaps between the awards captured in each dataset.\n \nUnlinked awards lack a shared award ID that allows a match between financial system data and award reporting data. As a result, such awards only show up in some parts of the site and are missing their full context. For example, awards found in File C but not in File D lack recipient and CFDA Program information and thus, will not have an Award Summary page.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Account Balance (File A)",
+        "slug": "account-balance-file-a",
+        "data_act_term": "Account Balance (File A)",
+        "plain": "After the end of every month (or in some select cases every quarter), agencies report the balances that are in their financial systems to USAspending in what is labeled \u201cFile A.\u201d  Because this data is based on Treasury Accounts (TAS), it is often referred to as \u201cAccount Data\u201d or \u201cAccount Spending.\u201d ",
+        "official": "Account Balance data is reported in File A, one of the three files that each agency publishes to USAspending.gov in its financial data submission each month (or quarter for some agencies). The file stems from the agency\u2019s audited financial system and is validated against the Governmentwide Treasury Account Symbol Adjusted Trial Balance System (GTAS). File A includes data on total budgetary resources and total spending, including obligations and outlays, by Treasury Account Symbol (TAS). It also provides the relevant budget function associated with spending. \nWhen you see a reference to Account Balance (File A) on the site, the reference is to the dataset comprising all agency Files A submissions and not one specific agency file.",
+        "resources": "See also:\n\n- [Account Breakdown by Program Activity & Object Class (File B)](?glossary=account-breakdown-by-program-activity-object-class-file-b)\n- [Account Breakdown by Award (File C)](?glossary=account-breakdown-by-award-file-c)\n- [Awards Data (File D)](?glossary=awards-data-file-d)\n\nFor more information on data elements within each Account File, see our [Data Dictionary](https://www.usaspending.gov/data-dictionary)"
+      },
+      {
+        "term": "Account Breakdown by Award (File C)",
+        "slug": "account-breakdown-by-award-file-c",
+        "data_act_term": null,
+        "plain": "Account Breakdown by Award (File C) is one of the three files that each agency publishes to USAspending.gov in its financial data submission each month (or quarter for some agencies). The file stems from the agency\u2019s audited financial system and includes data on award spending only (i.e., excludes non-award spending). Account Breakdown by Award (File C) provides details such as the timing, type, and recipient for each award. \nWhen you see a reference to Account Breakdown by Award (File C) on the site, the reference is to the dataset comprising all agency Files C and not one specific agency file.",
+        "official": null,
+        "resources": "See also:\n\n- [Account Balance (File A)](?glossary=account-balance-file-a)\n- [Account Breakdown by Program Activity & Object Class (File B)](?glossary=account-breakdown-by-program-activity-object-class-file-b)\n- [Awards Data (File D)](?glossary=awards-data-file-d)\n\nFor more information on data elements within each Account File, see our [Data Dictionary](https://www.usaspending.gov/data-dictionary)"
+      },
+      {
+        "term": "Account Breakdown by Program Activity & Object Class (File B)",
+        "slug": "account-breakdown-by-program-activity-object-class-file-b",
+        "data_act_term": null,
+        "plain": "Account Breakdown by Program Activity & Object Class (File B) is one of the three files that each agency publishes to USAspending.gov in its financial data submission each month (or quarter for some agencies). The file stems from the agency\u2019s audited financial system and includes data on total budgetary spending, including obligations and outlays, by Treasury Account Symbol. Like Account Balances (File A), this file provides the relevant budget function associated with spending. In contrast with Account Balances (File A) this file also includes the relevant object class and program activity. \nWhen you see a reference to Account Breakdown by Program Activity & Object Class (File B) on the site, the reference is to the dataset comprising all agency Files B and not one specific agency file.",
+        "official": null,
+        "resources": "See also:\n\n- [Account Balance (File A)](?glossary=account-balance-file-a)\n- [Account Breakdown by Award (File C)](?glossary=account-breakdown-by-award-file-c)\n- [Awards Data (File D)](?glossary=awards-data-file-d)\n\nFor more information on data elements within each Account File, see our [Data Dictionary](https://www.usaspending.gov/data-dictionary)"
+      },
+      {
+        "term": "Acquisition of Assets",
+        "slug": "acquisition-of-assets",
+        "data_act_term": "Acquisition of Assets",
+        "plain": "This major object class includes an agency\u2019s procurement of assets, including those that have lost value (depreciated). Some examples of assets, according to this definition, include equipment, land, physical structures, investments, and loans.",
+        "official": "This major object class covers object classes 31.0 through 33.0. Include\ncapitalized (depreciated) assets and non-capitalized assets. This includes:\n31.0 Equipment\n32.0 Land and structures\n33.0 Investments and loans\n\nEach specific object class is defined in OMB Circular A-11 Section 83.6.",
+        "resources": "Learn More: [Circular No. A-11](https://www.whitehouse.gov/sites/whitehouse.gov/files/omb/assets/a11_current_year/a11_2017.pdf)"
+      },
+      {
+        "term": "Action Date",
+        "slug": "action-date",
+        "data_act_term": "Action Date",
+        "plain": "The date the action being reported (for prime award transactions or sub-awards) was issued or signed by the Government, or a binding agreement was reached. Because award obligations are tied to action dates, any search for spending data on USAspending will search by this data element rather than by Period of Performance dates.",
+        "official": "The date the action being reported (for prime award transactions or sub-awards) was issued or signed by the Government, or a binding agreement was reached. Because award obligations are tied to action dates, any search for spending data on USAspending will search by this data element rather than by Period of Performance dates.",
+        "resources": "See also: [Base Transaction Action Date](?glossary=base-transaction-action-date), [Period of Performance Start Date](?glossary=period-of-performance-start-date), [Period of Performance Current End Date](?glossary=period-of-performance-current-end-date), [Period of Performance Potential End Date](?glossary=period-of-performance-potential-end-date)"
+      },
+      {
+        "term": "Action Type",
+        "slug": "action-type",
+        "data_act_term": "Action Type",
+        "plain": "Provides information on the type of change made to an award. For example, the change may be the result of a continuation, revision, and/or adjustment to completed project.",
+        "official": "Description (and corresponding code) that provides information on any changes made to the Federal prime award. There are typically multiple actions for each award.\n\n(Note: This definition encompasses current data elements \u2018Type of Action\u2019 for financial assistance and \u2018Reason for Modification\u2019 for procurement)",
+        "resources": null
+      },
+      {
+        "term": "Agency",
+        "slug": "agency",
+        "data_act_term": "Agency",
+        "plain": "On this website, we use the term agency to mean any federal department, commission, or other U.S. government entity. Agencies can have multiple sub-agencies. For example, the National Park Service is a sub-agency of the U.S. Department of the Interior. ",
+        "official": "On this website, we use the term agency to mean any federal department, commission, or other U.S. government entity. Agencies can have multiple sub-agencies. For example, the National Park Service is a sub-agency of the U.S. Department of the Interior. ",
+        "resources": null
+      },
+      {
+        "term": "Agency Identifier",
+        "slug": "agency-identifier",
+        "data_act_term": "Agency Identifier",
+        "plain": "Identifies the agency responsible for a Treasury account. This is a 3-digit number that is a part of a Treasury Account Symbol (TAS).",
+        "official": "The agency code identifies the department or agency that is responsible for the account.",
+        "resources": null
+      },
+      {
+        "term": "Allocation Transfer Agency (ATA) Identifier",
+        "slug": "allocation-transfer-agency-ata-identifier",
+        "data_act_term": "Allocation Transfer Agency (ATA) Identifier",
+        "plain": "Identifies an agency that receives funds through an allocation (non-expenditure) transfer. This is a 3-digit number that is a part of a Treasury Account Symbol (TAS).",
+        "official": "The allocation agency identifies the department or agency that is receiving funds through an allocation (non-expenditure) transfer.",
+        "resources": null
+      },
+      {
+        "term": "Appropriation",
+        "slug": "appropriation",
+        "data_act_term": null,
+        "plain": "The process by which Congress designates and approves spending for a specific purpose (e.g., a project or program). Most government spending is determined through appropriation bills each year. These bills must be passed by Congress and signed by the President. \n\nWhen an appropriation is not passed by Congress before the beginning of the fiscal year, a \u201ccontinuing resolution\u201d (often referred to as a \u201cCR\u201d) may be enacted to avoid a government shutdown. A CR is a law that provides stopgap funding for agencies until their regular appropriations are passed.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Appropriation Account",
+        "slug": "appropriation-account",
+        "data_act_term": "Appropriations Account",
+        "plain": "When Congress passes a law, it often gives an agency authority to carry out a project. When this happens, Congress may set aside money for the project. An appropriation account tracks the money, much like a bank account. The appropriation account number (like a bank account number) is called a Treasury Account Symbol (TAS).",
+        "official": "The basic unit of an appropriation generally reflecting each unnumbered paragraph in an appropriation act. An appropriation account typically encompasses a number of activities or projects and may be subject to restrictions or conditions applicable to only the account, the appropriation act, titles within an appropriation act, other appropriation acts, or the Government as a whole.\n\nAn appropriations account is represented by a TAFS created by Treasury in consultation with OMB.\n\n(defined in OMB Circular A-11)",
+        "resources": "Learn More: [Circular No. A-11](https://www.whitehouse.gov/sites/whitehouse.gov/files/omb/assets/a11_current_year/a11_2017.pdf)"
+      },
+      {
+        "term": "Assistance Listings (CFDA Program)",
+        "slug": "assistance-listings-cfda-program",
+        "data_act_term": "Catalog of Federal Domestic Assistance (CFDA) Number and Title",
+        "plain": "Assistance Listings, previously known as \"CFDA programs\", provide a full listing of federal programs that are available to organizations, government agencies (state, local, tribal), U.S. territories, and individuals who are authorized to do business with the government. An Assistance Listing program can be a project, service, or activity. Each program has a unique, 5-digit number in the form of XX.XXX. The first two digits represent the funding agency. The last three digits represent the program.\n\nExamples of Assistance Listings include: \n\n* Social Security Retirement Insurance (96.002) \n* Medicare Supplementary Medical Insurance (93.774) \n* Supplemental Nutrition Assistance Program (10.551) \n* Highway Planning and Construction (20.205) \n* National School Lunch Program (10.555) ",
+        "official": "The number assigned to an Assistance Listing in the Catalog of Federal Domestic Assistance (CFDA) and SAM.gov.\n\nThe title of the Assistance Listing under which the Federal award was funded in the Catalog of Federal Domestic Assistance (CFDA) and SAM.gov.",
+        "resources": "[Visit the Assistance Listing Website](https://sam.gov/content/assistance-listings)"
+      },
+      {
+        "term": "Availability Type Code",
+        "slug": "availability-type-code",
+        "data_act_term": "Availability Type Code",
+        "plain": "Within a Treasury Account Symbol (TAS), this one-letter code Identifies the availability (or time period) for obligations to be made on the appropriation account. A TAS will have an \u201cX\u201d if there is an unlimited or indefinite period to incur new obligations.",
+        "official": "In appropriations accounts, the availability type code identifies an unlimited period to incur new obligations; this is denoted by the letter X.",
+        "resources": null
+      },
+      {
+        "term": "Award",
+        "slug": "award",
+        "data_act_term": null,
+        "plain": "Money the federal government has promised to pay a recipient. Funding may be awarded to a company, organization, government entity (i.e., state, local, tribal, federal, or foreign), or individual. It may be obligated (promised) in the form of a contract, grant, loan, insurance, direct payment, etc.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Award Amount",
+        "slug": "award-amount",
+        "data_act_term": "Amount of Award",
+        "plain": "The amount that the federal government has promised to pay (obligated) a recipient, because it has signed a contract, awarded a grant, etc. ",
+        "official": "The cumulative amount obligated by the Federal Government for an award, which is calculated by USAspending.gov.\n\nFor procurement and financial assistance awards except loans, this is the sum of Federal Action Obligations.\n\nFor loans or loan guarantees, this is the Original Subsidy Cost.",
+        "resources": "See also:\n\n- [Federal Action Obligation](?glossary=federal-action-obligation)\n- [Loan Subsidy Cost](?glossary=loan-subsidy-cost)\n- [Current Total Value of Award](?glossary=current-award-amount)"
+      },
+      {
+        "term": "Award ID",
+        "slug": "award-id",
+        "data_act_term": "Award Identification Number",
+        "plain": "A unique identification number for each individual award.",
+        "official": "The unique identifier of the specific award being reported, i.e. Federal Award Identification Number (FAIN) for financial assistance and Procurement Instrument Identifier (PIID) for procurement.",
+        "resources": "See also: [FAIN](?glossary=fain), [Procurement Instrument Identifier (PIID)](?glossary=procurement-instrument-identifier-piid), [Parent Award Identification (ID) Number](?glosary=parent-award-identification-id-number), [URI](?glossary=uri)"
+      },
+      {
+        "term": "Base Transaction Description",
+        "slug": "base-transaction-description",
+        "data_act_term": "Base Transaction Description",
+        "plain": "A brief description of the purpose of the award.",
+        "official": "For procurement awards: Per the FPDS data dictionary, a brief, summary level, plain English, description of the contract, award, or modification. Additional information: the description field may also include abbreviations, acronyms, or other information that is not plain English such as that required by OMB policies (CARES Act, etc).\n\nFor financial assistance awards: A plain language description of the Federal award purpose; activities to be performed; deliverables and expected outcomes; intended beneficiary(ies); and subrecipient activities if known/specified at the time of award. ",
+        "resources": null
+      },
+      {
+        "term": "Award Type",
+        "slug": "award-type",
+        "data_act_term": "Award Type",
+        "plain": "The federal government can distribute funding in several forms, including contracts, grants, loans, insurance, and direct payments. Award Type is a classification that provides more information about the structure of the award. Examples include:\n\n- Purchase Order (a type of contract)\n- Definitive Contract (a type of contract)\n- Block Grant (a type of grant)\n- Direct Loan (a type of loan)",
+        "official": "Description (and corresponding code) that provides information to distinguish type of contract, grant, or loan and providers the user with more granularity into the method of delivery of the outcomes.",
+        "resources": "See also:  [Contract Pricing Type](?glossary=contract-pricing-type)\n\n[Read more about Award Type](http://fedspendingtransparency.github.io/whitepapers/types/)"
+      },
+      {
+        "term": "Awarding Agency",
+        "slug": "awarding-agency",
+        "data_act_term": "Awarding Agency Name and Code",
+        "plain": "The Awarding Agency is the agency that issues and administers the award. This agency usually pays for the funding out of its own budget. In some cases, the money is financed by another agency, called the Funding Agency.",
+        "official": "The name and code associated with a department or establishment of the Government as used in the Treasury Account Fund Symbol (TAFS).\n",
+        "resources": null
+      },
+      {
+        "term": "Awarding Office",
+        "slug": "awarding-office",
+        "data_act_term": "Awarding Office Name and Code",
+        "plain": "The office within an agency that issues and administers the award. ",
+        "official": "Name and identifier of the level n organization that awarded, executed or is otherwise responsible for the transaction.",
+        "resources": null
+      },
+      {
+        "term": "Awarding Sub-Agency",
+        "slug": "awarding-sub-agency",
+        "data_act_term": "Awarding Sub Tier Agency Name and Code",
+        "plain": "The Awarding Sub Agency is the sub agency that issues and administers the award. For example, the Internal Revenue Service (IRS) is a sub agency of the Department of the Treasury.",
+        "official": "Name and identifier of the level 2 organization that awarded, executed or is otherwise responsible for the transaction.",
+        "resources": null
+      },
+      {
+        "term": "Awards Data (File D)",
+        "slug": "awards-data-file-d",
+        "data_act_term": null,
+        "plain": "Awards Data is ingested up to daily from government-wide systems where agencies submit financial assistance and procurement data. Because it comprises two separate datasets, it is sometimes referred to as Procurement Data (File D1) and Assistance Data (File D2). Awards Data is separate from the financial data submissions that agencies publish to USAspending.gov each month or quarter (the submissions that include Files A, B, and C). Data from File D1/D2 supplements award data found in Account Breakdown by Award (File C) to provide a full picture of award spending. \nWhen you see a reference to File D on the site, it refers to the up-to-date set of all agencies\u2019 procurement (File D1) and assistance (File D2) datasets and not one specific agency\u2019s files.",
+        "official": null,
+        "resources": "See also:\n\n- [Account Balance (File A)](?glossary=account-balance-file-a)\n- [Account Breakdown by Program Activity & Object Class (File B)](?glossary=account-breakdown-by-program-activity-object-class-file-b)\n- [Account Breakdown by Award (File C)](?glossary=account-breakdown-by-award-file-c)\n\nFor more information on data elements within each Account File, see our [Data Dictionary](https://www.usaspending.gov/data-dictionary)"
+      },
+      {
+        "term": "Balance Brought Forward",
+        "slug": "balance-brought-forward",
+        "data_act_term": "Balance Brought Forward",
+        "plain": "Funds that were not spent (obligated or outlaid) in previous years and are authorized to be spent in the current year.\n",
+        "official": "The definition for this element appears in Appendix F of OMB Circular A-11 issued June 2015; a brief summary from A-11 appears below. For unexpired accounts: Amount of unobligated balance of appropriations or other budgetary resources carried forward from the preceding year and available for obligation without new action by Congress. For expired accounts: Amount of expired unobligated balances available for upward adjustments of obligations.",
+        "resources": "Learn More: [Circular No. A-11](https://www.whitehouse.gov/wp-content/uploads/2025/08/a11.pdf)"
+      },
+      {
+        "term": "Base Transaction Action Date",
+        "slug": "base-transaction-action-date",
+        "data_act_term": null,
+        "plain": "The action date of the original Prime Award Transaction of a Prime Award Summary. Note that this date may be different from the Period of Performance Start Date. Because award obligations are tied to action dates, any search for spending data on USAspending will search by this data element rather than by Period of Performance dates.",
+        "official": null,
+        "resources": "See also: [Period of Performance Start Date](?glossary=period-of-performance-start-date), [Action Date](?glossary=action-date), [Latest Transaction Action Date](?glossary=latest-transaction-action-date)"
+      },
+      {
+        "term": "Basic Ordering Agreement (BOA)",
+        "slug": "basic-ordering-agreement-boa",
+        "data_act_term": null,
+        "plain": "A Basic Ordering Agreement (BOA) is a type of Indefinite Delivery Vehicle (IDV). It is not a contract; it is a written understanding between government and contractor. It details the supplies or services offered. It also details pricing and delivery for future orders.\n\nBOA's can speed up contracting when requirements are uncertain. For instance, when specifications, quantities, and prices are not yet known.\n\nThese agreements can also help the government achieve economies of scale for part orders. For the contractor, they can lessen lead-time, enable a larger inventory investment, and lessen old inventory.",
+        "official": null,
+        "resources": "Learn more on the [FPDS BOA page](https://www.fpds.gov/help/Create_a_BOA.htm)"
+      },
+      {
+        "term": "Beginning Period of Availability",
+        "slug": "beginning-period-of-availability",
+        "data_act_term": "Beginning Period of Availability",
+        "plain": "Identifies the first year that an appropriation account may incur new obligations. This is for annual and multi-year funds only. This is a 4-digit number representing the year (e.g., 2017). It is a part of a Treasury Account Symbol (TAS).",
+        "official": "In annual and multi-year funds, the beginning period of availability identifies the first year of availability under law that an appropriation account may incur new obligations.",
+        "resources": null
+      },
+      {
+        "term": "Blanket Purchase Agreement (BPA)",
+        "slug": "blanket-purchase-agreement-bpa",
+        "data_act_term": null,
+        "plain": "A Blanket Purchase Agreement (BPA) is a method federal agencies use to make repeat purchases of supplies or services. A type of Indefinite Delivery Vehicle (IDV), a BPA operates by setting up a \"charge account\" with trusted vendors. Both agencies and vendors often prefer BPAs because they help speed up the process of repeated purchases. Once a BPA is set up, repeat purchases are easy for both sides.\n\nA BPA is an agreement with an individual agency, meaning only a handful of offices can place orders on a BPA. A BPA can be awarded to a set of vendors, who will then be able to bid on upcoming orders. A BPA can be set up with or without General Services Administration (GSA) schedules. Without GSA schedules, orders are capped at the Simplified Acquisition Threshold (SAT) of $100,000.\n\nExamples of BPAs:\n\n- Agency A establishes a BPA with a computer manufacturer for repeat laptop purchases\n- Agency B establishes a BPA with a graphic design agency for design of brochures and event signage",
+        "official": null,
+        "resources": "Learn more from the [General Services Administration](https://www.gsa.gov/portal/content/199353)"
+      },
+      {
+        "term": "Block Grant",
+        "slug": "block-grant",
+        "data_act_term": null,
+        "plain": "Block grants are awarded by the federal government to state and local governments for broadly defined purposes \u2014 for example, social services or community development.",
+        "official": "Block grants are given primarily to general purpose governmental units in accordance with a statutory formula. Such grants can be used for a variety of activities within a broad functional area. Examples of federal block grant programs are the Omnibus Crime Control and Safe Streets Act of 1968, the Housing and Community Development Act of 1974, and the grants to states for social services under title XX of the Social Security Act.",
+        "resources": null
+      },
+      {
+        "term": "Budget Authority",
+        "slug": "budget-authority",
+        "data_act_term": "Budget Authority Available Amount Total",
+        "plain": "A federal agency is only allowed to spend money if Congress provides the authority by law for that spending. That permission to spend is called \u201cbudget authority.\u201d  \n\nBudget authority can be granted through an appropriation law, which specifies a purpose, usually a maximum amount of money, and a set time period. Budget authority can also be granted for spending unused funds from a previous year, or to spend money that the agency takes in (e.g., the National Park Service is authorized to spend fees collected for park admission regardless of the amount).\n",
+        "official": "The total amount of all obligation budget authority including unobligated balances carried forward, adjustments to unobligated balances carried forward, appropriated amounts, and other budgetary resources, as of the reported date.",
+        "resources": null
+      },
+      {
+        "term": "Budget Authority Appropriated",
+        "slug": "budget-authority-appropriated",
+        "data_act_term": "Budget Authority Appropriated",
+        "plain": "A provision of law (not necessarily in an appropriations act) authorizing an account to incur obligations and to make outlays for a given purpose. Usually, but not always, an appropriation provides budget authority.\n\n(defined in OMB Circular A-11)",
+        "official": "A provision of law (not necessarily in an appropriations act) authorizing an account to incur obligations and to make outlays for a given purpose. Usually, but not always, an appropriation provides budget authority.\n\n(defined in OMB Circular A-11)",
+        "resources": "Learn More: [Circular No. A-11](https://www.whitehouse.gov/wp-content/uploads/2018/06/a11.pdf)"
+      },
+      {
+        "term": "Budget Function",
+        "slug": "budget-function",
+        "data_act_term": null,
+        "plain": "The federal budget is divided into approximately 20 categories, known as budget functions. These categories organize federal spending into topics based on the major purpose the spending serves (e.g., National Defense, Transportation, Health).\n\nThese are further broken down into budget sub functions.",
+        "official": null,
+        "resources": "Learn More: [Glossary of Terms Used in the Federal Budget Process](https://www.gao.gov/assets/80/76911.pdf)"
+      },
+      {
+        "term": "Budget Sub-Function",
+        "slug": "budget-sub-function",
+        "data_act_term": null,
+        "plain": "The federal budget is divided into functions and sub functions. These categories organize federal spending into topics based on the major purpose the spending serves. There are about 20 major functions (e.g., National Defense, Transportation, Health). Most of these functions are further divided into sub functions.\n\nFor example, the budget function for Health is divided into sub functions for Health care services, Health research and training, and Consumer and occupational health and safety.",
+        "official": null,
+        "resources": "Learn More: [Glossary of Terms Used in the Federal Budget Process](https://www.gao.gov/assets/80/76911.pdf)"
+      },
+      {
+        "term": "Budgetary Resources",
+        "slug": "budgetary-resources",
+        "data_act_term": null,
+        "plain": "Budgetary resources mean amounts available to incur obligations in a given year. Budgetary resources consist of new budget authority (from appropriations, borrowing authority, contract authority, or offsetting collections) and unobligated balances of budget authority provided in previous years. On this website, budgetary resources do not include financing accounts, which are a type of treasury account used to finance federal loans and are not considered spending per Office of Management and Budget (OMB) policy. For the purposes of USASpending.gov, \u201cfunding\u201d represents \u201cbudgetary resources\u201d. \n\nBudgetary resources include financial transfers between Government accounts. Financial transfers are financial interchanges between Federal Government accounts that are not an exchange for goods and services. For example, an expenditure transfer that shifts budgetary resources between a General Fund account, (e.g., Payment to Highway Trust Fund) and a trust fund (e.g., Highway Trust Fund) is considered a financial transfer.  For financial transfers, budgetary resources are shown in both accounts.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Clinger-Cohen Act",
+        "slug": "clinger-cohen-act",
+        "data_act_term": "Clinger-Cohen Act Planning Compliance",
+        "plain": "The Clinger-Cohen Act (CCA) of 1996 is a federal law designed to improve the way the federal government acquires, uses, and disposes of IT. It strives to make IT purchases more strategic.",
+        "official": "A code indicating the funding office has certified that the information technology purchase meets the planning requirements in 40 USC 11312 and 40 USC 11313.",
+        "resources": null
+      },
+      {
+        "term": "Construction Wage Rate Requirements",
+        "slug": "construction-wage-rate-requirements",
+        "data_act_term": "Construction Wage Rate Requirements",
+        "plain": "Indicates whether the transaction is subject to the Construction Wage Rate Requirements. The clause is 52.222-6 \"Construction Wage Rate Requirements\" -that goes with Wage Rate Requirements (Construction) (formerly Davis-Bacon Act).",
+        "official": "Indicates whether the transaction is subject to the Construction Wage Rate Requirements. The clause is 52.222-6 \"Construction Wage Rate Requirements\" -that goes with Wage Rate Requirements (Construction) (formerly Davis-Bacon Act).",
+        "resources": "[U.S. Department of Labor description](https://www.dol.gov/whd/contracts/dbra.htm)"
+      },
+      {
+        "term": "Contract",
+        "slug": "contract",
+        "data_act_term": null,
+        "plain": "An agreement between the federal government and a prime recipient to provide goods and services for a fee.",
+        "official": "Contract means a mutually binding legal relationship obligating the seller to furnish the supplies or services (including construction) and the buyer to pay for them. It includes all types of commitments that obligate the government to an expenditure of appropriated funds and that, except as otherwise authorized, are in writing. In addition to bilateral instruments, contracts include (but are not limited to) awards and notices of awards; job orders or task letters issued under basic ordering agreements; letter contracts; orders, such as purchase orders, under which the contract becomes effective by written acceptance or performance; and bilateral contract modifications. Contracts do not include grants and cooperative agreements covered by 31 U.S.C. 6301, et seq.",
+        "resources": null
+      },
+      {
+        "term": "Contract Pricing Type",
+        "slug": "contract-pricing-type",
+        "data_act_term": "Type of Contract Pricing",
+        "plain": "Payment model for a contract. Each has a different way of accounting for costs, fees, and profits. Contract pricing types include:\n\n- Fixed Price Redetermination \n- Fixed Price Level of Effort \n- Firm Fixed Price \n- Fixed Price with Economic Price Adjustment \n- Fixed Price Incentive \n- Fixed Price Award Fee \n- Cost Plus Award Fee \n- Cost No Fee \n- Cost Sharing \n- Cost Plus \n- Fixed Fee \n- Cost Plus Incentive Fee \n- Time and Materials \n- Labor Hours\n",
+        "official": "The type of contract as defined in FAR Part 16 that applies to this procurement.",
+        "resources": "[Read the Federal Acquisition Regulation (FAR) descriptions](https://www.acquisition.gov/far/html/FARTOCP16.html)"
+      },
+      {
+        "term": "Contractor",
+        "slug": "contractor",
+        "data_act_term": null,
+        "plain": "A business, organization, or agency that receives funding and/or performs work on a contract. A contractor may be a corporation, small business, university, non-profit, sole proprietor, or other entity. When a company has a contract with the U.S. government, they may hire another company to perform part of the work. When this happens, the company who received the award is called the prime contractor. The company hired by the prime is called the sub-contractor.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Contractual Services and Supplies",
+        "slug": "contractual-services-and-supplies",
+        "data_act_term": "Contractual Services and Supplies",
+        "plain": "This major object class includes services or supplies purchased to support the fulfillment of government activities during a specified contract period. Some examples include transportation of government personnel and supplies, rent and other utilities, rental payments made to GSA, printing and reproduction costs, and operations/maintenance costs for federal facilities. \n\nThese items are not equivalent to the Federal Acquisition Regulation (FAR) federal contract award spending and will not match total contract award spending on USAspending.gov.",
+        "official": "This major object class covers purchases of contractual services and supplies in object classes 21.0 through 26.0, including:\n21.0 Travel and transportation of persons\n22.0 Transportation of things, Rent, Communications, and Utilities\n23 Rent, Communications, and Utilities\n23.1 Rental payments to GSA\n23.2 Rental payments to others\n23.3 Communications, utilities, and miscellaneous charges\n24.0 Printing and reproduction\n25 Other contractual services\n25.1 Advisory and assistance services\n25.2 Other services from non-Federal sources\n25.3 Other goods and services from Federal sources\n25.4 Operation and maintenance of facilities\n25.5 Research and development contracts\n25.6 Medical care\n25.7 Operation and maintenance of equipment\n25.8 Subsistence and support of persons\n26.0 Supplies and materials\n\nEach specific object class is defined in OMB Circular A-11 Section 83.6.\n\n\n\n",
+        "resources": "Learn More: [Circular No. A-11](https://www.whitehouse.gov/sites/whitehouse.gov/files/omb/assets/a11_current_year/a11_2017.pdf)"
+      },
+      {
+        "term": "Cooperative Agreement",
+        "slug": "cooperative-agreement",
+        "data_act_term": null,
+        "plain": "Grant awarded to provide assistance. It is characterized by extended involvement between recipient and agency. It requires substantial oversight by the agency, and includes reporting requirements.",
+        "official": null,
+        "resources": "[Read the OMB Uniform Guidance definition](http://www.ecfr.gov/cgi-bin/text-idx?SID=46104990e1c2a6428d3e417781304a9f&mc=true&node=pt2.1.200&rgn=div5#se2.1.200_124)"
+      },
+      {
+        "term": "Current Award Amount",
+        "slug": "current-award-amount",
+        "data_act_term": "Current Total Value of Award",
+        "plain": "The amount of money that the government has promised (obligated) to pay a recipient for a contract. This means the base amount and any exercised options.",
+        "official": "For procurement, the total amount obligated to date on a contract, including the base and exercised options.",
+        "resources": null
+      },
+      {
+        "term": "Definitive Contract",
+        "slug": "definitive-contract",
+        "data_act_term": null,
+        "plain": "A Definitive Contract is a mutually binding legal relationship obligating the seller to provide the supplies or services (including construction) and the buyer to pay for them. It includes all types of commitments that obligate the Government to an expenditure of appropriated funds and that, except as otherwise authorized, are in writing. In addition to bilateral instruments, contracts include (but are not limited to) awards and notices of awards; job orders, or task letters, issued under basic ordering agreements; letter contracts; orders, such as purchase orders, under which the contract becomes effective by written acceptance or performance; and bilateral contract modifications. ",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Delivery Order Contract",
+        "slug": "delivery-order-contract",
+        "data_act_term": null,
+        "plain": "An Indefinite Quantity Contract for supplies (not services) is sometimes referred to as a Delivery Order Contract. With this type of contract, the government promises to buy supplies over a period of time from a vendor. Instead of an exact amount, it sets a quantity range with a minimum and maximum.",
+        "official": null,
+        "resources": "Read more on the [FPDS page](https://www.fpds.gov/help/Indefinite_Delivery_Contract.htm)"
+      },
+      {
+        "term": "Deobligation",
+        "slug": "deobligation",
+        "data_act_term": null,
+        "plain": "The cancellation or downward adjustment of previously obligated funds. Agencies deobligate funds to decrease the amount available under an award.  Deobligated funds may be reobligated within the period of availability of the appropriation.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Direct Loan",
+        "slug": "direct-loan",
+        "data_act_term": null,
+        "plain": "Direct loan means a disbursement of funds by the Government to a non-Federal borrower under a contract that requires the repayment of such funds with or without interest.  The term also includes certain equivalent transactions that extend credit.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Direct Payment",
+        "slug": "direct-payment",
+        "data_act_term": null,
+        "plain": "A cash payment made by the federal government to an individual, a private firm, or another private institution.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Unobligated Balance",
+        "slug": "unobligated-balance",
+        "data_act_term": "Unobligated Balance",
+        "plain": "The amount of money out of an account that has yet to be awarded or obligated (promised to be spent).",
+        "official": "Unobligated balance means the cumulative amount of budget authority that remains available for obligation under law in unexpired accounts at a point in time. The term \u201cexpired balances available for adjustment only\u201d refers to unobligated amounts in expired accounts.\n\n \n\nAdditional detail is provided in Circular A\u201011.",
+        "resources": null
+      },
+      {
+        "term": "Direct Payment for Specified Use",
+        "slug": "direct-payment-for-specified-use",
+        "data_act_term": "Direct Payment for Specified Use",
+        "plain": "Financial assistance provided by the federal government directly to individuals, private firms, and other private institutions for a particular activity. To receive this assistance, the recipient must perform certain agreed-upon activities and meet certain milestones. Direct payments don\u2019t include solicited contracts for the procurement of goods and services for the government.",
+        "official": "Includes financial assistance from the Federal government provided directly to individuals, private firms, and other private institutions to encourage or subsidize a particular activity by conditioning the receipt of the assistance on a particular performance by the recipient. ",
+        "resources": null
+      },
+      {
+        "term": "Disaster Emergency Fund Code (DEFC)",
+        "slug": "disaster-emergency-fund-code-defc",
+        "data_act_term": "Disaster Emergency Fund Code (DEFC)",
+        "plain": "Disaster Emergency Fund Code (DEFC) is used to track the spending of funding for disasters and emergencies such as COVID-19. Each code links to one or more legislative bills that authorized the funding.",
+        "official": "The Office of Management and Budget (OMB), working with the Department of Treasury\u2019s Fiscal Service, has identified a Government-wide Treasury Account Symbol Adjusted Trial Balance System (GTAS) attribute called \u2018Disaster Emergency Fund Code (DEFC)\u2019 to track appropriations classified as disaster or emergency. This code applies to the budgetary resources, obligations incurred, unobligated and obligated balances, and outlays that result from these appropriations.\n\n\nAs established in Memorandum M-18-08,  the domain value set for DEFC is a single letter from \u2018A\u2019 to \u2018Z\u2019. The default domain value for all funding without disaster or emergency designation is \u2018Q\u2019. OMB assigns a new DEFC domain value from the set to each enacted appropriation with disaster or emergency funding. The corresponding domain title for each DEFC domain value identifies the associated public law number(s) and whether the funding is disaster or emergency.\n\n\nMemorandum M-20-21 amended the above to allow agencies to use DEFC to meet reporting requirements for COVID-19 supplemental funding, which required tracking of funds not designated as emergency.\n\n\nAgencies use the following DEFC domain values and titles for COVID-19 supplemental funding:\n\n- **DEFC \u2018L\u2019**  Public Law 116-123, designated as emergency\n- **DEFC \u2018M\u2019**  Public Law 116-127, designated as emergency\n- **DEFC \u2018N\u2019**  Public Law 116-136, designated as emergency\n- **DEFC \u2018O\u2019**  Public Law 116-136, Public Law 116-139, and Public Law 116-260, not designated as emergency\n- **DEFC \u2018P\u2019**  Public Law 116-139, designated as emergency\n- **DEFC \u2018U\u2019**  Public Law 116-260, designated as emergency\n- **DEFC \u2018V\u2019**  Public Law 117-2, American Rescue Plan Act of 2021, not designated as emergency\n\n\nNote that the National Interest Action (NIA) code is also used to track COVID-19 spending. However, it only applies to procurement actions (i.e., contracts) and is not necessarily tied to COVID-19 supplemental appropriations. Thus, awards with the COVID-19 NIA value may not have a COVID-19 DEFC value, and vice versa.",
+        "resources": "[Memorandum M-18-08](https://www.whitehouse.gov/wp-content/uploads/2017/11/M-18-08.pdf)\n\n[Memorandum M-20-21](https://www.whitehouse.gov/wp-content/uploads/2020/04/Implementation-Guidance-for-Supplemental-Funding-Provided-in-Response.pdf)"
+      },
+      {
+        "term": "Direct Payment with Unrestricted Use",
+        "slug": "direct-payment-with-unrestricted-use",
+        "data_act_term": "Direct Payment with Unrestricted Use",
+        "plain": "Financial assistance provided by the federal government directly to beneficiaries who meet certain federal eligibility requirements. This type of assistance doesn\u2019t place any restrictions on how the recipient spends the money. Some examples of direct payments include retirement, pension, and compensatory programs.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "DOD Claimant Program Code",
+        "slug": "dod-claimant-program-code",
+        "data_act_term": "DOD Claimant Program Code",
+        "plain": "Department of Defense (DOD) code that designates a grouping of supplies, construction, or other services. Each code has letters and numbers.",
+        "official": "A claimant program number designates a grouping of supplies, construction, or other services.",
+        "resources": "- [Claimant Program Code Field Requirements](https://www.fpds.gov/help/ClaimantProgram.htm)\n- [Listing of DOD Claimant Program Codes](http://www.dior.whs.mil/peidhome/guide/mn02/sect3.htm)"
+      },
+      {
+        "term": "DUNS",
+        "slug": "duns",
+        "data_act_term": "Awardee/Recipient Unique Identifier",
+        "plain": "DUNS stands for Data Universal Numbering System. It is a unique 9-digit identification number assigned to a company or organization by Dun & Bradstreet, Inc. A DUNS is required to register in the System for Award Management (SAM). An organization must be registered in SAM (and obtain a DUNS) to do business with the federal government. There is a separate DUNS number for each business location in the Dun & Bradstreet database. The DUNS number is random, and specific digits have no significance.",
+        "official": "The unique identification number for an awardee or recipient. Currently the identifier is the 9-digit number assigned by Dun & Bradstreet referred to as the DUNS\u00ae number.",
+        "resources": "- [Dun & Bradstreet website](http://www.dnb.com/duns-number.html)\n- [Read the limitations on use of DUNS](https://www.usaspending.gov/#/db_info)"
+      },
+      {
+        "term": "Ending Period of Availability",
+        "slug": "ending-period-of-availability",
+        "data_act_term": "Ending Period of Availability",
+        "plain": "Identifies the last year that an appropriation account may incur new obligations. This is for annual and multi-year funds only. This is a 4-digit number representing the year (e.g., 2018). It is a part of a Treasury Account Symbol (TAS).",
+        "official": "In annual and multi-year funds, the end period of availability identifies the last year of funds availability under law that an appropriation account may incur new obligations.",
+        "resources": null
+      },
+      {
+        "term": "Extent Competed",
+        "slug": "extent-competed",
+        "data_act_term": "Extent Completed",
+        "plain": "A code that represents the competitive nature of the contract. Values include:\n\n- A = Full and open competition (competitive proposal, no sources excluded)\n- B = Not available for competition\n- C = Not competed\n- D = Full and open competition after exclusion of sources\n- E = Follow-on to competed action (a follow-on to an existing competed contract)\n- F = Competed under Simplified Acquisition Threshold (SAP)\n- G = Not competed under Simplified Acquisition Threshold (SAP)",
+        "official": "A code that represents the competitive nature of the contract.\n[Read the Federal Procurement Data System definition](https://www.fpds.gov/help/Extent_Competed.htm).",
+        "resources": "Learn More: [https://www.fpds.gov/help/Extent_Competed.htm](https://www.fpds.gov/help/Extent_Competed.htm)"
+      },
+      {
+        "term": "Face Value of Loan",
+        "slug": "face-value-of-loan",
+        "data_act_term": "Face Value Of Direct Loan Or Loan Guarantee",
+        "plain": "Face value of a loan is the total amount of the loan, and the amount that agencies have directly issued (for direct loans) or facilitated by compensating the lender if the borrower defaults (for loan guarantees). \n\nSince loans are expected to be paid back, in budgetary terms, the face value of a loan is not considered spending and is not included in any obligation or outlay figure. However, because not all loans are repaid, they do have costs to the government. The government\u2019s calculation of these costs is called subsidy cost. ",
+        "official": "The face value of the direct loan or loan guarantee.",
+        "resources": null
+      },
+      {
+        "term": "FAIN",
+        "slug": "fain",
+        "data_act_term": "FAIN",
+        "plain": "An identification code assigned to a specific financial assistance award by an agency for tracking purposes. The FAIN is tied to that award (and all future modifications to that award) throughout the award's life. Within an agency, FAINs are unique; a new award must be issued a new FAIN. FAIN stands for Federal Award Identification Number, though the digits may be both letters and numbers.",
+        "official": "The Federal Award Identification Number (FAIN) is the unique ID within the Federal agency for each financial assistance award.",
+        "resources": null
+      },
+      {
+        "term": "Federal Account",
+        "slug": "federal-account",
+        "data_act_term": null,
+        "plain": "Federal Accounts refer to the set of Treasury spending accounts that are grouped under a given \"Federal Account Symbol.\" On this website we group them by their agency identifier (3-digit code) and Main Account code (4-digit code).",
+        "official": null,
+        "resources": "[Federal Account Symbols and Titles (FAST Book)](https://www.fiscal.treasury.gov/fsreports/ref/fastBook/fastbook_home.htm)\n\nSee also:\n\n- [Treasury Account Symbol](?glossary=treasury-account-symbol-tas)"
+      },
+      {
+        "term": "Federal Action Obligation",
+        "slug": "federal-action-obligation",
+        "data_act_term": "Federal Action Obligation",
+        "plain": "Amount of Federal Government\u2019s obligation, de-obligation, or liability, in dollars, for an award transaction.",
+        "official": "Amount of Federal Government\u2019s obligation, de-obligation, or liability, in dollars, for an award transaction.",
+        "resources": null
+      },
+      {
+        "term": "Financial Assistance",
+        "slug": "financial-assistance",
+        "data_act_term": null,
+        "plain": "A federal program, service, or activity that directly aids organizations, individuals, or state/local/tribal governments. Sectors include education, health, public safety and public welfare - to name a few. Financial assistance is distributed in many forms, including grants, loans, direct payments, or insurance.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Federal Supply Schedule (FSS)",
+        "slug": "federal-supply-schedule-fss",
+        "data_act_term": null,
+        "plain": "The Federal Supply Schedule (FSS) is a listing of contractors that have been awarded a contract by GSA that can be used by all federal agencies. This is also known as a Multiple Award Schedule (MAS).",
+        "official": null,
+        "resources": "[Learn more from the GSA Acquisition Manual](https://www.acquisition.gov/gsam/current/html/Part538.html)"
+      },
+      {
+        "term": "Fiscal Year (FY)",
+        "slug": "fiscal-year-fy",
+        "data_act_term": null,
+        "plain": "The fiscal year is an accounting period that spans 12 months. For the federal government, it runs from October 1 to September 30. For example, Fiscal Year 2017 (FY 2017) starts October 1, 2016 and ends September 30, 2017.\nA fiscal year may be broken down into quarters. For the federal government, these quarters are:\n\n- Q1: October - December \n- Q2: January - March \n- Q3: April - June\n- Q4: July - September",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Formula Grant",
+        "slug": "formula-grant",
+        "data_act_term": "Formula Grant",
+        "plain": "An allocation made to states (or their subdivisions, which include county and local governments, among other entities) according to law. These grants are awarded for continuing activities that aren\u2019t confined to a specific project \u2014 for example, Medicaid.",
+        "official": "Allocations made to states (or their subdivisions) according to law or administrative regulation. These grants are awarded for continuing activities that aren\u2019t confined to a specific project.",
+        "resources": null
+      },
+      {
+        "term": "Funding Agency",
+        "slug": "funding-agency",
+        "data_act_term": "Funding Agency Name and Code",
+        "plain": "A Funding Agency pays for the majority of funds for an award out of its budget. Typically, the Funding Agency is the same as the Awarding Agency. In some cases, one agency will administer an award (Awarding Agency) and another agency will pay for it (Funding Agency).",
+        "official": "Name and 3-digit CGAC agency code of the department or establishment of the Government that provided the preponderance of the funds for an award and/or individual transactions related to an award.\n",
+        "resources": null
+      },
+      {
+        "term": "Funding Obligated",
+        "slug": "funding-obligated",
+        "data_act_term": "Transaction Obligated Amount",
+        "plain": "The amount of money that an agency has promised to pay, usually because the agency has signed a contract, awarded a grant, or placed an order for goods or services. \n\nIn the \"Financial Systems Details\" tab on an award summary page, this amount refers to the funding obligated in an agency's financial system.",
+        "official": "The definition for this element appears in Section 20 of OMB Circular A-11 issued June 2015; a brief summary from A-11 appears below. \n\nObligation means a binding agreement that will result in outlays, immediately or in the future. Budgetary resources must be available before obligations can be incurred legally.",
+        "resources": null
+      },
+      {
+        "term": "Funding Office",
+        "slug": "funding-office",
+        "data_act_term": "Funding Office Name and Code",
+        "plain": "The office within an agency that pays the majority of funds for an award out of its budget. ",
+        "official": "Name and identifier of the level n organization that provided the preponderance of the funds obligated by this transaction.",
+        "resources": null
+      },
+      {
+        "term": "Funding Opportunity Goals Text",
+        "slug": "funding-opportunity-goals-text",
+        "data_act_term": null,
+        "plain": "A brief summary of the intended outcomes associated with the notice of funding opportunity.",
+        "official": "A brief summary of the intended outcomes associated with the notice of funding opportunity.",
+        "resources": null
+      },
+      {
+        "term": "Funding Opportunity Number",
+        "slug": "funding-opportunity-number",
+        "data_act_term": null,
+        "plain": "An alphanumeric identifier that a Federal agency assigns to its funding opportunity announcement as part of the Notice of Funding Opportunity posted on the OMB-designated government-wide web site\u00a0(currently\u00a0grants.gov)\u00a0for finding and applying for Federal financial assistance.",
+        "official": "An alphanumeric identifier that a Federal agency assigns to its funding opportunity announcement as part of the Notice of Funding Opportunity posted on the OMB-designated government-wide web site\u00a0(currently\u00a0grants.gov)\u00a0for finding and applying for Federal financial assistance.",
+        "resources": null
+      },
+      {
+        "term": "Funding Sub-Agency",
+        "slug": "funding-sub-agency",
+        "data_act_term": "Funding Sub Tier Agency Name and Code",
+        "plain": "A component of a larger department or agency that pays for the majority of funds for an award out of its budget. Also known as a sub-tier agency. For example, Bureau of Indian Affairs is a sub-agency of Department of Interior.",
+        "official": "Name and identifier of the level 2 organization that provided the preponderance of the funds obligated by this transaction.",
+        "resources": null
+      },
+      {
+        "term": "Governmentwide Spending Data Model (GSDM)",
+        "slug": "governmentwide-spending-data-model-gsdm",
+        "data_act_term": null,
+        "plain": "The Governmentwide Spending Data Model (GSDM), formerly called the DATA Act Information Model Schema (DAIMS), is the authoritative source for the data elements that establish government-wide data standards for spending data and their subsequent publication for transparency.",
+        "official": "The Governmentwide Spending Data Model (GSDM), formerly called the DATA Act Information Model Schema (DAIMS), was created as a result of the Digital Accountability and Transparency Act of 2014 (DATA Act). The GSDM is the authoritative source for the terms, definitions, formats and structures for hundreds of distinct data elements that establish government-wide data standards for spending data and their subsequent publication for transparency.\n\nThe Office of Management and Budget (OMB) and Department of the Treasury (Treasury) collected public input and feedback from federal agencies and implemented an agile development methodology to create the DAIMS. The finalized DAIMS first published in April 2016. Since then, Treasury has periodically published updates to reflect the inclusion of legislation and policies that go beyond the DATA Act. \n\nIn November 2023, DAIMS was rebranded as the GSDM to reflect the inclusion of new legislation and policies. The GSDM includes artifacts that provide technical guidance for federal agencies about what data to report to Treasury including the authoritative sources of the data elements and the submission format. The GSDM documents also provide data consumers with information and context to better understand the inherent complexity of the data. ",
+        "resources": "Learn more: [Governmentwide Spending Data Model (GSDM)](https://fiscal.treasury.gov/data-transparency/GSDM-current.html), [DATA Act of 2014](https://www.congress.gov/bill/113th-congress/senate-bill/994)"
+      },
+      {
+        "term": "Government wide Acquisition Contract (GWAC)",
+        "slug": "government-wide-acquisition-contract-gwac",
+        "data_act_term": null,
+        "plain": "Government-Wide Acquisition Contract (GWAC) is a multi-agency contract. It offers Information Technology (IT) services to agencies across the government. It is an Indefinite Delivery Vehicle (IDV) for certain types of IT work:\n\n- Systems design\n- Software engineering\n- Information assurance\n- Enterprise architecture\n\nVendors compete for the initial contracts. Once selected, they are eligible to compete further for agency-specific tasks.",
+        "official": null,
+        "resources": "[Learn more from the GSA GWAC page](https://www.gsa.gov/portal/content/104874)"
+      },
+      {
+        "term": "Unreported Data",
+        "slug": "unreported-data",
+        "data_act_term": null,
+        "plain": "There are various reasons financial or award data is not reported by agencies or otherwise available to USAspending.gov at a given time. These include, but are not limited to, timing of data availability, or sensitive data that is not subject to submission. Where possible, USAspending.gov advises readers that other information exists that cannot be detailed.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Grant",
+        "slug": "grant",
+        "data_act_term": "Grant",
+        "plain": "An award of financial assistance from a federal agency to a recipient to carry out a public project or service authorized by a United States law. Unlike loans, grants do not need to be repaid. Most grants are awarded to state and local governments. On this site, you\u2019ll see reference to several types of grants, including block grants, formula grants, project grants, and cooperative agreements. ",
+        "official": "A federal financial assistance award making payment in cash or in kind for a specified purpose. The federal government is not expected to have substantial involvement with the state or local government or other recipient while the contemplated activity is being performed. The term \u201cgrant\u201d is used broadly and may include a grant to nongovernmental recipients as well as one to a state or local government, while the term \u201cgrant-in-aid\u201d is commonly used to refer only to a grant to a state or local government. (For a more detailed description, see the Federal Grant and Cooperative Agreement Act of 1977, 31 U.S.C. \u00a7\u00a7 6301\u20136308.) The two major forms of federal grants-in-aid are block and categorical.",
+        "resources": null
+      },
+      {
+        "term": "Grants and Fixed Charges",
+        "slug": "grants-and-fixed-charges",
+        "data_act_term": "Grants and Fixed Charges",
+        "plain": "This major object class includes grants, subsidies, and contributions to foreign countries; insurance claims; indemnities (for example, payments to veterans for death or disability, or to compensate for loss of property); interest and dividends; and refunds.",
+        "official": "This major object class covers object classes 41.0 through 44.0. This includes:\n41.0 Grants, subsidies, and\ncontributions\n42.0 Insurance claims and\nindemnities\n43.0 Interest and dividends\n44.0 Refunds\n\nEach specific object class is defined in OMB Circular A-11 Section 83.6.",
+        "resources": "Learn More: [Circular No. A-11](https://www.whitehouse.gov/sites/whitehouse.gov/files/omb/assets/a11_current_year/a11_2017.pdf)"
+      },
+      {
+        "term": "Guaranteed / Insured Loans",
+        "slug": "guaranteed-insured-loans",
+        "data_act_term": null,
+        "plain": "Loan guarantee means any guarantee, insurance, or other pledge with respect to the payment of all or a part of the principal or interest on any debt obligation of a non-Federal borrower to a non-Federal lender.  The term does not include the insurance of deposits, shares, or other withdrawable accounts in financial institutions. ",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Highly Compensated Officer Name",
+        "slug": "highly-compensated-officer-name",
+        "data_act_term": "Highly Compensated Officer Name",
+        "plain": "First Name: The first name of an individual identified as one of the five most highly compensated \u201cExecutives.\u201d \u201cExecutive\u201d means officers, managing partners, or any other employees in management positions.\n\nMiddle Initial: The middle initial of an individual identified as one of the five most highly compensated \u201cExecutives.\u201d \u201cExecutive\u201d means officers, managing partners, or any other employees in management positions.\n\nLast Name: The last name of an individual identified as one of the five most highly compensated \u201cExecutives.\u201d \u201cExecutive\u201d means officers, managing partners, or any other employees in management positions.",
+        "official": "First Name: The first name of an individual identified as one of the five most highly compensated \u201cExecutives.\u201d \u201cExecutive\u201d means officers, managing partners, or any other employees in management positions.\n\nMiddle Initial: The middle initial of an individual identified as one of the five most highly compensated \u201cExecutives.\u201d \u201cExecutive\u201d means officers, managing partners, or any other employees in management positions.\n\nLast Name: The last name of an individual identified as one of the five most highly compensated \u201cExecutives.\u201d \u201cExecutive\u201d means officers, managing partners, or any other employees in management positions.",
+        "resources": null
+      },
+      {
+        "term": "Highly Compensated Officer Total Compensation",
+        "slug": "highly-compensated-officer-total-compensation",
+        "data_act_term": "Highly Compensated Officer Total Compensation",
+        "plain": "The cash and noncash dollar value earned by the one of the five most highly compensated \u201cExecutives\u201d during the awardee's preceding fiscal year and includes the following (for more information see 17 C.F.R. \u00a7 229.402(c)(2)): salary and bonuses, awards of stock, stock options, and stock appreciation rights, earnings for services under non-equity incentive plans, change in pension value, above-market earnings on deferred compensation which is not tax qualified, and other compensation.",
+        "official": "The cash and noncash dollar value earned by the one of the five most highly compensated \u201cExecutives\u201d during the awardee's preceding fiscal year and includes the following (for more information see 17 C.F.R. \u00a7 229.402(c)(2)): salary and bonuses, awards of stock, stock options, and stock appreciation rights, earnings for services under non-equity incentive plans, change in pension value, above-market earnings on deferred compensation which is not tax qualified, and other compensation.",
+        "resources": null
+      },
+      {
+        "term": "Indefinite Delivery / Requirements Contract",
+        "slug": "indefinite-delivery-requirements-contract",
+        "data_act_term": null,
+        "plain": "Requirements contracts are for the fulfillment of all purchase requirements of supplies or services for designated government activities during a specified contract period, with deliveries to be scheduled by placing orders with the contractor.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Indefinite Delivery Contract (IDC)",
+        "slug": "indefinite-delivery-contract-idc",
+        "data_act_term": null,
+        "plain": "Indefinite Delivery Contract (IDC) facilitates the delivery of supply and service orders during a set timeframe. This type of contract is awarded to one or more vendors. \n\nTypes of IDC's Include:\n\n- Indefinite Delivery / Definite Quantity Contract\n- Indefinite Delivery / Requirements Contract\n- Indefinite Delivery / Indefinite Quantity (IDIQ) Contract",
+        "official": null,
+        "resources": "[Learn more from the FPDS IDC page](https://www.fpds.gov/help/Indefinite_Delivery_Contract.htm)"
+      },
+      {
+        "term": "Indefinite Delivery / Definite Quantity Contract",
+        "slug": "indefinite-delivery-definite-quantity-contract",
+        "data_act_term": null,
+        "plain": "An indefinite delivery contract (IDC) facilitates the delivery of supply and service orders during a set timeframe. This type of contract is awarded to one or more vendors.\n\nDefinite Quantity Contracts, which are a type of IDC, provide for delivery of a definite quantity of supplies or services for a fixed period, with deliveries to be scheduled at designated locations upon order.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Indefinite Delivery Vehicle (IDV)",
+        "slug": "indefinite-delivery-vehicle-idv",
+        "data_act_term": null,
+        "plain": "Vehicle to facilitate the delivery of supply and service orders. IDV Types include:\n\n- Blanket Purchase Agreement (BPA)\n- Basic Ordering Agreement (BOA)\n- Government-Wide Acquisition Contract (GWAC)\n- Multi-Agency Contract\n- Indefinite Delivery Contract (IDC)\n- Federal Supply Schedule (FSS)\n",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Indefinite Delivery / Indefinite Quantity (IDIQ) Contract",
+        "slug": "indefinite-delivery-indefinite-quantity-idiq-contract",
+        "data_act_term": null,
+        "plain": "An Indefinite Quantity Contract is a type of Indefinite Delivery Contract (IDC). Sometimes the government contracts to buy supplies or services from a vendor over a period of time. For instances that government does not know the exact quantity it will need, an Indefinite Quantity Contract sets a quantity range with a min and max. It does not specify an exact number. For services, this is often called a Task Order Contract. For supplies, this is often called a Delivery Order Contract.",
+        "official": null,
+        "resources": "[Learn more from the GSA IDIQ page](https://www.fpds.gov/help/Indefinite_Delivery_Contract.htm)"
+      },
+      {
+        "term": "Indirect Cost Federal Share Amount",
+        "slug": "indirect-cost-federal-share-amount",
+        "data_act_term": null,
+        "plain": "The total amount of any single Federal award action that is allocated, per the award recipient\u2019s approved award budget, to indirect costs.",
+        "official": "The total amount of any single Federal award action that is allocated, per the award recipient\u2019s approved award budget, to indirect costs.",
+        "resources": null
+      },
+      {
+        "term": "Insurance",
+        "slug": "insurance",
+        "data_act_term": null,
+        "plain": "Financial assistance provided to assure reimbursement for losses sustained under specified conditions. Coverage may be provided directly by the Federal government or through private carriers and may or may not involve the payment of premiums. See Catalog for Federal Domestic Assistance (CFDA).",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Latest Transaction Action Date",
+        "slug": "latest-transaction-action-date",
+        "data_act_term": null,
+        "plain": "The action date of the most recent Prime Award Transaction of a Prime Award Summary. Note that this date may be different from the Period of Performance End Date (Current or Potential). Because award obligations are tied to action dates, any search for spending data on USAspending will search by this data element rather than by Period of Performance dates.",
+        "official": null,
+        "resources": "See also: [Period of Performance Current End Date](?glossary=period-of-performance-current-end-date), [Period of Performance Potential End Date](?glossary=period-of-performance-potential-end-date), [Action Date](?glossary=action-date), [Base Transaction Action Date](?glossary=base-transaction-action-date)"
+      },
+      {
+        "term": "Latest Transaction Description",
+        "slug": "latest-transaction-description",
+        "data_act_term": null,
+        "plain": "The descriptive summary associated with the most recent transaction (modification or action) recorded on an award.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Labor Standards",
+        "slug": "labor-standards",
+        "data_act_term": "Labor Standards",
+        "plain": "Indicates whether the transaction is subject to the Labor Standards. The clause for Labor Standards is 52.222-41 \"Labor Standards\" - that goes with the Service Contract Labor Standards (formerly Service Contract Act).",
+        "official": "Indicates whether the transaction is subject to the Labor Standards. The clause for Labor Standards is 52.222-41 \"Labor Standards\" - that goes with the Service Contract Labor Standards (formerly Service Contract Act).",
+        "resources": "[Learn more from the Department of Labor](https://www.dol.gov/whd/govcontracts/sca.htm)"
+      },
+      {
+        "term": "Legal Entity Country Name and Code",
+        "slug": "legal-entity-country-name-and-code",
+        "data_act_term": "Legal Entity Country Name and Code",
+        "plain": "The Name and Code for the country in which the awardee or recipient is located, using the ISO 3166-1 Alpha-3 GENC Profile, and not the codes listed for those territories and possessions of the United States already identified as \u201cstates.\u201d",
+        "official": "The Name and Code for the country in which the awardee or recipient is located, using the ISO 3166-1 Alpha-3 GENC Profile, and not the codes listed for those territories and possessions of the United States already identified as \u201cstates.\u201d",
+        "resources": null
+      },
+      {
+        "term": "Loan",
+        "slug": "loan",
+        "data_act_term": null,
+        "plain": "A federal award from the government that the borrower will eventually have to pay back. Direct loans are those made for a specific time period with a reasonable expectation of repayment; they may or may not require interest payments. Guaranteed loans require the federal government to pay the bank and take over the loan if the borrower defaults.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Loan Subsidy Cost",
+        "slug": "loan-subsidy-cost",
+        "data_act_term": "Original Loan Subsidy Cost",
+        "plain": "When the government makes a direct loan or guarantees a loan, it expects the loan to be repaid. However, for any given loan program (e.g., student loans, small business loan guarantees) some individual loans are not repaid. Subsidy cost is the government\u2019s way to estimate a loan\u2019s likely cost to the government based on the size of the loan (i.e., its Face value), interest rate, the modeled risk of default in full or in part, and other factors. Subsidy cost is computed as a percentage of the loan value and does not include administrative costs.\n\nWhile the award amount for a grant or contract is the amount that the recipient gets, for a loan, the award amount is the subsidy cost. This is because the subsidy cost is the actual cost to the government (estimated). Loan Subsidy Cost has a direct budgetary impact and is factored into obligations and outlays when it is positive. Subsidy costs can be positive (indicating that the government is likely to lose money on the loan) or negative (indicating that the government is likely to make money on the loan). A positive Loan Subsidy Cost is usually smaller than the corresponding Face Value, but in certain edge cases it can be over 100% of the face value if the entire loan is written off and the government paid fees to a bank to issue the loan (which are also included in the subsidy cost). Administrative costs of running the loan or loan guarantee program itself are excluded from Loan Subsidy Cost calculation.",
+        "official": "The estimated long-term cost to the Government of a direct loan or loan guarantee, or modification thereof, calculated on a net present value basis, excluding administrative costs.",
+        "resources": null
+      },
+      {
+        "term": "Local Area Set Aside",
+        "slug": "local-area-set-aside",
+        "data_act_term": "Local Area Set Aside",
+        "plain": "When awarding emergency response contracts during a major disaster or emergency declaration by the President, the government attempts to give preference to local firms. Preference may be given through a local area set-aside or an evaluation preference.",
+        "official": "When awarding emergency response contracts during the term of a major disaster or emergency declaration by the President of the United States under the authority of the Robert T. Stafford Disaster Relief and Emergency Assistance Act (42 U.S.C. 5121, et seq.), preference shall be given, to the extent feasible and practicable, to local firms. Preference may be given through a local area set-aside or an evaluation preference. Note: When the value for the data element 'Multiple or Single Award IDV' is 'Single' on the Referenced IDV, the value for 'Local Area Set Aside' is propagated from the BPA. When the value is 'Multiple' user input is required.",
+        "resources": null
+      },
+      {
+        "term": "Main Account Code",
+        "slug": "main-account-code",
+        "data_act_term": "Main Account Code",
+        "plain": "This is a 4-digit number that is part of a Treasury Account Symbol (TAS) and Identifies the TAS type and purpose. It cannot be blank.",
+        "official": "The main account code identifies the account in statute.",
+        "resources": null
+      },
+      {
+        "term": "Materials, Supplies, Articles & Equip",
+        "slug": "materials-supplies-articles-equip",
+        "data_act_term": "Materials, Supplies, Articles & Equip",
+        "plain": "Indicates whether the transaction is subject to the Materials, Supplies, Articles, & Equip. The clause is 52.222-20 \"Contracts for Materials, Supplies, Articles, and Equipment Exceeding $15,000\" - that goes with Contracts for Materials, Supplies, Articles, and Equipment Exceeding $15,000 (formerly Walsh-Healey).",
+        "official": "Indicates whether the transaction is subject to the Materials, Supplies, Articles, & Equip. The clause is 52.222-20 \"Contracts for Materials, Supplies, Articles, and Equipment Exceeding $15,000\" - that goes with Contracts for Materials, Supplies, Articles, and Equipment Exceeding $15,000 (formerly Walsh-Healey).",
+        "resources": "[Learn more from the Department of Labor](https://www.dol.gov/whd/govcontracts/pca.htm)"
+      },
+      {
+        "term": "Modification Number",
+        "slug": "modification-number",
+        "data_act_term": "Award Modification/Amendment Number",
+        "plain": "The identifier of an action being reported that indicates the specific subsequent change to the initial award.",
+        "official": "The identifier of an action being reported that indicates the specific subsequent change to the initial award.",
+        "resources": null
+      },
+      {
+        "term": "Multi-Agency Contract (MAC)",
+        "slug": "multi-agency-contract-mac",
+        "data_act_term": null,
+        "plain": "A Multi-Agency Contract (MAC) is a task-order or delivery-order contract established by one agency for use by government agencies to obtain supplies and services.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Multiple Award Schedule (MAS)",
+        "slug": "multiple-award-schedule-mas",
+        "data_act_term": null,
+        "plain": "A listing of contractors that have been awarded a contract by GSA that can be used by all federal agencies. This is also known as a Federal Supply Schedule (FSS).",
+        "official": null,
+        "resources": "[MAS Desk Reference](https://www.gsa.gov/portal/category/100755)"
+      },
+      {
+        "term": "Multiple Recipients ",
+        "slug": "multiple-recipients",
+        "data_act_term": null,
+        "plain": "A recipient name of \"MULTIPLE RECIPIENTS\" indicates that the financial assistance award has been aggregated to protect the Personally Identifiable Information (PII) of a collection of individuals. Agencies are prohibited from publishing PII on USAspending. Aggregating involves grouping awards to individuals (typically from the same program and time period) by county (for domestic awards), state (for domestic awards), or country (for foreign awards). These records omit location information that would normally be present (street address and the last 4 digits of the ZIP code) and replace the recipient name with \u201cMULTIPLE RECIPIENTS.\u201d The award summary pages for these records specify the level of aggregation.",
+        "official": null,
+        "resources": "See Also: [Redacted Due To PII](?glossary=redacted-due-to-pii), [Record Type](?glossary=record-type)"
+      },
+      {
+        "term": "NAICS",
+        "slug": "naics",
+        "data_act_term": "North American Industrial Classification System (NAICS) Code and Title",
+        "plain": "NAICS stands for the North American Industrial Classification System. This 6-digit code tells you what industry the work falls into. Each contract record has a NAICS code. That means you can look up how much money the U.S. government spent in a specific industry. \n\nThe list of industries and codes is updated every 5 years.",
+        "official": "The identifier and title that represents the North American Industrial Classification System Code assigned to the solicitation and resulting award identifying the industry in which the contract requirements are normally performed",
+        "resources": "[See current codes](https://www.census.gov/naics/?58967?yearbck=2017)"
+      },
+      {
+        "term": "National Interest Action (NIA) ",
+        "slug": "national-interest-action-nia",
+        "data_act_term": "National Interest Action (NIA) ",
+        "plain": "The National Interest Action (NIA) code categorizes federal contracts that are related to emergency responses or other nationally significant events.",
+        "official": "The National Interest Action values are used to categorize procurement actions related to emergency contingency responses or other nationally significant events. The length of the value is no more than 4 characters. A new NIA value was created to address the COVID-19 pandemic and this value is valid for actions signed between 3/13/2020 and 9/30/2020.\n\nBelow are examples of NIA values:\n - H19M \u2013 Hurricane Michael 2019\n - H19D \u2013 Hurricane Dorian 2019\n - P20C \u2013 COVID-19 2020\n\nNote that the Disaster Emergency Fund Code (DEFC) is also used to track COVID-19 spending. However, it is not limited to contracts and is necessarily tied to COVID-19 supplemental appropriations. Thus, awards with the COVID-19 NIA value may not have a COVID-19 DEFC value, and vice versa.",
+        "resources": null
+      },
+      {
+        "term": "Non-Federal Funding Amount",
+        "slug": "non-federal-funding-amount",
+        "data_act_term": "Non-Federal Funding Amount",
+        "plain": "The amount of the award funded by non-Federal source(s), in dollars. Program Income (as defined in 2 CFR \u00a7 200.1) is not included until such time that Program Income is generated and credited to the agreement.\n\nAward obligation and award outlay amounts (from Files C, D1, and D2) only count dollars spent from federal funding, not any dollars spent from non-federal funding.",
+        "official": "The amount of the award funded by non-Federal source(s), in dollars. Program Income (as defined in 2 CFR \u00a7 200.1) is not included until such time that Program Income is generated and credited to the agreement.\n\nAward obligation and award outlay amounts (from Files C, D1, and D2) only count dollars spent from federal funding, not any dollars spent from non-federal funding.",
+        "resources": null
+      },
+      {
+        "term": "Object Class",
+        "slug": "object-class",
+        "data_act_term": "Object Class",
+        "plain": "Object class is one way to classify financial data in the federal budget. An object class groups obligations by the types of items or services purchased by the federal government. Examples: \"Personnel Compensation\" and \"Equipment\"",
+        "official": "Categories in a classification system that presents obligations by the items or services purchased by the Federal Government. Each specific object class is defined in OMB Circular A-11 \u00a7 83.6.\n\n(defined in OMB Circular A-11)",
+        "resources": "[Object Class definitions](https://www.whitehouse.gov/wp-content/uploads/2018/06/a11.pdf) "
+      },
+      {
+        "term": "Obligation",
+        "slug": "obligation",
+        "data_act_term": "Obligation",
+        "plain": "When awarding funding, the U.S. government enters a binding agreement called an obligation. The government promises to spend the money, either immediately or in the future. An agency incurs an obligation, for example, when it places an order, signs a contract, awards a grant, purchases a service, or takes other actions that require it to make a payment.\n\nLoan Subsidy Cost has a direct budgetary impact and is factored into obligations and outlays when it is positive.",
+        "official": "Obligation means a legally binding agreement that will result in outlays, immediately or in the future. When you place an order, sign a contract, award a grant, purchase a service, or take other actions that require the Government to make payments to the public or from one Government account to another, you incur an obligation. It is a violation of the Antideficiency Act (31 U.S.C. \u00a7 1341(a)) to involve the Federal Government in a contract or obligation for payment of money before an appropriation is made, unless authorized by law. This means you cannot incur obligations in a vacuum; you incur an obligation against budget authority in a Treasury account that belongs to your agency. It is a violation of the Antideficiency Act to incur an obligation in an amount greater than the amount available in the Treasury account that is available. This means that the account must have budget authority sufficient to cover the total of such obligations at the time the obligation is incurred. In addition, the obligation you incur must conform to other applicable provisions of law, and you must be able to support the amounts reported by the documentary evidence required by 31 U.S.C. \u00a7 1501. Moreover, you are required to maintain certifications and records showing that the amounts have been obligated (31 U.S.C. \u00a7 1108). The following subsections provide additional guidance on when to record obligations for the different types of goods and services or the amount.\n\n \n\nAdditional detail is provided in Circular A\u201011.",
+        "resources": "See also: [Loan Subsidy Cost](?glossary=loan-subsidy-cost)"
+      },
+      {
+        "term": "Ordering Period End Date",
+        "slug": "ordering-period-end-date",
+        "data_act_term": "Ordering Period End Date",
+        "plain": "For procurement, the date on which, for the award referred to by the action being reported, no additional orders referring to it may be placed. This date applies only to procurement indefinite delivery vehicles (such as indefinite delivery contracts or blanket purchase agreements). Administrative actions related to this award may continue to occur after this date. The period of performance end dates for procurement orders issued under the indefinite delivery vehicle may extend beyond this date.",
+        "official": "For procurement, the date on which, for the award referred to by the action being reported, no additional orders referring to it may be placed. This date applies only to procurement indefinite delivery vehicles (such as indefinite delivery contracts or blanket purchase agreements). Administrative actions related to this award may continue to occur after this date. The period of performance end dates for procurement orders issued under the indefinite delivery vehicle may extend beyond this date.",
+        "resources": null
+      },
+      {
+        "term": "Other Budgetary Resources",
+        "slug": "other-budgetary-resources",
+        "data_act_term": "Other Budgetary Resources",
+        "plain": "A subset of budget authority. Most spending by agencies is authorized by appropriation laws; a small amount may come from money not spent in the previous year. The rest is authorized in other ways and grouped together on USAspending.gov as Other Budgetary Resources.",
+        "official": "New borrowing authority, contract authority, and spending authority from offsetting collections provided by Congress in an appropriations act or other legislation, or unobligated balances of budgetary resources made available in previous legislation, to incur obligations and to make outlays.\n\n(defined in OMB Circular A-11)",
+        "resources": null
+      },
+      {
+        "term": "Other Financial Assistance",
+        "slug": "other-financial-assistance",
+        "data_act_term": null,
+        "plain": "Financial assistance from the Federal Government that is not described by any of the previously-defined assistance types.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Other Object Class",
+        "slug": "other-object-class",
+        "data_act_term": "Other Object Class",
+        "plain": "This major object class includes other miscellaneous charges.",
+        "official": "This major object class covers object classes 91.0 through 99.5. This includes:\n91.0 Unvouchered\n92.0 Undistributed\n94.0 Financial transfers\n99.0 Subtotal, obligations\n99.5 Adjustment for rounding\n\nEach specific object class is defined in OMB Circular A-11 Section 83.6.\n",
+        "resources": "Learn More: [Circular No. A-11](https://www.whitehouse.gov/sites/whitehouse.gov/files/omb/assets/a11_current_year/a11_2017.pdf)"
+      },
+      {
+        "term": "Other Transaction (OT) Indefinite Delivery Vehicle (IDV)",
+        "slug": "other-transaction-ot-indefinite-delivery-vehicle-idv",
+        "data_act_term": null,
+        "plain": "An Other Transaction (OT) Indefinite Delivery Vehicle is a transaction other than a procurement contract, grant, or cooperative agreement. Since this transaction is defined in the negative, it could take unlimited potential forms. This term is often used to refer to transactions designed to:\n\n- Support research & development for homeland security.\n- Advance the development, testing, and deployment of critical homeland security technologies.\n- Speed up prototyping and deployment of technologies addressing homeland security vulnerabilities.\n\nThe Department of Homeland Security (DHS) often splits its use of OT's for Research and Prototype Projects.",
+        "official": null,
+        "resources": "[Read more about OT IDVs](https://www.fpds.gov/help/Create_an_OTIDV.htm) on the Federal Procurement Data System (FPDS) website."
+      },
+      {
+        "term": "Outlay",
+        "slug": "outlay",
+        "data_act_term": "Gross Outlay Amount",
+        "plain": "An outlay occurs when federal money is actually paid out, not just promised to be paid (\"obligated\").",
+        "official": "Payments made to liquidate an obligation (other than the repayment of debt principal or other disbursements that are \u201cmeans of financing\u201d transactions). Outlays generally are equal to cash disbursements but also are recorded for cash-equivalent transactions, such as the issuance of debentures to pay insurance claims, and in a few cases are recorded on an accrual basis such as interest on public issues of the public debt. Outlays are the measure of Government spending.\n\n(defined in OMB Circular A-11)",
+        "resources": null
+      },
+      {
+        "term": "Parent Award Identification (ID) Number",
+        "slug": "parent-award-identification-id-number",
+        "data_act_term": "Parent Award Identification (ID) Number",
+        "plain": "The identifier of the procurement award under which the specific award is issued, such as a Federal Supply Schedule. This data element currently applies to procurement actions only.",
+        "official": "The identifier of the procurement award under which the specific award is issued, such as a Federal Supply Schedule. This data element currently applies to procurement actions only.",
+        "resources": null
+      },
+      {
+        "term": "Parent DUNS",
+        "slug": "parent-duns",
+        "data_act_term": "Ultimate Parent Unique Identifier",
+        "plain": "The unique identification number for the ultimate parent of an awardee or recipient. Currently the identifier is the 9-digit number maintained by Dun & Bradstreet as the global parent DUNS\u00ae number.",
+        "official": "The unique identification number for the ultimate parent of an awardee or recipient. Currently the identifier is the 9-digit number maintained by Dun & Bradstreet as the global parent DUNS\u00ae number.",
+        "resources": "- [Dun & Bradstreet website](http://www.dnb.com/duns-number.html)\n- [Read the limitations on use of DUNS](https://www.usaspending.gov/#/db_info)"
+      },
+      {
+        "term": "Period of Performance Current End Date",
+        "slug": "period-of-performance-current-end-date",
+        "data_act_term": "Period of Performance Current End Date",
+        "plain": "The date that the award ends, as agreed upon by the parties involved without exercising any pre-determined extension options. Note that the latest transaction for the award (known as the Latest Transaction Action Date) may be different than this date. ",
+        "official": "For procurement awards: The contract completion date based on the schedule in the contract. For an initial award, this is the scheduled completion date for the base contract and for any options exercised at time of award. For modifications that exercise options or that shorten (such as termination) or extend the contract period of performance, this is the revised scheduled completion date for the base contract including exercised options. If the award is solely for the purchase of supplies to be delivered, the completion date should correspond to the latest delivery date on the base contract and any exercised options. The completion date does not change to reflect a closeout date. \n\nFor grants and cooperative agreements: The Period of Performance is defined in the CFR 200 as the total estimated time interval between the start of an initial Federal award and the planned end date, which may include one or more funded portions, or budget periods. If the end date is revised due to an extension, termination, lack of available funds, or other reason, the current end date will be amended.\n\nFor all other financial assistance awards: The current date on which, for the award referred to by the action being reported, awardee effort completes or the award is otherwise ended. Administrative actions related to this award may continue to occur after this date.\n\nNote that the latest transaction for the award (known as the Latest Transaction Action Date) may be different than Period of Performance Current End Date.",
+        "resources": "See also: [Action Date](?glossary=action-date), [Period of Performance Potential End Date](?glossary=period-of-performance-potential-end-date), [Latest Transaction Action Date](?glossary=latest-transaction-action-date)"
+      },
+      {
+        "term": "Period of Performance Potential End Date",
+        "slug": "period-of-performance-potential-end-date",
+        "data_act_term": "Period of Performance Potential End Date",
+        "plain": "The date that the award ends, as agreed upon by the parties involved after exercising any pre-determined extension options. Note that the latest transaction for the award (known as the Latest Transaction Action Date) may be different than this date.\n\nAdministrative actions related to this award may continue to occur after the Period of Performance Potential End Date.\n\nThe Period of Performance Potential End Date does not apply to Contract Indefinite Delivery Vehicles under which Definitive Contracts may be awarded.",
+        "official": "The date that the award ends, as agreed upon by the parties involved after exercising any pre-determined extension options. Note that the latest transaction for the award (known as the Latest Transaction Action Date) may be different than this date.\n\nAdministrative actions related to this award may continue to occur after the Period of Performance Potential End Date.\n\nThe Period of Performance Potential End Date does not apply to Contract Indefinite Delivery Vehicles under which Definitive Contracts may be awarded.",
+        "resources": "See also: [Action Date](?glossary=action-date), [Period of Performance Current End Date](?glossary=period-of-performance-current-end-date), [Latest Transaction Action Date](?glossary=latest-transaction-action-date)"
+      },
+      {
+        "term": "Period of Performance Start Date",
+        "slug": "period-of-performance-start-date",
+        "data_act_term": "Period of Performance Start Date",
+        "plain": "The date that the award begins, as agreed upon by the parties involved.  Note that the first transaction for the award (known as the Base Transaction Action Date) may be different than this date.",
+        "official": "For procurement awards: Per the FPDS data dictionary, the date that the parties agree will be the starting date for the contract's requirements. This is the period of performance start date for the entire contract period, this date does not reflect period of performance per modification, but rather the start of the entire contract period of performance. This data element does NOT correspond to FAR 43.101 or 52.243 and should not be mapped to those fields in your contract writing systems. \n\nFor grants and cooperative agreements: The Period of Performance is defined in the 2 CFR 200 as the total estimated time interval between the start of an initial Federal award and the planned end date, which may include one or more funded portions, or budget periods.\n\nFor all other financial assistance awards: The date on which, for the award referred to by the action being reported, awardee effort begins or the award is otherwise effective. \n\nNote that the first transaction for the award (known as the Base Transaction Action Date) may be different than the Period of Performance Start Date.",
+        "resources": "See also: [Action Date](?glossary=action-date), [Base Transaction Action Date](?glossary=base-transaction-action-date)"
+      },
+      {
+        "term": "Personnel Compensation and Benefits",
+        "slug": "personnel-compensation-and-benefits",
+        "data_act_term": "Personnel Compensation and Benefits",
+        "plain": "This major object class includes employee compensation, including salaries, wages, and health benefits, for federal employees. Personnel compensation and benefits apply to full-time and part-time employees, along with military personnel.",
+        "official": "This major object class consists of object classes 11, 12, and 13. This includes:\n11 Personnel compensation\n11.1 Full-time permanent\n11.3 Other than full-time\npermanent\n11.5 Other personnel\ncompensation\n11.6 Military personnel -\nbasic allowance for\nhousing\n11.7 Military personnel\n11.8 Special personal services\npayments\n11.9 Total personnel\ncompensation\n12 Personnel benefits\n12.1 Civilian personnel\nbenefits\n12.2 Military personnel\nbenefits\n13.0 Benefits for former\npersonnel\n\nEach specific object class is defined in OMB Circular A-11 Section 83.6.",
+        "resources": "Learn More: [Circular No. A-11](https://www.whitehouse.gov/sites/whitehouse.gov/files/omb/assets/a11_current_year/a11_2017.pdf)"
+      },
+      {
+        "term": "Potential Award Amount",
+        "slug": "potential-award-amount",
+        "data_act_term": "Potential Total Value of Award",
+        "plain": "The total amount that could be obligated on a contract. This total includes the base plus options amount. For example, if a recipient is awarded $10M on a base contract with 3 option years at $1M each, the potential award amount is $13M.\n\n",
+        "official": "For procurement, the total amount that could be obligated on a contract, if the base and all options are exercised.",
+        "resources": null
+      },
+      {
+        "term": "Primary Place of Performance",
+        "slug": "primary-place-of-performance",
+        "data_act_term": "Primary Place of Performance Address",
+        "plain": "The principal place of business, where the majority of the work is performed. For example, in a manufacturing contract, this would be the main plant where items are produced.",
+        "official": "The address where the predominant performance of the award will be accomplished. The address is made up of four components: City, State Code, and ZIP+4 or Postal Code.",
+        "resources": null
+      },
+      {
+        "term": "Primary Place of Performance Congressional District",
+        "slug": "primary-place-of-performance-congressional-district",
+        "data_act_term": "Primary Place of Performance Congressional District",
+        "plain": "The congressional district where the principal place of business, where the majority of the work is performed. For example, in a manufacturing contract, this would be the main plant where items are produced.",
+        "official": "U.S. congressional district where the predominant performance of the award will be accomplished. This data element will be derived from the Primary Place of Performance Address.",
+        "resources": null
+      },
+      {
+        "term": "Primary Place of Performance Country/Entity",
+        "slug": "primary-place-of-performance-countryentity",
+        "data_act_term": "Primary Place of Performance Country Code",
+        "plain": "The country/entity where the principal place of business and/or the majority of the work is performed. For example, in a manufacturing contract, this would be the main plant where items are produced.",
+        "official": "Country code where the predominant performance of the award will be accomplished.",
+        "resources": null
+      },
+      {
+        "term": "Prime Award",
+        "slug": "prime-award",
+        "data_act_term": null,
+        "plain": "A prime award is an agreement that the government makes with a non-federal entity for the purpose of carrying out a federal program. The entities receiving the prime award are known as prime recipients. \n\nThe term \u201cprime award\u201d can be used as a generic term to describe either  transactions or prime award summaries. ",
+        "official": "A Prime Award is a a federal award that is either:\n(1) Federal financial assistance that a non-Federal entity receives directly from a Federal awarding agency; or\n(2) The cost-reimbursement contract under the Federal Acquisition Regulations that a non-Federal entity receives directly from a Federal awarding agency.\n(Adapted from 2 CFR \u00a7200.38)",
+        "resources": "See also: [Prime Award Summary](?glossary=prime-award-summary), [Sub-Award](?glossary=sub-award), [Sub-Recipient](?glossary=sub-recipient), [Transactions](?glossary=transactions)"
+      },
+      {
+        "term": "Prime Award Summary",
+        "slug": "prime-award-summary",
+        "data_act_term": null,
+        "plain": "A prime award summary includes all related prime award transactions that share the same prime award unique key. Award Profile pages on USAspending.gov allow users to browse individual prime award summaries, including the list of transactions that constitute the prime award summary, the list of sub-awards funded by the prime award summary, and the list of federal accounts which have funded the prime award summary. \n\nGenerally speaking, information from the most recent prime award transaction is applied to the summary-level information in the prime award summary. For example, the award\u2019s recipient name, awarding agency, and period of performance at the summary level is drawn from the latest transaction of that award. ",
+        "official": null,
+        "resources": "See also: [Prime Award](?glossary=prime-award), [Award ID](?glossary=award-id), [Sub-Award](?glossary=sub-award), [Federal Account](?glossary=federal-account)"
+      },
+      {
+        "term": "Prime Award Transaction",
+        "slug": "prime-award-transaction",
+        "data_act_term": null,
+        "plain": "A single recorded action that establishes or modifies a prime award such as a contract, grant, or loan between a federal agency and the primary recipient.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Prime Recipient",
+        "slug": "prime-recipient",
+        "data_act_term": null,
+        "plain": "A company, organization, individual, or government entity (i.e., state, local, tribal, or foreign) that receives funding directly from the U.S. government. They receive this funding through an agreement called a prime award. For example, if the Dept. of Transporation is building a bridge, they can award Bridge Company A the contract to carry out the construction. Bridge Company A would be the prime recipient. ",
+        "official": "A non-Federal entity that receives a Federal award directly from a Federal awarding agency to carry out an activity under a Federal program. ",
+        "resources": null
+      },
+      {
+        "term": "Procurement Instrument Identifier (PIID)",
+        "slug": "procurement-instrument-identifier-piid",
+        "data_act_term": "Procurement Instrument Identifier (PIID)",
+        "plain": "A unique identifier assigned to a federal contract, purchase order, basic ordering agreement, basic agreement, and blanket purchase agreement. It is used to track the contract and any modifications or transactions related to it.",
+        "official": "The unique identifier of the specific award being reported. \n\n[Read more in the Federal Acquisition Regulation](https://www.acquisition.gov/far/html/Subpart%204_16.html).",
+        "resources": null
+      },
+      {
+        "term": "Product or Service Code (PSC)",
+        "slug": "product-or-service-code-psc",
+        "data_act_term": "Product or Service Code",
+        "plain": "A Product or Service Code (PSC) is a 4-character code that identifies the type of product, service, or research & development (R&D) purchased. While NAICS codes identify the industry most relevant to a contract, PSCs tell you what the contract is specifically purchasing. For example, a contract\u2019s NAICS code might point to the \u201cIndustrial Building Construction\u201d industry, while that same contract\u2019s PSC points to \u201cConstruct Hospitals and Infirmaries.\u201d There are nearly three times as many PSCs (over 2,900) as there are NAICS codes (just over 1000), which in many cases allows a more granular PSC designation than NAICS code designation for a given contract.\n\nAll PSC are 4 characters long, but there is an embedded hierarchy in the codes. \n\n- **R&D**: begin with \u2018A\u2019 (indicating R&D), followed by a second letter, followed by a number, followed by a number (four levels of hierarchy). Example: AA11.\n\n- **Services**: begin with \u2018B\u2019 to \u2018Z\u2019 (indicating the subcategory of Service), followed by a number, followed by two letters (four levels of hierarchy if you include the \u201cService\u201d designation). Example: C1AA\n\n- **Products**: begin with two numbers (indicating the subcategory of Product), followed by two more numbers (three levels of hierarchy if you include the \u201cProduct\u201d designation). Example: 1005",
+        "official": "The code that best identifies the product or service procured. Codes are defined in the Product and Service Codes Manual.",
+        "resources": "[PSC Manual](https://www.acquisition.gov/?q=PSC_Manual)\n"
+      },
+      {
+        "term": "Program Activity",
+        "slug": "program-activity",
+        "data_act_term": "Program Activity Name",
+        "plain": "A program activity is a category within an appropriation account. A program activity is a specific activity or project, as listed in the program and financing schedules of the annual budget of the U.S. government.",
+        "official": "A specific activity or project as listed in the program and financing schedules of the annual budget of the United States Government. \n\nAccording to OMB Circular A-11, The activities should:\n- Clearly indicate the services to be performed or the programs to be conducted; \n- Finance no more than one strategic goal or objective; \n- Distinguish investment, developmental, grant and subsidy, and operating programs; and\n- Relate to administrative control and operation of the agency. ",
+        "resources": null
+      },
+      {
+        "term": "Program, System, and Equipment Code",
+        "slug": "program-system-and-equipment-code",
+        "data_act_term": "Program, System, or Equipment Code",
+        "plain": "A system-generated Department of Defense (DOD) code, also known as the Acquisition Program (AP) Code. This code identifies the DOD program, weapons system, or equipment being acquired. It can be categorized as a Major Defense Acquisition Program (MDAP) or a Major Automated Information System (MAIS).",
+        "official": "Two codes that together identify the program and weapons system or equipment purchased by a DOD agency. The first character is a number 1-4 that identifies the DOD component. The last 3 characters identify that  component's program, system, or equipment.\n\n[Read more about this code](https://www.fpds.gov/help/SystemEquipment.htm) on the General Services Administration website.",
+        "resources": null
+      },
+      {
+        "term": "Project Grant",
+        "slug": "project-grant",
+        "data_act_term": "Project Grant",
+        "plain": "Funding of specific projects for a fixed amount of time. Some examples include fellowships, scholarships, research grants, survey grants, and construction grants.",
+        "official": "Project grants provide federal funding for fixed or known periods for specific projects or the delivery of specific services or products.",
+        "resources": null
+      },
+      {
+        "term": "Purchase Order",
+        "slug": "purchase-order",
+        "data_act_term": null,
+        "plain": "A Purchase Order is an offer by the government established to buy supplies or services, including construction and research and development, upon specified terms and conditions, using simplified acquisition procedures.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Reason for Modification",
+        "slug": "reason-for-modification",
+        "data_act_term": "Action Type",
+        "plain": "Provides information on the type of change made to an award.",
+        "official": "Description (and corresponding code) that provides information on any changes made to the Federal prime award. There are typically multiple actions for each award.\n\n(Note: This definition encompasses current data elements \u2018Type of Action\u2019 for financial assistance and \u2018Reason for Modification\u2019 for procurement)",
+        "resources": null
+      },
+      {
+        "term": "Recipient",
+        "slug": "recipient",
+        "data_act_term": null,
+        "plain": "A company, organization, individual, or government entity (i.e., state, local, tribal, federal, or foreign), that receives funding from the U.S. government.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Recipient Congressional District",
+        "slug": "recipient-congressional-district",
+        "data_act_term": "Legal Entity Congressional District",
+        "plain": "The congressional district in which the recipient is located.",
+        "official": "The congressional district in which the awardee or recipient is located. This is not a required data element for non-U.S. addresses.",
+        "resources": null
+      },
+      {
+        "term": "Recipient Location",
+        "slug": "recipient-location",
+        "data_act_term": "Legal Entity Address",
+        "plain": "Legal business address of the recipient.",
+        "official": "The awardee or recipient\u2019s legal business address where the office represented by the Unique Entity Identifier (as registered in the System for Award Management) is located. In most cases, this should match what the entity has filed with the State in its organizational documents, if required. The address is made up of five components: Address Lines 1 and 2, City, State Code, and ZIP+4 or Postal Code.",
+        "resources": null
+      },
+      {
+        "term": "Recipient Name",
+        "slug": "recipient-name",
+        "data_act_term": "Awardee/Recipient Legal Entity Name",
+        "plain": "A recipient is a company, organization, individual, or government entity (i.e., state, local, tribal, federal, or foreign), that received funding by the U.S. government. The recipient name is the same as what's registered in the System for Award Management (SAM.gov). This is usually the official name of the business. For individuals, the term 'Multiple Recipients' is used as the Recipient Name to protect individuals' privacy.",
+        "official": "The name of the awardee or recipient that relates to the unique identifier. For U.S. based companies, this name is what the business ordinarily files in formation documents with individual states (when required).",
+        "resources": null
+      },
+      {
+        "term": "Recipient/Business Types",
+        "slug": "recipientbusiness-types",
+        "data_act_term": "Business Types",
+        "plain": "Recipient/Business types are socio-economic and other organizational/business characteristics that are used to categorize federal contractors and other funding recipients. There are many different recipient/business types, and they span for-profit businesses, non-profits, government entities, individuals, and foreign entities. Some examples are:\n\n- Historically Black College or University\n- Veteran-Owned Business \n- Historically Underutilized Business Zone (HUBZone) Firm \n- Sole Proprietorship \n- Foundation\n\nYou can search and filter on all recipient types on this site.\n",
+        "official": "A collection of indicators of different types of recipients based on socio-economic status and organization / business areas.",
+        "resources": "[Read more about Business Types](https://fedspendingtransparency.github.io/whitepapers/business-types/)"
+      },
+      {
+        "term": "Record Type",
+        "slug": "record-type",
+        "data_act_term": "Record Type",
+        "plain": "Code indicating whether an action is an Aggregate Record (Record Type = 1), a Non-aggregate Record (Record Type = 2), or a Non-Aggregate Record to an Individual Recipient with Redacted Personally Identifiable Information (Record Type = 3).",
+        "official": "Code indicating whether an action is an Aggregate Record (Record Type = 1), a Non-aggregate Record (Record Type = 2), or a Non-Aggregate Record to an Individual Recipient with Redacted Personally Identifiable Information (Record Type = 3).",
+        "resources": "See Also: [Multiple Recipients](?glossary=multiple-recipients), [Redacted Due To PII](?glossary=redacted-due-to-pii)"
+      },
+      {
+        "term": "Redacted Due To PII",
+        "slug": "redacted-due-to-pii",
+        "data_act_term": null,
+        "plain": "A recipient name of \"REDACTED DUE TO PII\" indicates that the associated financial assistance award was issued to an individual whose name and other Personally Identifiable Information (PII) were redacted, as required by law. Along with masking the individual\u2019s name with \u201cREDACTED DUE TO PII,\u201d these records omit location information that would otherwise be present (street address and the last 4 digits of the ZIP code).",
+        "official": null,
+        "resources": "See Also: [Multiple Recipients](?glossary=multiple-recipients), [Record Type](?glossary=record-type)"
+      },
+      {
+        "term": "Set Aside Type",
+        "slug": "set-aside-type",
+        "data_act_term": "Type Set Aside",
+        "plain": "A tool used to award contracts to specific types of businesses. Most set asides reserve contracts for small businesses. Others are more specific, to support small businesses with specific designations, such as veteran owned business or small disadvantaged business types.",
+        "official": "The designator for type of set aside determined for the contract action.",
+        "resources": "[List of Set Aside Types](https://www.fpds.gov/help/Type_of_Set_Aside.htm)"
+      },
+      {
+        "term": "Simplified Acquisition Procedures (SAP)",
+        "slug": "simplified-acquisition-procedures-sap",
+        "data_act_term": null,
+        "plain": "For certain types of government purchases between $3,000 and $150,000. These purchases may require less approval and less documentation.",
+        "official": null,
+        "resources": "Learn more on the [acquisition.gov page](https://www.acquisition.gov/far/html/FARTOCP13.html)"
+      },
+      {
+        "term": "Solicitation",
+        "slug": "solicitation",
+        "data_act_term": null,
+        "plain": "When an agency needs work done, it can ask for information or bids on the work. These requests are called solicitations. They often come as a RFI (Request for Information) or RFP (Request for Proposal).",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Spending",
+        "slug": "spending",
+        "data_act_term": null,
+        "plain": "On this site, the term spending could either describe obligations (amount awarded) or outlays (amount paid out).",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Sub Account Code",
+        "slug": "sub-account-code",
+        "data_act_term": "Sub Account Code",
+        "plain": "Sub Account Code (SUB) is a component of the TAS that identifies a Treasury-defined subdivision of a Federal Account (AID + MAIN). Most Federal Accounts do not have subdivisions. 000 is the default SUB; if 000 is the only SUB under a given Federal Account, it has not been subdivided",
+        "official": "This is a component of the TAS. Identifies a Treasury-defined subdivision of the main account. This field cannot be blank. Sub Account 000 indicates the Parent account.",
+        "resources": null
+      },
+      {
+        "term": "Sub-Award",
+        "slug": "sub-award",
+        "data_act_term": null,
+        "plain": "A sub-award is an agreement that a prime recipient makes with another entity to perform a portion of their award. On our website, these recipients are known as sub-recipients. Sub-awards might also be referred to as a sub-contract or a sub-grant. Sub-award amounts are funded by prime award obligations and outlays. In theory, the total value of all sub-award amounts for any given prime award is a subset of the Current Award Amount for that prime award; sub-award amounts generally should not exceed the Current Award Amount for their associated prime award. To avoid double-counting the overall value of a prime award, do not sum up sub-award amounts and prime award obligations or outlays.",
+        "official": "An award provided by a pass-through entity to a subrecipient for the subrecipient to carry out part of a federal award received by the pass-through entity.  It does not include payments to a contractor or payments to an individual that is a beneficiary of a federal program.  A subaward may be provided through any form of legal agreement, including an agreement that the pass-through entity considers a contract. (2CFR)",
+        "resources": "See also: [Current Award Amount](?glossary=current-award-amount), [Prime Award](?glossary=prime-award), [Obligation](?glossary=obligation), [Outlay](?glossary=outlay)"
+      },
+      {
+        "term": "Sub-Recipient",
+        "slug": "sub-recipient",
+        "data_act_term": null,
+        "plain": "A company, organization, individual, or government entity (i.e., state, local, tribal, or foreign) that receives funding from another recipient of federal funds (a prime recipient), rather than directly from the U.S. government. The sub-recipient may be a sub-contractor or a sub-grantee. For example,  the Dept. of Transporation awards Bridge Company A a bridge construction contract. Bridge Company A needs Bridge Company B to supply the steel, so  Bridge Company A awards Bridge Company B a sub-award.  Bridge Company B is the sub-contractor.  On the grants side, University A receives an R&D grant from the National Science Foundation.  University A needs University B to perform the initial step in the research, so University A awards University B a sub-award. University B is the sub-grantee. ",
+        "official": "A non-Federal entity that receives a sub-award from a pass-through entity to carry out part of a federal program; but does not include an individual that is the beneficiary of such program. (grants.gov)",
+        "resources": null
+      },
+      {
+        "term": "URI",
+        "slug": "uri",
+        "data_act_term": null,
+        "plain": "URI stands for Unique Record Identifier. A URI is an agency-defined identifier that is unique for every financial assistance action reported by that agency. USAspending.gov uses URI as the Award ID for aggregate records.",
+        "official": null,
+        "resources": "See also: [Multiple Recipients](?glossary=multiple-recipients), [Record Type](?glossary=record-type), [Award ID](?glossary=award-id)"
+      }
+    ]
+  },
+  "status": "live_ok"
+}

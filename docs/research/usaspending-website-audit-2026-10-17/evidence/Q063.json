@@ -1,0 +1,172 @@
+{
+  "task_id": "Q063",
+  "requested_at_utc": "2026-10-17T19:20:29.579422+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/awards/ASST_NON_TSMC2_013/",
+    "query": {}
+  },
+  "url": "https://api.usaspending.gov/api/v2/awards/ASST_NON_TSMC2_013/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.327,
+  "response_bytes": 4462,
+  "response": {
+    "id": 271536977,
+    "generated_unique_award_id": "ASST_NON_TSMC2_013",
+    "fain": "TSMC2",
+    "uri": "TSMC2_0",
+    "category": "loans",
+    "type": "07",
+    "type_description": "DIRECT LOAN (E)",
+    "description": "THE LOAN WILL BE USED TO BOLSTER CHIPS DIRECT FUNDING IN SUPPORT OF TSMC ARIZONA'S GREENFIELD CONSTRUCTION A LEADING-EDGE LOGIC FAB.",
+    "subaward_count": 0,
+    "total_subaward_amount": null,
+    "total_subsidy_cost": -11006000.0,
+    "total_loan_value": 1000000000.0,
+    "total_obligation": 0.0,
+    "date_signed": "2024-11-07",
+    "base_and_all_options": null,
+    "base_exercised_options": null,
+    "non_federal_funding": 0.0,
+    "total_funding": 0.0,
+    "total_account_outlay": 0,
+    "total_account_obligation": 0,
+    "account_outlays_by_defc": [],
+    "account_obligations_by_defc": [],
+    "record_type": 2,
+    "cfda_info": [
+      {
+        "applicant_eligibility": "An applicant must be a \u201ccovered entity.\u201d A \u201ccovered entity\u201d means a nonprofit entity; a private- sector entity; a consortium of private- sector entities; or a consortium of nonprofit, public-, and private- sector entities with a demonstrated ability to substantially finance, construct, expand, or modernize a facility relating to fabrication, assembly, testing, advanced packaging, production, or research and development of semiconductors, materials used to manufacture semiconductors, or semiconductor manufacturing equipment.",
+        "beneficiary_eligibility": "Beneficiary eligibility is the same as applicant eligibility.",
+        "cfda_federal_agency": "NATIONAL INSTITUTE OF STANDARDS AND TECHNOLOGY, COMMERCE, DEPARTMENT OF",
+        "cfda_number": "11.037",
+        "cfda_objectives": "The CHIPS Incentives Program aims to catalyze long-term economically sustainable growth in the domestic semiconductor industry in support of U.S. economic  and national security.",
+        "cfda_obligations": "(Direct Payments for Specified Use) FY 23 FY 24 FY 25 FY 22$0.00; FY 21$0.00; - (Direct Loans) FY 23 FY 24 est $720,750,000.00; FY 25 est $90,324,000.00; FY 22$0.00; FY 21$0.00; - (Guaranteed/Insured Loans) FY 23 FY 24 FY 25 FY 22$0.00; FY 21$0.00; - ",
+        "cfda_popular_name": "CHIPS Incentives Program",
+        "cfda_title": "CHIPS Incentives Program",
+        "cfda_website": "https://www.nist.gov/chips",
+        "federal_action_obligation_amount": 0.0,
+        "non_federal_funding_amount": 0.0,
+        "sam_website": "https://sam.gov/fal/bb6ce12d82244e9bbe843833616492ca/view",
+        "total_funding_amount": 0.0
+      }
+    ],
+    "transaction_obligated_amount": null,
+    "funding_agency": {
+      "id": 197,
+      "has_agency_page": true,
+      "toptier_agency": {
+        "name": "Department of Commerce",
+        "code": "013",
+        "abbreviation": "DOC",
+        "slug": "department-of-commerce"
+      },
+      "subtier_agency": {
+        "name": "National Institute of Standards and Technology",
+        "code": "1341",
+        "abbreviation": "NIST"
+      },
+      "office_agency_name": "DEPT OF COMMERCE NIST"
+    },
+    "awarding_agency": {
+      "id": 197,
+      "has_agency_page": true,
+      "toptier_agency": {
+        "name": "Department of Commerce",
+        "code": "013",
+        "abbreviation": "DOC",
+        "slug": "department-of-commerce"
+      },
+      "subtier_agency": {
+        "name": "National Institute of Standards and Technology",
+        "code": "1341",
+        "abbreviation": "NIST"
+      },
+      "office_agency_name": "DEPT OF COMMERCE NIST"
+    },
+    "period_of_performance": {
+      "start_date": "2024-11-07",
+      "end_date": "2049-01-15",
+      "last_modified_date": "2024-11-27"
+    },
+    "recipient": {
+      "recipient_hash": "441be51c-2d1d-4b6b-ac97-7147f16cacd1-C",
+      "recipient_name": "TSMC ARIZONA CORP",
+      "recipient_uei": "QU6WVG5VVLA3",
+      "recipient_unique_id": null,
+      "parent_recipient_hash": "95a2b02c-ea3d-fb2c-0c92-4d4a28884360-P",
+      "parent_recipient_name": null,
+      "parent_recipient_uei": "QNXWAYFD1394",
+      "parent_recipient_unique_id": null,
+      "business_categories": [
+        "Category Business",
+        "Not Designated a Small Business"
+      ],
+      "location": {
+        "location_country_code": "USA",
+        "country_name": "UNITED STATES",
+        "state_code": "AZ",
+        "state_name": "ARIZONA",
+        "city_name": "PHOENIX",
+        "county_code": "013",
+        "county_name": "MARICOPA",
+        "address_line1": "5088 W INNOVATION CIR",
+        "address_line2": null,
+        "address_line3": null,
+        "congressional_code": "08",
+        "zip4": "6401",
+        "zip5": "85083",
+        "foreign_postal_code": null,
+        "foreign_province": null
+      }
+    },
+    "executive_details": {
+      "officers": [
+        {
+          "name": null,
+          "amount": null
+        },
+        {
+          "name": null,
+          "amount": null
+        },
+        {
+          "name": null,
+          "amount": null
+        },
+        {
+          "name": null,
+          "amount": null
+        },
+        {
+          "name": null,
+          "amount": null
+        }
+      ]
+    },
+    "place_of_performance": {
+      "location_country_code": "USA",
+      "country_name": "UNITED STATES",
+      "county_code": "013",
+      "county_name": "MARICOPA",
+      "city_name": "PHOENIX",
+      "state_code": "AZ",
+      "state_name": "ARIZONA",
+      "congressional_code": "08",
+      "zip4": "6401",
+      "zip5": "85083",
+      "address_line1": null,
+      "address_line2": null,
+      "address_line3": null,
+      "foreign_province": null,
+      "foreign_postal_code": null
+    },
+    "total_outlay": null,
+    "funding_opportunity": {
+      "number": null,
+      "goals": null
+    }
+  },
+  "status": "live_ok"
+}

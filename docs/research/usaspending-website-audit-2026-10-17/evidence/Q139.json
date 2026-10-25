@@ -1,0 +1,29 @@
+{
+  "task_id": "Q139",
+  "requested_at_utc": "2026-10-17T18:55:03.822294+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/budget_functions/list_budget_subfunctions/",
+    "body": {
+      "budget_function": "250"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/budget_functions/list_budget_subfunctions/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.422,
+  "response_bytes": 224,
+  "response": {
+    "results": [
+      {
+        "budget_subfunction_code": "251",
+        "budget_subfunction_title": "General science and basic research"
+      },
+      {
+        "budget_subfunction_code": "252",
+        "budget_subfunction_title": "Space flight, research, and supporting activities"
+      }
+    ]
+  },
+  "status": "live_ok"
+}

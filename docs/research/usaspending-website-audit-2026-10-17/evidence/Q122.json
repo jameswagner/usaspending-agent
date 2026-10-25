@@ -1,0 +1,162 @@
+{
+  "task_id": "Q122",
+  "requested_at_utc": "2026-10-17T19:20:15.579139+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/disaster/cfda/spending/",
+    "body": {
+      "filter": {
+        "def_codes": [
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "U",
+          "V"
+        ],
+        "award_type_codes": [
+          "02",
+          "03",
+          "04",
+          "05",
+          "06",
+          "07",
+          "08",
+          "09",
+          "10",
+          "11",
+          "-1"
+        ]
+      },
+      "spending_type": "award",
+      "pagination": {
+        "limit": 3,
+        "page": 1,
+        "sort": "obligation",
+        "order": "desc"
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/disaster/cfda/spending/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 13.243,
+  "response_bytes": 6694,
+  "response": {
+    "totals": {
+      "obligation": 2182997536514.62,
+      "outlay": 2242902436202.54,
+      "award_count": 21720341
+    },
+    "results": [
+      {
+        "id": 3169,
+        "code": "59.073",
+        "description": "Paycheck Protection Loan Program (PPP)",
+        "award_count": 11464024,
+        "resource_link": "https://sam.gov/fal/475072686fee4adb9a67e8a9c06af5be/view",
+        "cfda_federal_agency": "SMALL BUSINESS ADMINISTRATION, SMALL BUSINESS ADMINISTRATION",
+        "cfda_objectives": "The Paycheck Protection Program established by the CARES Act is implemented by the Small Business Administration with support from the Department of the Treasury. The effective period began March 27, 2020 through August 8, 2020. The Economic Aid to Hard-Hit Small Businesses, Nonprofits and Venues Act (Economic Aid Act) enacted on December 27, 2020, provided appropriations through May 31, 2021 or until funds are expended, for the PPP loan program. SBA reopened the Paycheck Protection Program (PPP) for First Draw Loans the week of January 11, 2021. First Draw PPP Loans can be used to help fund payroll costs, including benefits. Funds can also be used to pay for mortgage interest, rent, utilities, worker protection costs related to COVID-19, uninsured property damage costs caused by looting or vandalism during 2020, and certain supplier costs and expenses for operations. Additionally, The Paycheck Protection Program (PPP) now allows certain eligible borrowers that previously received a PPP loan to apply for a Second Draw PPP Loan with the same general loan terms as their First Draw PPP Loan. Second Draw PPP Loans can be used to help fund payroll costs, including benefits. Funds can also be used to pay for mortgage interest, rent, utilities, worker protection costs related to COVID-19, uninsured property damage costs caused by looting or vandalism during 2020, and certain supplier costs and expenses for operations\nBusiness Entities (partnerships, corporations, LLC), Sole Proprietors, independent Contractors,  501(c)(3) nonprofit organizations, 501(c)(6)Organization, 501(C) 19Veterans organizations, and Tribal businesses described in the Small Business Act, maybe eligible if they also meet program size standards and certain limitations.",
+        "cfda_website": "http://www.sba.gov",
+        "applicant_eligibility": "Additional information is available on SBA's website at www.sba.gov",
+        "beneficiary_eligibility": "Not for Profit Entities and Small businesses that meet the size and eligibility standards \nwww.treasury.gov",
+        "obligation": 811470409634.73,
+        "outlay": 811470172132.76
+      },
+      {
+        "id": 3151,
+        "code": "84.425",
+        "description": "Education Stabilization Fund",
+        "award_count": 13853,
+        "resource_link": "https://sam.gov/fal/a700222446ee4514ba5fac80996e2254/view",
+        "cfda_federal_agency": "EDUCATION, DEPARTMENT OF, EDUCATION, DEPARTMENT OF",
+        "cfda_objectives": "To prevent, prepare for, and respond to the coronavirus COVID-19 disease pandemic.",
+        "cfda_website": "https://www.ed.gov/teaching-and-administration/safe-learning-environments/covid-19/covid-19-resources-for-schools-students-and-families",
+        "applicant_eligibility": "Not Applicable",
+        "beneficiary_eligibility": "State educational agencies, local educational agencies, colleges, universities, and other education-related entities, and their students, faculty, staff, and employees, will benefit.",
+        "obligation": 268280215842.43,
+        "outlay": 265979967387.83
+      },
+      {
+        "id": 3253,
+        "code": "21.027",
+        "description": "CORONAVIRUS STATE AND LOCAL FISCAL RECOVERY FUNDS",
+        "award_count": 5645,
+        "resource_link": "https://sam.gov/fal/cf8da3c2ea494ed59c4ce0345356e049/view",
+        "cfda_federal_agency": "DEPARTMENTAL OFFICES, TREASURY, DEPARTMENT OF THE",
+        "cfda_objectives": "Sections 602 and 603 of the Social Security Act as added by section 9901 of the American Rescue Plan Act of 2021 (the \u201cAct\u201d), Pub. L. No. 117-2 (Mar. 11, 2021) authorizes the Coronavirus State Fiscal Recovery Fund (CSFRF) and Coronavirus Local Fiscal Recovery Fund (CLFRF) respectively (referred to as the \u201cCoronavirus State and Local Fiscal Recovery Funds\u201d or \u201cSLFRF\u201d), which provides $350 billion in total funding to Treasury to make payments generally to States (defined to include the District of Columbia), U.S. Territories (defined to include, Puerto Rico, U.S. Virgin Islands, Guam, Northern Mariana Islands, and American Samoa), Indian Tribes, Metropolitan cities, Counties, and Nonentitlement units of local government to respond to the COVID-19 public health emergency or its negative economic impact, including to provide assistance to households, small business, nonprofits, and impacted industries, such as tourism, travel, and hospitality; respond to workers performing essential work during the COVID-19 pandemic by providing premium pay to eligible workers of the State, territory, Tribal government, metropolitan city, county, or nonentitlement units of local government performing essential work or by providing grants to eligible employers that have eligible workers; provide government services, to the extent of the reduction of revenue due to COVID-19 relative to revenues collected in the most recent full fiscal year of the State, territory, tribal government, metropolitan city, county, or nonentitlement units of local government; or make necessary investments in water, sewer, or broadband infrastructure. The Consolidated Appropriations Act, 2023 (Pub. L. No. 117\u2013328 (Dec. 29, 2022)) amended sections 602 and 603 of the Social Security Act to authorize recipients also to use SLFRF funds to provide emergency relief from natural disasters or the negative economic impacts of natural disasters, including temporary emergency housing, food assistance, financial assistance for lost wages, or other immediate needs; and for certain infrastructure projects eligible under 26 programs administered by the Department of Transportation (Surface Transportation projects) and under title I of the Housing and Community Development Act of 1974 (Title I projects). No new awards are being made but existing projects are still active.",
+        "cfda_website": "https://home.treasury.gov/policy-issues/coronavirus/assistance-for-state-local-and-tribal-governments/state-and-local-fiscal-recovery-funds",
+        "applicant_eligibility": "States (defined to include the District of Columbia), U.S. Territories (Puerto Rico, U.S. Virgin Islands, Guam, Northern Mariana Islands, and American Samoa), Tribal governments, Metropolitan cities, nonentitlement units of local government (through states) and Counties",
+        "beneficiary_eligibility": "Individual/Family, Small business, Public nonprofit institution/organization, Private nonprofit institution/organization",
+        "obligation": 240647738718.51,
+        "outlay": 345627788305.7
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "total": 540,
+      "limit": 3,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    }
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q122",
+      "requested_at_utc": "2026-10-17T18:53:55.554397+00:00",
+      "request": {
+        "method": "POST",
+        "path": "/api/v2/disaster/cfda/spending/",
+        "body": {
+          "filter": {
+            "def_codes": [
+              "L",
+              "M",
+              "N",
+              "O",
+              "P",
+              "U",
+              "V"
+            ],
+            "award_type_codes": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "02",
+              "03",
+              "04",
+              "05",
+              "06",
+              "07",
+              "08",
+              "09",
+              "10",
+              "11",
+              "-1"
+            ]
+          },
+          "spending_type": "award",
+          "pagination": {
+            "limit": 3,
+            "page": 1,
+            "sort": "obligation",
+            "order": "desc"
+          }
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/disaster/cfda/spending/",
+      "http_status": 400,
+      "elapsed_seconds": 0.29,
+      "response_bytes": 215,
+      "response": {
+        "detail": "Field 'filter|award_type_codes' is outside valid values ['-1', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'F001', 'F002', 'F003', 'F004', 'F005', 'F006', 'F007', 'F008', 'F009', 'F010']"
+      },
+      "status": "http_error"
+    }
+  ]
+}

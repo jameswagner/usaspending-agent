@@ -1,0 +1,18 @@
+{
+  "task_id": "Q067",
+  "requested_at_utc": "2026-10-17T19:20:30.191258+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/awards/count/subaward/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-/",
+    "query": {}
+  },
+  "url": "https://api.usaspending.gov/api/v2/awards/count/subaward/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.268,
+  "response_bytes": 17,
+  "response": {
+    "subawards": 269
+  },
+  "status": "live_ok"
+}

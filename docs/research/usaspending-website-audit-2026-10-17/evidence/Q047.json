@@ -1,0 +1,51 @@
+{
+  "task_id": "Q047",
+  "requested_at_utc": "2026-10-17T18:53:29.338540+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/autocomplete/awarding_agency/",
+    "body": {
+      "search_text": "NASA",
+      "limit": 3
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/autocomplete/awarding_agency/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.334,
+  "response_bytes": 552,
+  "response": {
+    "results": [
+      {
+        "id": 862,
+        "toptier_flag": true,
+        "toptier_agency": {
+          "toptier_code": "080",
+          "abbreviation": "NASA",
+          "name": "National Aeronautics and Space Administration"
+        },
+        "subtier_agency": {
+          "abbreviation": "NASA",
+          "name": "National Aeronautics and Space Administration"
+        }
+      },
+      {
+        "id": 863,
+        "toptier_flag": false,
+        "toptier_agency": {
+          "toptier_code": "080",
+          "abbreviation": "NASA",
+          "name": "National Aeronautics and Space Administration"
+        },
+        "subtier_agency": {
+          "abbreviation": null,
+          "name": "Headquarters, NASA"
+        }
+      }
+    ],
+    "messages": [
+      "This endpoint is DEPRECATED. Please refer to the api contracts."
+    ]
+  },
+  "status": "live_ok"
+}

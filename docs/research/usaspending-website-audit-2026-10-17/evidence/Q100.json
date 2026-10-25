@@ -1,0 +1,49 @@
+{
+  "task_id": "Q100",
+  "requested_at_utc": "2026-10-17T18:53:44.315135+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/recipient/state/awards/06/",
+    "query": {
+      "year": 2025
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/recipient/state/awards/06/?year=2025",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.26,
+  "response_bytes": 462,
+  "response": [
+    {
+      "type": "contracts",
+      "amount": 62040610336.28,
+      "count": 301815,
+      "total_outlays": 19123590282.1
+    },
+    {
+      "type": "direct_payments",
+      "amount": 251318302866.97,
+      "count": 75246,
+      "total_outlays": 236253308515.93
+    },
+    {
+      "type": "grants",
+      "amount": 171833747530.86,
+      "count": 34517,
+      "total_outlays": 174250758709.96
+    },
+    {
+      "type": "loans",
+      "amount": 34927455.28,
+      "count": 242150,
+      "total_outlays": 304073704.02
+    },
+    {
+      "type": "other_financial_assistance",
+      "amount": 528962621.14,
+      "count": 7629,
+      "total_outlays": 709335786.44
+    }
+  ],
+  "status": "live_ok"
+}

@@ -1,0 +1,92 @@
+{
+  "task_id": "Q017",
+  "requested_at_utc": "2026-10-17T18:53:05.727990+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "extent_competed_type_codes": [
+          "A"
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.431,
+  "response_bytes": 1583,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 307885715,
+        "Award ID": "HT940216C0001",
+        "Recipient Name": "HUMANA GOVERNMENT BUSINESS INC",
+        "Award Amount": 51269205263.03,
+        "Start Date": "2016-08-01",
+        "End Date": "2025-12-31",
+        "Description": "IGF::OT::IGF",
+        "generated_internal_id": "CONT_AWD_HT940216C0001_9700_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 295476065,
+        "Award ID": "DEAC0494AL85000",
+        "Recipient Name": "LOCKHEED MARTIN CORP",
+        "Award Amount": 48063737196.35,
+        "Start Date": "1993-10-15",
+        "End Date": "2017-04-30",
+        "Description": null,
+        "generated_internal_id": "CONT_AWD_DEAC0494AL85000_8900_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 295527116,
+        "Award ID": "DENA0003525",
+        "Recipient Name": "NATIONAL TECHNOLOGY & ENGINEERING SOLUTIONS OF SANDIA, LLC",
+        "Award Amount": 43460682794.89,
+        "Start Date": "2017-01-18",
+        "End Date": "2027-04-30",
+        "Description": "IGF::CL,CT::IGF CONTRACT AWARD DE-NA0003525 TO THE NATIONAL TECHNOLOGY&ENGINEERING SOLUTIONS OF SANDIA, LLC (NTESS) FOR THE MANAGEMENT AND OPERATION OF THE DEPARTMENT OF ENERGY, NATIONAL NUCLEAR SECURITY ADMINISTRATION'S SANDIA NATIONAL LABORATORIES (SNL)",
+        "generated_internal_id": "CONT_AWD_DENA0003525_8900_-NONE-_-NONE-"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 295527116,
+      "last_record_sort_value": "4346068279489"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

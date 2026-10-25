@@ -1,0 +1,133 @@
+{
+  "task_id": "Q084",
+  "requested_at_utc": "2026-10-17T18:53:34.186988+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/agency/080/sub_agency/",
+    "query": {
+      "fiscal_year": 2025
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/agency/080/sub_agency/?fiscal_year=2025",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 1.002,
+  "response_bytes": 2113,
+  "response": {
+    "toptier_code": "080",
+    "fiscal_year": 2025,
+    "page_metadata": {
+      "page": 1,
+      "total": 1,
+      "limit": 10,
+      "next": null,
+      "previous": null,
+      "hasNext": false,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "abbreviation": "NASA",
+        "name": "National Aeronautics and Space Administration",
+        "total_obligations": 22858094044.11,
+        "transaction_count": 36114,
+        "new_award_count": 6730,
+        "children": [
+          {
+            "code": "80JSC0",
+            "name": "NASA JOHNSON SPACE CENTER",
+            "total_obligations": 5513421431.17,
+            "transaction_count": 2276,
+            "new_award_count": 259
+          },
+          {
+            "code": "80MSFC",
+            "name": "NASA MARSHALL SPACE FLIGHT CENTER",
+            "total_obligations": 4253464201.94,
+            "transaction_count": 1887,
+            "new_award_count": 192
+          },
+          {
+            "code": "80GSFC",
+            "name": "NASA GODDARD SPACE FLIGHT CENTER",
+            "total_obligations": 3311112187.67,
+            "transaction_count": 2738,
+            "new_award_count": 74
+          },
+          {
+            "code": "80NM00",
+            "name": "NASA MANAGEMENT OFFICE -- JPL",
+            "total_obligations": 2334038432.03,
+            "transaction_count": 1942,
+            "new_award_count": 74
+          },
+          {
+            "code": "80KSC0",
+            "name": "NASA KENNEDY SPACE CENTER",
+            "total_obligations": 2287801837.06,
+            "transaction_count": 1532,
+            "new_award_count": 132
+          },
+          {
+            "code": "80NSSC",
+            "name": "NASA SHARED SERVICES CENTER",
+            "total_obligations": 2114637266.08,
+            "transaction_count": 18052,
+            "new_award_count": 4812
+          },
+          {
+            "code": "80TECH",
+            "name": "NASA IT PROCUREMENT OFFICE",
+            "total_obligations": 933605868.94,
+            "transaction_count": 2086,
+            "new_award_count": 508
+          },
+          {
+            "code": "80GRC0",
+            "name": "NASA GLENN RESEARCH CENTER",
+            "total_obligations": 622255552.24,
+            "transaction_count": 1371,
+            "new_award_count": 121
+          },
+          {
+            "code": "80ARC0",
+            "name": "NASA AMES RESEARCH CENTER",
+            "total_obligations": 462315945.07,
+            "transaction_count": 1071,
+            "new_award_count": 101
+          },
+          {
+            "code": "80LARC",
+            "name": "NASA LANGLEY RESEARCH CENTER",
+            "total_obligations": 380766849.72,
+            "transaction_count": 1175,
+            "new_award_count": 151
+          },
+          {
+            "code": "80HQTR",
+            "name": "NASA HEADQUARTERS",
+            "total_obligations": 275672290.74,
+            "transaction_count": 860,
+            "new_award_count": 215
+          },
+          {
+            "code": "80AFRC",
+            "name": "NASA ARMSTRONG FLIGHT RESEARCH CNTR",
+            "total_obligations": 223265121.37,
+            "transaction_count": 570,
+            "new_award_count": 74
+          },
+          {
+            "code": "80SSC0",
+            "name": "NASA STENNIS SPACE CENTER",
+            "total_obligations": 145737060.08,
+            "transaction_count": 554,
+            "new_award_count": 32
+          }
+        ]
+      }
+    ],
+    "messages": []
+  },
+  "status": "live_ok"
+}

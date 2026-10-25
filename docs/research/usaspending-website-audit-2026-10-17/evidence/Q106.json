@@ -1,0 +1,149 @@
+{
+  "task_id": "Q106",
+  "requested_at_utc": "2026-10-17T19:20:36.038161+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/federal_accounts/5634/available_object_classes/",
+    "query": {}
+  },
+  "url": "https://api.usaspending.gov/api/v2/federal_accounts/5634/available_object_classes/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.47,
+  "response_bytes": 1673,
+  "response": {
+    "results": [
+      {
+        "id": "30",
+        "name": "Acquisition of assets",
+        "minor_object_class": [
+          {
+            "id": "32.0",
+            "name": "Land and structures"
+          },
+          {
+            "id": "31.0",
+            "name": "Equipment"
+          }
+        ]
+      },
+      {
+        "id": "20",
+        "name": "Contractual services and supplies",
+        "minor_object_class": [
+          {
+            "id": "23.2",
+            "name": "Rental payments to others"
+          },
+          {
+            "id": "23.3",
+            "name": "Communications, utilities, and miscellaneous charges"
+          },
+          {
+            "id": "24.0",
+            "name": "Printing and reproduction"
+          },
+          {
+            "id": "23.1",
+            "name": "Rental payments to GSA"
+          },
+          {
+            "id": "21.0",
+            "name": "Travel and transportation of persons"
+          },
+          {
+            "id": "22.0",
+            "name": "Transportation of things"
+          },
+          {
+            "id": "25.2",
+            "name": "Other services from non-Federal sources"
+          },
+          {
+            "id": "25.3",
+            "name": "Other goods and services from Federal sources"
+          },
+          {
+            "id": "25.7",
+            "name": "Operation and maintenance of equipment"
+          },
+          {
+            "id": "26.0",
+            "name": "Supplies and materials"
+          },
+          {
+            "id": "25.6",
+            "name": "Medical care"
+          },
+          {
+            "id": "25.1",
+            "name": "Advisory and assistance services"
+          },
+          {
+            "id": "25.4",
+            "name": "Operation and maintenance of facilities"
+          },
+          {
+            "id": "25.5",
+            "name": "Research and development contracts"
+          }
+        ]
+      },
+      {
+        "id": "10",
+        "name": "Personnel compensation and benefits",
+        "minor_object_class": [
+          {
+            "id": "11.8",
+            "name": "Special personal services payments"
+          },
+          {
+            "id": "13.0",
+            "name": "Benefits for former personnel"
+          },
+          {
+            "id": "11.5",
+            "name": "Other personnel compensation"
+          },
+          {
+            "id": "12.1",
+            "name": "Civilian personnel benefits"
+          },
+          {
+            "id": "11.1",
+            "name": "Full-time permanent"
+          },
+          {
+            "id": "11.3",
+            "name": "Other than full-time permanent"
+          }
+        ]
+      },
+      {
+        "id": "40",
+        "name": "Grants and fixed charges",
+        "minor_object_class": [
+          {
+            "id": "41.0",
+            "name": "Grants, subsidies, and contributions"
+          },
+          {
+            "id": "42.0",
+            "name": "Insurance claims and indemnities"
+          }
+        ]
+      },
+      {
+        "id": "00",
+        "name": "Unknown",
+        "minor_object_class": [
+          {
+            "id": "00.0",
+            "name": "Unknown"
+          }
+        ]
+      }
+    ]
+  },
+  "status": "live_ok"
+}

@@ -1,0 +1,92 @@
+{
+  "task_id": "Q014",
+  "requested_at_utc": "2026-10-17T18:53:05.296817+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "psc_codes": [
+          "D302"
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.335,
+  "response_bytes": 1987,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 296763037,
+        "Award ID": "DOCDG133E09CN0094",
+        "Recipient Name": "L3HARRIS TECHNOLOGIES, INC.",
+        "Award Amount": 1826088581.86,
+        "Start Date": "2009-05-27",
+        "End Date": "2024-01-31",
+        "Description": "THE PURPOSE OF THIS CONTRACT IS TO DEVELOP THE GROUND SYSTEM THAT WILL SUPPORT NOAA S NEXT GENERATION GEOSTATIONARY SATELLITE SERIES, GOES-R. THIS NEW SERIES OF SPACECRAFT, SET TO BEGIN LAUNCHING IN 2015, IS EXPECTED TO DOUBLE THE CLARITY OF TODAY S SATELLITE IMAGERY AND PROVIDE AT LEAST 20 TIMES MORE ATMOSPHERIC OBSERVATIONS FROM SPACE. THE CONTRACTOR IS TO DESIGN, DEVELOP, TEST AND IMPLEMENT THE GOES-R GROUND SYSTEM. THE GROUND SYSTEM WILL CAPTURE DATA FROM THE GOES-R SATELLITES, AND PROCESS AND DISTRIBUTE THE INFORMATION TO OPERATIONAL USERS.",
+        "generated_internal_id": "CONT_AWD_DOCDG133E09CN0094_1330_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 281084454,
+        "Award ID": "47QFMA21F0003",
+        "Recipient Name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+        "Award Amount": 577146092.9,
+        "Start Date": "2020-11-01",
+        "End Date": "2026-01-31",
+        "Description": "ENTERPRISE MISSION INFORMATION TECHNOLOGY SERVICES (EMITS)",
+        "generated_internal_id": "CONT_AWD_47QFMA21F0003_4732_47QTCK18D0003_4732"
+      },
+      {
+        "internal_id": 307128645,
+        "Award ID": "HHSN31600002",
+        "Recipient Name": "DELOITTE CONSULTING LLP",
+        "Award Amount": 465552113.42,
+        "Start Date": "2014-01-10",
+        "End Date": "2025-10-12",
+        "Description": "IGF::CT::IGF R12 UPGRADE - SYSTEM INTEGRATION AND HOSTING SUPPORT",
+        "generated_internal_id": "CONT_AWD_HHSN31600002_7529_HHSN316201200018W_7529"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 307128645,
+      "last_record_sort_value": "46555211342"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

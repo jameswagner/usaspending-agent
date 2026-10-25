@@ -1,0 +1,651 @@
+{
+  "captured_at_utc": "2026-10-17T19:35:06.717Z",
+  "flows": [
+    {
+      "flow": "recipient_to_advanced_search",
+      "log": [
+        {
+          "clicked": "View awards to this recipient",
+          "ok": true
+        },
+        {
+          "search_url": "https://www.usaspending.gov/search/?hash=39c77568f7bd2c627db7bffac47f6c33",
+          "search_title": "Federal Awards | Advanced Search | USAspending"
+        },
+        {
+          "clicked": "Transactions",
+          "ok": true
+        },
+        {
+          "clicked": "Subawards",
+          "ok": false,
+          "error": "locator.click: Timeout 10000ms exceeded."
+        },
+        {
+          "clicked": "Grants",
+          "ok": false,
+          "error": "locator.click: Timeout 10000ms exceeded."
+        }
+      ],
+      "calls": [
+        {
+          "tab": "recipient_profile",
+          "method": "GET",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500"
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "GET",
+          "path": "/api/v2/recipient/6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C/",
+          "query": "?year=latest"
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "GET",
+          "path": "/api/v2/recipient/6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C/",
+          "query": "?year=latest"
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "GET",
+          "path": "/api/v2/recipient/6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C/",
+          "query": "?year=latest"
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "POST",
+          "path": "/api/v2/search/spending_over_time/",
+          "body": {
+            "group": "fiscal_year",
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "time_period": [
+                {
+                  "start_date": "2007-10-01",
+                  "end_date": "2027-09-30"
+                }
+              ]
+            },
+            "auditTrail": "Recipient Spending Over Time Visualization"
+          }
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "POST",
+          "path": "/api/v2/search/new_awards_over_time/",
+          "body": {
+            "group": "fiscal_year",
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "time_period": [
+                {
+                  "start_date": "2007-10-01",
+                  "end_date": "2027-09-30"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "GET",
+          "path": "/api/v2/references/states/"
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_category/awarding_agency",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "awarding_agency",
+            "limit": 5,
+            "page": 1
+          }
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_category/awarding_subagency",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "awarding_subagency",
+            "limit": 5,
+            "page": 1
+          }
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_category/federal_account",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "federal_account",
+            "limit": 5,
+            "page": 1
+          }
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_category/cfda",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "cfda",
+            "limit": 5,
+            "page": 1
+          }
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_category/naics",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "naics",
+            "limit": 5,
+            "page": 1
+          }
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_category/psc",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "psc",
+            "limit": 5,
+            "page": 1
+          }
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_category/country",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "country",
+            "limit": 5,
+            "page": 1
+          }
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_category/state_territory",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "state_territory",
+            "limit": 5,
+            "page": 1
+          }
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "GET",
+          "path": "/api/v2/references/toptier_agencies/"
+        },
+        {
+          "tab": "recipient_profile",
+          "method": "POST",
+          "path": "/api/v2/references/filter/",
+          "body": {
+            "filters": {
+              "keyword": {},
+              "timePeriodType": "fy",
+              "timePeriodFY": [],
+              "time_period": [],
+              "filterNewAwardsOnlySelected": false,
+              "filterNewAwardsOnlyActive": false,
+              "filterNaoActiveFromFyOrDateRange": false,
+              "selectedLocations": {},
+              "locationDomesticForeign": "all",
+              "selectedFundingAgencies": {},
+              "selectedAwardingAgencies": {},
+              "selectedRecipients": [
+                "G4KDGE4JFFK7"
+              ],
+              "recipientDomesticForeign": "all",
+              "recipientType": [],
+              "selectedRecipientLocations": {},
+              "awardType": [],
+              "selectedAwardIDs": {},
+              "awardAmounts": {},
+              "selectedCFDA": {},
+              "naicsCodes": {
+                "require": [],
+                "exclude": [],
+                "counts": []
+              },
+              "pscCodes": {
+                "require": [],
+                "exclude": [],
+                "counts": []
+              },
+              "defCodes": {
+                "require": [],
+                "exclude": [],
+                "counts": []
+              },
+              "defCode": [],
+              "pricingType": [],
+              "setAside": [],
+              "extentCompeted": [],
+              "treasuryAccounts": {},
+              "tasCodes": {
+                "require": [],
+                "exclude": [],
+                "counts": []
+              },
+              "awardDescription": ""
+            },
+            "version": "2020-06-01"
+          }
+        },
+        {
+          "tab": "search_from_recipient",
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_award/",
+          "body": {
+            "auditTrail": "Results Table - Spending by award search",
+            "filters": {
+              "time_period": [
+                {
+                  "start_date": "2007-10-01",
+                  "end_date": "2027-09-30"
+                }
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ],
+              "recipient_search_text": [
+                "G4KDGE4JFFK7"
+              ]
+            },
+            "limit": 100,
+            "order": "desc",
+            "page": 1,
+            "sort": "Award Amount",
+            "fields": [
+              "Award ID",
+              "Recipient Name",
+              "Award Amount",
+              "Total Outlays",
+              "Description",
+              "Contract Award Type",
+              "Recipient UEI",
+              "Recipient Location",
+              "Primary Place of Performance",
+              "def_codes",
+              "COVID-19 Obligations",
+              "COVID-19 Outlays",
+              "Infrastructure Obligations",
+              "Infrastructure Outlays",
+              "Awarding Agency",
+              "Awarding Sub Agency",
+              "Start Date",
+              "End Date",
+              "NAICS",
+              "PSC",
+              "recipient_id",
+              "prime_award_recipient_id"
+            ],
+            "spending_level": "awards"
+          }
+        },
+        {
+          "tab": "search_from_recipient",
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_category/awarding_agency",
+          "body": {
+            "category": "awarding_agency",
+            "filters": {
+              "time_period": [
+                {
+                  "start_date": "2007-10-01",
+                  "end_date": "2027-09-30"
+                }
+              ],
+              "recipient_search_text": [
+                "G4KDGE4JFFK7"
+              ]
+            },
+            "limit": 10,
+            "page": 1,
+            "auditTrail": "Awarding Agency Rank Visualization",
+            "spending_level": "transactions"
+          }
+        },
+        {
+          "tab": "search_from_recipient",
+          "method": "POST",
+          "path": "/api/v2/search/spending_over_time/",
+          "body": {
+            "group": "month",
+            "filters": {
+              "time_period": [
+                {
+                  "start_date": "2007-10-01",
+                  "end_date": "2027-09-30"
+                }
+              ],
+              "recipient_search_text": [
+                "G4KDGE4JFFK7"
+              ]
+            },
+            "spending_level": "transactions",
+            "auditTrail": "Spending Over Time Visualization"
+          }
+        },
+        {
+          "tab": "search_from_recipient",
+          "method": "GET",
+          "path": "/api/v2/references/states/"
+        },
+        {
+          "tab": "search_from_recipient",
+          "method": "GET",
+          "path": "/api/v2/references/countries"
+        },
+        {
+          "tab": "search_from_recipient",
+          "method": "GET",
+          "path": "/api/v2/references/countries/"
+        },
+        {
+          "tab": "search_from_recipient",
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_geography/",
+          "body": {
+            "scope": "place_of_performance",
+            "geo_layer": "state",
+            "geo_layer_filters": [
+              "AK",
+              "AL",
+              "AR",
+              "AS",
+              "AZ",
+              "CA",
+              "CO",
+              "CT",
+              "DC",
+              "DE",
+              "FL",
+              "GA",
+              "GU",
+              "HI",
+              "IA",
+              "ID",
+              "IL",
+              "IN",
+              "KS",
+              "KY",
+              "LA",
+              "MA",
+              "MD",
+              "ME",
+              "MI",
+              "MN",
+              "MO",
+              "MP",
+              "MS",
+              "MT",
+              "NC",
+              "ND",
+              "NE",
+              "NH",
+              "NJ",
+              "NM",
+              "NV",
+              "NY",
+              "OH",
+              "OK",
+              "OR",
+              "PA",
+              "PR",
+              "RI",
+              "SC",
+              "SD",
+              "TN",
+              "TX",
+              "UT",
+              "VA",
+              "VI",
+              "VT",
+              "WA",
+              "WI",
+              "WV",
+              "WY"
+            ],
+            "filters": {
+              "time_period": [
+                {
+                  "start_date": "2007-10-01",
+                  "end_date": "2027-09-30"
+                }
+              ],
+              "recipient_search_text": [
+                "G4KDGE4JFFK7"
+              ]
+            },
+            "auditTrail": "Map Visualization",
+            "spending_level": "transactions"
+          }
+        }
+      ]
+    },
+    {
+      "flow": "award_history_tabs",
+      "log": [
+        {
+          "clicked": "Sub-Awards",
+          "ok": false,
+          "error": "locator.click: Timeout 10000ms exceeded."
+        },
+        {
+          "clicked": "Federal Account Funding",
+          "ok": true
+        }
+      ],
+      "calls": [
+        {
+          "tab": "award_contract",
+          "method": "GET",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500"
+        },
+        {
+          "tab": "award_contract",
+          "method": "GET",
+          "path": "/api/v2/awards/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-/"
+        },
+        {
+          "tab": "award_contract",
+          "method": "GET",
+          "path": "/api/v2/references/def_codes/"
+        },
+        {
+          "tab": "award_contract",
+          "method": "GET",
+          "path": "/api/v2/awards/count/federal_account/311267295/"
+        },
+        {
+          "tab": "award_contract",
+          "method": "POST",
+          "path": "/api/v2/awards/funding_rollup/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-"
+          }
+        },
+        {
+          "tab": "award_contract",
+          "method": "POST",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1,
+            "sort": "federal_action_obligation",
+            "order": "asc",
+            "limit": 5000
+          }
+        },
+        {
+          "tab": "award_contract",
+          "method": "POST",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "tab": "award_contract",
+          "method": "POST",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "tab": "award_contract",
+          "method": "POST",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "tab": "award_contract",
+          "method": "GET",
+          "path": "/api/v2/awards/count/transaction/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-/"
+        },
+        {
+          "tab": "award_contract",
+          "method": "GET",
+          "path": "/api/v2/awards/count/subaward/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-/"
+        },
+        {
+          "tab": "award_contract",
+          "method": "GET",
+          "path": "/api/v2/awards/count/federal_account/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-/"
+        },
+        {
+          "tab": "award_contract",
+          "method": "GET",
+          "path": "/api/v2/references/def_codes/"
+        },
+        {
+          "tab": "award_contract",
+          "method": "POST",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "tab": "award_contract",
+          "method": "POST",
+          "path": "/api/v2/awards/accounts/",
+          "body": {
+            "limit": 10,
+            "sort": "total_transaction_obligated_amount",
+            "order": "desc",
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1
+          }
+        }
+      ],
+      "calls_after_clicks_start_at": 15
+    }
+  ]
+}

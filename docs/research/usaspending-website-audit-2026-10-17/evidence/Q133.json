@@ -1,0 +1,32 @@
+{
+  "task_id": "Q133",
+  "requested_at_utc": "2026-10-17T18:55:02.095142+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/reporting/agencies/080/discrepancies/",
+    "query": {
+      "fiscal_year": 2025,
+      "fiscal_period": 12,
+      "limit": 3
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/reporting/agencies/080/discrepancies/?fiscal_year=2025&fiscal_period=12&limit=3",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.295,
+  "response_bytes": 139,
+  "response": {
+    "page_metadata": {
+      "page": 1,
+      "total": 0,
+      "limit": 3,
+      "next": null,
+      "previous": null,
+      "hasNext": false,
+      "hasPrevious": false
+    },
+    "results": [],
+    "messages": []
+  },
+  "status": "live_ok"
+}

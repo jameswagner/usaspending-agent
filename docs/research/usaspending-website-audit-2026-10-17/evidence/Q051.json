@@ -1,0 +1,37 @@
+{
+  "task_id": "Q051",
+  "requested_at_utc": "2026-10-17T18:53:31.295104+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/autocomplete/cfda/",
+    "body": {
+      "search_text": "child care",
+      "limit": 3
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/autocomplete/cfda/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.515,
+  "response_bytes": 399,
+  "response": {
+    "results": [
+      {
+        "program_number": "66.444",
+        "program_title": "Voluntary School and Child Care Lead Testing and Reduction Grant Program (SDWA 1464(d))",
+        "popular_name": "SDWA 1464(d)"
+      },
+      {
+        "program_number": "84.335",
+        "program_title": "Child Care Access Means Parents in School",
+        "popular_name": ""
+      },
+      {
+        "program_number": "93.489",
+        "program_title": "Child Care Disaster Relief",
+        "popular_name": "Child Care Disaster Funds"
+      }
+    ]
+  },
+  "status": "live_ok"
+}

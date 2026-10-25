@@ -1,0 +1,24 @@
+{
+  "task_id": "Q085",
+  "requested_at_utc": "2026-10-17T18:53:34.761202+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/agency/080/sub_agency/count/",
+    "query": {
+      "fiscal_year": 2025
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/agency/080/sub_agency/count/?fiscal_year=2025",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.668,
+  "response_bytes": 94,
+  "response": {
+    "toptier_code": "080",
+    "fiscal_year": 2025,
+    "sub_agency_count": 1,
+    "office_count": 13,
+    "messages": []
+  },
+  "status": "live_ok"
+}

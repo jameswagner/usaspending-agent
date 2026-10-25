@@ -1,0 +1,92 @@
+{
+  "task_id": "Q022",
+  "requested_at_utc": "2026-10-17T18:53:07.605679+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "recipient_type_names": [
+          "woman_owned_business"
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.501,
+  "response_bytes": 1389,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 349583399,
+        "Award ID": "W9124G17C0104",
+        "Recipient Name": "M1 SUPPORT SERVICES, L.P.",
+        "Award Amount": 4701689160.67,
+        "Start Date": "2017-10-01",
+        "End Date": "2027-01-17",
+        "Description": "IGF::OT::IGF",
+        "generated_internal_id": "CONT_AWD_W9124G17C0104_9700_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 297927564,
+        "Award ID": "FA283424CB002",
+        "Recipient Name": "SIERRA NEVADA COMPANY, LLC",
+        "Award Amount": 3419616376.72,
+        "Start Date": "2024-04-26",
+        "End Date": "2032-10-29",
+        "Description": "SURVIVABLE AIRBORNE OPERATIONS CENTER (SAOC)",
+        "generated_internal_id": "CONT_AWD_FA283424CB002_9700_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 291434657,
+        "Award ID": "73351020F0071",
+        "Recipient Name": "RER SOLUTIONS, INC.",
+        "Award Amount": 800000000.0,
+        "Start Date": "2020-03-29",
+        "End Date": "2021-09-30",
+        "Description": "DATA ANALYSIS AND LOAN RECOMMENDATION SERVICES FOR COVID-19",
+        "generated_internal_id": "CONT_AWD_73351020F0071_7300_73351019D0001_7300"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 291434657,
+      "last_record_sort_value": "80000000000"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

@@ -1,0 +1,42 @@
+{
+  "task_id": "Q114",
+  "requested_at_utc": "2026-10-17T19:20:36.508544+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/spending/",
+    "body": {
+      "type": "budget_subfunction",
+      "filters": {
+        "fy": "2025",
+        "quarter": "4",
+        "budget_function": "250"
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/spending/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 4.213,
+  "response_bytes": 329,
+  "response": {
+    "total": 47642186350.39,
+    "end_date": "2025-09-30T00:00:00Z",
+    "results": [
+      {
+        "id": "252",
+        "code": "252",
+        "type": "budget_subfunction",
+        "name": "Space flight, research, and supporting activities",
+        "amount": 27805846911.92
+      },
+      {
+        "id": "251",
+        "code": "251",
+        "type": "budget_subfunction",
+        "name": "General science and basic research",
+        "amount": 19836339438.47
+      }
+    ]
+  },
+  "status": "live_ok"
+}

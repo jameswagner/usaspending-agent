@@ -1,0 +1,27 @@
+{
+  "task_id": "Q105",
+  "requested_at_utc": "2026-10-17T19:20:35.790840+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/federal_accounts/5634/fiscal_year_snapshot/2025/",
+    "query": {}
+  },
+  "url": "https://api.usaspending.gov/api/v2/federal_accounts/5634/fiscal_year_snapshot/2025/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.302,
+  "response_bytes": 294,
+  "response": {
+    "results": {
+      "outlay": 7666106608.57,
+      "budget_authority": 15539496422.29,
+      "obligated": 7923866974.31,
+      "unobligated": 7615629447.98,
+      "balance_brought_forward": 453296422.29,
+      "other_budgetary_resources": 0.0,
+      "appropriations": 15086200000.0,
+      "name": "Exploration, National Aeronautics and Space Administration"
+    }
+  },
+  "status": "live_ok"
+}

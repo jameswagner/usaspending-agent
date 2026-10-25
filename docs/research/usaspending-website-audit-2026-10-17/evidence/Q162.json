@@ -1,0 +1,29 @@
+{
+  "task_id": "Q162",
+  "requested_at_utc": "2026-10-17T19:38:49.447778+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_transaction_count/",
+    "body": {
+      "filters": {
+        "keyword": "cybersecurity"
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_transaction_count/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.336,
+  "response_bytes": 102,
+  "response": {
+    "results": {
+      "contracts": 22194,
+      "grants": 6282,
+      "idvs": 1807,
+      "loans": 116,
+      "direct_payments": 447,
+      "other": 51
+    }
+  },
+  "status": "live_ok"
+}

@@ -1,0 +1,296 @@
+{
+  "task_id": "Q094",
+  "requested_at_utc": "2026-10-17T19:21:37.253776+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/recipient/children/JSQTW5L2SSM1/",
+    "query": {
+      "year": 2025
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/recipient/children/JSQTW5L2SSM1/?year=2025",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.304,
+  "response_bytes": 5450,
+  "response": [
+    {
+      "recipient_id": "d7df489c-5a15-3e1b-e7fa-0e93eb94a166-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "848028494",
+      "uei": "CWM4UN76ZQW8",
+      "amount": 2195763520.05,
+      "state_province": "NJ"
+    },
+    {
+      "recipient_id": "0701db1f-8045-4e60-83f7-5fd066cdf38d-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "075796037",
+      "uei": "Z9B5HQ9HSTM5",
+      "amount": 0,
+      "state_province": "NY"
+    },
+    {
+      "recipient_id": "3f24e8a2-ffa4-0b5f-1464-ab3597dd7aea-C",
+      "name": "LOCKHEED MARTIN SIPPICAN, INC.",
+      "duns": "032046666",
+      "uei": "YS2TNLEU8EK3",
+      "amount": 0,
+      "state_province": "NY"
+    },
+    {
+      "recipient_id": "0d5744ec-afe5-eea8-0593-f35c6a784084-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "002995582",
+      "uei": "XYUMJHQ1LJV5",
+      "amount": 0,
+      "state_province": "CO"
+    },
+    {
+      "recipient_id": "a4923c68-af42-9ae1-542b-a94992cac151-C",
+      "name": "LOCKHEED MARTIN AUSTRALIA PTY LIMITED",
+      "duns": "753773076",
+      "uei": "XXGWL2UF11M9",
+      "amount": 0,
+      "state_province": null
+    },
+    {
+      "recipient_id": "2d3a87eb-892a-befd-7332-a870cbb5c892-C",
+      "name": "LOCKHEED MARTIN LOGISTIC SERVICES, INC.",
+      "duns": "023110377",
+      "uei": "XPNHKJDDSGJ5",
+      "amount": 0,
+      "state_province": "SC"
+    },
+    {
+      "recipient_id": "779b3e3e-364f-7cbc-28a4-a2b4484b86f4-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "794571448",
+      "uei": "XFJMYSYFJEK4",
+      "amount": 0,
+      "state_province": "TX"
+    },
+    {
+      "recipient_id": "ec233861-77ff-bf66-8987-ba495789e1f1-C",
+      "name": "LOCKHEED MARTIN ACULIGHT CORPORATION",
+      "duns": "801518747",
+      "uei": "WYAVK6MSRJ15",
+      "amount": 0,
+      "state_province": "WA"
+    },
+    {
+      "recipient_id": "ac6353b4-94a7-285e-be38-bd8a7af11663-C",
+      "name": "LOCKHEED MARTIN SERVICES, LLC",
+      "duns": "113168686",
+      "uei": "VA1WWN5RAG77",
+      "amount": 0,
+      "state_province": "CO"
+    },
+    {
+      "recipient_id": "d64537c9-5482-dd40-cdd4-5cf07b66329d-C",
+      "name": "SIKORSKY AIRCRAFT CORPORATION",
+      "duns": "835551474",
+      "uei": "UTJWTSLMFNG4",
+      "amount": 0,
+      "state_province": "CT"
+    },
+    {
+      "recipient_id": "7a954f30-eada-36b9-2b45-2db412908b7a-C",
+      "name": "SIKORSKY AIRCRAFT CORPORATION",
+      "duns": "095680570",
+      "uei": "UT9HCKX9F6Q4",
+      "amount": 0,
+      "state_province": "CT"
+    },
+    {
+      "recipient_id": "3ed3dff5-2c28-c0eb-b15d-7271c2841327-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "790552504",
+      "uei": "TL1MRK244M47",
+      "amount": 0,
+      "state_province": "VA"
+    },
+    {
+      "recipient_id": "709d84bb-d7e3-2b97-6b75-efb601a7c8df-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "002106276",
+      "uei": "P8RKVLSH4RL3",
+      "amount": 0,
+      "state_province": "NY"
+    },
+    {
+      "recipient_id": "352b07fc-18d8-2071-247c-2d4b2f133717-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "015586845",
+      "uei": "NQ4RF43EENE4",
+      "amount": 0,
+      "state_province": "FL"
+    },
+    {
+      "recipient_id": "4b338935-1fe1-e136-3ef3-dbe01c516fbd-C",
+      "name": "DERCO AEROSPACE, INC.",
+      "duns": "012386405",
+      "uei": "NE3YWSUB81N5",
+      "amount": 0,
+      "state_province": "WI"
+    },
+    {
+      "recipient_id": "ceb32173-4900-91c2-280a-acdfbd574d2a-C",
+      "name": "LOCKHEED MARTIN COHERENT TECHNOLOGIES, INC.",
+      "duns": "149375479",
+      "uei": "MLF6FJ7FAVB3",
+      "amount": 0,
+      "state_province": "CO"
+    },
+    {
+      "recipient_id": "ebaaae81-1c39-a78f-5f6e-609314194ed1-C",
+      "name": "LOCKHEED MARTIN GLOBAL, INC.",
+      "duns": "080100705",
+      "uei": "MKGBNMGL19Y6",
+      "amount": 0,
+      "state_province": "NY"
+    },
+    {
+      "recipient_id": "49ba01f3-56b6-92fd-1814-1a521f21fe7e-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "003419090",
+      "uei": "MJENSFHZJP11",
+      "amount": 0,
+      "state_province": "MD"
+    },
+    {
+      "recipient_id": "9331a572-1e03-40ce-14db-7b658677c20a-C",
+      "name": "LOCKHEED MARTIN AEROPARTS, INC.",
+      "duns": "181814575",
+      "uei": "MAXNUBXJDDW6",
+      "amount": 0,
+      "state_province": "PA"
+    },
+    {
+      "recipient_id": "c798c2aa-022b-9a6f-21c5-8060af622f14-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "619434590",
+      "uei": "LXKGXB75YKY6",
+      "amount": 0,
+      "state_province": "CA"
+    },
+    {
+      "recipient_id": "0d5e3d40-f011-f507-c0ac-94bfc8c41a3e-C",
+      "name": "LOCKHEED MARTIN PROCERUS TECHNOLOGIES, L.C.",
+      "duns": "142406169",
+      "uei": "LHKDVHKNCES3",
+      "amount": 0,
+      "state_province": "UT"
+    },
+    {
+      "recipient_id": "dcfcacdd-ee37-1915-c7cd-5e0e1beb3741-C",
+      "name": "LOCKHEED MARTIN SIPPICAN, INC.",
+      "duns": "079818181",
+      "uei": "JZNMLE97EC97",
+      "amount": 0,
+      "state_province": "VA"
+    },
+    {
+      "recipient_id": "778fca0c-40b1-c7ff-78ae-bffa1c810be7-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "839379781",
+      "uei": "JPRDPNJCPHQ3",
+      "amount": 0,
+      "state_province": "CA"
+    },
+    {
+      "recipient_id": "5ad7895c-192b-21cd-8baf-92c6dce0b593-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "002232973",
+      "uei": "HJP4JZG1FUL9",
+      "amount": 0,
+      "state_province": "NY"
+    },
+    {
+      "recipient_id": "aec6af69-06ac-9ea8-5eab-b8c163d576bb-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "942512757",
+      "uei": "GESMUL9PADB9",
+      "amount": 0,
+      "state_province": "FL"
+    },
+    {
+      "recipient_id": "cd389dd1-0a00-fc35-f85a-8f9e179e7fd4-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "179351267",
+      "uei": "G7L1NH7VBL84",
+      "amount": 0,
+      "state_province": "CO"
+    },
+    {
+      "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "008016958",
+      "uei": "G4KDGE4JFFK7",
+      "amount": 0,
+      "state_province": "TX"
+    },
+    {
+      "recipient_id": "4da6fb05-06fd-558a-14f8-966db8d06bcf-C",
+      "name": "ZETA ASSOCIATES INC",
+      "duns": "153239082",
+      "uei": "FHLPHFQBMDX9",
+      "amount": 0,
+      "state_province": "VA"
+    },
+    {
+      "recipient_id": "7d1fc038-0be0-225c-776e-9023de3c1d84-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "147327691",
+      "uei": "DML6TA1CBQG4",
+      "amount": 0,
+      "state_province": "NY"
+    },
+    {
+      "recipient_id": "61d4326a-f714-157b-294b-11d87fed7071-C",
+      "name": "LOCKHEED MARTIN CORPORATION",
+      "duns": "147459577",
+      "uei": "DKELBA3FW769",
+      "amount": 0,
+      "state_province": "PA"
+    },
+    {
+      "recipient_id": "58465eb6-2fbe-cf76-0826-be3fa0af837b-C",
+      "name": "SIKORSKY SUPPORT SERVICES INC",
+      "duns": "107254062",
+      "uei": "DGMPAHA84UF3",
+      "amount": 0,
+      "state_province": "CT"
+    },
+    {
+      "recipient_id": "46023044-eacc-a9ca-5b5e-ddc4673fc267-C",
+      "name": "LOCKHEED MARTIN CORP",
+      "duns": "872978978",
+      "uei": "CQWLW9XRQTH5",
+      "amount": 0,
+      "state_province": "CA"
+    }
+  ],
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q094",
+      "requested_at_utc": "2026-10-17T19:20:34.341695+00:00",
+      "request": {
+        "method": "GET",
+        "path": "/api/v2/recipient/children/G4KDGE4JFFK7/",
+        "query": {
+          "year": 2025
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/recipient/children/G4KDGE4JFFK7/?year=2025",
+      "http_status": 400,
+      "elapsed_seconds": 0.341,
+      "response_bytes": 65,
+      "response": {
+        "detail": "Recipient is not listed as a parent: 'G4KDGE4JFFK7'."
+      },
+      "status": "http_error"
+    }
+  ]
+}

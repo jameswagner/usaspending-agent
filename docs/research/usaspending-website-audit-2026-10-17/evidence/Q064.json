@@ -1,0 +1,71 @@
+{
+  "task_id": "Q064",
+  "requested_at_utc": "2026-10-17T19:20:29.738557+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/transactions/",
+    "body": {
+      "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+      "limit": 3,
+      "page": 1,
+      "sort": "action_date",
+      "order": "desc"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/transactions/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.344,
+  "response_bytes": 1245,
+  "response": {
+    "page_metadata": {
+      "page": 1,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "id": "CONT_TX_8000_-NONE-_NAS1510000_3254_-NONE-_0",
+        "type": "D",
+        "type_description": "DEFINITIVE CONTRACT",
+        "action_date": "2026-10-02",
+        "action_type": "M",
+        "action_type_description": "OTHER ADMINISTRATIVE ACTION",
+        "modification_number": "3254",
+        "description": "INTERNATIONAL SPACE STATION",
+        "federal_action_obligation": 0.0,
+        "face_value_loan_guarantee": 0.0,
+        "original_loan_subsidy_cost": 0.0
+      },
+      {
+        "id": "CONT_TX_8000_-NONE-_NAS1510000_3255_-NONE-_0",
+        "type": "D",
+        "type_description": "DEFINITIVE CONTRACT",
+        "action_date": "2026-10-02",
+        "action_type": "B",
+        "action_type_description": "SUPPLEMENTAL AGREEMENT FOR WORK WITHIN SCOPE",
+        "modification_number": "3255",
+        "description": "INTERNATIONAL SPACE STATION",
+        "federal_action_obligation": 0.0,
+        "face_value_loan_guarantee": 0.0,
+        "original_loan_subsidy_cost": 0.0
+      },
+      {
+        "id": "CONT_TX_8000_-NONE-_NAS1510000_3252_-NONE-_0",
+        "type": "D",
+        "type_description": "DEFINITIVE CONTRACT",
+        "action_date": "2026-09-29",
+        "action_type": "C",
+        "action_type_description": "FUNDING ONLY ACTION",
+        "modification_number": "3252",
+        "description": "INTERNATIONAL SPACE STATION",
+        "federal_action_obligation": 49151.45,
+        "face_value_loan_guarantee": 0.0,
+        "original_loan_subsidy_cost": 0.0
+      }
+    ]
+  },
+  "status": "live_ok"
+}

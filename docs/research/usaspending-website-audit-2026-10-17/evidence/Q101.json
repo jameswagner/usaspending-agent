@@ -1,0 +1,90 @@
+{
+  "task_id": "Q101",
+  "requested_at_utc": "2026-10-17T18:53:44.575072+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_category/county/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "02",
+          "03",
+          "04",
+          "05",
+          "06",
+          "07",
+          "08",
+          "09",
+          "10",
+          "11",
+          "-1"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "place_of_performance_locations": [
+          {
+            "country": "USA",
+            "state": "CA"
+          }
+        ]
+      },
+      "category": "county",
+      "limit": 3,
+      "page": 1,
+      "spending_level": "transactions"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_category/county/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 2.396,
+  "response_bytes": 918,
+  "response": {
+    "category": "county",
+    "spending_level": "transactions",
+    "limit": 3,
+    "page_metadata": {
+      "page": 1,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "id": null,
+        "code": "037",
+        "name": "LOS ANGELES COUNTY",
+        "amount": 80118482883.12,
+        "total_outlays": null
+      },
+      {
+        "id": null,
+        "code": "001",
+        "name": "ALAMEDA COUNTY",
+        "amount": 42493855788.87,
+        "total_outlays": null
+      },
+      {
+        "id": null,
+        "code": "073",
+        "name": "SAN DIEGO COUNTY",
+        "amount": 35365425631.35,
+        "total_outlays": null
+      }
+    ],
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. ",
+      "'subawards' will be deprecated in the future. Set \u2018spending_level\u2019 to \u2018subawards\u2019 instead. See documentation for more information. "
+    ]
+  },
+  "status": "live_ok"
+}

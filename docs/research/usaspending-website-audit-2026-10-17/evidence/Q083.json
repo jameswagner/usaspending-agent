@@ -1,0 +1,46 @@
+{
+  "task_id": "Q083",
+  "requested_at_utc": "2026-10-17T18:53:33.950696+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/agency/080/obligations_by_award_category/",
+    "query": {
+      "fiscal_year": 2025
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/agency/080/obligations_by_award_category/?fiscal_year=2025",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.81,
+  "response_bytes": 367,
+  "response": {
+    "total_aggregated_amount": 22858094044.11,
+    "results": [
+      {
+        "category": "contracts",
+        "aggregated_amount": 15784850074.01
+      },
+      {
+        "category": "direct_payments",
+        "aggregated_amount": 0.0
+      },
+      {
+        "category": "grants",
+        "aggregated_amount": 1522830192.06
+      },
+      {
+        "category": "idvs",
+        "aggregated_amount": 5550413778.04
+      },
+      {
+        "category": "loans",
+        "aggregated_amount": 0.0
+      },
+      {
+        "category": "other",
+        "aggregated_amount": 0
+      }
+    ]
+  },
+  "status": "live_ok"
+}

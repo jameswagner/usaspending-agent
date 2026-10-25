@@ -1,0 +1,73 @@
+{
+  "task_id": "Q037",
+  "requested_at_utc": "2026-10-17T18:53:19.592754+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_category/cfda/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "02",
+          "03",
+          "04",
+          "05"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ]
+      },
+      "category": "cfda",
+      "limit": 3,
+      "page": 1,
+      "spending_level": "transactions"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_category/cfda/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 3.665,
+  "response_bytes": 1011,
+  "response": {
+    "category": "cfda",
+    "spending_level": "transactions",
+    "limit": 3,
+    "page_metadata": {
+      "page": 1,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "id": 2014,
+        "code": "93.778",
+        "name": "Grants to States for Medicaid",
+        "amount": 666131123061.05,
+        "total_outlays": null
+      },
+      {
+        "id": 1098,
+        "code": "20.205",
+        "name": "Highway Planning and Construction",
+        "amount": 67099522060.44,
+        "total_outlays": null
+      },
+      {
+        "id": 2191,
+        "code": "97.036",
+        "name": "Disaster Grants - Public Assistance (Presidentially Declared Disasters)",
+        "amount": 28290790377.52,
+        "total_outlays": null
+      }
+    ],
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. ",
+      "'subawards' will be deprecated in the future. Set \u2018spending_level\u2019 to \u2018subawards\u2019 instead. See documentation for more information. "
+    ]
+  },
+  "status": "live_ok"
+}

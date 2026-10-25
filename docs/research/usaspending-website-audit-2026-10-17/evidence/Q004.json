@@ -1,0 +1,87 @@
+{
+  "task_id": "Q004",
+  "requested_at_utc": "2026-10-17T18:53:02.190901+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "06",
+          "10"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 1.03,
+  "response_bytes": 3592,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 195227669,
+        "Award ID": "7530-20253-08-06-93774-MN-053-90-X-7530-75AGCF-7530-75AGCA-NON",
+        "Recipient Name": "MULTIPLE RECIPIENTS",
+        "Award Amount": 17494169022.24,
+        "Start Date": null,
+        "End Date": null,
+        "Description": "MEDICARE SUPPLEMENTARY MEDICAL INSURANCE",
+        "generated_internal_id": "ASST_AGG_7530-20253-08-06-93774-MN-053-90-X-7530-75AGCF-7530-75AGCA-NON_075"
+      },
+      {
+        "internal_id": 271416063,
+        "Award ID": "SLFRP4644",
+        "Recipient Name": "TEXAS OFFICE OF THE GOVERNOR",
+        "Award Amount": 15817148161.38,
+        "Start Date": null,
+        "End Date": null,
+        "Description": "PURPOSE: THE STATE AND LOCAL FISCAL RECOVERY FUNDS PROGRAM AUTHORIZED BY THE AMERICAN RESCUE PLAN ACT PROVIDES FUNDING TO SUPPORT URGENT COVID-19 RESPONSE EFFORTS TO CONTINUE TO DECREASE SPREAD OF THE VIRUS AND BRING THE PANDEMIC UNDER CONTROL; REPLACE LOST REVENUE FOR ELIGIBLE STATE, LOCAL, TERRITORIAL, AND TRIBAL GOVERNMENTS TO STRENGTHEN SUPPORT FOR VITAL PUBLIC SERVICES AND HELP RETAIN JOBS; SUPPORT IMMEDIATE ECONOMIC STABILIZATION FOR HOUSEHOLDS AND BUSINESSES; TO MAKE NECESSARY INVESTMENTS IN WATER, SEWER, AND BROADBAND INFRASTRUCTURE; AND COVER THE COST OF OTHER ELIGIBLE ACTIVITIES. ACTIVITIES TO BE PERFORMED: TREASURY WILL MAKE DIRECT PAYMENTS TO STATES (DEFINED TO INCLUDE THE DISTRICT OF COLUMBIA), U.S. TERRITORIES (DEFINED TO INCLUDE, PUERTO RICO, U.S. VIRGIN ISLANDS, GUAM, NORTHERN MARIANA ISLANDS, AND AMERICAN SAMOA), TRIBES, METROPOLITAN CITIES, COUNTIES, CONSOLIDATED GOVERNMENTS, AND NONENTITLEMENT UNITS OF LOCAL GOVERNMENT (THROUGH STATES)(COLLECTIVELY \"ELIGIBLE ENTITIES\") TO USE THE FUNDING FOR THE ELIGIBLE PURPOSES OUTLINED IN THE PROGRAM STATUTE, TREASURY'S IMPLEMENTING REGULATIONS, AND GUIDANCE. END GOAL/EXPECTED OUTCOMES: THE STATE AND LOCAL FISCAL RECOVERY FUNDS PROGRAM FUNDING WILL: (1) PROVIDE THE NECESSARY ASSISTANCE FOR HOUSEHOLDS, SMALL BUSINESSES, NONPROFITS, AND IMPACTED INDUSTRIES, SUCH AS TOURISM, TRAVEL, AND HOSPITALITY TO RESPOND TO THE COVID-19 PUBLIC HEALTH EMERGENCY OR ITS NEGATIVE IMPACTS; (2) BE USED TO COVER PREMIUM PAY TO ELIGIBLE WORKERS OF THE GOVERNMENTS PERFORMING ESSENTIAL WORK DURING THE COVID-19 PANDEMIC OR USED TO PROVIDE GRANTS TO ELIGIBLE EMPLOYERS THAT HAVE ELIGIBLE WORKERS WHO PERFORM ESSENTIAL WORK; (3) PROVIDE GOVERNMENT SERVICES, TO THE EXTENT COVID-19 CAUSED A REDUCTION OF REVENUES COLLECTED IN THE MOST RECENT FULL FISCAL YEAR OF THE GOVERNMENT; OR (4) MAKE THE NECESSARY INVESTMENTS IN WATER, SEWER, OR BROADBAND INFRASTRUCTURE. INTENDED BENEFICIARIES: ESSENTIAL WORKERS, HOUSEHOLDS, SMALL BUSINESSES, NONPROFITS, THE GOVERNMENTS OF THE ELIGIBLE ENTITIES, THE GENERAL PUBLIC, ETC. SUBRECIPIENT ACTIVITIES: SUBRECIPIENT ACTIVITIES ARE NOT KNOWN AT THIS TIME.",
+        "generated_internal_id": "ASST_NON_SLFRP4644_020"
+      },
+      {
+        "internal_id": 195229019,
+        "Award ID": "7530-20254-11-06-93774-MN-053-90-X-7530-75AGCF-7530-75AGCA-NON",
+        "Recipient Name": "MULTIPLE RECIPIENTS",
+        "Award Amount": 14829903201.88,
+        "Start Date": null,
+        "End Date": null,
+        "Description": "MEDICARE SUPPLEMENTARY MEDICAL INSURANCE",
+        "generated_internal_id": "ASST_AGG_7530-20254-11-06-93774-MN-053-90-X-7530-75AGCF-7530-75AGCA-NON_075"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 195229019,
+      "last_record_sort_value": "1482990320188"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

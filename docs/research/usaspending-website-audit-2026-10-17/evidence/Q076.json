@@ -1,0 +1,119 @@
+{
+  "task_id": "Q076",
+  "requested_at_utc": "2026-10-17T19:23:22.446446+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/idvs/activity/",
+    "body": {
+      "award_id": "CONT_IDV_NNG15SE16B_8000",
+      "limit": 3,
+      "page": 1
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/idvs/activity/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.335,
+  "response_bytes": 2073,
+  "response": {
+    "results": [
+      {
+        "award_id": 291265171,
+        "awarding_agency": "Department of Homeland Security",
+        "awarding_agency_id": 772,
+        "generated_unique_award_id": "CONT_AWD_70Z02320FRI206500_7008_NNG15SE16B_8000",
+        "period_of_performance_potential_end_date": "2025-09-23 12:00:00",
+        "parent_award_id": 351431442,
+        "parent_generated_unique_award_id": "CONT_IDV_NNG15SE16B_8000",
+        "parent_award_piid": "NNG15SE16B",
+        "obligated_amount": 1503140.6,
+        "awarded_amount": 1503140.6,
+        "period_of_performance_start_date": "2020-09-24",
+        "piid": "70Z02320FRI206500",
+        "recipient_name": "BLUE TECH INC.",
+        "recipient_id": "1d2b86ed-22ef-ab63-ef2c-787925497c54-C",
+        "grandchild": false,
+        "awarding_agency_slug": "department-of-homeland-security"
+      },
+      {
+        "award_id": 347649663,
+        "awarding_agency": "Department of Veterans Affairs",
+        "awarding_agency_id": 561,
+        "generated_unique_award_id": "CONT_AWD_VA11815F0758_3600_NNG15SE16B_8000",
+        "period_of_performance_potential_end_date": "2017-01-07 00:00:00",
+        "parent_award_id": 351431442,
+        "parent_generated_unique_award_id": "CONT_IDV_NNG15SE16B_8000",
+        "parent_award_piid": "NNG15SE16B",
+        "obligated_amount": 1113499.99,
+        "awarded_amount": 1113499.99,
+        "period_of_performance_start_date": "2015-09-30",
+        "piid": "VA11815F0758",
+        "recipient_name": "BLUE TECH INC.",
+        "recipient_id": "1d2b86ed-22ef-ab63-ef2c-787925497c54-C",
+        "grandchild": false,
+        "awarding_agency_slug": "department-of-veterans-affairs"
+      },
+      {
+        "award_id": 309315541,
+        "awarding_agency": "Department of Defense",
+        "awarding_agency_id": 1174,
+        "generated_unique_award_id": "CONT_AWD_M6785416F7304_9700_NNG15SE16B_8000",
+        "period_of_performance_potential_end_date": "2021-08-03 00:00:00",
+        "parent_award_id": 351431442,
+        "parent_generated_unique_award_id": "CONT_IDV_NNG15SE16B_8000",
+        "parent_award_piid": "NNG15SE16B",
+        "obligated_amount": 560369.82,
+        "awarded_amount": 570051.62,
+        "period_of_performance_start_date": "2016-08-04",
+        "piid": "M6785416F7304",
+        "recipient_name": "BLUE TECH INC.",
+        "recipient_id": "1d2b86ed-22ef-ab63-ef2c-787925497c54-C",
+        "grandchild": false,
+        "awarding_agency_slug": "department-of-defense"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "total": 43,
+      "limit": 3,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    }
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q076",
+      "requested_at_utc": "2026-10-17T19:20:31.684830+00:00",
+      "request": {
+        "method": "POST",
+        "path": "/api/v2/idvs/activity/",
+        "body": {
+          "award_id": "CONT_IDV_80JSC019C0012_8000",
+          "limit": 3,
+          "page": 1
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/idvs/activity/",
+      "http_status": 200,
+      "content_type": "application/json",
+      "elapsed_seconds": 0.313,
+      "response_bytes": 125,
+      "response": {
+        "results": [],
+        "page_metadata": {
+          "page": 1,
+          "total": 0,
+          "limit": 3,
+          "next": null,
+          "previous": null,
+          "hasNext": false,
+          "hasPrevious": false
+        }
+      },
+      "status": "live_ok"
+    }
+  ]
+}

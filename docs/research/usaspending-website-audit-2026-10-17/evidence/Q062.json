@@ -1,0 +1,196 @@
+{
+  "task_id": "Q062",
+  "requested_at_utc": "2026-10-17T19:20:29.327276+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/awards/ASST_NON_NNX16AO69A_080/",
+    "query": {}
+  },
+  "url": "https://api.usaspending.gov/api/v2/awards/ASST_NON_NNX16AO69A_080/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.411,
+  "response_bytes": 13216,
+  "response": {
+    "id": 269004917,
+    "generated_unique_award_id": "ASST_NON_NNX16AO69A_080",
+    "fain": "NNX16AO69A",
+    "uri": null,
+    "category": "grant",
+    "type": "05",
+    "type_description": "COOPERATIVE AGREEMENT (B)",
+    "description": "THIS PROPOSAL FOR A TRANSLATIONAL RESEARCH INSTITUTE IS SUBMITTED ON BEHALF OF A CONSORTIUM OF NON-PROFIT ACADEMIC INSTITUTIONS IN RESPONSE TO NASA C",
+    "subaward_count": 66,
+    "total_subaward_amount": 34541728.88,
+    "total_subsidy_cost": 0.0,
+    "total_loan_value": 0.0,
+    "total_obligation": 139591379.5,
+    "date_signed": "2016-09-29",
+    "base_and_all_options": null,
+    "base_exercised_options": null,
+    "non_federal_funding": 0.0,
+    "total_funding": 139591379.5,
+    "total_account_outlay": 106687172.54,
+    "total_account_obligation": 96667879.5,
+    "account_outlays_by_defc": [
+      {
+        "code": "Q",
+        "amount": 106687172.54
+      }
+    ],
+    "account_obligations_by_defc": [
+      {
+        "code": "Q",
+        "amount": 96667879.5
+      }
+    ],
+    "record_type": 2,
+    "cfda_info": [
+      {
+        "applicant_eligibility": "Categories of organizations that may be eligible for NASA grants and cooperative agreements include: \u2022 Institutions of Higher Education (IHE) \u2013 A two- or four-year university or college (including U.S. community colleges), public or private, accredited to confer degrees beyond that of the K-12 grade levels. 29 \u2022 Educational Institutions \u2013 Non-higher-education entities, such as K-12 education groups or institutions of informal education, are classified as Educational Institutions.2 \u2022 Non-profit Organization \u2013 An organization that: o Is operated primarily for scientific, engineering, educational, research, or similar purposes in the public interest; o Is not organized primarily for profit; o Uses net proceeds to maintain, improve, or expand the organization\u2019s operations; and o Is not an IHE. Non-profit organizations generally exclude (i) colleges and universities; (ii) hospitals; and (iii) state, local, and Federally recognized Indian tribal governments. \u2022 For-profit Entity \u2013 An organization of any size that is organized primarily for profit. \u2022 Federally Funded Research and Development Center (FFRDC) \u2013 FFRDCs are under a broad charter by a Government agency for performing, analyzing, or conducting research for the United States Government. NASA sponsors JPL as the Agency\u2019s sole FFRDC, and JPL is not an eligible applicant to receive a NASA-funded grant or cooperative agreement as a recipient or subrecipient3 . However, FFRDCs sponsored by agencies other than NASA may be eligible to receive a NASA-funded award as a recipient or subrecipient. \u2022 Non-U.S. Organizations \u2013 Organizations outside the U.S. that meet the definitions of foreign organization or foreign public entity in 2 CFR \u00a7 200.1. Non-U.S. organizations generally propose for opportunities on a no-exchange-of-funds basis in accordance with NASA policy. NOFOs may be issued jointly with a non-U.S. organization (e.g., those concerning guest observing programs for jointly sponsored space science programs) that will contain additional special guidelines for non-U.S. participants. \u2022 State, Local, or Federally-Recognized Tribal Government Agency \u2013 o State Government means any state of the United States, the District of Columbia, the Commonwealth of Puerto Rico, any territory or possession of the United States, and any agency or instrumentality of a State exclusive of its local governments",
+        "beneficiary_eligibility": "Beneficiary eligibility is the same as applicant eligibility.",
+        "cfda_federal_agency": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION, NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+        "cfda_number": "43.003",
+        "cfda_objectives": "The Exploration Systems Development Mission Directorate (ESDMD) defines and manages systems development for programs critical to the NASA\u2019s Artemis campaign and planning for NASA\u2019s Moon to Mars exploration approach in an integrated manner. ESDMD manages the human exploration system development for lunar orbital, lunar surface, and Mars exploration. ESDMD leads the human aspects of the Artemis activities as well as the integration of science into the human system elements. ESDMD is responsible for development of the lunar and Mars architectures. Programs in the mission directorate include Orion, Space Launch System, Exploration Ground Systems, Gateway, Human Landing System, and Extravehicular Activity (xEVA)and Human Surface Mobility.",
+        "cfda_obligations": "(Grant) FY 24$2,697,674.00; FY 25$2,597,666.00; FY 26 est $2,797,667.00; - (Cooperative Agreement) FY 24$12,314,745.00; FY 25$13,011,088.00; FY 26 est $13,202,333.00; - ",
+        "cfda_popular_name": "Exploration Systems Development Mission Directorate (ESDMD)",
+        "cfda_title": "Exploration",
+        "cfda_website": "https://nspires.nasaprs.com/external/",
+        "federal_action_obligation_amount": 138666379.5,
+        "non_federal_funding_amount": 0.0,
+        "sam_website": "https://sam.gov/fal/5cb4251a9da345cf8995698ac00fcd39/view",
+        "total_funding_amount": 138666379.5
+      },
+      {
+        "applicant_eligibility": "Categories of organizations that may be eligible for NASA grants and cooperative agreements include: \u2022\nInstitutions of Higher Education (IHE) \u2013 A two- or four-year university or college (including U.S. community\ncolleges), public or private, accredited to confer degrees beyond that of the K-12 grade levels. 29 \u2022 Educational\nInstitutions \u2013 Non-higher-education entities, such as K-12 education groups or institutions of informal\neducation, are classified as Educational Institutions.2 \u2022 Non-profit Organization \u2013 An organization that: o Is\noperated primarily for scientific, engineering, educational, research, or similar purposes in the public interest;\no Is not organized primarily for profit; o Uses net proceeds to maintain, improve, or expand the organization\u2019s\noperations; and o Is not an IHE. Non-profit organizations generally exclude (i) colleges and universities; (ii)\nhospitals; and (iii) state, local, and Federally recognized Indian tribal governments. \u2022 For-profit Entity \u2013 An\norganization of any size that is organized primarily for profit. \u2022 Federally Funded Research and Development\nCenter (FFRDC) \u2013 FFRDCs are under a broad charter by a Government agency for performing, analyzing, or\nconducting research for the United States Government. NASA sponsors JPL as the Agency\u2019s sole FFRDC, and\nJPL is not an eligible applicant to receive a NASA-funded grant or cooperative agreement as a recipient or\nsubrecipient3 . However, FFRDCs sponsored by agencies other than NASA may be eligible to receive a NASAfunded\naward as a recipient or subrecipient. \u2022 Non-U.S. Organizations \u2013 Organizations outside the U.S. that\nmeet the definitions of foreign organization or foreign public entity in 2 CFR \u00a7 200.1. Non-U.S. organizations\ngenerally propose for opportunities on a no-exchange-of-funds basis in accordance with NASA policy. NOFOs\nmay be issued jointly with a non-U.S. organization (e.g., those concerning guest observing programs for jointly\nsponsored space science programs) that will contain additional special guidelines for non-U.S. participants. \u2022\nState, Local, or Federally-Recognized Tribal Government Agency \u2013 o State Government means any state of the\nUnited States, the District of Columbia, the Commonwealth of Puerto Rico, any territory or possession of the\nUnited States, and any agency or instrumentality of a State exclusive of its local governments",
+        "beneficiary_eligibility": "Beneficiary eligibility is the same as applicant eligibility.",
+        "cfda_federal_agency": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION, NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+        "cfda_number": "43.001",
+        "cfda_objectives": "NASA\u2019s FY 2026 Annual Performance Plan and Evaluation Plan (APPEP) located at URL https://www.nasa.gov/ocfo/performance-report/ describes the Agency\u2019s Performance Goals, including the underlying milestone targets, consistent with the FY 2025 Operating Plan and FY 2026 President\u2019s Budget Request. As noted on page 2 of the APPEP, \u201cNASA will develop a new mission statement and make more significant changes to its performance framework as part of the forthcoming 2026 NASA Strategic Plan.\u201d Historically, The Science Mission Directorate (SMD) pursues NASA's strategic objectives, particularly Strategic Goal 1: \u201cExpand Human Knowledge through new Scientific Discoveries\u201d, using aircraft, balloon, and spaceflight programs to enable the execution of both remote-sensing and in-situ investigations. Investigations in Earth orbit, as well as to or even beyond objects in the Solar System, and through ground-based research activities that directly support these space missions. SMD also supports basic and applied research and technology in order to understand naturally occurring space and Earth phenomena, human-induced changes in the Earth system, and to develop Earth and space science-related technologies. In March 2022 NASA released a new Strategic Plan. Per that 2022 plan\nSMD\u2019s Assistance Listing aligns to this Goal Statement: \u201cNASA\u2019s enduring purpose is scientific discovery and exploration for the benefit of the United States and all of humanity. NASA seeks to discover the secrets of the universe, search for life elsewhere, and protect and improve life on Earth and in space. Finding answers to these profound science questions requires support for national priorities in science and exploration, enhancing new opportunities for cross-disciplinary science, and expanding the societal benefits of our science programs. It also requires continued progress on the scientific priorities, including those identified by the National Academies of Sciences, Engineering, and Medicine through their decadal surveys.\u201d\n\nSMD uses NASA's Strategic Goals and Objectives and the high-level objectives that flow from them as the performance component to its research grant program notices of funding opportunity. The high-level objectives are derived from \u201cDecadal Surveys\u201d created by the National Academies of Science, Engineering and Medicine (NASEM) every ten years and reviewed every five years. NASEM reports summarize the state of the performance for SMD\u2019s science awards. Decadal Surveys inform the NASA\u2019s strategic and SMD science plan and allow grant programs to be kept up to date rather than be completely reliant on agency produced program goals and objectives and performance measures.  SMD\u2019s research awardees individually set appropriate, NASA-relevant  project level objectives, goals and measures.",
+        "cfda_obligations": "(Grant) FY 24$608,114,249.00; FY 25$745,263,740.00; FY 26 est $596,210,992.00; - (Cooperative Agreement) FY 24$313,650,682.00; FY 25$444,147,762.00; FY 26 est $310,903,433.00; - ",
+        "cfda_popular_name": "SMD",
+        "cfda_title": "Science",
+        "cfda_website": "https://science.nasa.gov/researchers/sara/grant-solicitations",
+        "federal_action_obligation_amount": 925000.0,
+        "non_federal_funding_amount": 0.0,
+        "sam_website": "https://sam.gov/fal/7dc752b6b8374dd0b18b746647c90722/view",
+        "total_funding_amount": 925000.0
+      }
+    ],
+    "transaction_obligated_amount": 138591379.5,
+    "funding_agency": {
+      "id": 862,
+      "has_agency_page": true,
+      "toptier_agency": {
+        "name": "National Aeronautics and Space Administration",
+        "code": "080",
+        "abbreviation": "NASA",
+        "slug": "national-aeronautics-and-space-administration"
+      },
+      "subtier_agency": {
+        "name": "National Aeronautics and Space Administration",
+        "code": "8000",
+        "abbreviation": "NASA"
+      },
+      "office_agency_name": "NASA SHARED SERVICES CENTER"
+    },
+    "awarding_agency": {
+      "id": 862,
+      "has_agency_page": true,
+      "toptier_agency": {
+        "name": "National Aeronautics and Space Administration",
+        "code": "080",
+        "abbreviation": "NASA",
+        "slug": "national-aeronautics-and-space-administration"
+      },
+      "subtier_agency": {
+        "name": "National Aeronautics and Space Administration",
+        "code": "8000",
+        "abbreviation": "NASA"
+      },
+      "office_agency_name": "NASA SHARED SERVICES CENTER"
+    },
+    "period_of_performance": {
+      "start_date": "2016-10-01",
+      "end_date": "2028-09-30",
+      "last_modified_date": "2026-04-20"
+    },
+    "recipient": {
+      "recipient_hash": "ddcd398f-5e59-e840-2368-a57b84efdc7d-C",
+      "recipient_name": "BAYLOR COLLEGE OF MEDICINE",
+      "recipient_uei": "FXKMA43NTV21",
+      "recipient_unique_id": null,
+      "parent_recipient_hash": "ddcd398f-5e59-e840-2368-a57b84efdc7d-P",
+      "parent_recipient_name": "BAYLOR COLLEGE OF MEDICINE",
+      "parent_recipient_uei": "FXKMA43NTV21",
+      "parent_recipient_unique_id": null,
+      "business_categories": [
+        "Nonprofit Organization"
+      ],
+      "location": {
+        "location_country_code": "USA",
+        "country_name": "UNITED STATES",
+        "state_code": "TX",
+        "state_name": "TEXAS",
+        "city_name": "HOUSTON",
+        "county_code": "201",
+        "county_name": "HARRIS",
+        "address_line1": "ONE BAYLOR PLAZA",
+        "address_line2": null,
+        "address_line3": null,
+        "congressional_code": "09",
+        "zip4": "3411",
+        "zip5": "77030",
+        "foreign_postal_code": null,
+        "foreign_province": null
+      }
+    },
+    "executive_details": {
+      "officers": [
+        {
+          "name": null,
+          "amount": null
+        },
+        {
+          "name": null,
+          "amount": null
+        },
+        {
+          "name": null,
+          "amount": null
+        },
+        {
+          "name": null,
+          "amount": null
+        },
+        {
+          "name": null,
+          "amount": null
+        }
+      ]
+    },
+    "place_of_performance": {
+      "location_country_code": "USA",
+      "country_name": "UNITED STATES",
+      "county_code": "201",
+      "county_name": "HARRIS",
+      "city_name": "HOUSTON",
+      "state_code": "TX",
+      "state_name": "TEXAS",
+      "congressional_code": "09",
+      "zip4": "3411",
+      "zip5": "77030",
+      "address_line1": null,
+      "address_line2": null,
+      "address_line3": null,
+      "foreign_province": null,
+      "foreign_postal_code": null
+    },
+    "total_outlay": 106687172.54,
+    "funding_opportunity": {
+      "number": "NOT APPLICABLE",
+      "goals": "NOT APPLICABLE"
+    }
+  },
+  "status": "live_ok"
+}

@@ -1,0 +1,354 @@
+{
+  "task_id": "Q130",
+  "requested_at_utc": "2026-10-17T18:54:45.877517+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/reporting/agencies/publish_dates/",
+    "query": {
+      "fiscal_year": 2025,
+      "limit": 3,
+      "page": 1
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/reporting/agencies/publish_dates/?fiscal_year=2025&limit=3&page=1",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.498,
+  "response_bytes": 6151,
+  "response": {
+    "page_metadata": {
+      "page": 1,
+      "total": 111,
+      "limit": 3,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "agency_name": "Department of Health and Human Services",
+        "abbreviation": "HHS",
+        "toptier_code": "075",
+        "current_total_budget_authority_amount": 3129725212729.56,
+        "periods": [
+          {
+            "period": 2,
+            "quarter": 1,
+            "submission_dates": {
+              "publication_date": "2025-01-08 21:08:54.235317+00",
+              "certification_date": "2025-02-14 15:07:10.171789+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 3,
+            "quarter": 1,
+            "submission_dates": {
+              "publication_date": "2025-02-03 13:37:13.805032+00",
+              "certification_date": "2025-02-14 15:07:58.28332+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 4,
+            "quarter": 2,
+            "submission_dates": {
+              "publication_date": "2025-03-04 15:01:33.104833+00",
+              "certification_date": "2025-05-15 16:58:54.534542+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 5,
+            "quarter": 2,
+            "submission_dates": {
+              "publication_date": "2025-03-31 13:49:40.976675+00",
+              "certification_date": "2025-05-15 16:59:58.31186+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 6,
+            "quarter": 2,
+            "submission_dates": {
+              "publication_date": "2025-04-29 13:13:21.218749+00",
+              "certification_date": "2025-05-15 17:00:33.206678+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 7,
+            "quarter": 3,
+            "submission_dates": {
+              "publication_date": "2025-05-29 17:42:32.87958+00",
+              "certification_date": "2025-08-13 14:18:37.771242+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 8,
+            "quarter": 3,
+            "submission_dates": {
+              "publication_date": "2025-07-01 14:55:10.799445+00",
+              "certification_date": "2025-08-13 14:19:32.494819+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 9,
+            "quarter": 3,
+            "submission_dates": {
+              "publication_date": "2025-07-29 14:20:22.983638+00",
+              "certification_date": "2025-08-13 14:20:03.845081+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 10,
+            "quarter": 4,
+            "submission_dates": {
+              "publication_date": "2025-09-02 15:43:08.506311+00",
+              "certification_date": "2025-12-05 19:41:27.504272+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 11,
+            "quarter": 4,
+            "submission_dates": {
+              "publication_date": "2025-09-30 13:50:52.851374+00",
+              "certification_date": "2025-12-05 19:41:52.56433+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 12,
+            "quarter": 4,
+            "submission_dates": {
+              "publication_date": "2025-12-05 19:44:19.957973+00",
+              "certification_date": "2025-12-05 19:44:20.05191+00"
+            },
+            "quarterly": false
+          }
+        ]
+      },
+      {
+        "agency_name": "Department of the Treasury",
+        "abbreviation": "TREAS",
+        "toptier_code": "020",
+        "current_total_budget_authority_amount": 2378074445400.83,
+        "periods": [
+          {
+            "period": 2,
+            "quarter": 1,
+            "submission_dates": {
+              "publication_date": "2025-01-08 19:48:42.1558+00",
+              "certification_date": "2025-01-08 19:48:54.053531+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 3,
+            "quarter": 1,
+            "submission_dates": {
+              "publication_date": "2025-02-03 19:09:34.845848+00",
+              "certification_date": "2025-02-03 19:09:58.501176+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 4,
+            "quarter": 2,
+            "submission_dates": {
+              "publication_date": "2025-03-04 18:51:00.579307+00",
+              "certification_date": "2025-03-04 18:51:16.075941+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 5,
+            "quarter": 2,
+            "submission_dates": {
+              "publication_date": "2025-04-01 19:20:01.19843+00",
+              "certification_date": "2025-04-01 19:21:06.909767+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 6,
+            "quarter": 2,
+            "submission_dates": {
+              "publication_date": "2025-04-29 17:51:44.979105+00",
+              "certification_date": "2025-04-29 17:52:06.738405+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 7,
+            "quarter": 3,
+            "submission_dates": {
+              "publication_date": "2025-05-29 17:23:44.836735+00",
+              "certification_date": "2025-05-29 17:23:58.167409+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 8,
+            "quarter": 3,
+            "submission_dates": {
+              "publication_date": "2025-07-01 15:10:17.420814+00",
+              "certification_date": "2025-07-01 15:10:41.894107+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 9,
+            "quarter": 3,
+            "submission_dates": {
+              "publication_date": "2025-07-30 18:22:06.953122+00",
+              "certification_date": "2025-07-30 18:22:21.233689+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 10,
+            "quarter": 4,
+            "submission_dates": {
+              "publication_date": "2025-09-02 17:43:33.205896+00",
+              "certification_date": "2025-09-02 17:44:12.7441+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 11,
+            "quarter": 4,
+            "submission_dates": {
+              "publication_date": "2025-09-30 17:58:59.906816+00",
+              "certification_date": "2025-09-30 17:59:14.003764+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 12,
+            "quarter": 4,
+            "submission_dates": {
+              "publication_date": "2025-12-04 19:15:51.749958+00",
+              "certification_date": "2025-12-04 19:15:51.814075+00"
+            },
+            "quarterly": false
+          }
+        ]
+      },
+      {
+        "agency_name": "Department of Defense",
+        "abbreviation": "DOD",
+        "toptier_code": "097",
+        "current_total_budget_authority_amount": 2213230963902.27,
+        "periods": [
+          {
+            "period": 2,
+            "quarter": 1,
+            "submission_dates": {
+              "publication_date": "2025-01-09 00:29:44.241019+00",
+              "certification_date": "2025-01-09 00:30:14.439948+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 3,
+            "quarter": 1,
+            "submission_dates": {
+              "publication_date": "2025-05-09 20:02:19.03485+00",
+              "certification_date": "2025-05-09 20:02:19.064874+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 4,
+            "quarter": 2,
+            "submission_dates": {
+              "publication_date": "2025-02-28 21:35:19.64209+00",
+              "certification_date": "2025-02-28 21:36:56.73035+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 5,
+            "quarter": 2,
+            "submission_dates": {
+              "publication_date": "2025-03-28 19:55:52.110311+00",
+              "certification_date": "2025-03-28 19:59:19.149024+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 6,
+            "quarter": 2,
+            "submission_dates": {
+              "publication_date": "2025-07-29 17:32:53.18846+00",
+              "certification_date": "2025-07-29 17:32:53.275209+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 7,
+            "quarter": 3,
+            "submission_dates": {
+              "publication_date": "2025-05-30 12:15:15.557977+00",
+              "certification_date": "2025-05-30 12:36:31.103092+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 8,
+            "quarter": 3,
+            "submission_dates": {
+              "publication_date": "2025-06-30 14:42:52.716687+00",
+              "certification_date": "2025-06-30 14:43:33.51489+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 9,
+            "quarter": 3,
+            "submission_dates": {
+              "publication_date": "2025-11-21 17:23:25.598221+00",
+              "certification_date": "2025-11-21 17:23:25.62894+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 10,
+            "quarter": 4,
+            "submission_dates": {
+              "publication_date": "2025-09-09 21:12:23.036616+00",
+              "certification_date": "2025-09-09 21:13:10.429344+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 11,
+            "quarter": 4,
+            "submission_dates": {
+              "publication_date": "2025-09-29 15:39:36.090645+00",
+              "certification_date": "2025-09-29 15:42:16.921066+00"
+            },
+            "quarterly": false
+          },
+          {
+            "period": 12,
+            "quarter": 4,
+            "submission_dates": {
+              "publication_date": "2026-01-30 00:27:12.995443+00",
+              "certification_date": "2026-01-30 00:27:13.060561+00"
+            },
+            "quarterly": false
+          }
+        ]
+      }
+    ],
+    "messages": []
+  },
+  "status": "live_ok"
+}

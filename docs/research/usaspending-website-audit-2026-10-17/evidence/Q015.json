@@ -1,0 +1,92 @@
+{
+  "task_id": "Q015",
+  "requested_at_utc": "2026-10-17T18:53:05.354662+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "set_aside_type_codes": [
+          "SBA"
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.373,
+  "response_bytes": 1531,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 296718103,
+        "Award ID": "DOC003",
+        "Recipient Name": "T-REX SOLUTIONS LLC",
+        "Award Amount": 1480169956.14,
+        "Start Date": "2016-08-26",
+        "End Date": "2023-09-20",
+        "Description": "IGF::OT::IGF  ENTERPRISE SOLUTIONS FRAMEWORK (ESF) FOR MULTI-TIERED ACQUISITION FRAMEWORK FOR SYSTEMS ENGINEERING AND INTEGRATION - PROGRAM TIER WORK ORDER 003 - 2020 CENSUS TECHNICAL INTEGRATOR",
+        "generated_internal_id": "CONT_AWD_DOC003_1323_DOCYA132315BU0033_1323"
+      },
+      {
+        "internal_id": 291190282,
+        "Award ID": "70CDCR18FR0000002",
+        "Recipient Name": "CLASSIC AIR CHARTER INC.",
+        "Award Amount": 794320929.55,
+        "Start Date": "2017-10-20",
+        "End Date": "2023-06-30",
+        "Description": "IGF::OT::IGF  DAILY CHARTER FLIGHT SERVICES",
+        "generated_internal_id": "CONT_AWD_70CDCR18FR0000002_7012_GS33F004DA_4732"
+      },
+      {
+        "internal_id": 307305022,
+        "Award ID": "HR001121F0006",
+        "Recipient Name": "SECURIGENCE LLC",
+        "Award Amount": 698467543.26,
+        "Start Date": "2021-02-03",
+        "End Date": "2027-06-30",
+        "Description": "MULTI-NETWORK SUPPORT SERVICES",
+        "generated_internal_id": "CONT_AWD_HR001121F0006_9700_GS35F626GA_4732"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 307305022,
+      "last_record_sort_value": "69846754326"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

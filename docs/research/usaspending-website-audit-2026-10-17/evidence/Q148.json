@@ -1,0 +1,18 @@
+{
+  "task_id": "Q148",
+  "requested_at_utc": "2026-10-17T18:55:06.360057+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/awards/last_updated/",
+    "query": {}
+  },
+  "url": "https://api.usaspending.gov/api/v2/awards/last_updated/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.278,
+  "response_bytes": 29,
+  "response": {
+    "last_updated": "10/17/2026"
+  },
+  "status": "live_ok"
+}

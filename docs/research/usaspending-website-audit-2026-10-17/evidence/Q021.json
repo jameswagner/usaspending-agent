@@ -1,0 +1,201 @@
+{
+  "task_id": "Q021",
+  "requested_at_utc": "2026-10-17T19:20:15.201882+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "02",
+          "03",
+          "04",
+          "05"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "def_codes": [
+          "Z"
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.504,
+  "response_bytes": 4123,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 251352902,
+        "Award ID": "69A36522503700AMTDC",
+        "Recipient Name": "NATIONAL RAILROAD PASSENGER CORPORATION",
+        "Award Amount": 15642357036.58,
+        "Start Date": "2022-09-01",
+        "End Date": "2035-12-31",
+        "Description": "THIS FUNDING WILL PROVIDE AN OPPORTUNITY TO RESTORE, REBUILD, AND MODERNIZE AMTRAK S INTERCITY PASSENGER RAIL ROLLING STOCK, FACILITIES, STATIONS, AND INFRASTRUCTURE WITH ANTICIPATED OUTCOMES INCLUDING A SIGNIFICANT REDUCTION OR ELIMINATION OF STATE OF GOOD REPAIR DEFICIENCIES, IMPROVED SAFETY AND RELIABILITY FOR THE TRAVELING PUBLIC, AND SET A FOUNDATION FOR GROWTH OF INTERCITY PASSENGER RAIL AS A MODE OF TRAVEL FOR THE NEXT GENERATION",
+        "generated_internal_id": "ASST_NON_69A36522503700AMTDC_069"
+      },
+      {
+        "internal_id": 251352903,
+        "Award ID": "69A36522503710AMTDC",
+        "Recipient Name": "NATIONAL RAILROAD PASSENGER CORPORATION",
+        "Award Amount": 5945000000.0,
+        "Start Date": "2022-09-01",
+        "End Date": "2035-12-31",
+        "Description": "THIS FUNDING WILL PROVIDE AN OPPORTUNITY TO RESTORE, REBUILD, AND MODERNIZE AMTRAK S INTERCITY PASSENGER RAIL ROLLING STOCK, FACILITIES, STATIONS, AND INFRASTRUCTURE WITH ANTICIPATED OUTCOMES INCLUDING A SIGNIFICANT REDUCTION OR ELIMINATION OF STATE OF GOOD REPAIR DEFICIENCIES, IMPROVED SAFETY AND RELIABILITY FOR THE TRAVELING PUBLIC, AND SET A FOUNDATION FOR GROWTH OF INTERCITY PASSENGER RAIL AS A MODE OF TRAVEL FOR THE NEXT GENERATION",
+        "generated_internal_id": "ASST_NON_69A36522503710AMTDC_069"
+      },
+      {
+        "internal_id": 244658672,
+        "Award ID": "4820B328",
+        "Recipient Name": "TEXAS COMPTROLLER OF PUBLIC ACCOUNTS",
+        "Award Amount": 3312616455.0,
+        "Start Date": "2022-12-01",
+        "End Date": "2032-06-30",
+        "Description": "PURPOSE: THE PURPOSE OF THIS GRANT IS TO SUPPORT CLOSING THE BROADBAND AVAILABILITY GAP AND SUPPORT THE DEVELOPMENT OF A FIVE-YEAR ACTION PLAN.THE PROPOSED PROJECT INCLUDES THE FOLLOWING PLANNING AND PRE-DEPLOYMENT ACTIVITIES:  RESEARCH AND DATA COLLECTION, INCLUDING INITIAL IDENTIFICATION OF UNSERVED LOCATIONS AND UNDERSERVED LOCATIONS CONSISTENT WITH RULES, REGULATIONS, AND PROCESSES COMMISSION HAS ESTABLISHED FOR MAKING DETERMINATIONS IN BROADBAND DATA MAPS; THE DEVELOPMENT OF A PRELIMINARY BUDGET FOR PRE-PLANNING ACTIVITIES; PUBLICATIONS, OUTREACH, AND COMMUNICATIONS SUPPORT; TRAINING FOR EMPLOYEES OF THE BROADBAND PROGRAM OR OFFICE OF THE ELIGIBLE ENTITY OR EMPLOYEES OR POLITICAL SUBDIVISIONS OF THE ELIGIBLE ENTITY, AND RELATED STAFFING CAPACITY OR CONSULTING OR CONTRACTED SUPPORT TO EFFECTUATE THE GOALS OF THE BEAD PROGRAM; CONDUCTING SURVEYS OF UNSERVED, UNDERSERVED, AND UNDERREPRESENTED COMMUNITIES TO BETTER UNDERSTAND BARRIERS TO ADOPTION; AND COSTS ASSOCIATED WITH MEETING THE LOCAL COORDINATION REQUIREMENTS IN SECTION IV.C.1.C OF THE BEAD NOFO INCLUDING CAPACITY BUILDING AT THE LOCAL AND REGIONAL LEVELS OR CONTRACTED SUPPORT.EXPECTED OUTCOMES: THE EXPECTED OUTCOMES OF TEXAS' PROPOSED PROJECT ARE DEVELOPING AND IMPLEMENTING A PUBLIC ENGAGEMENT PLAN, A COMPREHENSIVE FIVE-YEAR ACTION PLAN, AND IMPLEMENTATION PLAN, RESULTING IN THE TEXAS BROADBAND AND DEVELOPMENT OFFICE PREPARED TO RECEIVE AND ADMINISTER BEAD FUNDS, IDENTIFYING BROADBAND ACCESS, AFFORDABILITY, EQUITY, AND ADOPTION NEEDS ACROSS TEXAS, AND BUILDING ON THE TEXAS STATE BROADBAND PLAN 2022. BEAD PROGRAM FUNDS WILL SUPPORT TEXAS' MISSION OF EXPANDING ACCESS TO RELIABLE, AFFORDABLE, HIGH-SPEED BROADBAND SERVICE TO ALL TEXANS.INTENDED BENEFICIARIES: THE INTENDED BENEFICIARIES ARE UNSERVED AND UNDERSERVED GROUPS IN THE STATE OF TEXAS WITH A FOCUS ON RURAL AND UNSERVED POPULATIONS.SUBRECIPIENT ACTIVITIES: THE RECIPIENT DOES NOT INTEND TO INTEND TO SUBAWARD FUNDS.",
+        "generated_internal_id": "ASST_NON_4820B328_013"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 244658672,
+      "last_record_sort_value": "331261645500"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q021",
+      "requested_at_utc": "2026-10-17T18:53:07.319490+00:00",
+      "request": {
+        "method": "POST",
+        "path": "/api/v2/search/spending_by_award/",
+        "body": {
+          "filters": {
+            "award_type_codes": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "02",
+              "03",
+              "04",
+              "05",
+              "06",
+              "07",
+              "08",
+              "09",
+              "10",
+              "11",
+              "-1"
+            ],
+            "time_period": [
+              {
+                "start_date": "2024-10-01",
+                "end_date": "2025-09-30"
+              }
+            ],
+            "def_codes": [
+              "Z"
+            ]
+          },
+          "fields": [
+            "Award ID",
+            "Recipient Name",
+            "Award Amount",
+            "Start Date",
+            "End Date",
+            "Description",
+            "generated_internal_id"
+          ],
+          "limit": 3,
+          "page": 1,
+          "sort": "Award Amount",
+          "order": "desc",
+          "spending_level": "awards"
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+      "http_status": 422,
+      "elapsed_seconds": 0.286,
+      "response_bytes": 1364,
+      "response": {
+        "message": "'award_type_codes' must only contain types from one group.",
+        "award_type_groups": {
+          "contracts": {
+            "A": "BPA Call",
+            "B": "Purchase Order",
+            "C": "Delivery Order",
+            "D": "Definitive Contract"
+          },
+          "loans": {
+            "07": "Direct Loan",
+            "08": "Guaranteed/Insured Loan",
+            "F003": "Direct Loan",
+            "F004": "Loan Guarantee"
+          },
+          "idvs": {
+            "IDV_A": "GWAC Government Wide Acquisition Contract",
+            "IDV_B": "IDC Multi-Agency Contract, Other Indefinite Delivery Contract",
+            "IDV_B_A": "IDC Indefinite Delivery Contract / Requirements",
+            "IDV_B_B": "IDC Indefinite Delivery Contract / Indefinite Quantity",
+            "IDV_B_C": "IDC Indefinite Delivery Contract / Definite Quantity",
+            "IDV_C": "FSS Federal Supply Schedule",
+            "IDV_D": "BOA Basic Ordering Agreement",
+            "IDV_E": "BPA Blanket Purchase Agreement"
+          },
+          "grants": {
+            "02": "Block Grant",
+            "03": "Formula Grant",
+            "04": "Project Grant",
+            "05": "Cooperative Agreement",
+            "F001": "Grant",
+            "F002": "Cooperative Agreement"
+          },
+          "other_financial_assistance": {
+            "06": "Direct Payment for Specified Use",
+            "10": "Direct Payment with Unrestricted Use",
+            "F006": "Direct Payment for Specified Use",
+            "F007": "Direct Payment with Unrestricted Use"
+          },
+          "direct_payments": {
+            "09": "Insurance",
+            "F005": "Indemnity / Insurance (non-loan)",
+            "11": "Other Financial Assistance",
+            "-1": "Not Specified",
+            "F008": "Asset Forfeiture / Equitable Sharing",
+            "F009": "Sale, Exchange, or Donation of Property and Goods",
+            "F010": "Other Financial Assistance"
+          }
+        }
+      },
+      "status": "http_error"
+    }
+  ]
+}

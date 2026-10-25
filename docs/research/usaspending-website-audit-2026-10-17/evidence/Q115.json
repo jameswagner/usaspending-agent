@@ -1,0 +1,42 @@
+{
+  "task_id": "Q115",
+  "requested_at_utc": "2026-10-17T19:20:36.995185+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/spending/",
+    "body": {
+      "type": "program_activity",
+      "filters": {
+        "fy": "2025",
+        "quarter": "4",
+        "federal_account": 5634
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/spending/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.345,
+  "response_bytes": 289,
+  "response": {
+    "total": 7923866974.38,
+    "end_date": "2025-09-30T00:00:00Z",
+    "results": [
+      {
+        "id": "698062",
+        "code": "0001",
+        "type": "program_activity",
+        "name": "DEEP SPACE EXPLORATION SYSTEMS (DIRECT)",
+        "amount": 7923866974.38
+      },
+      {
+        "id": "841605",
+        "code": "0000",
+        "type": "program_activity",
+        "name": "UNKNOWN/OTHER",
+        "amount": 0.0
+      }
+    ]
+  },
+  "status": "live_ok"
+}

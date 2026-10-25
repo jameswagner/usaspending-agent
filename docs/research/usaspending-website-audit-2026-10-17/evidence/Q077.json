@@ -1,0 +1,93 @@
+{
+  "task_id": "Q077",
+  "requested_at_utc": "2026-10-17T19:23:22.447750+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/idvs/accounts/",
+    "body": {
+      "award_id": "CONT_IDV_NNG15SE16B_8000",
+      "limit": 3,
+      "page": 1
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/idvs/accounts/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.396,
+  "response_bytes": 1223,
+  "response": {
+    "results": [
+      {
+        "total_transaction_obligated_amount": 16567.56,
+        "federal_account": "080-0120",
+        "account_title": "Science, National Aeronautics and Space Administration",
+        "funding_agency_abbreviation": "NASA",
+        "funding_agency_name": "National Aeronautics and Space Administration",
+        "funding_agency_id": 862,
+        "funding_toptier_agency_id": 72,
+        "funding_agency_slug": "national-aeronautics-and-space-administration"
+      },
+      {
+        "total_transaction_obligated_amount": 529982.37,
+        "federal_account": "070-0610",
+        "account_title": "Operations and Support, Coast Guard, Homeland Security",
+        "funding_agency_abbreviation": "DHS",
+        "funding_agency_name": "Department of Homeland Security",
+        "funding_agency_id": 772,
+        "funding_toptier_agency_id": 63,
+        "funding_agency_slug": "department-of-homeland-security"
+      },
+      {
+        "total_transaction_obligated_amount": 277020.0,
+        "federal_account": "070-0530",
+        "account_title": "Operations and Support, U.S. Customs and Border Protection, Homeland Security",
+        "funding_agency_abbreviation": "DHS",
+        "funding_agency_name": "Department of Homeland Security",
+        "funding_agency_id": 778,
+        "funding_toptier_agency_id": 63,
+        "funding_agency_slug": "department-of-homeland-security"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "count": 12,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    }
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q077",
+      "requested_at_utc": "2026-10-17T19:20:31.976274+00:00",
+      "request": {
+        "method": "POST",
+        "path": "/api/v2/idvs/accounts/",
+        "body": {
+          "award_id": "CONT_IDV_80JSC019C0012_8000",
+          "limit": 3,
+          "page": 1
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/idvs/accounts/",
+      "http_status": 200,
+      "content_type": "application/json",
+      "elapsed_seconds": 0.285,
+      "response_bytes": 115,
+      "response": {
+        "results": [],
+        "page_metadata": {
+          "page": 1,
+          "count": 0,
+          "next": null,
+          "previous": null,
+          "hasNext": false,
+          "hasPrevious": false
+        }
+      },
+      "status": "live_ok"
+    }
+  ]
+}

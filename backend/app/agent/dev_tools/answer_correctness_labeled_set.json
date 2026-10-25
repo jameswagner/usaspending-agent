@@ -84,6 +84,20 @@
       "tool_output": "NSF FY2023 total: $8,900,000,000. California: $2,225,000,000.",
       "answer": "California received about 40% of NSF's FY2023 spending.",
       "label": false
+    },
+    {
+      "name": "placeholder row presented as the top recipient",
+      "question": "Who received the most federal money in Arizona in FY2025?",
+      "tool_output": "Top recipients, Arizona FY2025: ACME DEFENSE $2,100,000,000; DESERT SOLAR LLC $1,400,000,000.\nPlaceholder rows (not real entities; do not rank or present these as the top result):\nMULTIPLE RECIPIENTS: $6,900,000,000 - an aggregate bucket of many recipients, not one recipient",
+      "answer": "The top recipient in Arizona in FY2025 was MULTIPLE RECIPIENTS at $6.9 billion.",
+      "label": false
+    },
+    {
+      "name": "placeholder reported separately from the real top recipient",
+      "question": "Who received the most federal money in Arizona in FY2025?",
+      "tool_output": "Top recipients, Arizona FY2025: ACME DEFENSE $2,100,000,000; DESERT SOLAR LLC $1,400,000,000.\nPlaceholder rows (not real entities; do not rank or present these as the top result):\nMULTIPLE RECIPIENTS: $6,900,000,000 - an aggregate bucket of many recipients, not one recipient",
+      "answer": "ACME DEFENSE was the top named recipient in Arizona in FY2025 at $2.1 billion. A separate $6.9 billion sits in a MULTIPLE RECIPIENTS aggregate bucket, which is not a single recipient.",
+      "label": true
     }
   ]
 }

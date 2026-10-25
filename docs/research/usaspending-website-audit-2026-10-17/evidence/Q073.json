@@ -1,0 +1,104 @@
+{
+  "task_id": "Q073",
+  "requested_at_utc": "2026-10-17T19:23:21.744246+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/idvs/amounts/CONT_IDV_NNG15SE16B_8000/",
+    "query": {}
+  },
+  "url": "https://api.usaspending.gov/api/v2/idvs/amounts/CONT_IDV_NNG15SE16B_8000/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.267,
+  "response_bytes": 1002,
+  "response": {
+    "award_id": 351431442,
+    "generated_unique_award_id": "CONT_IDV_NNG15SE16B_8000",
+    "child_idv_count": 0,
+    "child_award_count": 43,
+    "child_award_total_obligation": 5423431.5,
+    "child_award_total_outlay": 151354.54,
+    "child_award_base_and_all_options_value": 5486013.83,
+    "child_award_base_exercised_options_val": 5476309.95,
+    "child_total_account_outlay": 151354.54,
+    "child_total_account_obligation": 933180.11,
+    "child_account_outlays_by_defc": [
+      {
+        "code": "Q",
+        "amount": 94871.98
+      },
+      {
+        "code": "V",
+        "amount": 56482.56
+      },
+      {
+        "code": "N",
+        "amount": 0.0
+      }
+    ],
+    "child_account_obligations_by_defc": [
+      {
+        "code": "Q",
+        "amount": 851290.37
+      },
+      {
+        "code": "V",
+        "amount": 56482.56
+      },
+      {
+        "code": "N",
+        "amount": 25407.18
+      }
+    ],
+    "grandchild_award_count": 0,
+    "grandchild_award_total_obligation": 0.0,
+    "grandchild_award_total_outlay": null,
+    "grandchild_award_base_and_all_options_value": 0.0,
+    "grandchild_award_base_exercised_options_val": 0.0,
+    "grandchild_total_account_outlay": 0,
+    "grandchild_total_account_obligation": 0,
+    "grandchild_account_outlays_by_defc": [],
+    "grandchild_account_obligations_by_defc": []
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q073",
+      "requested_at_utc": "2026-10-17T19:20:31.355644+00:00",
+      "request": {
+        "method": "GET",
+        "path": "/api/v2/idvs/amounts/CONT_IDV_80JSC019C0012_8000/",
+        "query": {}
+      },
+      "url": "https://api.usaspending.gov/api/v2/idvs/amounts/CONT_IDV_80JSC019C0012_8000/",
+      "http_status": 200,
+      "content_type": "application/json",
+      "elapsed_seconds": 0.329,
+      "response_bytes": 783,
+      "response": {
+        "award_id": 351037624,
+        "generated_unique_award_id": "CONT_IDV_80JSC019C0012_8000",
+        "child_idv_count": 0,
+        "child_award_count": 0,
+        "child_award_total_obligation": 0.0,
+        "child_award_total_outlay": null,
+        "child_award_base_and_all_options_value": 0.0,
+        "child_award_base_exercised_options_val": 0.0,
+        "child_total_account_outlay": 0,
+        "child_total_account_obligation": 0,
+        "child_account_outlays_by_defc": [],
+        "child_account_obligations_by_defc": [],
+        "grandchild_award_count": 0,
+        "grandchild_award_total_obligation": 0.0,
+        "grandchild_award_total_outlay": null,
+        "grandchild_award_base_and_all_options_value": 0.0,
+        "grandchild_award_base_exercised_options_val": 0.0,
+        "grandchild_total_account_outlay": 0,
+        "grandchild_total_account_obligation": 0,
+        "grandchild_account_outlays_by_defc": [],
+        "grandchild_account_obligations_by_defc": []
+      },
+      "status": "live_ok"
+    }
+  ]
+}

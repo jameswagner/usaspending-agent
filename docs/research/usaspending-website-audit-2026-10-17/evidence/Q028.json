@@ -1,0 +1,69 @@
+{
+  "task_id": "Q028",
+  "requested_at_utc": "2026-10-17T18:53:09.732412+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_over_time/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "agencies": [
+          {
+            "type": "awarding",
+            "tier": "toptier",
+            "name": "National Aeronautics and Space Administration"
+          }
+        ]
+      },
+      "group": "fiscal_year",
+      "spending_level": "transactions"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_over_time/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.671,
+  "response_bytes": 1136,
+  "response": {
+    "group": "fiscal_year",
+    "results": [
+      {
+        "aggregated_amount": 15784850074.01,
+        "time_period": {
+          "fiscal_year": "2025"
+        },
+        "Contract_Obligations": 15784850074.01,
+        "Direct_Obligations": 0,
+        "Grant_Obligations": 0,
+        "Idv_Obligations": 0,
+        "Loan_Obligations": 0,
+        "Other_Obligations": 0,
+        "total_outlays": null,
+        "Contract_Outlays": null,
+        "Direct_Outlays": null,
+        "Grant_Outlays": null,
+        "Idv_Outlays": null,
+        "Loan_Outlays": null,
+        "Other_Outlays": null
+      }
+    ],
+    "spending_level": "transactions",
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. ",
+      "The 'subawards' field will be deprecated in the future. Set 'spending_level' to 'subawards' instead. See documentation for more information.",
+      "You may see additional month, quarter and year results when searching for Awards or Subawards. This is due to Awards or Subawards overlapping with the time period specified but having an 'action date' outside of that time period."
+    ]
+  },
+  "status": "live_ok"
+}

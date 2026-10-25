@@ -1,0 +1,222 @@
+{
+  "task_id": "Q121",
+  "requested_at_utc": "2026-10-17T19:20:15.202146+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/disaster/agency/spending/",
+    "body": {
+      "filter": {
+        "def_codes": [
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "U",
+          "V"
+        ],
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "02",
+          "03",
+          "04",
+          "05",
+          "06",
+          "07",
+          "08",
+          "09",
+          "10",
+          "11",
+          "-1"
+        ]
+      },
+      "spending_type": "award",
+      "pagination": {
+        "limit": 3,
+        "page": 1,
+        "sort": "obligation",
+        "order": "desc"
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/disaster/agency/spending/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.376,
+  "response_bytes": 1948,
+  "response": {
+    "totals": {
+      "obligation": 1800689861002.45,
+      "outlay": 1836537237511.26,
+      "award_count": 17514890
+    },
+    "results": [
+      {
+        "id": 803,
+        "code": "073",
+        "description": "Small Business Administration",
+        "award_count": 17126421,
+        "obligation": 744015624989.64,
+        "outlay": 744033522087.35,
+        "children": [
+          {
+            "id": 803,
+            "code": "7300",
+            "description": "Small Business Administration",
+            "award_count": 17126421,
+            "obligation": 744015624989.64,
+            "outlay": 744033522087.35
+          }
+        ]
+      },
+      {
+        "id": 456,
+        "code": "020",
+        "description": "Department of the Treasury",
+        "award_count": 15082,
+        "obligation": 397946296809.37,
+        "outlay": 518825934515.85,
+        "children": [
+          {
+            "id": 456,
+            "code": "2001",
+            "description": "Departmental Offices",
+            "award_count": 13575,
+            "obligation": 395004299374.77,
+            "outlay": 515898973297.44
+          },
+          {
+            "id": 456,
+            "code": "2066",
+            "description": "Community Development Financial Institutions Fund",
+            "award_count": 1138,
+            "obligation": 2263286960.22,
+            "outlay": 2249193346.1
+          },
+          {
+            "id": 456,
+            "code": "2050",
+            "description": "Internal Revenue Service",
+            "award_count": 316,
+            "obligation": 645966471.4,
+            "outlay": 645051745.54
+          },
+          {
+            "id": 456,
+            "code": "2036",
+            "description": "Bureau of the Fiscal Service",
+            "award_count": 38,
+            "obligation": 29216216.4,
+            "outlay": 29216216.4
+          },
+          {
+            "id": 456,
+            "code": "2004",
+            "description": "Office of Inspector General",
+            "award_count": 10,
+            "obligation": 3291810.2,
+            "outlay": 3263933.99
+          },
+          {
+            "id": 456,
+            "code": "2014",
+            "description": "Office of the Inspector General for Tax Administration",
+            "award_count": 2,
+            "obligation": 192617.48,
+            "outlay": 192617.48
+          },
+          {
+            "id": 456,
+            "code": "2084",
+            "description": "Special Inspector General for Pandemic Recovery",
+            "award_count": 3,
+            "obligation": 43358.9,
+            "outlay": 43358.9
+          }
+        ]
+      },
+      {
+        "id": 1068,
+        "code": "091",
+        "description": "Department of Education",
+        "award_count": 11661,
+        "obligation": 212025598269.31,
+        "outlay": 210104260461.62,
+        "children": [
+          {
+            "id": 1068,
+            "code": "9100",
+            "description": "Department of Education",
+            "award_count": 11661,
+            "obligation": 212025598269.31,
+            "outlay": 210104260461.62
+          }
+        ]
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "total": 48,
+      "limit": 3,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    }
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q121",
+      "requested_at_utc": "2026-10-17T18:53:50.955082+00:00",
+      "request": {
+        "method": "POST",
+        "path": "/api/v2/disaster/agency/spending/",
+        "body": {
+          "filter": {
+            "def_codes": [
+              "L",
+              "M",
+              "N",
+              "O",
+              "P",
+              "U",
+              "V"
+            ],
+            "award_type_codes": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "02",
+              "03",
+              "04",
+              "05",
+              "06",
+              "07",
+              "08",
+              "09",
+              "10",
+              "11",
+              "-1"
+            ]
+          },
+          "spending_type": "award",
+          "pagination": {
+            "limit": 3,
+            "page": 1,
+            "sort": "obligation",
+            "order": "desc"
+          }
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/disaster/agency/spending/",
+      "status": "transport_error",
+      "error": "The read operation timed out",
+      "elapsed_seconds": 35.139
+    }
+  ]
+}

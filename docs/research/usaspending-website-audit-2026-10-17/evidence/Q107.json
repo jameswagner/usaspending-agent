@@ -1,0 +1,54 @@
+{
+  "task_id": "Q107",
+  "requested_at_utc": "2026-10-17T19:21:37.254061+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/agency/treasury_account/080-2010/2011-0124-000/program_activity/",
+    "query": {
+      "fiscal_year": 2025,
+      "page": 1
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/agency/treasury_account/080-2010/2011-0124-000/program_activity/?fiscal_year=2025&page=1",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.435,
+  "response_bytes": 457,
+  "response": {
+    "treasury_account_symbol": "080-2010/2011-0124-000",
+    "fiscal_year": 2025,
+    "page_metadata": {
+      "page": 1,
+      "total": 1,
+      "limit": 10,
+      "next": null,
+      "previous": null,
+      "hasNext": false,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "name": "DEEP SPACE EXPLORATION SYSTEMS (DIRECT)",
+        "obligated_amount": 128258.59,
+        "gross_outlay_amount": 140373.97,
+        "type": "PAC/PAN",
+        "children": [
+          {
+            "name": "Contractual services and supplies",
+            "obligated_amount": 128258.59,
+            "gross_outlay_amount": 140373.97
+          }
+        ]
+      }
+    ],
+    "messages": []
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q107",
+      "status": "dependency_unresolved",
+      "error": "'tas'"
+    }
+  ]
+}

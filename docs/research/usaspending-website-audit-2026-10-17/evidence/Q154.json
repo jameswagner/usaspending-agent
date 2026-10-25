@@ -1,0 +1,81 @@
+{
+  "task_id": "Q154",
+  "requested_at_utc": "2026-10-17T19:38:51.002598+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_category/country/",
+    "body": {
+      "filters": {
+        "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ]
+      },
+      "category": "country",
+      "limit": 5,
+      "page": 1
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_category/country/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.505,
+  "response_bytes": 1048,
+  "response": {
+    "category": "country",
+    "spending_level": "transactions",
+    "limit": 5,
+    "page_metadata": {
+      "page": 1,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "id": null,
+        "code": "USA",
+        "name": "UNITED STATES",
+        "amount": 34091707896.78,
+        "total_outlays": null
+      },
+      {
+        "id": null,
+        "code": "BEL",
+        "name": "BELGIUM",
+        "amount": 1601362.0,
+        "total_outlays": null
+      },
+      {
+        "id": null,
+        "code": "BHR",
+        "name": "BAHRAIN",
+        "amount": 1070680.0,
+        "total_outlays": null
+      },
+      {
+        "id": null,
+        "code": "TUR",
+        "name": "TURKEY",
+        "amount": 996065.35,
+        "total_outlays": null
+      },
+      {
+        "id": null,
+        "code": "EGY",
+        "name": "EGYPT",
+        "amount": 846364.0,
+        "total_outlays": null
+      }
+    ],
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. ",
+      "'subawards' will be deprecated in the future. Set \u2018spending_level\u2019 to \u2018subawards\u2019 instead. See documentation for more information. "
+    ]
+  },
+  "status": "live_ok"
+}

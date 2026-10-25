@@ -1,0 +1,583 @@
+{
+  "task_id": "Q125",
+  "requested_at_utc": "2026-10-17T18:54:26.625103+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/disaster/object_class/spending/",
+    "body": {
+      "filter": {
+        "def_codes": [
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "U",
+          "V"
+        ],
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "02",
+          "03",
+          "04",
+          "05",
+          "06",
+          "07",
+          "08",
+          "09",
+          "10",
+          "11",
+          "-1"
+        ]
+      },
+      "spending_type": "award",
+      "pagination": {
+        "limit": 3,
+        "page": 1,
+        "sort": "obligation",
+        "order": "desc"
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/disaster/object_class/spending/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.302,
+  "response_bytes": 8630,
+  "response": {
+    "totals": {
+      "award_count": 23628321,
+      "obligation": 2540674131711.57,
+      "outlay": 2576255918466.34
+    },
+    "results": [
+      {
+        "id": "40",
+        "code": "40",
+        "description": "Grants and fixed charges",
+        "award_count": 23549854,
+        "obligation": 2212917916203.79,
+        "outlay": 2261395240006.3,
+        "children": [
+          {
+            "id": 141,
+            "code": "41.0",
+            "description": "Grants, subsidies, and contributions",
+            "award_count": 23528665,
+            "obligation": 2204126359289.65,
+            "outlay": 2259646251503.57
+          },
+          {
+            "id": 200,
+            "code": "41.0",
+            "description": "Grants, subsidies, and contributions",
+            "award_count": 2085,
+            "obligation": 6872659088.82,
+            "outlay": 0.0
+          },
+          {
+            "id": 142,
+            "code": "42.0",
+            "description": "Insurance claims and indemnities",
+            "award_count": 36,
+            "obligation": 1867600293.5,
+            "outlay": 1699150037.04
+          },
+          {
+            "id": 201,
+            "code": "42.0",
+            "description": "Insurance claims and indemnities",
+            "award_count": 19000,
+            "obligation": 49866779.07,
+            "outlay": 49831391.47
+          },
+          {
+            "id": 181,
+            "code": "41.0",
+            "description": "Grants, subsidies, and contributions",
+            "award_count": 3,
+            "obligation": 1430070.6,
+            "outlay": 0.0
+          },
+          {
+            "id": 202,
+            "code": "43.0",
+            "description": "Interest and dividends",
+            "award_count": 19,
+            "obligation": 682.15,
+            "outlay": 0.0
+          },
+          {
+            "id": 143,
+            "code": "43.0",
+            "description": "Interest and dividends",
+            "award_count": 46,
+            "obligation": 0.0,
+            "outlay": 7074.22
+          }
+        ]
+      },
+      {
+        "id": "20",
+        "code": "20",
+        "description": "Contractual services and supplies",
+        "award_count": 68299,
+        "obligation": 236605716170.46,
+        "outlay": 225468745860.37,
+        "children": [
+          {
+            "id": 129,
+            "code": "25.2",
+            "description": "Other services from non-Federal sources",
+            "award_count": 12991,
+            "obligation": 181217656979.18,
+            "outlay": 178940529861.09
+          },
+          {
+            "id": 128,
+            "code": "25.1",
+            "description": "Advisory and assistance services",
+            "award_count": 6601,
+            "obligation": 24195399719.61,
+            "outlay": 20126385542.08
+          },
+          {
+            "id": 136,
+            "code": "26.0",
+            "description": "Supplies and materials",
+            "award_count": 12312,
+            "obligation": 13232622427.1,
+            "outlay": 15379071860.14
+          },
+          {
+            "id": 132,
+            "code": "25.5",
+            "description": "Research and development contracts",
+            "award_count": 5701,
+            "obligation": 5497371150.05,
+            "outlay": 3660292214.32
+          },
+          {
+            "id": 169,
+            "code": "25.5",
+            "description": "Research and development contracts",
+            "award_count": 527,
+            "obligation": 3635004593.23,
+            "outlay": 62140377.92
+          },
+          {
+            "id": 131,
+            "code": "25.4",
+            "description": "Operation and maintenance of facilities",
+            "award_count": 7408,
+            "obligation": 3083454847.07,
+            "outlay": 818097738.56
+          },
+          {
+            "id": 134,
+            "code": "25.7",
+            "description": "Operation and maintenance of equipment",
+            "award_count": 8327,
+            "obligation": 2368755187.5,
+            "outlay": 4411751064.81
+          },
+          {
+            "id": 133,
+            "code": "25.6",
+            "description": "Medical care",
+            "award_count": 3440,
+            "obligation": 890263366.83,
+            "outlay": 659437516.14
+          },
+          {
+            "id": 135,
+            "code": "25.8",
+            "description": "Subsistence and support of persons",
+            "award_count": 1015,
+            "obligation": 592035855.49,
+            "outlay": 308956496.23
+          },
+          {
+            "id": 126,
+            "code": "23.3",
+            "description": "Communications, utilities, and miscellaneous charges",
+            "award_count": 4002,
+            "obligation": 449686722.01,
+            "outlay": 422937353.23
+          },
+          {
+            "id": 168,
+            "code": "25.4",
+            "description": "Operation and maintenance of facilities",
+            "award_count": 501,
+            "obligation": 362093495.29,
+            "outlay": 38738176.13
+          },
+          {
+            "id": 130,
+            "code": "25.3",
+            "description": "Other goods and services from Federal sources",
+            "award_count": 541,
+            "obligation": 298473406.06,
+            "outlay": 161677605.3
+          },
+          {
+            "id": 123,
+            "code": "22.0",
+            "description": "Transportation of things",
+            "award_count": 1673,
+            "obligation": 254127309.0,
+            "outlay": 245598150.53
+          },
+          {
+            "id": 171,
+            "code": "25.7",
+            "description": "Operation and maintenance of equipment",
+            "award_count": 362,
+            "obligation": 214987340.14,
+            "outlay": 98688180.17
+          },
+          {
+            "id": 173,
+            "code": "26.0",
+            "description": "Supplies and materials",
+            "award_count": 497,
+            "obligation": 67322667.1,
+            "outlay": 9772990.64
+          },
+          {
+            "id": 165,
+            "code": "25.1",
+            "description": "Advisory and assistance services",
+            "award_count": 137,
+            "obligation": 55302370.22,
+            "outlay": 2779797.75
+          },
+          {
+            "id": 186,
+            "code": "25.2",
+            "description": "Other services from non-Federal sources",
+            "award_count": 210,
+            "obligation": 41824291.99,
+            "outlay": 0.0
+          },
+          {
+            "id": 160,
+            "code": "22.0",
+            "description": "Transportation of things",
+            "award_count": 63,
+            "obligation": 34688061.67,
+            "outlay": 726310.16
+          },
+          {
+            "id": 159,
+            "code": "21.0",
+            "description": "Travel and transportation of persons",
+            "award_count": 23,
+            "obligation": 29843625.76,
+            "outlay": 3571.02
+          },
+          {
+            "id": 125,
+            "code": "23.2",
+            "description": "Rental payments to others",
+            "award_count": 887,
+            "obligation": 27570755.09,
+            "outlay": 24801221.05
+          },
+          {
+            "id": 124,
+            "code": "23.1",
+            "description": "Rental payments to GSA",
+            "award_count": 23,
+            "obligation": 24611822.1,
+            "outlay": 22253410.84
+          },
+          {
+            "id": 185,
+            "code": "25.1",
+            "description": "Advisory and assistance services",
+            "award_count": 12,
+            "obligation": 20973268.52,
+            "outlay": 0.0
+          },
+          {
+            "id": 121,
+            "code": "21.0",
+            "description": "Travel and transportation of persons",
+            "award_count": 436,
+            "obligation": 11248336.32,
+            "outlay": 23370063.26
+          },
+          {
+            "id": 163,
+            "code": "23.3",
+            "description": "Communications, utilities, and miscellaneous charges",
+            "award_count": 178,
+            "obligation": 9411874.41,
+            "outlay": 1845832.54
+          },
+          {
+            "id": 187,
+            "code": "25.3",
+            "description": "Other goods and services from Federal sources",
+            "award_count": 21,
+            "obligation": 7083932.59,
+            "outlay": 0.0
+          },
+          {
+            "id": 167,
+            "code": "25.3",
+            "description": "Other goods and services from Federal sources",
+            "award_count": 28,
+            "obligation": 3838798.1,
+            "outlay": 131407.78
+          },
+          {
+            "id": 193,
+            "code": "26.0",
+            "description": "Supplies and materials",
+            "award_count": 48,
+            "obligation": 3146041.85,
+            "outlay": 0.0
+          },
+          {
+            "id": 191,
+            "code": "25.7",
+            "description": "Operation and maintenance of equipment",
+            "award_count": 12,
+            "obligation": 421867.58,
+            "outlay": 0.0
+          },
+          {
+            "id": 170,
+            "code": "25.6",
+            "description": "Medical care",
+            "award_count": 3,
+            "obligation": 365200.39,
+            "outlay": 26308.48
+          },
+          {
+            "id": 178,
+            "code": "23.3",
+            "description": "Communications, utilities, and miscellaneous charges",
+            "award_count": 1,
+            "obligation": 336353.68,
+            "outlay": 0.0
+          },
+          {
+            "id": 162,
+            "code": "23.2",
+            "description": "Rental payments to others",
+            "award_count": 24,
+            "obligation": 161093.71,
+            "outlay": 37424.14
+          },
+          {
+            "id": 164,
+            "code": "24.0",
+            "description": "Printing and reproduction",
+            "award_count": 1,
+            "obligation": 37476.65,
+            "outlay": 0.0
+          },
+          {
+            "id": 166,
+            "code": "25.2",
+            "description": "Other services from non-Federal sources",
+            "award_count": 161,
+            "obligation": 36972.41,
+            "outlay": 1981472.48
+          },
+          {
+            "id": 158,
+            "code": "22.0",
+            "description": "Transportation of things",
+            "award_count": 4,
+            "obligation": 20150.69,
+            "outlay": 0.0
+          },
+          {
+            "id": 127,
+            "code": "24.0",
+            "description": "Printing and reproduction",
+            "award_count": 77,
+            "obligation": -11947653.85,
+            "outlay": 41199417.63
+          },
+          {
+            "id": 172,
+            "code": "25.8",
+            "description": "Subsistence and support of persons",
+            "award_count": 52,
+            "obligation": -12513535.08,
+            "outlay": 5514495.95
+          }
+        ]
+      },
+      {
+        "id": "30",
+        "code": "30",
+        "description": "Acquisition of assets",
+        "award_count": 9830,
+        "obligation": 91136244617.1,
+        "outlay": 89198704472.05,
+        "children": [
+          {
+            "id": 140,
+            "code": "33.0",
+            "description": "Investments and loans",
+            "award_count": 364,
+            "obligation": 86545362869.09,
+            "outlay": 86540396349.3
+          },
+          {
+            "id": 138,
+            "code": "31.0",
+            "description": "Equipment",
+            "award_count": 8135,
+            "obligation": 3710585363.62,
+            "outlay": 1900376235.9
+          },
+          {
+            "id": 177,
+            "code": "32.0",
+            "description": "Land and structures",
+            "award_count": 387,
+            "obligation": 657280965.99,
+            "outlay": 44489979.45
+          },
+          {
+            "id": 139,
+            "code": "32.0",
+            "description": "Land and structures",
+            "award_count": 749,
+            "obligation": 190284457.87,
+            "outlay": 695278323.72
+          },
+          {
+            "id": 175,
+            "code": "31.0",
+            "description": "Equipment",
+            "award_count": 150,
+            "obligation": 28994633.97,
+            "outlay": 18163583.68
+          },
+          {
+            "id": 197,
+            "code": "31.0",
+            "description": "Equipment",
+            "award_count": 45,
+            "obligation": 3736326.56,
+            "outlay": 0.0
+          }
+        ]
+      },
+      {
+        "id": "10",
+        "code": "10",
+        "description": "Personnel compensation and benefits",
+        "award_count": 155,
+        "obligation": 14254720.22,
+        "outlay": 14116411.93,
+        "children": [
+          {
+            "id": 107,
+            "code": "11.3",
+            "description": "Other than full-time permanent",
+            "award_count": 23,
+            "obligation": 6499448.13,
+            "outlay": 7186741.09
+          },
+          {
+            "id": 106,
+            "code": "11.1",
+            "description": "Full-time permanent",
+            "award_count": 3,
+            "obligation": 4636106.54,
+            "outlay": 4636106.54
+          },
+          {
+            "id": 153,
+            "code": "11.7",
+            "description": "Military personnel",
+            "award_count": 25,
+            "obligation": 1400922.61,
+            "outlay": 0.0
+          },
+          {
+            "id": 112,
+            "code": "12.1",
+            "description": "Civilian personnel benefits",
+            "award_count": 69,
+            "obligation": 989059.67,
+            "outlay": 1400247.53
+          },
+          {
+            "id": 111,
+            "code": "11.8",
+            "description": "Special personal services payments",
+            "award_count": 3,
+            "obligation": 484000.0,
+            "outlay": 484000.0
+          },
+          {
+            "id": 108,
+            "code": "11.5",
+            "description": "Other personnel compensation",
+            "award_count": 14,
+            "obligation": 297282.67,
+            "outlay": 409316.77
+          },
+          {
+            "id": 155,
+            "code": "12.1",
+            "description": "Civilian personnel benefits",
+            "award_count": 1,
+            "obligation": -6233.16,
+            "outlay": 0.0
+          },
+          {
+            "id": 110,
+            "code": "11.7",
+            "description": "Military personnel",
+            "award_count": 17,
+            "obligation": -45866.24,
+            "outlay": 0.0
+          }
+        ]
+      },
+      {
+        "id": "00",
+        "code": "00",
+        "description": "Unknown",
+        "award_count": 183,
+        "obligation": 0.0,
+        "outlay": 179111715.69,
+        "children": [
+          {
+            "id": 211,
+            "code": "00.0",
+            "description": "Unknown",
+            "award_count": 183,
+            "obligation": 0.0,
+            "outlay": 179111715.69
+          }
+        ]
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "total": 5,
+      "limit": 3,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    }
+  },
+  "status": "live_ok"
+}

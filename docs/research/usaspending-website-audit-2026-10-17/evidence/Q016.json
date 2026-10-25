@@ -1,0 +1,92 @@
+{
+  "task_id": "Q016",
+  "requested_at_utc": "2026-10-17T18:53:05.631753+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "contract_pricing_type_codes": [
+          "J"
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.435,
+  "response_bytes": 1350,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 309494374,
+        "Award ID": "N0001914C0067",
+        "Recipient Name": "THE BOEING COMPANY",
+        "Award Amount": 18111838529.78,
+        "Start Date": "2014-08-14",
+        "End Date": "2027-04-30",
+        "Description": "USN P-8A FRP II LONG LEAD MATERIAL",
+        "generated_internal_id": "CONT_AWD_N0001914C0067_9700_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 298560047,
+        "Award ID": "FA863412C2651",
+        "Recipient Name": "THE BOEING COMPANY",
+        "Award Amount": 11204226412.65,
+        "Start Date": "2012-03-08",
+        "End Date": "2023-05-31",
+        "Description": "RSAF F-15 FLEET MODERNIZATION PROGRAM",
+        "generated_internal_id": "CONT_AWD_FA863412C2651_9700_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 361848019,
+        "Award ID": "W15QKN21C0012",
+        "Recipient Name": "PFIZER INC",
+        "Award Amount": 11110134065.68,
+        "Start Date": "2020-12-22",
+        "End Date": "2023-06-30",
+        "Description": "COVID-19 VACCINE PRODUCTION",
+        "generated_internal_id": "CONT_AWD_W15QKN21C0012_9700_-NONE-_-NONE-"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 361848019,
+      "last_record_sort_value": "1111013406568"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

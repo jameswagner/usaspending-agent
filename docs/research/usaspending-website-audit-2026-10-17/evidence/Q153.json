@@ -1,0 +1,18 @@
+{
+  "task_id": "Q153",
+  "requested_at_utc": "2026-10-17T19:38:51.002276+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/idvs/count/federal_account/CONT_IDV_NNG15SE16B_8000/",
+    "query": {}
+  },
+  "url": "https://api.usaspending.gov/api/v2/idvs/count/federal_account/CONT_IDV_NNG15SE16B_8000/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.291,
+  "response_bytes": 12,
+  "response": {
+    "count": 77
+  },
+  "status": "live_ok"
+}

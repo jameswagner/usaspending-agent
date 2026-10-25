@@ -1,0 +1,95 @@
+{
+  "task_id": "Q044",
+  "requested_at_utc": "2026-10-17T18:53:28.268886+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "agencies": [
+          {
+            "type": "awarding",
+            "tier": "toptier",
+            "name": "National Aeronautics and Space Administration"
+          }
+        ]
+      },
+      "spending_level": "subawards",
+      "subawards": true,
+      "fields": [
+        "Sub-Award ID",
+        "Sub-Awardee Name",
+        "Sub-Award Amount",
+        "Sub-Award Date",
+        "Prime Award ID"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Sub-Award Amount",
+      "order": "desc"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 3.026,
+  "response_bytes": 1457,
+  "response": {
+    "spending_level": "subawards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": "3022000003 CO854",
+        "prime_award_internal_id": 311383785,
+        "Sub-Award ID": "3022000003 CO854",
+        "Sub-Awardee Name": "PARAGON SPACE DEVELOPMENT CORPORATION",
+        "Sub-Award Amount": 180737408.0,
+        "Sub-Award Date": "2025-05-08",
+        "Prime Award ID": "NNH15CN76C",
+        "prime_award_generated_internal_id": "CONT_AWD_NNH15CN76C_8000_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": "3021900280 CO 4",
+        "prime_award_internal_id": 311383785,
+        "Sub-Award ID": "3021900280 CO 4",
+        "Sub-Awardee Name": "THALES ALENIA SPACE ITALIA S.P.A.",
+        "Sub-Award Amount": 92039277.74,
+        "Sub-Award Date": "2025-08-12",
+        "Prime Award ID": "NNH15CN76C",
+        "prime_award_generated_internal_id": "CONT_AWD_NNH15CN76C_8000_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": "1039806",
+        "prime_award_internal_id": 311405786,
+        "Sub-Award ID": "1039806",
+        "Sub-Awardee Name": "UNITED LAUNCH SERVICES, LLC",
+        "Sub-Award Amount": 75608580.0,
+        "Sub-Award Date": "2024-11-15",
+        "Prime Award ID": "NNK17MA02T",
+        "prime_award_generated_internal_id": "CONT_AWD_NNK17MA02T_8000_NNK14MA75C_8000"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": "311405786",
+      "last_record_sort_value": "7560858000"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

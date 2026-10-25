@@ -1,0 +1,92 @@
+{
+  "task_id": "Q020",
+  "requested_at_utc": "2026-10-17T18:53:06.882334+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "02",
+          "03",
+          "04",
+          "05"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "program_numbers": [
+          "93.575"
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.437,
+  "response_bytes": 1264,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 235159391,
+        "Award ID": "2101CACSC6",
+        "Recipient Name": "DEPARTMENT OF EDUCATION CALIFORNIA",
+        "Award Amount": 2312899777.0,
+        "Start Date": "2020-10-01",
+        "End Date": "2023-09-30",
+        "Description": "CSC6-2021",
+        "generated_internal_id": "ASST_NON_2101CACSC6_075"
+      },
+      {
+        "internal_id": 235159757,
+        "Award ID": "2101FLCSC6",
+        "Recipient Name": "FLORIDA DEPARTMENT OF EDUCATION",
+        "Award Amount": 1509933996.26,
+        "Start Date": "2020-10-01",
+        "End Date": "2023-09-30",
+        "Description": "CSC6-2021",
+        "generated_internal_id": "ASST_NON_2101FLCSC6_075"
+      },
+      {
+        "internal_id": 235159385,
+        "Award ID": "2101CACDC6",
+        "Recipient Name": "DEPARTMENT OF EDUCATION CALIFORNIA",
+        "Award Amount": 1443293123.21,
+        "Start Date": "2020-10-01",
+        "End Date": "2024-09-30",
+        "Description": "CDC6-2021",
+        "generated_internal_id": "ASST_NON_2101CACDC6_075"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 235159385,
+      "last_record_sort_value": "144329312321"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

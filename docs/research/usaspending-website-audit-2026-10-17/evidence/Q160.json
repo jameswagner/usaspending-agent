@@ -1,0 +1,36 @@
+{
+  "task_id": "Q160",
+  "requested_at_utc": "2026-10-17T19:38:47.914641+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/disaster/cfda/count/",
+    "body": {
+      "filter": {
+        "def_codes": [
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "U",
+          "V"
+        ],
+        "award_type_codes": [
+          "02",
+          "03",
+          "04",
+          "F001"
+        ]
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/disaster/cfda/count/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.247,
+  "response_bytes": 13,
+  "response": {
+    "count": 335
+  },
+  "status": "live_ok"
+}

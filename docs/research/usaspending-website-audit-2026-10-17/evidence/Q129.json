@@ -1,0 +1,91 @@
+{
+  "task_id": "Q129",
+  "requested_at_utc": "2026-10-17T18:54:44.272695+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/reporting/agencies/overview/",
+    "query": {
+      "fiscal_year": 2025,
+      "fiscal_period": 12,
+      "limit": 3,
+      "page": 1
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/reporting/agencies/overview/?fiscal_year=2025&fiscal_period=12&limit=3&page=1",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 1.604,
+  "response_bytes": 2256,
+  "response": {
+    "page_metadata": {
+      "page": 1,
+      "total": 111,
+      "limit": 3,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "agency_name": "Department of Health and Human Services",
+        "abbreviation": "HHS",
+        "toptier_code": "075",
+        "agency_id": 806,
+        "current_total_budget_authority_amount": 3129725212729.56,
+        "recent_publication_date": "2025-12-05T19:44:19.957973Z",
+        "recent_publication_date_certified": true,
+        "tas_account_discrepancies_totals": {
+          "gtas_obligation_total": 5588699606177.2,
+          "tas_accounts_total": 2794349803088.6,
+          "tas_obligation_not_in_gtas_total": 0.0,
+          "missing_tas_accounts_count": 0
+        },
+        "obligation_difference": 0.0,
+        "unlinked_contract_award_count": 279,
+        "unlinked_assistance_award_count": 409,
+        "assurance_statement_url": "https://files.usaspending.gov/agency_submissions/2025-P12-075_Department%20of%20Health%20and%20Human%20Services%20(HHS)-Agency_Comments.txt"
+      },
+      {
+        "agency_name": "Department of the Treasury",
+        "abbreviation": "TREAS",
+        "toptier_code": "020",
+        "agency_id": 456,
+        "current_total_budget_authority_amount": 2378074445400.83,
+        "recent_publication_date": "2025-12-04T19:15:51.749958Z",
+        "recent_publication_date_certified": true,
+        "tas_account_discrepancies_totals": {
+          "gtas_obligation_total": 3907378788285.32,
+          "tas_accounts_total": 1953689394142.66,
+          "tas_obligation_not_in_gtas_total": 0.0,
+          "missing_tas_accounts_count": 0
+        },
+        "obligation_difference": 0.0,
+        "unlinked_contract_award_count": 74,
+        "unlinked_assistance_award_count": 0,
+        "assurance_statement_url": "https://files.usaspending.gov/agency_submissions/2025-P12-020_Department%20of%20the%20Treasury%20(TREAS)-Agency_Comments.txt"
+      },
+      {
+        "agency_name": "Department of Defense",
+        "abbreviation": "DOD",
+        "toptier_code": "097",
+        "agency_id": 1173,
+        "current_total_budget_authority_amount": 2213230963902.27,
+        "recent_publication_date": "2026-01-30T00:27:12.995443Z",
+        "recent_publication_date_certified": true,
+        "tas_account_discrepancies_totals": {
+          "gtas_obligation_total": 3120391529727.8,
+          "tas_accounts_total": 1560195764863.9,
+          "tas_obligation_not_in_gtas_total": 0.0,
+          "missing_tas_accounts_count": 0
+        },
+        "obligation_difference": 108875215974.37,
+        "unlinked_contract_award_count": 436167,
+        "unlinked_assistance_award_count": 1854,
+        "assurance_statement_url": "https://files.usaspending.gov/agency_submissions/2025-P12-097_Department%20of%20Defense%20(DOD)-Agency_Comments.txt"
+      }
+    ],
+    "messages": []
+  },
+  "status": "live_ok"
+}

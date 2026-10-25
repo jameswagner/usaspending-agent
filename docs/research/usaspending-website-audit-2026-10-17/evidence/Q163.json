@@ -1,0 +1,89 @@
+{
+  "task_id": "Q163",
+  "requested_at_utc": "2026-10-17T19:38:49.783851+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_transaction/",
+    "body": {
+      "filters": {
+        "keyword": "cybersecurity",
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Mod",
+        "Recipient Name",
+        "Action Date",
+        "Transaction Amount",
+        "Awarding Agency",
+        "Award Type",
+        "internal_id",
+        "generated_internal_id"
+      ],
+      "page": 1,
+      "limit": 3,
+      "sort": "Transaction Amount",
+      "order": "desc"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_transaction/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.444,
+  "response_bytes": 1582,
+  "response": {
+    "limit": 3,
+    "results": [
+      {
+        "Award ID": "47QFRA21F0038",
+        "Mod": "P00034",
+        "Recipient Name": "MIRACLE SYSTEMS LLC",
+        "Action Date": "2026-09-15",
+        "Transaction Amount": 88761165.29,
+        "Awarding Agency": "General Services Administration",
+        "Award Type": "DELIVERY ORDER",
+        "internal_id": 281086651,
+        "generated_internal_id": "CONT_AWD_47QFRA21F0038_4732_47QRAD20DU109_4732"
+      },
+      {
+        "Award ID": "W52P1J22C0023",
+        "Mod": "P00003",
+        "Recipient Name": "GENERAL DYNAMICS ORDNANCE AND TACTICAL SYSTEMS, INC.",
+        "Action Date": "2023-03-30",
+        "Transaction Amount": 77924924.4,
+        "Awarding Agency": "Department of Defense",
+        "Award Type": "DEFINITIVE CONTRACT",
+        "internal_id": 361850734,
+        "generated_internal_id": "CONT_AWD_W52P1J22C0023_9700_-NONE-_-NONE-"
+      },
+      {
+        "Award ID": "47QFRA24F0005",
+        "Mod": "P00121",
+        "Recipient Name": "CACI, INC. - FEDERAL",
+        "Action Date": "2026-09-25",
+        "Transaction Amount": 68863155.37,
+        "Awarding Agency": "General Services Administration",
+        "Award Type": "DELIVERY ORDER",
+        "internal_id": 281086673,
+        "generated_internal_id": "CONT_AWD_47QFRA24F0005_4732_47QTCK18D0009_4732"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. ",
+      "The following filters from the request were not used: {'keyword_search'}. See https://api.usaspending.gov/docs/endpoints for a list of appropriate filters"
+    ]
+  },
+  "status": "live_ok"
+}

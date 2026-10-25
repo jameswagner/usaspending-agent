@@ -1,0 +1,25 @@
+{
+  "task_id": "Q161",
+  "requested_at_utc": "2026-10-17T19:38:48.161844+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/transaction_spending_summary/",
+    "body": {
+      "filters": {
+        "keyword": "cybersecurity"
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/transaction_spending_summary/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 1.286,
+  "response_bytes": 87,
+  "response": {
+    "results": {
+      "prime_awards_count": 30897,
+      "prime_awards_obligation_amount": 29968696908.9
+    }
+  },
+  "status": "live_ok"
+}

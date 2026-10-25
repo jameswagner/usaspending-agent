@@ -1,0 +1,34 @@
+{
+  "task_id": "Q054",
+  "requested_at_utc": "2026-10-17T18:53:32.058290+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/autocomplete/program_activity/",
+    "body": {
+      "search_text": "research",
+      "limit": 3
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/autocomplete/program_activity/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.785,
+  "response_bytes": 289,
+  "response": {
+    "results": [
+      {
+        "program_activity_code": "0000",
+        "program_activity_name": "DATA ACT RESEARCH/UNDISTRIBUTED"
+      },
+      {
+        "program_activity_code": "0001",
+        "program_activity_name": "ADVANCED RESEARCH PROJECTS AGENCY FOR HEALTH (0837)"
+      },
+      {
+        "program_activity_code": "0001",
+        "program_activity_name": "BASIC RESEARCH"
+      }
+    ]
+  },
+  "status": "live_ok"
+}

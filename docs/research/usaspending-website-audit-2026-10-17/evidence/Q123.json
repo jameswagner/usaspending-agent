@@ -1,0 +1,104 @@
+{
+  "task_id": "Q123",
+  "requested_at_utc": "2026-10-17T18:53:55.844658+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/disaster/recipient/spending/",
+    "body": {
+      "filter": {
+        "def_codes": [
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "U",
+          "V"
+        ],
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "02",
+          "03",
+          "04",
+          "05",
+          "06",
+          "07",
+          "08",
+          "09",
+          "10",
+          "11",
+          "-1"
+        ]
+      },
+      "spending_type": "award",
+      "pagination": {
+        "limit": 3,
+        "page": 1,
+        "sort": "obligation",
+        "order": "desc"
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/disaster/recipient/spending/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 34.394,
+  "response_bytes": 979,
+  "response": {
+    "totals": {
+      "obligation": 1800914682658.14,
+      "outlay": 1836722014482.59,
+      "award_count": 17515363
+    },
+    "results": [
+      {
+        "id": [
+          "2ab0e4a1-2761-2380-7a3d-9f54f1ceaaf5-C",
+          "2ab0e4a1-2761-2380-7a3d-9f54f1ceaaf5-R"
+        ],
+        "code": "807480843",
+        "description": "DEPARTMENT OF EDUCATION CALIFORNIA",
+        "award_count": 21,
+        "obligation": 30124522043.97,
+        "outlay": 30014622979.32
+      },
+      {
+        "id": [
+          "660d4d23-77c9-c296-9cc3-358d88d9dba2-C"
+        ],
+        "code": "093565575",
+        "description": "TEXAS OFFICE OF THE GOVERNOR",
+        "award_count": 4,
+        "obligation": 23892735371.18,
+        "outlay": 23895755590.55
+      },
+      {
+        "id": [
+          "05419ed6-1ee0-b61b-515b-abc6bfd622a6-C",
+          "05419ed6-1ee0-b61b-515b-abc6bfd622a6-R"
+        ],
+        "code": "179260856",
+        "description": "TX EDUCATION AGENCY",
+        "award_count": 11,
+        "obligation": 19576354532.88,
+        "outlay": 19445780917.9
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "total": 10000,
+      "limit": 3,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    },
+    "messages": [
+      "Notice! API Request is capped at 10,000 results. Either download to view all results or filter using the 'query' attribute."
+    ]
+  },
+  "status": "live_ok"
+}

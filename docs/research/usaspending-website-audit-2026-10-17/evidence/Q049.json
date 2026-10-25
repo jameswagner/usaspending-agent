@@ -1,0 +1,44 @@
+{
+  "task_id": "Q049",
+  "requested_at_utc": "2026-10-17T18:53:29.947983+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/autocomplete/recipient/",
+    "body": {
+      "search_text": "LOCKHEED",
+      "limit": 3
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/autocomplete/recipient/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.497,
+  "response_bytes": 537,
+  "response": {
+    "count": 3,
+    "results": [
+      {
+        "recipient_name": "LOCKHEED MARTIN CORPORATION",
+        "recipient_level": null,
+        "uei": null,
+        "duns": null
+      },
+      {
+        "recipient_name": "LOCKHEED MARTIN INTEGRATED SYSTEMS, LLC",
+        "recipient_level": null,
+        "uei": null,
+        "duns": null
+      },
+      {
+        "recipient_name": "LOCKHEED MARTIN CORP",
+        "recipient_level": null,
+        "uei": null,
+        "duns": null
+      }
+    ],
+    "messages": [
+      "The response value of 'recipient_level' is deprecated to avoid to confusion when returning only a single Recipient in the response. The request value of 'recipient_levels' will continue to limit the response."
+    ]
+  },
+  "status": "live_ok"
+}

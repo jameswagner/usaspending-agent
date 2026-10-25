@@ -1,0 +1,99 @@
+{
+  "task_id": "Q156",
+  "requested_at_utc": "2026-10-17T19:38:47.582374+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_category/defc/",
+    "body": {
+      "filters": {
+        "def_codes": [
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "U",
+          "V",
+          "Z",
+          "1"
+        ],
+        "place_of_performance_scope": "domestic",
+        "place_of_performance_locations": [
+          {
+            "country": "USA",
+            "state": "CA"
+          }
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ]
+      },
+      "category": "defc",
+      "limit": 5,
+      "page": 1,
+      "spending_level": "award_financial"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_category/defc/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 3.324,
+  "response_bytes": 1278,
+  "response": {
+    "category": "defc",
+    "spending_level": "award_financial",
+    "limit": 5,
+    "page_metadata": {
+      "page": 1,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "id": null,
+        "code": "V",
+        "name": "American Rescue Plan Act of 2021",
+        "amount": 20840656143.27,
+        "total_outlays": 18560376577.22
+      },
+      {
+        "id": null,
+        "code": "1",
+        "name": "Infrastructure Investment and Jobs Act",
+        "amount": 17114722272.52,
+        "total_outlays": 12493534016.48
+      },
+      {
+        "id": null,
+        "code": "Z",
+        "name": "Infrastructure Investment and Jobs Act",
+        "amount": 10031290682.49,
+        "total_outlays": 3760036762.89
+      },
+      {
+        "id": null,
+        "code": "N",
+        "name": "Coronavirus Aid, Relief, and Economic Security Act or the CARES Act",
+        "amount": 4908466062.42,
+        "total_outlays": 4760165049.25
+      },
+      {
+        "id": null,
+        "code": "U",
+        "name": "Consolidated Appropriations Act, 2021",
+        "amount": 4270146019.95,
+        "total_outlays": 3840611273.19
+      }
+    ],
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. ",
+      "'subawards' will be deprecated in the future. Set \u2018spending_level\u2019 to \u2018subawards\u2019 instead. See documentation for more information. "
+    ]
+  },
+  "status": "live_ok"
+}

@@ -1,0 +1,28 @@
+{
+  "task_id": "Q128",
+  "requested_at_utc": "2026-10-17T18:54:43.636047+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/references/total_budgetary_resources/",
+    "query": {
+      "fiscal_year": 2025,
+      "fiscal_period": 12
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/references/total_budgetary_resources/?fiscal_year=2025&fiscal_period=12",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.637,
+  "response_bytes": 113,
+  "response": {
+    "results": [
+      {
+        "fiscal_year": 2025,
+        "fiscal_period": 12,
+        "total_budgetary_resources": 13263700405307.76
+      }
+    ],
+    "messages": []
+  },
+  "status": "live_ok"
+}

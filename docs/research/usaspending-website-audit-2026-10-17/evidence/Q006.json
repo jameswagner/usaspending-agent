@@ -1,0 +1,179 @@
+{
+  "task_id": "Q006",
+  "requested_at_utc": "2026-10-17T19:23:20.924664+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "IDV_A"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "agencies": [
+          {
+            "type": "awarding",
+            "tier": "toptier",
+            "name": "National Aeronautics and Space Administration"
+          }
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Last Date to Order",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.737,
+  "response_bytes": 1058,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 351431442,
+        "Award ID": "NNG15SE16B",
+        "Recipient Name": "BLUE TECH INC.",
+        "Award Amount": 0.0,
+        "Last Date to Order": "2027-01-31",
+        "generated_internal_id": "CONT_IDV_NNG15SE16B_8000"
+      },
+      {
+        "internal_id": 351431440,
+        "Award ID": "NNG15SE14B",
+        "Recipient Name": "UNICOM GOVERNMENT, INC.",
+        "Award Amount": 0.0,
+        "Last Date to Order": "2027-01-31",
+        "generated_internal_id": "CONT_IDV_NNG15SE14B_8000"
+      },
+      {
+        "internal_id": 351431439,
+        "Award ID": "NNG15SE13B",
+        "Recipient Name": "PC SPECIALISTS, LLC",
+        "Award Amount": 0.0,
+        "Last Date to Order": "2027-01-31",
+        "generated_internal_id": "CONT_IDV_NNG15SE13B_8000"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 351431439,
+      "last_record_sort_value": "0"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q006",
+      "requested_at_utc": "2026-10-17T18:53:03.410502+00:00",
+      "request": {
+        "method": "POST",
+        "path": "/api/v2/search/spending_by_award/",
+        "body": {
+          "filters": {
+            "award_type_codes": [
+              "IDV_A",
+              "IDV_B",
+              "IDV_B_A",
+              "IDV_B_B",
+              "IDV_B_C",
+              "IDV_C",
+              "IDV_D",
+              "IDV_E"
+            ],
+            "time_period": [
+              {
+                "start_date": "2024-10-01",
+                "end_date": "2025-09-30"
+              }
+            ],
+            "agencies": [
+              {
+                "type": "awarding",
+                "tier": "toptier",
+                "name": "National Aeronautics and Space Administration"
+              }
+            ]
+          },
+          "fields": [
+            "Award ID",
+            "Recipient Name",
+            "Award Amount",
+            "Last Date to Order",
+            "generated_internal_id"
+          ],
+          "limit": 3,
+          "page": 1,
+          "sort": "Award Amount",
+          "order": "desc",
+          "spending_level": "awards"
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+      "http_status": 200,
+      "content_type": "application/json",
+      "elapsed_seconds": 0.38,
+      "response_bytes": 1141,
+      "response": {
+        "spending_level": "awards",
+        "limit": 3,
+        "results": [
+          {
+            "internal_id": 351037624,
+            "Award ID": "80JSC019C0012",
+            "Recipient Name": "LOCKHEED MARTIN CORP",
+            "Award Amount": 3752987510.56,
+            "Last Date to Order": "2030-09-30",
+            "generated_internal_id": "CONT_IDV_80JSC019C0012_8000"
+          },
+          {
+            "internal_id": 351431948,
+            "Award ID": "NNJ16GU21B",
+            "Recipient Name": "NORTHROP GRUMMAN SYSTEMS CORPORATION",
+            "Award Amount": 3714010953.61,
+            "Last Date to Order": "2030-12-31",
+            "generated_internal_id": "CONT_IDV_NNJ16GU21B_8000"
+          },
+          {
+            "internal_id": 351431952,
+            "Award ID": "NNJ16GX08B",
+            "Recipient Name": "SPACE EXPLORATION TECHNOLOGIES CORP.",
+            "Award Amount": 3695753157.87,
+            "Last Date to Order": "2030-12-31",
+            "generated_internal_id": "CONT_IDV_NNJ16GX08B_8000"
+          }
+        ],
+        "page_metadata": {
+          "page": 1,
+          "hasNext": true,
+          "last_record_unique_id": 351431952,
+          "last_record_sort_value": "369575315787"
+        },
+        "messages": [
+          "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+        ]
+      },
+      "status": "live_ok"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "task_id": "Q078",
+  "requested_at_utc": "2026-10-17T19:23:22.781967+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/idvs/funding_rollup/",
+    "body": {
+      "award_id": "CONT_IDV_NNG15SE16B_8000"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/idvs/funding_rollup/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.357,
+  "response_bytes": 127,
+  "response": {
+    "total_transaction_obligated_amount": 1588635.53,
+    "awarding_agency_count": 8,
+    "funding_agency_count": 8,
+    "federal_account_count": 12
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q078",
+      "requested_at_utc": "2026-10-17T19:20:31.997842+00:00",
+      "request": {
+        "method": "POST",
+        "path": "/api/v2/idvs/funding_rollup/",
+        "body": {
+          "award_id": "CONT_IDV_80JSC019C0012_8000"
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/idvs/funding_rollup/",
+      "http_status": 200,
+      "content_type": "application/json",
+      "elapsed_seconds": 0.298,
+      "response_bytes": 119,
+      "response": {
+        "total_transaction_obligated_amount": 0.0,
+        "awarding_agency_count": 0,
+        "funding_agency_count": 0,
+        "federal_account_count": 0
+      },
+      "status": "live_ok"
+    }
+  ]
+}

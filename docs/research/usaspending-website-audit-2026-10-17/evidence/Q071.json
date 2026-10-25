@@ -1,0 +1,99 @@
+{
+  "task_id": "Q071",
+  "requested_at_utc": "2026-10-17T19:20:31.038187+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/awards/funding/",
+    "body": {
+      "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+      "limit": 3,
+      "page": 1
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/awards/funding/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.321,
+  "response_bytes": 2778,
+  "response": {
+    "results": [
+      {
+        "transaction_obligated_amount": 3300000.0,
+        "gross_outlay_amount": null,
+        "disaster_emergency_fund_code": "Q",
+        "federal_account": "080-0124",
+        "account_title": "Exploration, National Aeronautics and Space Administration",
+        "funding_agency_name": "National Aeronautics and Space Administration",
+        "funding_agency_id": 862,
+        "funding_toptier_agency_id": 72,
+        "awarding_agency_name": "National Aeronautics and Space Administration",
+        "awarding_agency_id": 862,
+        "awarding_toptier_agency_id": 72,
+        "object_class": "25.5",
+        "object_class_name": "Research and development contracts",
+        "program_activity_code": "0001",
+        "program_activity_name": "DEEP SPACE EXPLORATION SYSTEMS (DIRECT)",
+        "reporting_fiscal_year": 2025,
+        "reporting_fiscal_quarter": 4,
+        "reporting_fiscal_month": 12,
+        "is_quarterly_submission": false,
+        "awarding_agency_slug": "national-aeronautics-and-space-administration",
+        "funding_agency_slug": "national-aeronautics-and-space-administration"
+      },
+      {
+        "transaction_obligated_amount": 9900000.0,
+        "gross_outlay_amount": null,
+        "disaster_emergency_fund_code": "Q",
+        "federal_account": "080-0124",
+        "account_title": "Exploration, National Aeronautics and Space Administration",
+        "funding_agency_name": "National Aeronautics and Space Administration",
+        "funding_agency_id": 862,
+        "funding_toptier_agency_id": 72,
+        "awarding_agency_name": "National Aeronautics and Space Administration",
+        "awarding_agency_id": 862,
+        "awarding_toptier_agency_id": 72,
+        "object_class": "25.5",
+        "object_class_name": "Research and development contracts",
+        "program_activity_code": "0001",
+        "program_activity_name": "DEEP SPACE EXPLORATION SYSTEMS (DIRECT)",
+        "reporting_fiscal_year": 2024,
+        "reporting_fiscal_quarter": 2,
+        "reporting_fiscal_month": 6,
+        "is_quarterly_submission": false,
+        "awarding_agency_slug": "national-aeronautics-and-space-administration",
+        "funding_agency_slug": "national-aeronautics-and-space-administration"
+      },
+      {
+        "transaction_obligated_amount": 13700000.0,
+        "gross_outlay_amount": null,
+        "disaster_emergency_fund_code": "Q",
+        "federal_account": "080-0124",
+        "account_title": "Exploration, National Aeronautics and Space Administration",
+        "funding_agency_name": "National Aeronautics and Space Administration",
+        "funding_agency_id": 862,
+        "funding_toptier_agency_id": 72,
+        "awarding_agency_name": "National Aeronautics and Space Administration",
+        "awarding_agency_id": 862,
+        "awarding_toptier_agency_id": 72,
+        "object_class": "25.5",
+        "object_class_name": "Research and development contracts",
+        "program_activity_code": "0001",
+        "program_activity_name": "EXPLORATION (DIRECT)",
+        "reporting_fiscal_year": 2022,
+        "reporting_fiscal_quarter": 4,
+        "reporting_fiscal_month": 11,
+        "is_quarterly_submission": false,
+        "awarding_agency_slug": "national-aeronautics-and-space-administration",
+        "funding_agency_slug": "national-aeronautics-and-space-administration"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    }
+  },
+  "status": "live_ok"
+}

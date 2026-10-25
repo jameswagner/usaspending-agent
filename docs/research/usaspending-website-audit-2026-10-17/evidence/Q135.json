@@ -1,0 +1,20 @@
+{
+  "task_id": "Q135",
+  "requested_at_utc": "2026-10-17T18:55:02.709334+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/reporting/agencies/080/2025/12/unlinked_awards/procurement/",
+    "query": {}
+  },
+  "url": "https://api.usaspending.gov/api/v2/reporting/agencies/080/2025/12/unlinked_awards/procurement/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.291,
+  "response_bytes": 100,
+  "response": {
+    "unlinked_file_c_award_count": 36,
+    "unlinked_file_d_award_count": 164,
+    "total_linked_award_count": 2511
+  },
+  "status": "live_ok"
+}

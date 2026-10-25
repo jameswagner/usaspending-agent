@@ -1,0 +1,114 @@
+{
+  "task_id": "Q074",
+  "requested_at_utc": "2026-10-17T19:23:22.011666+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/idvs/awards/",
+    "body": {
+      "award_id": "CONT_IDV_NNG15SE16B_8000",
+      "type": "child_awards",
+      "limit": 3,
+      "page": 1
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/idvs/awards/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.434,
+  "response_bytes": 1964,
+  "response": {
+    "results": [
+      {
+        "award_id": 362380056,
+        "award_type": "DELIVERY ORDER",
+        "description": "REVEAL FARSIGHT SOFTWARE LICENSE - RSO",
+        "funding_agency": "Department of the Interior",
+        "awarding_agency": "Department of the Interior",
+        "funding_agency_id": 228,
+        "awarding_agency_id": 228,
+        "generated_unique_award_id": "CONT_AWD_140R3026F0106_1425_NNG15SE16B_8000",
+        "last_date_to_order": null,
+        "obligated_amount": 22548.05,
+        "period_of_performance_current_end_date": "2029-09-30",
+        "period_of_performance_start_date": "2026-09-18",
+        "piid": "140R3026F0106",
+        "funding_agency_slug": "department-of-the-interior",
+        "awarding_agency_slug": "department-of-the-interior"
+      },
+      {
+        "award_id": 279032856,
+        "award_type": "DELIVERY ORDER",
+        "description": "RICOH PRINTER TONER COVID-19",
+        "funding_agency": "Department of the Treasury",
+        "awarding_agency": "Department of the Treasury",
+        "funding_agency_id": 479,
+        "awarding_agency_id": 479,
+        "generated_unique_award_id": "CONT_AWD_2033H622F00035_2036_NNG15SE16B_8000",
+        "last_date_to_order": null,
+        "obligated_amount": 88922.24,
+        "period_of_performance_current_end_date": "2022-11-18",
+        "period_of_performance_start_date": "2021-11-19",
+        "piid": "2033H622F00035",
+        "funding_agency_slug": "department-of-the-treasury",
+        "awarding_agency_slug": "department-of-the-treasury"
+      },
+      {
+        "award_id": 291265171,
+        "award_type": "DELIVERY ORDER",
+        "description": "DATA STORAGE HARDWARE AND SOFTWARE MAINTENANCE SUPPORT (NETAPP)",
+        "funding_agency": "Department of Homeland Security",
+        "awarding_agency": "Department of Homeland Security",
+        "funding_agency_id": 772,
+        "awarding_agency_id": 772,
+        "generated_unique_award_id": "CONT_AWD_70Z02320FRI206500_7008_NNG15SE16B_8000",
+        "last_date_to_order": null,
+        "obligated_amount": 1503140.6,
+        "period_of_performance_current_end_date": "2025-09-23",
+        "period_of_performance_start_date": "2020-09-24",
+        "piid": "70Z02320FRI206500",
+        "funding_agency_slug": "department-of-homeland-security",
+        "awarding_agency_slug": "department-of-homeland-security"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    }
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q074",
+      "requested_at_utc": "2026-10-17T19:20:31.359312+00:00",
+      "request": {
+        "method": "POST",
+        "path": "/api/v2/idvs/awards/",
+        "body": {
+          "award_id": "CONT_IDV_80JSC019C0012_8000",
+          "type": "child_awards",
+          "limit": 3,
+          "page": 1
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/idvs/awards/",
+      "http_status": 200,
+      "content_type": "application/json",
+      "elapsed_seconds": 0.325,
+      "response_bytes": 105,
+      "response": {
+        "results": [],
+        "page_metadata": {
+          "page": 1,
+          "next": null,
+          "previous": null,
+          "hasNext": false,
+          "hasPrevious": false
+        }
+      },
+      "status": "live_ok"
+    }
+  ]
+}

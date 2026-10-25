@@ -1,0 +1,279 @@
+{
+  "task_id": "Q157",
+  "requested_at_utc": "2026-10-17T19:38:51.507885+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/tas/balances/quarters/total/",
+    "body": {
+      "filters": [
+        {
+          "field": "treasury_account_identifier__federal_account_id",
+          "operation": "equals",
+          "value": 5634
+        }
+      ],
+      "group": [
+        "submission__reporting_fiscal_year",
+        "submission__reporting_fiscal_quarter"
+      ],
+      "field": "gross_outlay_amount_by_tas_cpe",
+      "aggregate": "sum",
+      "order": [
+        "submission__reporting_fiscal_year"
+      ]
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v1/tas/balances/quarters/total/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 1.066,
+  "response_bytes": 5290,
+  "response": {
+    "page_metadata": {
+      "count": 39,
+      "page": 1,
+      "has_next_page": false,
+      "has_previous_page": false,
+      "next": null,
+      "current": "https://api.usaspending.gov/api/v1/tas/balances/quarters/total/?limit=100&page=1",
+      "previous": null
+    },
+    "results": [
+      {
+        "item": "2017",
+        "aggregate": "2027056039.46",
+        "submission__reporting_fiscal_year": "2017",
+        "submission__reporting_fiscal_quarter": "2"
+      },
+      {
+        "item": "2017",
+        "aggregate": "3087788429.96",
+        "submission__reporting_fiscal_year": "2017",
+        "submission__reporting_fiscal_quarter": "3"
+      },
+      {
+        "item": "2017",
+        "aggregate": "4151664759.64",
+        "submission__reporting_fiscal_year": "2017",
+        "submission__reporting_fiscal_quarter": "4"
+      },
+      {
+        "item": "2018",
+        "aggregate": "1097866429.72",
+        "submission__reporting_fiscal_year": "2018",
+        "submission__reporting_fiscal_quarter": "1"
+      },
+      {
+        "item": "2018",
+        "aggregate": "2116610194.12",
+        "submission__reporting_fiscal_year": "2018",
+        "submission__reporting_fiscal_quarter": "2"
+      },
+      {
+        "item": "2018",
+        "aggregate": "3328114909.30",
+        "submission__reporting_fiscal_year": "2018",
+        "submission__reporting_fiscal_quarter": "3"
+      },
+      {
+        "item": "2018",
+        "aggregate": "4481188212.93",
+        "submission__reporting_fiscal_year": "2018",
+        "submission__reporting_fiscal_quarter": "4"
+      },
+      {
+        "item": "2019",
+        "aggregate": "1098376662.65",
+        "submission__reporting_fiscal_year": "2019",
+        "submission__reporting_fiscal_quarter": "1"
+      },
+      {
+        "item": "2019",
+        "aggregate": "2142242732.37",
+        "submission__reporting_fiscal_year": "2019",
+        "submission__reporting_fiscal_quarter": "2"
+      },
+      {
+        "item": "2019",
+        "aggregate": "3307421947.87",
+        "submission__reporting_fiscal_year": "2019",
+        "submission__reporting_fiscal_quarter": "3"
+      },
+      {
+        "item": "2019",
+        "aggregate": "4522528675.60",
+        "submission__reporting_fiscal_year": "2019",
+        "submission__reporting_fiscal_quarter": "4"
+      },
+      {
+        "item": "2020",
+        "aggregate": "1308520986.34",
+        "submission__reporting_fiscal_year": "2020",
+        "submission__reporting_fiscal_quarter": "1"
+      },
+      {
+        "item": "2020",
+        "aggregate": "2473996635.39",
+        "submission__reporting_fiscal_year": "2020",
+        "submission__reporting_fiscal_quarter": "2"
+      },
+      {
+        "item": "2020",
+        "aggregate": "3849013505.90",
+        "submission__reporting_fiscal_year": "2020",
+        "submission__reporting_fiscal_quarter": "3"
+      },
+      {
+        "item": "2020",
+        "aggregate": "5382114880.60",
+        "submission__reporting_fiscal_year": "2020",
+        "submission__reporting_fiscal_quarter": "4"
+      },
+      {
+        "item": "2021",
+        "aggregate": "1654373986.95",
+        "submission__reporting_fiscal_year": "2021",
+        "submission__reporting_fiscal_quarter": "1"
+      },
+      {
+        "item": "2021",
+        "aggregate": "3293630517.64",
+        "submission__reporting_fiscal_year": "2021",
+        "submission__reporting_fiscal_quarter": "2"
+      },
+      {
+        "item": "2021",
+        "aggregate": "4713155230.63",
+        "submission__reporting_fiscal_year": "2021",
+        "submission__reporting_fiscal_quarter": "3"
+      },
+      {
+        "item": "2021",
+        "aggregate": "6230694821.65",
+        "submission__reporting_fiscal_year": "2021",
+        "submission__reporting_fiscal_quarter": "4"
+      },
+      {
+        "item": "2022",
+        "aggregate": "2031644182.30",
+        "submission__reporting_fiscal_year": "2022",
+        "submission__reporting_fiscal_quarter": "1"
+      },
+      {
+        "item": "2022",
+        "aggregate": "3296461052.33",
+        "submission__reporting_fiscal_year": "2022",
+        "submission__reporting_fiscal_quarter": "2"
+      },
+      {
+        "item": "2022",
+        "aggregate": "4749209128.83",
+        "submission__reporting_fiscal_year": "2022",
+        "submission__reporting_fiscal_quarter": "3"
+      },
+      {
+        "item": "2022",
+        "aggregate": "6492208191.60",
+        "submission__reporting_fiscal_year": "2022",
+        "submission__reporting_fiscal_quarter": "4"
+      },
+      {
+        "item": "2023",
+        "aggregate": "2218206783.47",
+        "submission__reporting_fiscal_year": "2023",
+        "submission__reporting_fiscal_quarter": "1"
+      },
+      {
+        "item": "2023",
+        "aggregate": "3717683490.79",
+        "submission__reporting_fiscal_year": "2023",
+        "submission__reporting_fiscal_quarter": "2"
+      },
+      {
+        "item": "2023",
+        "aggregate": "5343977116.95",
+        "submission__reporting_fiscal_year": "2023",
+        "submission__reporting_fiscal_quarter": "3"
+      },
+      {
+        "item": "2023",
+        "aggregate": "7450351121.89",
+        "submission__reporting_fiscal_year": "2023",
+        "submission__reporting_fiscal_quarter": "4"
+      },
+      {
+        "item": "2024",
+        "aggregate": "2094436737.41",
+        "submission__reporting_fiscal_year": "2024",
+        "submission__reporting_fiscal_quarter": "1"
+      },
+      {
+        "item": "2024",
+        "aggregate": "3434129998.91",
+        "submission__reporting_fiscal_year": "2024",
+        "submission__reporting_fiscal_quarter": "2"
+      },
+      {
+        "item": "2024",
+        "aggregate": "5449254874.10",
+        "submission__reporting_fiscal_year": "2024",
+        "submission__reporting_fiscal_quarter": "3"
+      },
+      {
+        "item": "2024",
+        "aggregate": "7208336254.10",
+        "submission__reporting_fiscal_year": "2024",
+        "submission__reporting_fiscal_quarter": "4"
+      },
+      {
+        "item": "2025",
+        "aggregate": "2220344278.35",
+        "submission__reporting_fiscal_year": "2025",
+        "submission__reporting_fiscal_quarter": "1"
+      },
+      {
+        "item": "2025",
+        "aggregate": "3744370925.72",
+        "submission__reporting_fiscal_year": "2025",
+        "submission__reporting_fiscal_quarter": "2"
+      },
+      {
+        "item": "2025",
+        "aggregate": "5511429842.52",
+        "submission__reporting_fiscal_year": "2025",
+        "submission__reporting_fiscal_quarter": "3"
+      },
+      {
+        "item": "2025",
+        "aggregate": "7666106608.57",
+        "submission__reporting_fiscal_year": "2025",
+        "submission__reporting_fiscal_quarter": "4"
+      },
+      {
+        "item": "2026",
+        "aggregate": "2243025660.95",
+        "submission__reporting_fiscal_year": "2026",
+        "submission__reporting_fiscal_quarter": "1"
+      },
+      {
+        "item": "2026",
+        "aggregate": "4064476391.43",
+        "submission__reporting_fiscal_year": "2026",
+        "submission__reporting_fiscal_quarter": "2"
+      },
+      {
+        "item": "2026",
+        "aggregate": "5925206978.94",
+        "submission__reporting_fiscal_year": "2026",
+        "submission__reporting_fiscal_quarter": "3"
+      },
+      {
+        "item": "2026",
+        "aggregate": "7165664399.36",
+        "submission__reporting_fiscal_year": "2026",
+        "submission__reporting_fiscal_quarter": "4"
+      }
+    ]
+  },
+  "status": "live_ok"
+}

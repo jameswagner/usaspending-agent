@@ -1,0 +1,3209 @@
+{
+  "captured_at_utc": "2026-10-17T19:32:50.103Z",
+  "browser": "chromium headless shell 153 via Playwright 1.55",
+  "pages": [
+    {
+      "page": "home",
+      "url": "https://www.usaspending.gov/",
+      "final_url": "https://www.usaspending.gov/",
+      "title": "Government Spending Open Data | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "search_shared_hash",
+      "url": "https://www.usaspending.gov/search?hash=2986f5ef9c9900a71840d8016a3905d6",
+      "final_url": "https://www.usaspending.gov/hash-error",
+      "title": "404 | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/hash/",
+          "body": {
+            "hash": "2986f5ef9c9900a71840d8016a3905d6"
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "award_contract",
+      "url": "https://www.usaspending.gov/award/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+      "final_url": "https://www.usaspending.gov/award/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+      "title": "CONTRACT to THE BOEING COMPANY | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/federal_account/311267295/",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/funding_rollup/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1,
+            "sort": "federal_action_obligation",
+            "order": "asc",
+            "limit": 5000
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/transaction/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/subaward/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/federal_account/CONT_AWD_NAS1510000_8000_-NONE-_-NONE-/",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/accounts/",
+          "body": {
+            "limit": 10,
+            "sort": "total_transaction_obligated_amount",
+            "order": "desc",
+            "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
+            "page": 1
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "award_grant",
+      "url": "https://www.usaspending.gov/award/ASST_NON_NNX16AO69A_080",
+      "final_url": "https://www.usaspending.gov/award/ASST_NON_NNX16AO69A_080",
+      "title": "GRANT to BAYLOR COLLEGE OF MEDICINE | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/ASST_NON_NNX16AO69A_080/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/federal_account/269004917/",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/funding_rollup/",
+          "body": {
+            "award_id": "ASST_NON_NNX16AO69A_080"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "ASST_NON_NNX16AO69A_080",
+            "page": 1,
+            "sort": "federal_action_obligation",
+            "order": "asc",
+            "limit": 5000
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "ASST_NON_NNX16AO69A_080",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "ASST_NON_NNX16AO69A_080",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "ASST_NON_NNX16AO69A_080",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/transaction/ASST_NON_NNX16AO69A_080/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/subaward/ASST_NON_NNX16AO69A_080/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/federal_account/ASST_NON_NNX16AO69A_080/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/"
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "ASST_NON_NNX16AO69A_080",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/accounts/",
+          "body": {
+            "limit": 10,
+            "sort": "total_transaction_obligated_amount",
+            "order": "desc",
+            "award_id": "ASST_NON_NNX16AO69A_080",
+            "page": 1
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "award_loan",
+      "url": "https://www.usaspending.gov/award/ASST_NON_TSMC2_013",
+      "final_url": "https://www.usaspending.gov/award/ASST_NON_TSMC2_013",
+      "title": "LOANS to TSMC ARIZONA CORP | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/ASST_NON_TSMC2_013/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/federal_account/271536977/",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/funding_rollup/",
+          "body": {
+            "award_id": "ASST_NON_TSMC2_013"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "ASST_NON_TSMC2_013",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "ASST_NON_TSMC2_013",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "ASST_NON_TSMC2_013",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/transaction/ASST_NON_TSMC2_013/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/federal_account/ASST_NON_TSMC2_013/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/"
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "ASST_NON_TSMC2_013",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        }
+      ]
+    },
+    {
+      "page": "award_idv",
+      "url": "https://www.usaspending.gov/award/CONT_IDV_NNG15SE16B_8000",
+      "final_url": "https://www.usaspending.gov/award/CONT_IDV_NNG15SE16B_8000",
+      "title": "IDV to BLUE TECH INC. | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/CONT_IDV_NNG15SE16B_8000/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/idvs/count/federal_account/351431442/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/idvs/amounts/CONT_IDV_NNG15SE16B_8000/",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/idvs/activity/",
+          "body": {
+            "award_id": "CONT_IDV_NNG15SE16B_8000",
+            "page": 1,
+            "hide_edge_cases": true,
+            "limit": 50
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/idvs/funding_rollup/",
+          "body": {
+            "award_id": "CONT_IDV_NNG15SE16B_8000"
+          },
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/"
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_IDV_NNG15SE16B_8000",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_IDV_NNG15SE16B_8000",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_IDV_NNG15SE16B_8000",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/awards/count/transaction/CONT_IDV_NNG15SE16B_8000/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/idvs/count/federal_account/CONT_IDV_NNG15SE16B_8000/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/"
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/transactions/",
+          "body": {
+            "award_id": "CONT_IDV_NNG15SE16B_8000",
+            "page": 1,
+            "sort": "modification_number",
+            "order": "asc",
+            "limit": 10
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/idvs/accounts/",
+          "body": {
+            "limit": 10,
+            "sort": "total_transaction_obligated_amount",
+            "order": "desc",
+            "award_id": "CONT_IDV_NNG15SE16B_8000",
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/idvs/awards/",
+          "body": {
+            "award_id": "CONT_IDV_NNG15SE16B_8000",
+            "type": "child_awards",
+            "limit": 10,
+            "page": 1,
+            "sort": "period_of_performance_start_date",
+            "order": "desc"
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "agency_landing",
+      "url": "https://www.usaspending.gov/agency",
+      "final_url": "https://www.usaspending.gov/agency",
+      "title": "Federal Agency Spending Profiles | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/toptier_agencies/",
+          "query": "?sort=percentage_of_total_budget_authority&order=desc",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "agency_profile",
+      "url": "https://www.usaspending.gov/agency/national-aeronautics-and-space-administration?fy=2025",
+      "final_url": "https://www.usaspending.gov/agency/national-aeronautics-and-space-administration?fy=2025",
+      "title": "National Aeronautics and Space Administration (NASA) | Spending Profile | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/"
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/toptier_agencies/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/agency/080/",
+          "query": "?fiscal_year=2025",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/agency/080/obligations_by_award_category/",
+          "query": "?fiscal_year=2025",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/agency/080/budgetary_resources",
+          "status": 301
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/agency/080/sub_components/",
+          "query": "?fiscal_year=2025&page=1",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/agency/080/sub_components/",
+          "query": "?fiscal_year=2025&page=1"
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/agency/080/awards/new/count/",
+          "query": "?fiscal_year=2025",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/agency/080/awards/",
+          "query": "?fiscal_year=2025",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/agency/080/sub_agency/",
+          "query": "?fiscal_year=2025&limit=10&page=1&sort=total_obligations&order=desc",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/agency/080/budgetary_resources/",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "recipient_landing",
+      "url": "https://www.usaspending.gov/recipient",
+      "final_url": "https://www.usaspending.gov/recipient",
+      "title": "Federal Award Recipient Profiles | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/recipient/",
+          "body": {
+            "order": "desc",
+            "sort": "amount",
+            "page": 1,
+            "limit": 50,
+            "award_type": "all"
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "recipient_profile",
+      "url": "https://www.usaspending.gov/recipient/6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C/latest",
+      "final_url": "https://www.usaspending.gov/recipient/6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C/latest",
+      "title": "LOCKHEED MARTIN CORPORATION | Federal Award Recipient Profile | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/recipient/6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C/",
+          "query": "?year=latest",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/recipient/6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C/",
+          "query": "?year=latest",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/recipient/6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C/",
+          "query": "?year=latest",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_over_time/",
+          "body": {
+            "group": "fiscal_year",
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "time_period": [
+                {
+                  "start_date": "2007-10-01",
+                  "end_date": "2027-09-30"
+                }
+              ]
+            },
+            "auditTrail": "Recipient Spending Over Time Visualization"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/new_awards_over_time/",
+          "body": {
+            "group": "fiscal_year",
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "time_period": [
+                {
+                  "start_date": "2007-10-01",
+                  "end_date": "2027-09-30"
+                }
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/states/",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/awarding_agency",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "awarding_agency",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/awarding_subagency",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "awarding_subagency",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/federal_account",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "federal_account",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/cfda",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "cfda",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/naics",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "naics",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/psc",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "psc",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/country",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "country",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/state_territory",
+          "body": {
+            "filters": {
+              "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+              "recipient_name": "LOCKHEED MARTIN CORPORATION",
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "state_territory",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/toptier_agencies/",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "state_profile",
+      "url": "https://www.usaspending.gov/state/california/latest",
+      "final_url": "https://www.usaspending.gov/state/california/2026",
+      "title": "California | Spending Profile | USAspending",
+      "error": "page.goto: Timeout 90000ms exceeded.",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/states/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/toptier_agencies/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/recipient/state/06/",
+          "query": "?year=latest",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/recipient/state/06/",
+          "query": "?year=2026",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/recipient/state/awards/06/",
+          "query": "?year=latest",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/"
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_over_time/",
+          "body": {
+            "group": "fiscal_year",
+            "filters": {
+              "place_of_performance_locations": [
+                {
+                  "country": "USA",
+                  "state": "CA"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2007-10-01",
+                  "end_date": "2027-09-30"
+                }
+              ]
+            },
+            "spending_level": "transactions",
+            "auditTrail": "Spending Over Time Visualization"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/awarding_agency",
+          "body": {
+            "filters": {
+              "place_of_performance_scope": "domestic",
+              "place_of_performance_locations": [
+                {
+                  "country": "USA",
+                  "state": "CA"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "awarding_agency",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/recipient",
+          "body": {
+            "filters": {
+              "place_of_performance_scope": "domestic",
+              "place_of_performance_locations": [
+                {
+                  "country": "USA",
+                  "state": "CA"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "recipient",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_award/",
+          "body": {
+            "filters": {
+              "place_of_performance_scope": "domestic",
+              "place_of_performance_locations": [
+                {
+                  "country": "USA",
+                  "state": "CA"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ]
+            },
+            "category": "awards",
+            "limit": 5,
+            "page": 1,
+            "fields": [
+              "Award ID",
+              "Award Amount",
+              "generated_internal_id"
+            ],
+            "order": "desc",
+            "sort": "Award Amount",
+            "spending_level": "awards"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/defc",
+          "body": {
+            "filters": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V",
+                "Z",
+                "1"
+              ],
+              "place_of_performance_scope": "domestic",
+              "place_of_performance_locations": [
+                {
+                  "country": "USA",
+                  "state": "CA"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "defc",
+            "limit": 5,
+            "page": 1,
+            "spending_level": "award_financial"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/cfda",
+          "body": {
+            "filters": {
+              "place_of_performance_scope": "domestic",
+              "place_of_performance_locations": [
+                {
+                  "country": "USA",
+                  "state": "CA"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "cfda",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/naics",
+          "body": {
+            "filters": {
+              "place_of_performance_scope": "domestic",
+              "place_of_performance_locations": [
+                {
+                  "country": "USA",
+                  "state": "CA"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "naics",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/county",
+          "body": {
+            "filters": {
+              "place_of_performance_scope": "domestic",
+              "place_of_performance_locations": [
+                {
+                  "country": "USA",
+                  "state": "CA"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "county",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_category/district",
+          "body": {
+            "filters": {
+              "place_of_performance_scope": "domestic",
+              "place_of_performance_locations": [
+                {
+                  "country": "USA",
+                  "state": "CA"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            },
+            "category": "district",
+            "limit": 5,
+            "page": 1
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_geography/",
+          "body": {
+            "scope": "place_of_performance",
+            "geo_layer": "county",
+            "filters": {
+              "place_of_performance_locations": [
+                {
+                  "country": "USA",
+                  "state": "CA"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2025-10-17",
+                  "end_date": "2026-10-17"
+                }
+              ]
+            }
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "federal_account_landing",
+      "url": "https://www.usaspending.gov/federal_account",
+      "final_url": "https://www.usaspending.gov/federal_account",
+      "title": "Federal Account Spending Profiles | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/federal_accounts/",
+          "body": {
+            "sort": {
+              "field": "budgetary_resources",
+              "direction": "desc"
+            },
+            "page": 1,
+            "limit": 50,
+            "filters": {
+              "fy": "2026"
+            }
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "federal_account_profile",
+      "url": "https://www.usaspending.gov/federal_account/080-0124",
+      "final_url": "https://www.usaspending.gov/federal_account/080-0124",
+      "title": "Exploration, National Aeronautics and Space Administration | Spending Profile | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/federal_accounts/080-0124/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/federal_accounts/5634/fiscal_year_snapshot/2026",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "gross_outlay_amount_by_tas_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - outlay"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "total_budgetary_resources_amount_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - budgetAuthority"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "obligations_incurred_total_by_tas_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - obligated"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "unobligated_balance_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - unobligated"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "budget_authority_unobligated_balance_brought_forward_fyb",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - balanceBroughtForward1"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "adjustments_to_unobligated_balance_brought_forward_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - balanceBroughtForward2"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "other_budgetary_resources_amount_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - otherBudgetaryResources"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "budget_authority_appropriated_amount_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - appropriations"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/categories/total/",
+          "body": {
+            "group": "program_activity__program_activity_name",
+            "field": "obligations_incurred_by_program_object_class_cpe",
+            "aggregate": "sum",
+            "order": [
+              "-aggregate"
+            ],
+            "filters": [
+              {
+                "field": "treasury_account__federal_account",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "page": 1,
+            "limit": 5,
+            "auditTrail": "Rank vis - programActivity"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_award_count/",
+          "body": {
+            "filters": {
+              "tas_codes": [
+                {
+                  "aid": "080",
+                  "main": "0124"
+                }
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_award/",
+          "body": {
+            "filters": {
+              "tas_codes": [
+                {
+                  "aid": "080",
+                  "main": "0124"
+                }
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ]
+            },
+            "spending_level": "awards",
+            "fields": [
+              "Award ID",
+              "Recipient Name",
+              "Award Amount",
+              "Total Outlays",
+              "Description",
+              "Contract Award Type",
+              "Recipient UEI",
+              "Recipient Location",
+              "Primary Place of Performance",
+              "def_codes",
+              "COVID-19 Obligations",
+              "COVID-19 Outlays",
+              "Infrastructure Obligations",
+              "Infrastructure Outlays",
+              "Awarding Agency",
+              "Awarding Sub Agency",
+              "Start Date",
+              "End Date",
+              "NAICS",
+              "PSC",
+              "recipient_id"
+            ],
+            "limit": 10,
+            "order": "desc",
+            "page": 1,
+            "sort": "Award Amount"
+          },
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/federal_accounts/5634/available_object_classes",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/categories/total/",
+          "body": {
+            "group": [
+              "program_activity__program_activity_name",
+              "program_activity__program_activity_code",
+              "program_activity__id"
+            ],
+            "field": "ussgl480100_undelivered_orders_obligations_unpaid_fyb",
+            "aggregate": "count",
+            "filters": [
+              {
+                "field": "treasury_account__federal_account",
+                "operation": "equals",
+                "value": 5634
+              }
+            ]
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "submission__reporting_fiscal_year",
+                "operation": "in",
+                "value": [
+                  "2027"
+                ]
+              },
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "gross_outlay_amount_by_tas_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - outlay"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "submission__reporting_fiscal_year",
+                "operation": "in",
+                "value": [
+                  "2027"
+                ]
+              },
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "total_budgetary_resources_amount_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - budgetAuthority"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "submission__reporting_fiscal_year",
+                "operation": "in",
+                "value": [
+                  "2027"
+                ]
+              },
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "obligations_incurred_total_by_tas_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - obligated"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "submission__reporting_fiscal_year",
+                "operation": "in",
+                "value": [
+                  "2027"
+                ]
+              },
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "unobligated_balance_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - unobligated"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "submission__reporting_fiscal_year",
+                "operation": "in",
+                "value": [
+                  "2027"
+                ]
+              },
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "budget_authority_unobligated_balance_brought_forward_fyb",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - balanceBroughtForward1"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "submission__reporting_fiscal_year",
+                "operation": "in",
+                "value": [
+                  "2027"
+                ]
+              },
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "adjustments_to_unobligated_balance_brought_forward_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - balanceBroughtForward2"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "submission__reporting_fiscal_year",
+                "operation": "in",
+                "value": [
+                  "2027"
+                ]
+              },
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "other_budgetary_resources_amount_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - otherBudgetaryResources"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v1/tas/balances/quarters/total/",
+          "body": {
+            "filters": [
+              {
+                "field": "submission__reporting_fiscal_year",
+                "operation": "in",
+                "value": [
+                  "2027"
+                ]
+              },
+              {
+                "field": "treasury_account_identifier__federal_account_id",
+                "operation": "equals",
+                "value": 5634
+              }
+            ],
+            "group": [
+              "submission__reporting_fiscal_year",
+              "submission__reporting_fiscal_quarter"
+            ],
+            "field": "budget_authority_appropriated_amount_cpe",
+            "aggregate": "sum",
+            "order": [
+              "submission__reporting_fiscal_year"
+            ],
+            "auditTrail": "Spending over Time (quarters) - non-obligated filter - appropriations"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_award_count/",
+          "body": {
+            "filters": {
+              "tas_codes": [
+                {
+                  "aid": "080",
+                  "main": "0124"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2026-10-01",
+                  "end_date": "2027-09-30"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/search/spending_by_award/",
+          "body": {
+            "filters": {
+              "tas_codes": [
+                {
+                  "aid": "080",
+                  "main": "0124"
+                }
+              ],
+              "time_period": [
+                {
+                  "start_date": "2026-10-01",
+                  "end_date": "2027-09-30"
+                }
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ]
+            },
+            "spending_level": "awards",
+            "fields": [
+              "Award ID",
+              "Recipient Name",
+              "Award Amount",
+              "Total Outlays",
+              "Description",
+              "Contract Award Type",
+              "Recipient UEI",
+              "Recipient Location",
+              "Primary Place of Performance",
+              "def_codes",
+              "COVID-19 Obligations",
+              "COVID-19 Outlays",
+              "Infrastructure Obligations",
+              "Infrastructure Outlays",
+              "Awarding Agency",
+              "Awarding Sub Agency",
+              "Start Date",
+              "End Date",
+              "NAICS",
+              "PSC",
+              "recipient_id"
+            ],
+            "limit": 10,
+            "order": "desc",
+            "page": 1,
+            "sort": "Award Amount"
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "explorer_agency",
+      "url": "https://www.usaspending.gov/explorer/agency",
+      "final_url": "https://www.usaspending.gov/explorer/agency",
+      "title": "Government Spending Explorer | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/toptier_agencies/",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/spending/",
+          "body": {
+            "type": "agency",
+            "filters": {
+              "fy": "2026",
+              "period": "11"
+            }
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "disaster_covid",
+      "url": "https://www.usaspending.gov/disaster/covid-19",
+      "final_url": "https://www.usaspending.gov/disaster/covid-19",
+      "title": "COVID Relief Spending | USAspending",
+      "error": "page.goto: Timeout 90000ms exceeded.",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/toptier_agencies/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/overview/",
+          "query": "?def_codes=L,M,N,O,P,U,V",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/award/amount/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/",
+          "query": "?use_cache=true",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/",
+          "query": "?use_cache=true",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/spending/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            },
+            "pagination": {
+              "limit": 10,
+              "page": 1,
+              "sort": "total_budgetary_resources",
+              "order": "desc"
+            },
+            "spending_type": "total"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/spending/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            },
+            "pagination": {
+              "limit": 10,
+              "page": 1,
+              "sort": "total_budgetary_resources",
+              "order": "desc"
+            },
+            "spending_type": "total"
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/spending/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            },
+            "pagination": {
+              "limit": 10,
+              "page": 1,
+              "sort": "total_budgetary_resources",
+              "order": "desc"
+            },
+            "spending_type": "total"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/",
+          "query": "?use_cache=true",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/recipient/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/award/amount/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/",
+          "query": "?use_cache=true",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/award/amount/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/spending/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "IDV_A",
+                "IDV_B",
+                "IDV_B_A",
+                "IDV_B_B",
+                "IDV_B_C",
+                "IDV_C",
+                "IDV_D",
+                "IDV_E",
+                "02",
+                "03",
+                "04",
+                "F001",
+                "05",
+                "F002",
+                "10",
+                "06",
+                "F006",
+                "F007",
+                "07",
+                "08",
+                "F003",
+                "F004",
+                "09",
+                "F005",
+                "F008",
+                "F009",
+                "F010",
+                "11",
+                "-1"
+              ]
+            },
+            "pagination": {
+              "limit": 10,
+              "page": 1,
+              "sort": "obligation",
+              "order": "desc"
+            },
+            "spending_type": "award"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/spending/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "IDV_A",
+                "IDV_B",
+                "IDV_B_A",
+                "IDV_B_B",
+                "IDV_B_C",
+                "IDV_C",
+                "IDV_D",
+                "IDV_E",
+                "02",
+                "03",
+                "04",
+                "F001",
+                "05",
+                "F002",
+                "10",
+                "06",
+                "F006",
+                "F007",
+                "07",
+                "08",
+                "F003",
+                "F004",
+                "09",
+                "F005",
+                "F008",
+                "F009",
+                "F010",
+                "11",
+                "-1"
+              ]
+            },
+            "pagination": {
+              "limit": 10,
+              "page": 1,
+              "sort": "obligation",
+              "order": "desc"
+            },
+            "spending_type": "award"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/spending/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "IDV_A",
+                "IDV_B",
+                "IDV_B_A",
+                "IDV_B_B",
+                "IDV_B_C",
+                "IDV_C",
+                "IDV_D",
+                "IDV_E",
+                "02",
+                "03",
+                "04",
+                "F001",
+                "05",
+                "F002",
+                "10",
+                "06",
+                "F006",
+                "F007",
+                "07",
+                "08",
+                "F003",
+                "F004",
+                "09",
+                "F005",
+                "F008",
+                "F009",
+                "F010",
+                "11",
+                "-1"
+              ]
+            },
+            "pagination": {
+              "limit": 10,
+              "page": 1,
+              "sort": "obligation",
+              "order": "desc"
+            },
+            "spending_type": "award"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "IDV_A",
+                "IDV_B",
+                "IDV_B_A",
+                "IDV_B_B",
+                "IDV_B_C",
+                "IDV_C",
+                "IDV_D",
+                "IDV_E",
+                "02",
+                "03",
+                "04",
+                "F001",
+                "05",
+                "F002",
+                "10",
+                "06",
+                "F006",
+                "F007",
+                "07",
+                "08",
+                "F003",
+                "F004",
+                "09",
+                "F005",
+                "F008",
+                "F009",
+                "F010",
+                "11",
+                "-1"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "02",
+                "03",
+                "04",
+                "F001"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "07",
+                "08",
+                "F003",
+                "F004"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "10",
+                "06",
+                "F006",
+                "F007"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "09",
+                "F005",
+                "F008",
+                "F009",
+                "F010",
+                "11",
+                "-1"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/agency/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "IDV_A",
+                "IDV_B",
+                "IDV_B_A",
+                "IDV_B_B",
+                "IDV_B_C",
+                "IDV_C",
+                "IDV_D",
+                "IDV_E"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/",
+          "query": "?use_cache=true",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/award/amount/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type": "assistance"
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/cfda/spending/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            },
+            "spending_type": "award",
+            "pagination": {
+              "limit": 10,
+              "page": 1,
+              "sort": "obligation",
+              "order": "desc"
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/cfda/spending/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            },
+            "spending_type": "award",
+            "pagination": {
+              "limit": 10,
+              "page": 1,
+              "sort": "obligation",
+              "order": "desc"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/cfda/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/cfda/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "02",
+                "03",
+                "04",
+                "F001"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/cfda/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "07",
+                "08",
+                "F003",
+                "F004"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/cfda/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "10",
+                "06",
+                "F006",
+                "F007"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/cfda/count/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ],
+              "award_type_codes": [
+                "09",
+                "F005",
+                "F008",
+                "F009",
+                "F010",
+                "11",
+                "-1"
+              ]
+            }
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/disaster/spending_by_geography/",
+          "body": {
+            "filter": {
+              "def_codes": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+              ]
+            },
+            "geo_layer": "state",
+            "geo_layer_filters": [
+              "OR",
+              "WI",
+              "WA",
+              "NE",
+              "MT",
+              "ND",
+              "MI",
+              "IA",
+              "MN",
+              "IL",
+              "NV",
+              "ID",
+              "WY",
+              "UT",
+              "CO",
+              "CA",
+              "SD",
+              "OH",
+              "RI",
+              "ME",
+              "NJ",
+              "MA",
+              "CT",
+              "NH",
+              "VT",
+              "IN",
+              "NY",
+              "PA",
+              "LA",
+              "MS",
+              "TX",
+              "AZ",
+              "KS",
+              "TN",
+              "OK",
+              "MO",
+              "AR",
+              "NM",
+              "WV",
+              "VA",
+              "NC",
+              "MD",
+              "FL",
+              "DC",
+              "DE",
+              "SC",
+              "GA",
+              "AL",
+              "KY"
+            ],
+            "spending_type": "obligation"
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "submission_statistics",
+      "url": "https://www.usaspending.gov/submission-statistics",
+      "final_url": "https://www.usaspending.gov/submission-statistics?tab=submissions&fy=2026&period=11",
+      "title": "USAspending.gov",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/"
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/total_budgetary_resources/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/reporting/agencies/overview/",
+          "query": "?fiscal_year=2026&fiscal_period=11&page=1&limit=10&order=desc&sort=current_total_budget_authority_amount&filter=",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "submission_statistics_nasa",
+      "url": "https://www.usaspending.gov/submission-statistics/agency/080",
+      "final_url": "https://www.usaspending.gov/submission-statistics/agency/080",
+      "title": "National Aeronautics and Space Administration (NASA) | Spending Profile | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/toptier_agencies/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/agency/080/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/reporting/agencies/080/overview/",
+          "query": "?limit=10&page=1&sort=fiscal_year&order=desc",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "download_custom_award",
+      "url": "https://www.usaspending.gov/download_center/custom_award_data",
+      "final_url": "https://www.usaspending.gov/download_center/custom_award_data",
+      "title": "Custom Award Data | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/states/",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/bulk_download/list_agencies/",
+          "body": {
+            "type": "award_agencies",
+            "agency": 0
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "download_custom_account",
+      "url": "https://www.usaspending.gov/download_center/custom_account_data",
+      "final_url": "https://www.usaspending.gov/download_center/custom_account_data",
+      "title": "Custom Account Data | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/states/",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/bulk_download/list_agencies/",
+          "body": {
+            "type": "award_agencies",
+            "agency": 0
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/bulk_download/list_agencies/",
+          "body": {
+            "type": "account_agencies",
+            "agency": 0
+          }
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/budget_functions/list_budget_functions/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/def_codes/",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/submission_periods/",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "download_archive",
+      "url": "https://www.usaspending.gov/download_center/award_data_archive",
+      "final_url": "https://www.usaspending.gov/download_center/award_data_archive",
+      "title": "Award Data Archive | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/states/",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/bulk_download/list_agencies/",
+          "body": {
+            "type": "award_agencies",
+            "agency": 0
+          },
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/bulk_download/list_agencies/",
+          "body": {
+            "type": "award_agencies",
+            "agency": 0
+          }
+        },
+        {
+          "method": "POST",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/bulk_download/list_monthly_files/",
+          "body": {
+            "agency": "all",
+            "fiscal_year": 2027,
+            "type": "contracts"
+          },
+          "status": 200
+        }
+      ]
+    },
+    {
+      "page": "data_dictionary",
+      "url": "https://www.usaspending.gov/data-dictionary",
+      "final_url": "https://www.usaspending.gov/data-dictionary",
+      "title": "Data Dictionary | USAspending",
+      "calls": [
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/glossary/",
+          "query": "?limit=500",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "host": "api.usaspending.gov",
+          "path": "/api/v2/references/data_dictionary/",
+          "status": 200
+        }
+      ]
+    }
+  ]
+}

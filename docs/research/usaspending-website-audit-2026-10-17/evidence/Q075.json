@@ -1,0 +1,62 @@
+{
+  "task_id": "Q075",
+  "requested_at_utc": "2026-10-17T19:23:22.102680+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/idvs/awards/",
+    "body": {
+      "award_id": "CONT_IDV_NNG15SE16B_8000",
+      "type": "grandchild_awards",
+      "limit": 3,
+      "page": 1
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/idvs/awards/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.345,
+  "response_bytes": 105,
+  "response": {
+    "results": [],
+    "page_metadata": {
+      "page": 1,
+      "next": null,
+      "previous": null,
+      "hasNext": false,
+      "hasPrevious": false
+    }
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q075",
+      "requested_at_utc": "2026-10-17T19:20:31.684475+00:00",
+      "request": {
+        "method": "POST",
+        "path": "/api/v2/idvs/awards/",
+        "body": {
+          "award_id": "CONT_IDV_80JSC019C0012_8000",
+          "type": "grandchild_awards",
+          "limit": 3,
+          "page": 1
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/idvs/awards/",
+      "http_status": 200,
+      "content_type": "application/json",
+      "elapsed_seconds": 0.292,
+      "response_bytes": 105,
+      "response": {
+        "results": [],
+        "page_metadata": {
+          "page": 1,
+          "next": null,
+          "previous": null,
+          "hasNext": false,
+          "hasPrevious": false
+        }
+      },
+      "status": "live_ok"
+    }
+  ]
+}

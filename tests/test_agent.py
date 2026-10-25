@@ -144,6 +144,7 @@ from backend.app.usaspending import (
     FederalAccountBreakdown,
     GeographyTypeResult,
     IDVAmountsResponse,
+    IDVFundingRollup,
     ObligationByPeriod,
     PageMetadata,
     RecipientListing,
@@ -3175,6 +3176,57 @@ class TestGetAwardFundingBreakdown:
         self._mock_client(response, monkeypatch)
         result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
         assert "complete" in result.lower() or "exhaustive" in result.lower() or "more" in result.lower()
+
+
+class TestGetAwardFundingBreakdownIDV:
+    def test_idv_rows_derive_federal_account_and_show_rollup_header(self, monkeypatch):
+        response = AwardFundingResponse(
+            results=[
+                AwardFundingRow(
+                    agency_id="020",
+                    main_account_code="0520",
+                    piid="2033H622F00035",
+                    transaction_obligated_amount=10.0,
+                    reporting_fiscal_year=2022,
+                )
+            ],
+            page_metadata=PageMetadata(page=1, hasNext=False),
+        )
+        client = FakeClient(make_agency())
+        client.get_award_funding = lambda *a, **kw: response
+        client.get_idv_funding_rollup = lambda award_id: IDVFundingRollup(
+            federal_account_count=12, total_transaction_obligated_amount=1588635.53
+        )
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+        result = get_award_funding_breakdown.func(award_id="CONT_IDV_X_8000")
+        assert "020-0520" in result
+        assert "child award 2033H622F00035" in result
+        assert "funding records" in result
+        assert "Distinct federal accounts: 12" in result
+        assert "$1,588,635.53" in result
+
+    def test_rollup_failure_still_returns_rows(self, monkeypatch):
+        response = AwardFundingResponse(results=[AwardFundingRow(federal_account="020-0520")])
+        client = FakeClient(make_agency())
+        client.get_award_funding = lambda *a, **kw: response
+
+        def raise_error(*a, **kw):
+            raise USASpendingAPIError("boom")
+
+        client.get_idv_funding_rollup = raise_error
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+        result = get_award_funding_breakdown.func(award_id="CONT_IDV_X_8000")
+        assert "020-0520" in result and "funding records" in result
+
+    def test_client_routes_idv_ids_to_idvs_endpoint(self):
+        from backend.app.usaspending.client import USASpendingClient
+
+        calls = []
+        client = USASpendingClient.__new__(USASpendingClient)
+        client._post = lambda path, body: calls.append(path) or {"results": []}
+        client.get_award_funding("CONT_IDV_X_8000")
+        client.get_award_funding("CONT_AWD_X")
+        assert calls == ["/api/v2/idvs/funding/", "/api/v2/awards/funding/"]
 
 
 class TestGetAwardTransactionHistory:

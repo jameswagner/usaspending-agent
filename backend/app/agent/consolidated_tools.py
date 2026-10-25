@@ -296,7 +296,8 @@ _CONTRACT_ONLY_GROUP_BYS = {"naics", "psc"}
 
 def _is_assistance(award_type: str) -> bool:
     codes = AWARD_TYPE_GROUPS.get(_normalize_award_type(award_type), [])
-    return bool(codes) and all(code.isdigit() for code in codes)
+    contract_codes = set(AWARD_TYPE_GROUPS["contracts"]) | set(AWARD_TYPE_GROUPS["idv"])
+    return bool(codes) and not contract_codes & set(codes)
 
 
 def _query_spending(**kwargs) -> str:

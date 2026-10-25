@@ -20,12 +20,13 @@ from langchain_core.messages import AIMessage, ToolMessage
 from langsmith import Client, evaluate
 from langsmith.schemas import Example, ExampleUpdate, Run
 
+from backend.app.agent.consolidated_tools import COVERS
 from backend.app.agent.dev_tools.answer_correctness_judge import (
     judge_answer_correctness,
 )
 from backend.app.agent.dev_tools.failure_judge import judge_failure_acknowledged
 from backend.app.agent.orchestrator import ask
-from backend.app.agent.singletons import _get_conversation_graph, warm_up
+from backend.app.agent.singletons import AGENT_TOOLSET, _get_conversation_graph, warm_up
 
 LABELED_SET_PATH = Path(__file__).parent / "tool_selection_labeled_set.json"
 DATASET_NAME = "tool-selection-eval"
@@ -120,7 +121,23 @@ def predict(inputs: dict) -> dict:
         "answer": result.answer_text,
         "tools_called": [step["tool"] for step in trajectory],
         "trajectory": trajectory,
+        "toolset": AGENT_TOOLSET,
     }
+
+
+def _expected_for(run: Run, example: Example) -> dict:
+    """The labeled set names current-toolset tools; translate them when the run used the consolidated one."""
+    expected = example.outputs or {}
+    if (run.outputs or {}).get("toolset") != "consolidated":
+        return expected
+    covering = {old: new for new, olds in COVERS.items() for old in olds}
+    translated = dict(expected)
+    for key in ("expected_tools", "then_one_of", "acceptable_tools"):
+        if key in expected:
+            translated[key] = [covering.get(t, t) for t in expected[key]]
+    if "expected_tool" in expected:
+        translated["expected_tool"] = covering.get(expected["expected_tool"], expected["expected_tool"])
+    return translated
 
 
 def _expected_description(expected: dict) -> str:
@@ -136,7 +153,7 @@ def _expected_description(expected: dict) -> str:
 
 def tool_selection_correct(run: Run, example: Example) -> dict[str, Any]:
     tools_called = (run.outputs or {}).get("tools_called", [])
-    expected = example.outputs or {}
+    expected = _expected_for(run, example)
 
     if "expected_tools" in expected:
         passed = all(t in tools_called for t in expected["expected_tools"])
@@ -175,7 +192,7 @@ def _ordered_match_end(expected: list[str], tools_called: list[str]) -> int | No
 def tool_order_correct(run: Run, example: Example) -> dict[str, Any]:
     """Order, which tool_selection_correct doesn't check - it passes as long as
     both tools appear anywhere. Its own key, so that metric stays comparable."""
-    expected = example.outputs or {}
+    expected = _expected_for(run, example)
     if "expected_tools" not in expected:
         return {"key": "tool_order_correct", "score": None, "comment": "not applicable"}
 

@@ -51,6 +51,7 @@ from backend.app.usaspending import (
 from ..singletons import _get_usaspending_client
 from ..tool_filters import _clamp_limit
 from ._shared import _record_tool_call, _wrap_untrusted
+from .placeholders import placeholder_reason, split_placeholders
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +148,10 @@ def get_spending_explorer_breakdown_raw(
     return client.spending_explorer(group_by, filters)
 
 
+def _explorer_identity(r: SpendingExplorerResult) -> tuple[str | None, str | None]:
+    return r.name, r.code
+
+
 def _rank_and_truncate_spending_explorer_results(
     results: list[SpendingExplorerResult], limit: int
 ) -> tuple[list[SpendingExplorerResult], int]:
@@ -160,9 +165,11 @@ def _rank_and_truncate_spending_explorer_results(
     output and the chart (should_chart in response_shaping.py) render, so
     neither can show more categories than the other.
     """
-    named = sorted((r for r in results if r.id is not None), key=lambda r: -r.amount)
     unreported = [r for r in results if r.id is None]
-    return named[:limit] + unreported, len(named)
+    real, placeholders = split_placeholders([r for r in results if r.id is not None], _explorer_identity)
+    real.sort(key=lambda r: -r.amount)
+    placeholders.sort(key=lambda r: -r.amount)
+    return real[:limit] + placeholders + unreported, len(real)
 
 
 def _format_spending_explorer_results(response: SpendingExplorerResponse) -> str:
@@ -170,6 +177,7 @@ def _format_spending_explorer_results(response: SpendingExplorerResponse) -> str
         lines = [f"No data as of {response.end_date}."]
     else:
         lines = [f"Total obligated: ${response.total:,.2f} (as of {response.end_date})"]
+    placeholder_lines = []
     for r in response.results:
         if r.id is None:
             # SpendingExplorerGeneralUnreportedResponse shape - the gap
@@ -187,7 +195,14 @@ def _format_spending_explorer_results(response: SpendingExplorerResponse) -> str
         if r.code and r.name and r.code != r.name:
             label = f"{label} (code {r.code})"
         account_suffix = f", account {r.account_number}" if r.account_number else ""
-        lines.append(f"  {label}: ${r.amount:,.2f}{account_suffix}")
+        line = f"  {label}: ${r.amount:,.2f}{account_suffix}"
+        if reason := placeholder_reason(*_explorer_identity(r)):
+            placeholder_lines.append(f"{line} - {reason}")
+        else:
+            lines.append(line)
+    if placeholder_lines:
+        lines.append("Placeholder rows (not real entities; do not rank or present these as the top result):")
+        lines.extend(placeholder_lines)
     return "\n".join(lines)
 
 

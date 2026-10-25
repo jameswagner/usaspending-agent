@@ -32,6 +32,7 @@ from .._shared import (
     _scope_label,
     _wrap_untrusted,
 )
+from ..placeholders import format_with_placeholders
 
 logger = logging.getLogger(__name__)
 
@@ -281,7 +282,9 @@ def get_spending_by_geography(
 
     results_sorted = sorted(response.results, key=lambda r: -r.aggregated_amount)
     shown = results_sorted[:MAX_GEOGRAPHY_RESULTS]
-    lines = [_format_geography_result(r) for r in shown]
+    body = format_with_placeholders(
+        shown, lambda r: (r.display_name or r.shape_code, None), _format_geography_result
+    )
 
     note_parts = []
     if len(results_sorted) > MAX_GEOGRAPHY_RESULTS:
@@ -300,4 +303,4 @@ def get_spending_by_geography(
     if naics_note:
         note += f"\n\n({naics_note})"
 
-    return _wrap_untrusted("\n".join(lines) + note + _format_api_messages(response.messages))
+    return _wrap_untrusted(body + note + _format_api_messages(response.messages))

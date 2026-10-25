@@ -113,6 +113,7 @@ CASES: dict[str, tuple[str, dict, object]] = {
         None,
     ),
     "search_recipients": ("search_recipients", {"keyword": "MIT", "_requests": _REQ}, None),
+    "search_recipients_no_keyword": ("search_recipients", {"keyword": None, "_requests": _REQ}, None),
     "recipient_details": ("get_recipient_details", {"recipient_id": "abc-R", "name": "MIT", "year": 2024}, None),
     "recipient_details_defaults": ("get_recipient_details", {"recipient_id": "abc-R"}, None),
     "recipient_children": ("get_recipient_children", {"recipient_id": "abc-R", "name": "MIT"}, None),

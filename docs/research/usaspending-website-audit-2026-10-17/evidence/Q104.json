@@ -1,0 +1,104 @@
+{
+  "task_id": "Q104",
+  "requested_at_utc": "2026-10-17T19:20:35.321969+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/federal_accounts/080-0124/",
+    "query": {
+      "fiscal_year": 2025
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/federal_accounts/080-0124/?fiscal_year=2025",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.716,
+  "response_bytes": 2618,
+  "response": {
+    "fiscal_year": "2025",
+    "id": 5634,
+    "agency_identifier": "080",
+    "main_account_code": "0124",
+    "account_title": "Exploration, National Aeronautics and Space Administration",
+    "federal_account_code": "080-0124",
+    "parent_agency_toptier_code": "080",
+    "parent_agency_name": "National Aeronautics and Space Administration",
+    "bureau_name": "National Aeronautics and Space Administration",
+    "bureau_slug": "national-aeronautics-and-space-administration",
+    "total_obligated_amount": 7923866974.38,
+    "total_gross_outlay_amount": 7666106608.36,
+    "total_budgetary_resources": 8119177534.06,
+    "children": [
+      {
+        "name": "Exploration, National Aeronautics and Space Administration",
+        "code": "080-2010/2011-0124-000",
+        "obligated_amount": 128258.59,
+        "gross_outlay_amount": 140373.97,
+        "budgetary_resources_amount": 2760959.53
+      },
+      {
+        "name": "Exploration, National Aeronautics and Space Administration",
+        "code": "080-2012/2013-0124-000",
+        "obligated_amount": 420706.59,
+        "gross_outlay_amount": 420706.59,
+        "budgetary_resources_amount": 1599055.01
+      },
+      {
+        "name": "Exploration, National Aeronautics and Space Administration",
+        "code": "080-2013/2014-0124-000",
+        "obligated_amount": 478725.55,
+        "gross_outlay_amount": 478725.55,
+        "budgetary_resources_amount": 1728148.9
+      },
+      {
+        "name": "Exploration, National Aeronautics and Space Administration",
+        "code": "080-2019/2020-0124-000",
+        "obligated_amount": 775539.99,
+        "gross_outlay_amount": 1434368.24,
+        "budgetary_resources_amount": 775539.99
+      },
+      {
+        "name": "Exploration, National Aeronautics and Space Administration",
+        "code": "080-2020/2021-0124-000",
+        "obligated_amount": 30408568.87,
+        "gross_outlay_amount": 33744132.08,
+        "budgetary_resources_amount": 32208111.42
+      },
+      {
+        "name": "Exploration, National Aeronautics and Space Administration",
+        "code": "080-2021/2022-0124-000",
+        "obligated_amount": 1577847.52,
+        "gross_outlay_amount": 5438857.8,
+        "budgetary_resources_amount": 3785761.45
+      },
+      {
+        "name": "Exploration, National Aeronautics and Space Administration",
+        "code": "080-2022/2023-0124-000",
+        "obligated_amount": 5526743.14,
+        "gross_outlay_amount": 25084525.83,
+        "budgetary_resources_amount": 6266119.26
+      },
+      {
+        "name": "Exploration, National Aeronautics and Space Administration",
+        "code": "080-2023/2024-0124-000",
+        "obligated_amount": 134437.68,
+        "gross_outlay_amount": 301010858.43,
+        "budgetary_resources_amount": 888502.95
+      },
+      {
+        "name": "Exploration, National Aeronautics and Space Administration",
+        "code": "080-2024/2025-0124-000",
+        "obligated_amount": 402901240.82,
+        "gross_outlay_amount": 3235126197.67,
+        "budgetary_resources_amount": 402965335.55
+      },
+      {
+        "name": "Exploration, National Aeronautics and Space Administration",
+        "code": "080-2025/2026-0124-000",
+        "obligated_amount": 7481514905.63,
+        "gross_outlay_amount": 4063227862.2,
+        "budgetary_resources_amount": 7666200000.0
+      }
+    ]
+  },
+  "status": "live_ok"
+}

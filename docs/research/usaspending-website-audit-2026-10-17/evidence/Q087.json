@@ -1,0 +1,25 @@
+{
+  "task_id": "Q087",
+  "requested_at_utc": "2026-10-17T18:53:35.429346+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/agency/080/awards/",
+    "query": {
+      "fiscal_year": 2025
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/agency/080/awards/?fiscal_year=2025",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.614,
+  "response_bytes": 153,
+  "response": {
+    "fiscal_year": 2025,
+    "latest_action_date": "2025-09-30T00:00:00",
+    "toptier_code": "080",
+    "transaction_count": 36114,
+    "obligations": 22858094044.11,
+    "messages": []
+  },
+  "status": "live_ok"
+}

@@ -1,0 +1,92 @@
+{
+  "task_id": "Q007",
+  "requested_at_utc": "2026-10-17T18:53:03.790469+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "keywords": [
+          "cybersecurity"
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.424,
+  "response_bytes": 1850,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 298556830,
+        "Award ID": "FA862118F6251",
+        "Recipient Name": "LOCKHEED MARTIN CORPORATION",
+        "Award Amount": 666315748.84,
+        "Start Date": "2018-02-08",
+        "End Date": "2027-01-31",
+        "Description": "IGF::OT::IGF  AFSOC ACTS AWARD OF CONTRACT FOR CLS, ENGINEERING, INSTRUCTION, CYBERSECURITY, DMO",
+        "generated_internal_id": "CONT_AWD_FA862118F6251_9700_FA862115D6276_9700"
+      },
+      {
+        "internal_id": 307254014,
+        "Award ID": "HQ085722F8003",
+        "Recipient Name": "AMENTUM TECHNOLOGY, INC.",
+        "Award Amount": 524055138.18,
+        "Start Date": "2022-09-05",
+        "End Date": "2025-09-01",
+        "Description": "DELIVER INFORMATION MANAGEMENT AND IT SERVICES TO MDA FOR UNCLASSIFIED AND CLASSIFIED NETWORKS. UTILIZING THE CUSTOMER-FOCUSED SERVICE MODEL, ITIL METHOD. PERFORM BREAK-FIX, MAINTENANCE AND CYBERSECURITY OF CIO MANAGED NETWORKS WITHIN MDA.",
+        "generated_internal_id": "CONT_AWD_HQ085722F8003_9700_HQ079617D0001_9700"
+      },
+      {
+        "internal_id": 281082206,
+        "Award ID": "47QFCA20F0049",
+        "Recipient Name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+        "Award Amount": 396604521.78,
+        "Start Date": "2020-09-25",
+        "End Date": "2025-10-24",
+        "Description": "THE SCOPE OF THIS REQUIREMENT INCLUDES PROGRAM MANAGEMENT SERVICES, TRANSITION SERVICES, AND A FULL RANGE OF ENTERPRISE IT-RELATED SERVICES AND TECHNICAL SOLUTIONS THAT SPAN CYBERSECURITY AND IT MANAGEMENT.",
+        "generated_internal_id": "CONT_AWD_47QFCA20F0049_4732_47QTCK18D0003_4732"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 281082206,
+      "last_record_sort_value": "39660452178"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

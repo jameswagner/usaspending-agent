@@ -1,0 +1,51 @@
+{
+  "task_id": "Q141",
+  "requested_at_utc": "2026-10-17T18:55:04.244644+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/download/count/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "agencies": [
+          {
+            "type": "awarding",
+            "tier": "toptier",
+            "name": "National Aeronautics and Space Administration"
+          }
+        ]
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/download/count/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 2.115,
+  "response_bytes": 815,
+  "response": {
+    "calculated_transaction_count": 21273,
+    "maximum_transaction_limit": 500000,
+    "transaction_rows_gt_limit": false,
+    "calculated_count": 21273,
+    "spending_level": "transactions",
+    "maximum_limit": 500000,
+    "rows_gt_limit": false,
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. ",
+      "'subawards' will be deprecated in the future. Set \u2018spending_level\u2019 to \u2018subawards\u2019 instead. See documentation for more information. ",
+      "The above fields containing the transaction_* naming convention will be deprecated and replaced with fields without the transaction_*. "
+    ]
+  },
+  "status": "live_ok"
+}

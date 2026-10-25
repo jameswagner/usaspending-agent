@@ -1,0 +1,30 @@
+{
+  "task_id": "Q159",
+  "requested_at_utc": "2026-10-17T19:38:47.582709+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/disaster/recipient/count/",
+    "body": {
+      "filter": {
+        "def_codes": [
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "U",
+          "V"
+        ]
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/disaster/recipient/count/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.332,
+  "response_bytes": 18,
+  "response": {
+    "count": 14671865
+  },
+  "status": "live_ok"
+}

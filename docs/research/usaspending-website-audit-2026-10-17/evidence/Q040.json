@@ -1,0 +1,3558 @@
+{
+  "task_id": "Q040",
+  "requested_at_utc": "2026-10-17T18:53:23.863692+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_geography/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "agencies": [
+          {
+            "type": "awarding",
+            "tier": "toptier",
+            "name": "National Aeronautics and Space Administration"
+          }
+        ]
+      },
+      "scope": "place_of_performance",
+      "geo_layer": "county",
+      "spending_level": "transactions"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_geography/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 1.436,
+  "response_bytes": 61813,
+  "response": {
+    "scope": "place_of_performance",
+    "geo_layer": "county",
+    "spending_level": "transactions",
+    "results": [
+      {
+        "shape_code": "06037",
+        "display_name": "Los Angeles County",
+        "aggregated_amount": 3660452296.87,
+        "population": 10014009,
+        "per_capita": 365.53
+      },
+      {
+        "shape_code": "01089",
+        "display_name": "Madison County",
+        "aggregated_amount": 1862614440.62,
+        "population": 388153,
+        "per_capita": 4798.66
+      },
+      {
+        "shape_code": "24033",
+        "display_name": "Prince George'S County",
+        "aggregated_amount": 1119919356.86,
+        "population": 967201,
+        "per_capita": 1157.9
+      },
+      {
+        "shape_code": "48201",
+        "display_name": "Harris County",
+        "aggregated_amount": 1175881437.66,
+        "population": 4731145,
+        "per_capita": 248.54
+      },
+      {
+        "shape_code": "12009",
+        "display_name": "Brevard County",
+        "aggregated_amount": 1252241715.52,
+        "population": 606612,
+        "per_capita": 2064.32
+      },
+      {
+        "shape_code": "06085",
+        "display_name": "Santa Clara County",
+        "aggregated_amount": 327803729.02,
+        "population": 1936259,
+        "per_capita": 169.3
+      },
+      {
+        "shape_code": "39035",
+        "display_name": "Cuyahoga County",
+        "aggregated_amount": 105282829.99,
+        "population": 1264817,
+        "per_capita": 83.24
+      },
+      {
+        "shape_code": "51059",
+        "display_name": "Fairfax County",
+        "aggregated_amount": 1031117074.58,
+        "population": 1150309,
+        "per_capita": 896.38
+      },
+      {
+        "shape_code": "51650",
+        "display_name": "Hampton City",
+        "aggregated_amount": 142944116.71,
+        "population": 137148,
+        "per_capita": 1042.26
+      },
+      {
+        "shape_code": "28045",
+        "display_name": "Hancock County",
+        "aggregated_amount": 173518300.62,
+        "population": 46053,
+        "per_capita": 3767.8
+      },
+      {
+        "shape_code": "11001",
+        "display_name": "District Of Columbia",
+        "aggregated_amount": 124125205.22,
+        "population": 689545,
+        "per_capita": 180.01
+      },
+      {
+        "shape_code": "08013",
+        "display_name": "Boulder County",
+        "aggregated_amount": 217370529.12,
+        "population": 330758,
+        "per_capita": 657.19
+      },
+      {
+        "shape_code": "25017",
+        "display_name": "Middlesex County",
+        "aggregated_amount": 80980281.01,
+        "population": 1632002,
+        "per_capita": 49.62
+      },
+      {
+        "shape_code": "06029",
+        "display_name": "Kern County",
+        "aggregated_amount": 112976796.14,
+        "population": 909235,
+        "per_capita": 124.25
+      },
+      {
+        "shape_code": "24027",
+        "display_name": "Howard County",
+        "aggregated_amount": 448727548.92,
+        "population": 332317,
+        "per_capita": 1350.3
+      },
+      {
+        "shape_code": "06001",
+        "display_name": "Alameda County",
+        "aggregated_amount": 102077566.93,
+        "population": 1682353,
+        "per_capita": 60.68
+      },
+      {
+        "shape_code": "51107",
+        "display_name": "Loudoun County",
+        "aggregated_amount": 365883399.96,
+        "population": 420959,
+        "per_capita": 869.17
+      },
+      {
+        "shape_code": "51001",
+        "display_name": "Accomack County",
+        "aggregated_amount": 117130246.97,
+        "population": 33413,
+        "per_capita": 3505.53
+      },
+      {
+        "shape_code": "04013",
+        "display_name": "Maricopa County",
+        "aggregated_amount": 42759544.67,
+        "population": 4420568,
+        "per_capita": 9.67
+      },
+      {
+        "shape_code": "06073",
+        "display_name": "San Diego County",
+        "aggregated_amount": 19898003.57,
+        "population": 3298634,
+        "per_capita": 6.03
+      },
+      {
+        "shape_code": "24031",
+        "display_name": "Montgomery County",
+        "aggregated_amount": 8702671.23,
+        "population": 1062061,
+        "per_capita": 8.19
+      },
+      {
+        "shape_code": "51013",
+        "display_name": "Arlington County",
+        "aggregated_amount": 53840238.69,
+        "population": 238643,
+        "per_capita": 225.61
+      },
+      {
+        "shape_code": "48029",
+        "display_name": "Bexar County",
+        "aggregated_amount": 107970028.53,
+        "population": 2009324,
+        "per_capita": 53.73
+      },
+      {
+        "shape_code": "06059",
+        "display_name": "Orange County",
+        "aggregated_amount": 27137806.54,
+        "population": 3186989,
+        "per_capita": 8.52
+      },
+      {
+        "shape_code": "08035",
+        "display_name": "Douglas County",
+        "aggregated_amount": 593553750.76,
+        "population": 357978,
+        "per_capita": 1658.07
+      },
+      {
+        "shape_code": "33009",
+        "display_name": "Grafton County",
+        "aggregated_amount": 24966884.08,
+        "population": 91118,
+        "per_capita": 274.01
+      },
+      {
+        "shape_code": "39061",
+        "display_name": "Hamilton County",
+        "aggregated_amount": 69003089.74,
+        "population": 830639,
+        "per_capita": 83.07
+      },
+      {
+        "shape_code": "53033",
+        "display_name": "King County",
+        "aggregated_amount": 783431351.56,
+        "population": 2269675,
+        "per_capita": 345.17
+      },
+      {
+        "shape_code": "42003",
+        "display_name": "Allegheny County",
+        "aggregated_amount": 27704697.27,
+        "population": 1250578,
+        "per_capita": 22.15
+      },
+      {
+        "shape_code": "54049",
+        "display_name": "Marion County",
+        "aggregated_amount": 36312723.33,
+        "population": 56205,
+        "per_capita": 646.08
+      },
+      {
+        "shape_code": "08059",
+        "display_name": "Jefferson County",
+        "aggregated_amount": 76143821.8,
+        "population": 582910,
+        "per_capita": 130.63
+      },
+      {
+        "shape_code": "27053",
+        "display_name": "Hennepin County",
+        "aggregated_amount": 5070731.67,
+        "population": 1281565,
+        "per_capita": 3.96
+      },
+      {
+        "shape_code": "48453",
+        "display_name": "Travis County",
+        "aggregated_amount": 15964188.44,
+        "population": 1290188,
+        "per_capita": 12.37
+      },
+      {
+        "shape_code": "51510",
+        "display_name": "Alexandria City",
+        "aggregated_amount": 13231158.59,
+        "population": 159467,
+        "per_capita": 82.97
+      },
+      {
+        "shape_code": "17031",
+        "display_name": "Cook County",
+        "aggregated_amount": 3727936.76,
+        "population": 5275541,
+        "per_capita": 0.71
+      },
+      {
+        "shape_code": "24510",
+        "display_name": "Baltimore City",
+        "aggregated_amount": 299742556.15,
+        "population": 585708,
+        "per_capita": 511.76
+      },
+      {
+        "shape_code": "",
+        "display_name": null,
+        "aggregated_amount": -6366.34,
+        "population": null,
+        "per_capita": null
+      },
+      {
+        "shape_code": "26161",
+        "display_name": "Washtenaw County",
+        "aggregated_amount": 9624794.69,
+        "population": 372258,
+        "per_capita": 25.86
+      },
+      {
+        "shape_code": "39049",
+        "display_name": "Franklin County",
+        "aggregated_amount": 3585421.6,
+        "population": 1323807,
+        "per_capita": 2.71
+      },
+      {
+        "shape_code": "06111",
+        "display_name": "Ventura County",
+        "aggregated_amount": 17317326.84,
+        "population": 843843,
+        "per_capita": 20.52
+      },
+      {
+        "shape_code": "36061",
+        "display_name": "New York County",
+        "aggregated_amount": 16087885.73,
+        "population": 1694251,
+        "per_capita": 9.5
+      },
+      {
+        "shape_code": "42125",
+        "display_name": "Washington County",
+        "aggregated_amount": 7593702.42,
+        "population": 209349,
+        "per_capita": 36.27
+      },
+      {
+        "shape_code": "35013",
+        "display_name": "Do\u00f1a Ana County",
+        "aggregated_amount": 17493475.4,
+        "population": 219561,
+        "per_capita": 79.67
+      },
+      {
+        "shape_code": "51153",
+        "display_name": "Prince William County",
+        "aggregated_amount": 4334568.58,
+        "population": 482204,
+        "per_capita": 8.99
+      },
+      {
+        "shape_code": "06083",
+        "display_name": "Santa Barbara County",
+        "aggregated_amount": 4663290.85,
+        "population": 448229,
+        "per_capita": 10.4
+      },
+      {
+        "shape_code": "04019",
+        "display_name": "Pima County",
+        "aggregated_amount": 39351290.02,
+        "population": 1043433,
+        "per_capita": 37.71
+      },
+      {
+        "shape_code": "22071",
+        "display_name": "Orleans Parish",
+        "aggregated_amount": 119778138.85,
+        "population": 383997,
+        "per_capita": 311.92
+      },
+      {
+        "shape_code": "51540",
+        "display_name": "Charlottesville City",
+        "aggregated_amount": 8763745.87,
+        "population": 46553,
+        "per_capita": 188.25
+      },
+      {
+        "shape_code": "24003",
+        "display_name": "Anne Arundel County",
+        "aggregated_amount": 3865661.42,
+        "population": 588261,
+        "per_capita": 6.57
+      },
+      {
+        "shape_code": "25009",
+        "display_name": "Essex County",
+        "aggregated_amount": 4184657.32,
+        "population": 809829,
+        "per_capita": 5.17
+      },
+      {
+        "shape_code": "42077",
+        "display_name": "Lehigh County",
+        "aggregated_amount": 10602392.03,
+        "population": 374557,
+        "per_capita": 28.31
+      },
+      {
+        "shape_code": "51073",
+        "display_name": "Gloucester County",
+        "aggregated_amount": 156149.5,
+        "population": 38711,
+        "per_capita": 4.03
+      },
+      {
+        "shape_code": "34035",
+        "display_name": "Somerset County",
+        "aggregated_amount": 8038289.71,
+        "population": 345361,
+        "per_capita": 23.28
+      },
+      {
+        "shape_code": "26125",
+        "display_name": "Oakland County",
+        "aggregated_amount": 1940387.14,
+        "population": 1274395,
+        "per_capita": 1.52
+      },
+      {
+        "shape_code": "12086",
+        "display_name": "Miami-Dade County",
+        "aggregated_amount": 3026553.0,
+        "population": 2701767,
+        "per_capita": 1.12
+      },
+      {
+        "shape_code": "18003",
+        "display_name": "Allen County",
+        "aggregated_amount": 115998589.8,
+        "population": 385410,
+        "per_capita": 300.97
+      },
+      {
+        "shape_code": "39113",
+        "display_name": "Montgomery County",
+        "aggregated_amount": 1849678.44,
+        "population": 537309,
+        "per_capita": 3.44
+      },
+      {
+        "shape_code": "33017",
+        "display_name": "Strafford County",
+        "aggregated_amount": 22696923.54,
+        "population": 130889,
+        "per_capita": 173.41
+      },
+      {
+        "shape_code": "08041",
+        "display_name": "El Paso County",
+        "aggregated_amount": 1569698.89,
+        "population": 730395,
+        "per_capita": 2.15
+      },
+      {
+        "shape_code": "36067",
+        "display_name": "Onondaga County",
+        "aggregated_amount": 7409602.84,
+        "population": 476516,
+        "per_capita": 15.55
+      },
+      {
+        "shape_code": "48113",
+        "display_name": "Dallas County",
+        "aggregated_amount": 2186731.41,
+        "population": 2613539,
+        "per_capita": 0.84
+      },
+      {
+        "shape_code": "51700",
+        "display_name": "Newport News City",
+        "aggregated_amount": 2457475.35,
+        "population": 186247,
+        "per_capita": 13.19
+      },
+      {
+        "shape_code": "20209",
+        "display_name": "Wyandotte County",
+        "aggregated_amount": 904697.11,
+        "population": 169245,
+        "per_capita": 5.35
+      },
+      {
+        "shape_code": "34021",
+        "display_name": "Mercer County",
+        "aggregated_amount": 5014764.82,
+        "population": 387340,
+        "per_capita": 12.95
+      },
+      {
+        "shape_code": "10003",
+        "display_name": "New Castle County",
+        "aggregated_amount": 4024193.89,
+        "population": 570719,
+        "per_capita": 7.05
+      },
+      {
+        "shape_code": "12099",
+        "display_name": "Palm Beach County",
+        "aggregated_amount": 16348162.14,
+        "population": 1492191,
+        "per_capita": 10.96
+      },
+      {
+        "shape_code": "33011",
+        "display_name": "Hillsborough County",
+        "aggregated_amount": 2073064.26,
+        "population": 422937,
+        "per_capita": 4.9
+      },
+      {
+        "shape_code": "06081",
+        "display_name": "San Mateo County",
+        "aggregated_amount": 2394184.28,
+        "population": 764442,
+        "per_capita": 3.13
+      },
+      {
+        "shape_code": "35001",
+        "display_name": "Bernalillo County",
+        "aggregated_amount": 3222939.13,
+        "population": 676444,
+        "per_capita": 4.76
+      },
+      {
+        "shape_code": "36055",
+        "display_name": "Monroe County",
+        "aggregated_amount": 3707052.91,
+        "population": 759443,
+        "per_capita": 4.88
+      },
+      {
+        "shape_code": "48001",
+        "display_name": "Anderson County",
+        "aggregated_amount": 44693796.25,
+        "population": 57922,
+        "per_capita": 771.62
+      },
+      {
+        "shape_code": "48041",
+        "display_name": "Brazos County",
+        "aggregated_amount": 4170749.0,
+        "population": 233849,
+        "per_capita": 17.84
+      },
+      {
+        "shape_code": "39057",
+        "display_name": "Greene County",
+        "aggregated_amount": 21669906.33,
+        "population": 167966,
+        "per_capita": 129.01
+      },
+      {
+        "shape_code": "08001",
+        "display_name": "Adams County",
+        "aggregated_amount": 28481195.09,
+        "population": 519572,
+        "per_capita": 54.82
+      },
+      {
+        "shape_code": "12095",
+        "display_name": "Orange County",
+        "aggregated_amount": 3196275.17,
+        "population": 1429908,
+        "per_capita": 2.24
+      },
+      {
+        "shape_code": "17019",
+        "display_name": "Champaign County",
+        "aggregated_amount": 3680736.0,
+        "population": 205865,
+        "per_capita": 17.88
+      },
+      {
+        "shape_code": "25025",
+        "display_name": "Suffolk County",
+        "aggregated_amount": 1438714.03,
+        "population": 797936,
+        "per_capita": 1.8
+      },
+      {
+        "shape_code": "08005",
+        "display_name": "Arapahoe County",
+        "aggregated_amount": 12723662.56,
+        "population": 655070,
+        "per_capita": 19.42
+      },
+      {
+        "shape_code": "13121",
+        "display_name": "Fulton County",
+        "aggregated_amount": 1812571.97,
+        "population": 1066710,
+        "per_capita": 1.7
+      },
+      {
+        "shape_code": "30031",
+        "display_name": "Gallatin County",
+        "aggregated_amount": 7240925.92,
+        "population": 118960,
+        "per_capita": 60.87
+      },
+      {
+        "shape_code": "42071",
+        "display_name": "Lancaster County",
+        "aggregated_amount": 1956096.0,
+        "population": 552984,
+        "per_capita": 3.54
+      },
+      {
+        "shape_code": "51810",
+        "display_name": "Virginia Beach City",
+        "aggregated_amount": 1088196.69,
+        "population": 459470,
+        "per_capita": 2.37
+      },
+      {
+        "shape_code": "08014",
+        "display_name": "Broomfield County",
+        "aggregated_amount": 2072026.89,
+        "population": 74112,
+        "per_capita": 27.96
+      },
+      {
+        "shape_code": "08069",
+        "display_name": "Larimer County",
+        "aggregated_amount": 14194203.0,
+        "population": 359066,
+        "per_capita": 39.53
+      },
+      {
+        "shape_code": "18157",
+        "display_name": "Tippecanoe County",
+        "aggregated_amount": 1554134.0,
+        "population": 186251,
+        "per_capita": 8.34
+      },
+      {
+        "shape_code": "41051",
+        "display_name": "Multnomah County",
+        "aggregated_amount": 4775588.73,
+        "population": 815428,
+        "per_capita": 5.86
+      },
+      {
+        "shape_code": "42091",
+        "display_name": "Montgomery County",
+        "aggregated_amount": 1031203.84,
+        "population": 856553,
+        "per_capita": 1.2
+      },
+      {
+        "shape_code": "48439",
+        "display_name": "Tarrant County",
+        "aggregated_amount": 2940873.11,
+        "population": 2110640,
+        "per_capita": 1.39
+      },
+      {
+        "shape_code": "08031",
+        "display_name": "Denver County",
+        "aggregated_amount": 4764976.57,
+        "population": 715522,
+        "per_capita": 6.66
+      },
+      {
+        "shape_code": "36029",
+        "display_name": "Erie County",
+        "aggregated_amount": 1517117.2,
+        "population": 954236,
+        "per_capita": 1.59
+      },
+      {
+        "shape_code": "48491",
+        "display_name": "Williamson County",
+        "aggregated_amount": 94713955.51,
+        "population": 609017,
+        "per_capita": 155.52
+      },
+      {
+        "shape_code": "06071",
+        "display_name": "San Bernardino County",
+        "aggregated_amount": 169034.88,
+        "population": 2181654,
+        "per_capita": 0.08
+      },
+      {
+        "shape_code": "13135",
+        "display_name": "Gwinnett County",
+        "aggregated_amount": 1822714.9,
+        "population": 957062,
+        "per_capita": 1.9
+      },
+      {
+        "shape_code": "48085",
+        "display_name": "Collin County",
+        "aggregated_amount": 1397501.8,
+        "population": 1064465,
+        "per_capita": 1.31
+      },
+      {
+        "shape_code": "49003",
+        "display_name": "Box Elder County",
+        "aggregated_amount": 17700000.0,
+        "population": 57666,
+        "per_capita": 306.94
+      },
+      {
+        "shape_code": "53061",
+        "display_name": "Snohomish County",
+        "aggregated_amount": 449510.36,
+        "population": 827957,
+        "per_capita": 0.54
+      },
+      {
+        "shape_code": "55025",
+        "display_name": "Dane County",
+        "aggregated_amount": 8331919.11,
+        "population": 561504,
+        "per_capita": 14.84
+      },
+      {
+        "shape_code": "12001",
+        "display_name": "Alachua County",
+        "aggregated_amount": 3867834.0,
+        "population": 278468,
+        "per_capita": 13.89
+      },
+      {
+        "shape_code": "18097",
+        "display_name": "Marion County",
+        "aggregated_amount": 698963.38,
+        "population": 977203,
+        "per_capita": 0.72
+      },
+      {
+        "shape_code": "42017",
+        "display_name": "Bucks County",
+        "aggregated_amount": 1224423.01,
+        "population": 646538,
+        "per_capita": 1.89
+      },
+      {
+        "shape_code": "13067",
+        "display_name": "Cobb County",
+        "aggregated_amount": 1569843.57,
+        "population": 766149,
+        "per_capita": 2.05
+      },
+      {
+        "shape_code": "10001",
+        "display_name": "Kent County",
+        "aggregated_amount": 4050404.0,
+        "population": 181851,
+        "per_capita": 22.27
+      },
+      {
+        "shape_code": "24005",
+        "display_name": "Baltimore County",
+        "aggregated_amount": 833252.77,
+        "population": 854535,
+        "per_capita": 0.98
+      },
+      {
+        "shape_code": "12057",
+        "display_name": "Hillsborough County",
+        "aggregated_amount": 2122362.13,
+        "population": 1459762,
+        "per_capita": 1.45
+      },
+      {
+        "shape_code": "19103",
+        "display_name": "Johnson County",
+        "aggregated_amount": 19079166.92,
+        "population": 152854,
+        "per_capita": 124.82
+      },
+      {
+        "shape_code": "21111",
+        "display_name": "Jefferson County",
+        "aggregated_amount": 1435575.95,
+        "population": 782969,
+        "per_capita": 1.83
+      },
+      {
+        "shape_code": "36103",
+        "display_name": "Suffolk County",
+        "aggregated_amount": 412295.66,
+        "population": 1525920,
+        "per_capita": 0.27
+      },
+      {
+        "shape_code": "41005",
+        "display_name": "Clackamas County",
+        "aggregated_amount": 1340011.1,
+        "population": 421401,
+        "per_capita": 3.18
+      },
+      {
+        "shape_code": "49035",
+        "display_name": "Salt Lake County",
+        "aggregated_amount": 4629012.4,
+        "population": 1185238,
+        "per_capita": 3.91
+      },
+      {
+        "shape_code": "37063",
+        "display_name": "Durham County",
+        "aggregated_amount": 970352.76,
+        "population": 324833,
+        "per_capita": 2.99
+      },
+      {
+        "shape_code": "35049",
+        "display_name": "Santa Fe County",
+        "aggregated_amount": 1372406.94,
+        "population": 154823,
+        "per_capita": 8.86
+      },
+      {
+        "shape_code": "01073",
+        "display_name": "Jefferson County",
+        "aggregated_amount": 1736035.17,
+        "population": 674721,
+        "per_capita": 2.57
+      },
+      {
+        "shape_code": "21067",
+        "display_name": "Fayette County",
+        "aggregated_amount": 7216744.16,
+        "population": 322570,
+        "per_capita": 22.37
+      },
+      {
+        "shape_code": "25021",
+        "display_name": "Norfolk County",
+        "aggregated_amount": 1632700.0,
+        "population": 725981,
+        "per_capita": 2.25
+      },
+      {
+        "shape_code": "30047",
+        "display_name": "Lake County",
+        "aggregated_amount": 7803246.27,
+        "population": 31134,
+        "per_capita": 250.63
+      },
+      {
+        "shape_code": "37183",
+        "display_name": "Wake County",
+        "aggregated_amount": 558446.68,
+        "population": 1129410,
+        "per_capita": 0.49
+      },
+      {
+        "shape_code": "33015",
+        "display_name": "Rockingham County",
+        "aggregated_amount": 298231.62,
+        "population": 314176,
+        "per_capita": 0.95
+      },
+      {
+        "shape_code": "42027",
+        "display_name": "Centre County",
+        "aggregated_amount": 3548433.7,
+        "population": 158172,
+        "per_capita": 22.43
+      },
+      {
+        "shape_code": "12117",
+        "display_name": "Seminole County",
+        "aggregated_amount": 463086.82,
+        "population": 470856,
+        "per_capita": 0.98
+      },
+      {
+        "shape_code": "20045",
+        "display_name": "Douglas County",
+        "aggregated_amount": 717330.72,
+        "population": 118785,
+        "per_capita": 6.04
+      },
+      {
+        "shape_code": "29189",
+        "display_name": "St. Louis County",
+        "aggregated_amount": 970893.36,
+        "population": 1004125,
+        "per_capita": 0.97
+      },
+      {
+        "shape_code": "42029",
+        "display_name": "Chester County",
+        "aggregated_amount": 562970.05,
+        "population": 534413,
+        "per_capita": 1.05
+      },
+      {
+        "shape_code": "06075",
+        "display_name": "San Francisco County",
+        "aggregated_amount": 2001425.19,
+        "population": 873965,
+        "per_capita": 2.29
+      },
+      {
+        "shape_code": "26163",
+        "display_name": "Wayne County",
+        "aggregated_amount": 935103.96,
+        "population": 1793561,
+        "per_capita": 0.52
+      },
+      {
+        "shape_code": "34027",
+        "display_name": "Morris County",
+        "aggregated_amount": 489407.2,
+        "population": 509285,
+        "per_capita": 0.96
+      },
+      {
+        "shape_code": "41067",
+        "display_name": "Washington County",
+        "aggregated_amount": 627226.66,
+        "population": 600372,
+        "per_capita": 1.04
+      },
+      {
+        "shape_code": "42101",
+        "display_name": "Philadelphia County",
+        "aggregated_amount": 687320.29,
+        "population": 1603797,
+        "per_capita": 0.43
+      },
+      {
+        "shape_code": "47157",
+        "display_name": "Shelby County",
+        "aggregated_amount": 529405.92,
+        "population": 929744,
+        "per_capita": 0.57
+      },
+      {
+        "shape_code": "01103",
+        "display_name": "Morgan County",
+        "aggregated_amount": 2801095.53,
+        "population": 123421,
+        "per_capita": 22.7
+      },
+      {
+        "shape_code": "06097",
+        "display_name": "Sonoma County",
+        "aggregated_amount": 827063.18,
+        "population": 488863,
+        "per_capita": 1.69
+      },
+      {
+        "shape_code": "13089",
+        "display_name": "Dekalb County",
+        "aggregated_amount": 1632924.65,
+        "population": 764382,
+        "per_capita": 2.14
+      },
+      {
+        "shape_code": "18043",
+        "display_name": "Floyd County",
+        "aggregated_amount": 6924231.7,
+        "population": 80484,
+        "per_capita": 86.03
+      },
+      {
+        "shape_code": "36063",
+        "display_name": "Niagara County",
+        "aggregated_amount": 375698.36,
+        "population": 212666,
+        "per_capita": 1.77
+      },
+      {
+        "shape_code": "17043",
+        "display_name": "Dupage County",
+        "aggregated_amount": 148627.94,
+        "population": 932877,
+        "per_capita": 0.16
+      },
+      {
+        "shape_code": "18173",
+        "display_name": "Warrick County",
+        "aggregated_amount": 5576730.14,
+        "population": 63898,
+        "per_capita": 87.28
+      },
+      {
+        "shape_code": "31119",
+        "display_name": "Madison County",
+        "aggregated_amount": 1178018.4,
+        "population": 35585,
+        "per_capita": 33.1
+      },
+      {
+        "shape_code": "39009",
+        "display_name": "Athens County",
+        "aggregated_amount": 712951.31,
+        "population": 62431,
+        "per_capita": 11.42
+      },
+      {
+        "shape_code": "44009",
+        "display_name": "Washington County",
+        "aggregated_amount": 244108.8,
+        "population": 129839,
+        "per_capita": 1.88
+      },
+      {
+        "shape_code": "47001",
+        "display_name": "Anderson County",
+        "aggregated_amount": 24386681.0,
+        "population": 77123,
+        "per_capita": 316.21
+      },
+      {
+        "shape_code": "47031",
+        "display_name": "Coffee County",
+        "aggregated_amount": 4381664.29,
+        "population": 57889,
+        "per_capita": 75.69
+      },
+      {
+        "shape_code": "48109",
+        "display_name": "Culberson County",
+        "aggregated_amount": 1129920.0,
+        "population": 2188,
+        "per_capita": 516.42
+      },
+      {
+        "shape_code": "06013",
+        "display_name": "Contra Costa County",
+        "aggregated_amount": 252409.01,
+        "population": 1165927,
+        "per_capita": 0.22
+      },
+      {
+        "shape_code": "22033",
+        "display_name": "East Baton Rouge Parish",
+        "aggregated_amount": 769599.12,
+        "population": 456781,
+        "per_capita": 1.68
+      },
+      {
+        "shape_code": "28089",
+        "display_name": "Madison County",
+        "aggregated_amount": 8852785.67,
+        "population": 109145,
+        "per_capita": 81.11
+      },
+      {
+        "shape_code": "39153",
+        "display_name": "Summit County",
+        "aggregated_amount": 2312410.0,
+        "population": 540428,
+        "per_capita": 4.28
+      },
+      {
+        "shape_code": "40119",
+        "display_name": "Payne County",
+        "aggregated_amount": 1224494.0,
+        "population": 81646,
+        "per_capita": 15.0
+      },
+      {
+        "shape_code": "48121",
+        "display_name": "Denton County",
+        "aggregated_amount": 176707.93,
+        "population": 906422,
+        "per_capita": 0.19
+      },
+      {
+        "shape_code": "49049",
+        "display_name": "Utah County",
+        "aggregated_amount": 4995940.4,
+        "population": 659399,
+        "per_capita": 7.58
+      },
+      {
+        "shape_code": "04005",
+        "display_name": "Coconino County",
+        "aggregated_amount": 24305932.0,
+        "population": 145101,
+        "per_capita": 167.51
+      },
+      {
+        "shape_code": "34003",
+        "display_name": "Bergen County",
+        "aggregated_amount": 403081.12,
+        "population": 955732,
+        "per_capita": 0.42
+      },
+      {
+        "shape_code": "36047",
+        "display_name": "Kings County",
+        "aggregated_amount": 1962795.89,
+        "population": 2736074,
+        "per_capita": 0.72
+      },
+      {
+        "shape_code": "55131",
+        "display_name": "Washington County",
+        "aggregated_amount": 555989.0,
+        "population": 136761,
+        "per_capita": 4.07
+      },
+      {
+        "shape_code": "02090",
+        "display_name": "Fairbanks North Star Borough",
+        "aggregated_amount": 15172223.71,
+        "population": 95655,
+        "per_capita": 158.61
+      },
+      {
+        "shape_code": "12011",
+        "display_name": "Broward County",
+        "aggregated_amount": 167402.88,
+        "population": 1944375,
+        "per_capita": 0.09
+      },
+      {
+        "shape_code": "20173",
+        "display_name": "Sedgwick County",
+        "aggregated_amount": 560777.64,
+        "population": 523824,
+        "per_capita": 1.07
+      },
+      {
+        "shape_code": "25027",
+        "display_name": "Worcester County",
+        "aggregated_amount": 1673238.33,
+        "population": 862111,
+        "per_capita": 1.94
+      },
+      {
+        "shape_code": "26099",
+        "display_name": "Macomb County",
+        "aggregated_amount": 262053.49,
+        "population": 881217,
+        "per_capita": 0.3
+      },
+      {
+        "shape_code": "37119",
+        "display_name": "Mecklenburg County",
+        "aggregated_amount": 597405.1,
+        "population": 1115482,
+        "per_capita": 0.54
+      },
+      {
+        "shape_code": "36093",
+        "display_name": "Schenectady County",
+        "aggregated_amount": 619070.0,
+        "population": 158061,
+        "per_capita": 3.92
+      },
+      {
+        "shape_code": "51121",
+        "display_name": "Montgomery County",
+        "aggregated_amount": 261981.08,
+        "population": 99721,
+        "per_capita": 2.63
+      },
+      {
+        "shape_code": "51683",
+        "display_name": "Manassas City",
+        "aggregated_amount": 57264.4,
+        "population": 42772,
+        "per_capita": 1.34
+      },
+      {
+        "shape_code": "51790",
+        "display_name": "Staunton City",
+        "aggregated_amount": 1527591.0,
+        "population": 25750,
+        "per_capita": 59.32
+      },
+      {
+        "shape_code": "06065",
+        "display_name": "Riverside County",
+        "aggregated_amount": 3295474.87,
+        "population": 2418185,
+        "per_capita": 1.36
+      },
+      {
+        "shape_code": "08123",
+        "display_name": "Weld County",
+        "aggregated_amount": 474470.29,
+        "population": 328981,
+        "per_capita": 1.44
+      },
+      {
+        "shape_code": "19193",
+        "display_name": "Woodbury County",
+        "aggregated_amount": 533792.42,
+        "population": 105941,
+        "per_capita": 5.04
+      },
+      {
+        "shape_code": "24013",
+        "display_name": "Carroll County",
+        "aggregated_amount": 32470.59,
+        "population": 172891,
+        "per_capita": 0.19
+      },
+      {
+        "shape_code": "24037",
+        "display_name": "St. Mary'S County",
+        "aggregated_amount": 576680.0,
+        "population": 113777,
+        "per_capita": 5.07
+      },
+      {
+        "shape_code": "34013",
+        "display_name": "Essex County",
+        "aggregated_amount": 304264.56,
+        "population": 863728,
+        "per_capita": 0.35
+      },
+      {
+        "shape_code": "34039",
+        "display_name": "Union County",
+        "aggregated_amount": -380155.41,
+        "population": 575345,
+        "per_capita": -0.66
+      },
+      {
+        "shape_code": "36109",
+        "display_name": "Tompkins County",
+        "aggregated_amount": 546641.0,
+        "population": 105740,
+        "per_capita": 5.17
+      },
+      {
+        "shape_code": "45045",
+        "display_name": "Greenville County",
+        "aggregated_amount": 654091.23,
+        "population": 525534,
+        "per_capita": 1.24
+      },
+      {
+        "shape_code": "48157",
+        "display_name": "Fort Bend County",
+        "aggregated_amount": 628067.55,
+        "population": 822779,
+        "per_capita": 0.76
+      },
+      {
+        "shape_code": "49005",
+        "display_name": "Cache County",
+        "aggregated_amount": 4649153.0,
+        "population": 133154,
+        "per_capita": 34.92
+      },
+      {
+        "shape_code": "06017",
+        "display_name": "El Dorado County",
+        "aggregated_amount": 19386.2,
+        "population": 191185,
+        "per_capita": 0.1
+      },
+      {
+        "shape_code": "15003",
+        "display_name": "Honolulu County",
+        "aggregated_amount": 1778737.0,
+        "population": 1016508,
+        "per_capita": 1.75
+      },
+      {
+        "shape_code": "24015",
+        "display_name": "Cecil County",
+        "aggregated_amount": 6219640.77,
+        "population": 103725,
+        "per_capita": 59.96
+      },
+      {
+        "shape_code": "27123",
+        "display_name": "Ramsey County",
+        "aggregated_amount": 523395.0,
+        "population": 552352,
+        "per_capita": 0.95
+      },
+      {
+        "shape_code": "34007",
+        "display_name": "Camden County",
+        "aggregated_amount": 363626.41,
+        "population": 523485,
+        "per_capita": 0.69
+      },
+      {
+        "shape_code": "34023",
+        "display_name": "Middlesex County",
+        "aggregated_amount": 409004.0,
+        "population": 863162,
+        "per_capita": 0.47
+      },
+      {
+        "shape_code": "39025",
+        "display_name": "Clermont County",
+        "aggregated_amount": 76500.0,
+        "population": 208601,
+        "per_capita": 0.37
+      },
+      {
+        "shape_code": "48339",
+        "display_name": "Montgomery County",
+        "aggregated_amount": 13060193.73,
+        "population": 620443,
+        "per_capita": 21.05
+      },
+      {
+        "shape_code": "50007",
+        "display_name": "Chittenden County",
+        "aggregated_amount": 1165826.4,
+        "population": 168323,
+        "per_capita": 6.93
+      },
+      {
+        "shape_code": "01095",
+        "display_name": "Marshall County",
+        "aggregated_amount": 86660.0,
+        "population": 97612,
+        "per_capita": 0.89
+      },
+      {
+        "shape_code": "06007",
+        "display_name": "Butte County",
+        "aggregated_amount": 524990.0,
+        "population": 211632,
+        "per_capita": 2.48
+      },
+      {
+        "shape_code": "12103",
+        "display_name": "Pinellas County",
+        "aggregated_amount": 337201.0,
+        "population": 959107,
+        "per_capita": 0.35
+      },
+      {
+        "shape_code": "13051",
+        "display_name": "Chatham County",
+        "aggregated_amount": 81483.18,
+        "population": 295291,
+        "per_capita": 0.28
+      },
+      {
+        "shape_code": "17197",
+        "display_name": "Will County",
+        "aggregated_amount": 99019.61,
+        "population": 696355,
+        "per_capita": 0.14
+      },
+      {
+        "shape_code": "25023",
+        "display_name": "Plymouth County",
+        "aggregated_amount": 19320.0,
+        "population": 530819,
+        "per_capita": 0.04
+      },
+      {
+        "shape_code": "32003",
+        "display_name": "Clark County",
+        "aggregated_amount": 158391.4,
+        "population": 2265461,
+        "per_capita": 0.07
+      },
+      {
+        "shape_code": "36059",
+        "display_name": "Nassau County",
+        "aggregated_amount": 108139.5,
+        "population": 1395774,
+        "per_capita": 0.08
+      },
+      {
+        "shape_code": "47037",
+        "display_name": "Davidson County",
+        "aggregated_amount": 1335799.18,
+        "population": 715884,
+        "per_capita": 1.87
+      },
+      {
+        "shape_code": "51087",
+        "display_name": "Henrico County",
+        "aggregated_amount": 288395.0,
+        "population": 334389,
+        "per_capita": 0.86
+      },
+      {
+        "shape_code": "51710",
+        "display_name": "Norfolk City",
+        "aggregated_amount": 456303.24,
+        "population": 238005,
+        "per_capita": 1.92
+      },
+      {
+        "shape_code": "51760",
+        "display_name": "Richmond City",
+        "aggregated_amount": 69126.53,
+        "population": 226610,
+        "per_capita": 0.31
+      },
+      {
+        "shape_code": "51770",
+        "display_name": "Roanoke City",
+        "aggregated_amount": 203903.64,
+        "population": 100011,
+        "per_capita": 2.04
+      },
+      {
+        "shape_code": "55109",
+        "display_name": "St. Croix County",
+        "aggregated_amount": 0.0,
+        "population": 93536,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "01081",
+        "display_name": "Lee County",
+        "aggregated_amount": 307037.3,
+        "population": 174241,
+        "per_capita": 1.76
+      },
+      {
+        "shape_code": "06067",
+        "display_name": "Sacramento County",
+        "aggregated_amount": -75411.85,
+        "population": 1585055,
+        "per_capita": -0.05
+      },
+      {
+        "shape_code": "12073",
+        "display_name": "Leon County",
+        "aggregated_amount": 190782.97,
+        "population": 292198,
+        "per_capita": 0.65
+      },
+      {
+        "shape_code": "26093",
+        "display_name": "Livingston County",
+        "aggregated_amount": 112967.97,
+        "population": 193866,
+        "per_capita": 0.58
+      },
+      {
+        "shape_code": "27037",
+        "display_name": "Dakota County",
+        "aggregated_amount": 354083.12,
+        "population": 439882,
+        "per_capita": 0.8
+      },
+      {
+        "shape_code": "29019",
+        "display_name": "Boone County",
+        "aggregated_amount": 428681.0,
+        "population": 183610,
+        "per_capita": 2.33
+      },
+      {
+        "shape_code": "28047",
+        "display_name": "Harrison County",
+        "aggregated_amount": 99057.36,
+        "population": 208621,
+        "per_capita": 0.47
+      },
+      {
+        "shape_code": "37067",
+        "display_name": "Forsyth County",
+        "aggregated_amount": 493931.74,
+        "population": 382590,
+        "per_capita": 1.29
+      },
+      {
+        "shape_code": "36117",
+        "display_name": "Wayne County",
+        "aggregated_amount": 312734.2,
+        "population": 91283,
+        "per_capita": 3.43
+      },
+      {
+        "shape_code": "36119",
+        "display_name": "Westchester County",
+        "aggregated_amount": 65114.76,
+        "population": 1004457,
+        "per_capita": 0.06
+      },
+      {
+        "shape_code": "39093",
+        "display_name": "Lorain County",
+        "aggregated_amount": 104700.06,
+        "population": 312964,
+        "per_capita": 0.33
+      },
+      {
+        "shape_code": "45079",
+        "display_name": "Richland County",
+        "aggregated_amount": 74924.0,
+        "population": 416147,
+        "per_capita": 0.18
+      },
+      {
+        "shape_code": "45091",
+        "display_name": "York County",
+        "aggregated_amount": 47400.0,
+        "population": 282090,
+        "per_capita": 0.17
+      },
+      {
+        "shape_code": "47009",
+        "display_name": "Blount County",
+        "aggregated_amount": 736645.0,
+        "population": 135280,
+        "per_capita": 5.45
+      },
+      {
+        "shape_code": "47093",
+        "display_name": "Knox County",
+        "aggregated_amount": 674998.93,
+        "population": 478971,
+        "per_capita": 1.41
+      },
+      {
+        "shape_code": "48167",
+        "display_name": "Galveston County",
+        "aggregated_amount": 805674.8,
+        "population": 350682,
+        "per_capita": 2.3
+      },
+      {
+        "shape_code": "51015",
+        "display_name": "Augusta County",
+        "aggregated_amount": 844715.26,
+        "population": 77487,
+        "per_capita": 10.9
+      },
+      {
+        "shape_code": "51023",
+        "display_name": "Botetourt County",
+        "aggregated_amount": 323540.0,
+        "population": 33596,
+        "per_capita": 9.63
+      },
+      {
+        "shape_code": "51071",
+        "display_name": "Giles County",
+        "aggregated_amount": 1212999.0,
+        "population": 16787,
+        "per_capita": 72.26
+      },
+      {
+        "shape_code": "51550",
+        "display_name": "Chesapeake City",
+        "aggregated_amount": 1904413.98,
+        "population": 249422,
+        "per_capita": 7.64
+      },
+      {
+        "shape_code": "51600",
+        "display_name": "Fairfax City",
+        "aggregated_amount": 476978.5,
+        "population": 24146,
+        "per_capita": 19.75
+      },
+      {
+        "shape_code": "53053",
+        "display_name": "Pierce County",
+        "aggregated_amount": 49797.49,
+        "population": 921130,
+        "per_capita": 0.05
+      },
+      {
+        "shape_code": "01083",
+        "display_name": "Limestone County",
+        "aggregated_amount": 1159120.0,
+        "population": 103570,
+        "per_capita": 11.19
+      },
+      {
+        "shape_code": "06113",
+        "display_name": "Yolo County",
+        "aggregated_amount": 77188.0,
+        "population": 216403,
+        "per_capita": 0.36
+      },
+      {
+        "shape_code": "16001",
+        "display_name": "Ada County",
+        "aggregated_amount": 85438.78,
+        "population": 494967,
+        "per_capita": 0.17
+      },
+      {
+        "shape_code": "24025",
+        "display_name": "Harford County",
+        "aggregated_amount": 100889.6,
+        "population": 260924,
+        "per_capita": 0.39
+      },
+      {
+        "shape_code": "23005",
+        "display_name": "Cumberland County",
+        "aggregated_amount": -5454.25,
+        "population": 303069,
+        "per_capita": -0.02
+      },
+      {
+        "shape_code": "23019",
+        "display_name": "Penobscot County",
+        "aggregated_amount": 185424.0,
+        "population": 152199,
+        "per_capita": 1.22
+      },
+      {
+        "shape_code": "29161",
+        "display_name": "Phelps County",
+        "aggregated_amount": -10300.58,
+        "population": 44638,
+        "per_capita": -0.23
+      },
+      {
+        "shape_code": "34025",
+        "display_name": "Monmouth County",
+        "aggregated_amount": 39693.2,
+        "population": 643615,
+        "per_capita": 0.06
+      },
+      {
+        "shape_code": "39095",
+        "display_name": "Lucas County",
+        "aggregated_amount": 154045.0,
+        "population": 431279,
+        "per_capita": 0.36
+      },
+      {
+        "shape_code": "40027",
+        "display_name": "Cleveland County",
+        "aggregated_amount": 408144.51,
+        "population": 295528,
+        "per_capita": 1.38
+      },
+      {
+        "shape_code": "41003",
+        "display_name": "Benton County",
+        "aggregated_amount": 1532175.0,
+        "population": 95184,
+        "per_capita": 16.1
+      },
+      {
+        "shape_code": "41017",
+        "display_name": "Deschutes County",
+        "aggregated_amount": 36043.37,
+        "population": 198253,
+        "per_capita": 0.18
+      },
+      {
+        "shape_code": "42001",
+        "display_name": "Adams County",
+        "aggregated_amount": 5225.0,
+        "population": 103852,
+        "per_capita": 0.05
+      },
+      {
+        "shape_code": "49011",
+        "display_name": "Davis County",
+        "aggregated_amount": 2862303.0,
+        "population": 362679,
+        "per_capita": 7.89
+      },
+      {
+        "shape_code": "53073",
+        "display_name": "Whatcom County",
+        "aggregated_amount": 168355.0,
+        "population": 226847,
+        "per_capita": 0.74
+      },
+      {
+        "shape_code": "18057",
+        "display_name": "Hamilton County",
+        "aggregated_amount": 198308.17,
+        "population": 347467,
+        "per_capita": 0.57
+      },
+      {
+        "shape_code": "25001",
+        "display_name": "Barnstable County",
+        "aggregated_amount": 899995.0,
+        "population": 228996,
+        "per_capita": 3.93
+      },
+      {
+        "shape_code": "25015",
+        "display_name": "Hampshire County",
+        "aggregated_amount": 0.0,
+        "population": 162308,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "26065",
+        "display_name": "Ingham County",
+        "aggregated_amount": 191500.93,
+        "population": 284900,
+        "per_capita": 0.67
+      },
+      {
+        "shape_code": "26081",
+        "display_name": "Kent County",
+        "aggregated_amount": 994884.69,
+        "population": 657974,
+        "per_capita": 1.51
+      },
+      {
+        "shape_code": "29095",
+        "display_name": "Jackson County",
+        "aggregated_amount": 12570.82,
+        "population": 717204,
+        "per_capita": 0.02
+      },
+      {
+        "shape_code": "29183",
+        "display_name": "St. Charles County",
+        "aggregated_amount": 147468.0,
+        "population": 405262,
+        "per_capita": 0.36
+      },
+      {
+        "shape_code": "29510",
+        "display_name": "St. Louis City",
+        "aggregated_amount": 195878.56,
+        "population": 301578,
+        "per_capita": 0.65
+      },
+      {
+        "shape_code": "34017",
+        "display_name": "Hudson County",
+        "aggregated_amount": 316128.21,
+        "population": 724854,
+        "per_capita": 0.44
+      },
+      {
+        "shape_code": "34037",
+        "display_name": "Sussex County",
+        "aggregated_amount": 92614.29,
+        "population": 144221,
+        "per_capita": 0.64
+      },
+      {
+        "shape_code": "35028",
+        "display_name": "Los Alamos County",
+        "aggregated_amount": 182843.39,
+        "population": 19419,
+        "per_capita": 9.42
+      },
+      {
+        "shape_code": "32031",
+        "display_name": "Washoe County",
+        "aggregated_amount": 139948.0,
+        "population": 486492,
+        "per_capita": 0.29
+      },
+      {
+        "shape_code": "36001",
+        "display_name": "Albany County",
+        "aggregated_amount": 299984.0,
+        "population": 314848,
+        "per_capita": 0.95
+      },
+      {
+        "shape_code": "36081",
+        "display_name": "Queens County",
+        "aggregated_amount": 281871.1,
+        "population": 2405464,
+        "per_capita": 0.12
+      },
+      {
+        "shape_code": "39017",
+        "display_name": "Butler County",
+        "aggregated_amount": 119108.24,
+        "population": 390357,
+        "per_capita": 0.31
+      },
+      {
+        "shape_code": "39043",
+        "display_name": "Erie County",
+        "aggregated_amount": 0.0,
+        "population": 75622,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "41039",
+        "display_name": "Lane County",
+        "aggregated_amount": 1344441.83,
+        "population": 382971,
+        "per_capita": 3.51
+      },
+      {
+        "shape_code": "50027",
+        "display_name": "Windsor County",
+        "aggregated_amount": 138597.0,
+        "population": 57753,
+        "per_capita": 2.4
+      },
+      {
+        "shape_code": "54091",
+        "display_name": "Taylor County",
+        "aggregated_amount": 119631.81,
+        "population": 16705,
+        "per_capita": 7.16
+      },
+      {
+        "shape_code": "56031",
+        "display_name": "Platte County",
+        "aggregated_amount": 374995.0,
+        "population": 8605,
+        "per_capita": 43.58
+      },
+      {
+        "shape_code": "05119",
+        "display_name": "Pulaski County",
+        "aggregated_amount": 166609.0,
+        "population": 399125,
+        "per_capita": 0.42
+      },
+      {
+        "shape_code": "06087",
+        "display_name": "Santa Cruz County",
+        "aggregated_amount": 150000.0,
+        "population": 270861,
+        "per_capita": 0.55
+      },
+      {
+        "shape_code": "12091",
+        "display_name": "Okaloosa County",
+        "aggregated_amount": 56650.0,
+        "population": 211668,
+        "per_capita": 0.27
+      },
+      {
+        "shape_code": "19163",
+        "display_name": "Scott County",
+        "aggregated_amount": 34129.78,
+        "population": 174669,
+        "per_capita": 0.2
+      },
+      {
+        "shape_code": "17089",
+        "display_name": "Kane County",
+        "aggregated_amount": 109260.0,
+        "population": 516522,
+        "per_capita": 0.21
+      },
+      {
+        "shape_code": "25005",
+        "display_name": "Bristol County",
+        "aggregated_amount": 109355.0,
+        "population": 579200,
+        "per_capita": 0.19
+      },
+      {
+        "shape_code": "24021",
+        "display_name": "Frederick County",
+        "aggregated_amount": 99525.73,
+        "population": 271717,
+        "per_capita": 0.37
+      },
+      {
+        "shape_code": "23031",
+        "display_name": "York County",
+        "aggregated_amount": 146676.94,
+        "population": 211972,
+        "per_capita": 0.69
+      },
+      {
+        "shape_code": "37037",
+        "display_name": "Chatham County",
+        "aggregated_amount": 1728377.61,
+        "population": 76285,
+        "per_capita": 22.66
+      },
+      {
+        "shape_code": "37083",
+        "display_name": "Halifax County",
+        "aggregated_amount": 59219.61,
+        "population": 48622,
+        "per_capita": 1.22
+      },
+      {
+        "shape_code": "34041",
+        "display_name": "Warren County",
+        "aggregated_amount": 47479.37,
+        "population": 109632,
+        "per_capita": 0.43
+      },
+      {
+        "shape_code": "36003",
+        "display_name": "Allegany County",
+        "aggregated_amount": 354400.0,
+        "population": 46456,
+        "per_capita": 7.63
+      },
+      {
+        "shape_code": "36071",
+        "display_name": "Orange County",
+        "aggregated_amount": 125260.0,
+        "population": 401310,
+        "per_capita": 0.31
+      },
+      {
+        "shape_code": "39041",
+        "display_name": "Delaware County",
+        "aggregated_amount": 36367.83,
+        "population": 214124,
+        "per_capita": 0.17
+      },
+      {
+        "shape_code": "39085",
+        "display_name": "Lake County",
+        "aggregated_amount": 101043.05,
+        "population": 232603,
+        "per_capita": 0.43
+      },
+      {
+        "shape_code": "39109",
+        "display_name": "Miami County",
+        "aggregated_amount": 340089.09,
+        "population": 108774,
+        "per_capita": 3.13
+      },
+      {
+        "shape_code": "40143",
+        "display_name": "Tulsa County",
+        "aggregated_amount": 848320.5,
+        "population": 669279,
+        "per_capita": 1.27
+      },
+      {
+        "shape_code": "42019",
+        "display_name": "Butler County",
+        "aggregated_amount": 30930.0,
+        "population": 193763,
+        "per_capita": 0.16
+      },
+      {
+        "shape_code": "42129",
+        "display_name": "Westmoreland County",
+        "aggregated_amount": 135236.99,
+        "population": 354663,
+        "per_capita": 0.38
+      },
+      {
+        "shape_code": "45083",
+        "display_name": "Spartanburg County",
+        "aggregated_amount": 17648.06,
+        "population": 327997,
+        "per_capita": 0.05
+      },
+      {
+        "shape_code": "47035",
+        "display_name": "Cumberland County",
+        "aggregated_amount": 999995.0,
+        "population": 61145,
+        "per_capita": 16.35
+      },
+      {
+        "shape_code": "48091",
+        "display_name": "Comal County",
+        "aggregated_amount": 32056.0,
+        "population": 161501,
+        "per_capita": 0.2
+      },
+      {
+        "shape_code": "48303",
+        "display_name": "Lubbock County",
+        "aggregated_amount": 63225.0,
+        "population": 310639,
+        "per_capita": 0.2
+      },
+      {
+        "shape_code": "49043",
+        "display_name": "Summit County",
+        "aggregated_amount": -6826.5,
+        "population": 42357,
+        "per_capita": -0.16
+      },
+      {
+        "shape_code": "51041",
+        "display_name": "Chesterfield County",
+        "aggregated_amount": 0.0,
+        "population": 364548,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "51610",
+        "display_name": "Falls Church City",
+        "aggregated_amount": -11000.0,
+        "population": 14658,
+        "per_capita": -0.75
+      },
+      {
+        "shape_code": "01043",
+        "display_name": "Cullman County",
+        "aggregated_amount": 146862.0,
+        "population": 87866,
+        "per_capita": 1.67
+      },
+      {
+        "shape_code": "04021",
+        "display_name": "Pinal County",
+        "aggregated_amount": 0.0,
+        "population": 425264,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "08107",
+        "display_name": "Routt County",
+        "aggregated_amount": 149994.0,
+        "population": 24829,
+        "per_capita": 6.04
+      },
+      {
+        "shape_code": "09003",
+        "display_name": "Hartford County",
+        "aggregated_amount": 0.0,
+        "population": 899498,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "09009",
+        "display_name": "New Haven County",
+        "aggregated_amount": 365536.75,
+        "population": 864835,
+        "per_capita": 0.42
+      },
+      {
+        "shape_code": "12031",
+        "display_name": "Duval County",
+        "aggregated_amount": 111852.0,
+        "population": 995567,
+        "per_capita": 0.11
+      },
+      {
+        "shape_code": "12115",
+        "display_name": "Sarasota County",
+        "aggregated_amount": 36495.0,
+        "population": 434006,
+        "per_capita": 0.08
+      },
+      {
+        "shape_code": "12127",
+        "display_name": "Volusia County",
+        "aggregated_amount": -1.6,
+        "population": 553543,
+        "per_capita": -0.0
+      },
+      {
+        "shape_code": "13117",
+        "display_name": "Forsyth County",
+        "aggregated_amount": 194250.0,
+        "population": 251283,
+        "per_capita": 0.77
+      },
+      {
+        "shape_code": "19169",
+        "display_name": "Story County",
+        "aggregated_amount": 149999.0,
+        "population": 98537,
+        "per_capita": 1.52
+      },
+      {
+        "shape_code": "17097",
+        "display_name": "Lake County",
+        "aggregated_amount": 159862.66,
+        "population": 714342,
+        "per_capita": 0.22
+      },
+      {
+        "shape_code": "18039",
+        "display_name": "Elkhart County",
+        "aggregated_amount": 0.0,
+        "population": 207047,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "18141",
+        "display_name": "St. Joseph County",
+        "aggregated_amount": 141162.0,
+        "population": 272912,
+        "per_capita": 0.52
+      },
+      {
+        "shape_code": "20091",
+        "display_name": "Johnson County",
+        "aggregated_amount": -213712.42,
+        "population": 609863,
+        "per_capita": -0.35
+      },
+      {
+        "shape_code": "21205",
+        "display_name": "Rowan County",
+        "aggregated_amount": 14222170.0,
+        "population": 24662,
+        "per_capita": 576.68
+      },
+      {
+        "shape_code": "22051",
+        "display_name": "Jefferson Parish",
+        "aggregated_amount": 11858.0,
+        "population": 440781,
+        "per_capita": 0.03
+      },
+      {
+        "shape_code": "25013",
+        "display_name": "Hampden County",
+        "aggregated_amount": 34395.42,
+        "population": 465825,
+        "per_capita": 0.07
+      },
+      {
+        "shape_code": "24017",
+        "display_name": "Charles County",
+        "aggregated_amount": 98525.58,
+        "population": 166617,
+        "per_capita": 0.59
+      },
+      {
+        "shape_code": "26095",
+        "display_name": "Luce County",
+        "aggregated_amount": 615.0,
+        "population": 5339,
+        "per_capita": 0.12
+      },
+      {
+        "shape_code": "27019",
+        "display_name": "Carver County",
+        "aggregated_amount": 52142.68,
+        "population": 106922,
+        "per_capita": 0.49
+      },
+      {
+        "shape_code": "27049",
+        "display_name": "Goodhue County",
+        "aggregated_amount": 950458.0,
+        "population": 47582,
+        "per_capita": 19.98
+      },
+      {
+        "shape_code": "30093",
+        "display_name": "Silver Bow County",
+        "aggregated_amount": 28180.35,
+        "population": 35133,
+        "per_capita": 0.8
+      },
+      {
+        "shape_code": "37049",
+        "display_name": "Craven County",
+        "aggregated_amount": -9570.56,
+        "population": 100720,
+        "per_capita": -0.1
+      },
+      {
+        "shape_code": "37077",
+        "display_name": "Granville County",
+        "aggregated_amount": 149911.0,
+        "population": 60992,
+        "per_capita": 2.46
+      },
+      {
+        "shape_code": "37129",
+        "display_name": "New Hanover County",
+        "aggregated_amount": 41856.8,
+        "population": 225702,
+        "per_capita": 0.19
+      },
+      {
+        "shape_code": "31173",
+        "display_name": "Thurston County",
+        "aggregated_amount": 13665.57,
+        "population": 6773,
+        "per_capita": 2.02
+      },
+      {
+        "shape_code": "33013",
+        "display_name": "Merrimack County",
+        "aggregated_amount": 0.0,
+        "population": 153808,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "34005",
+        "display_name": "Burlington County",
+        "aggregated_amount": 0.0,
+        "population": 461860,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "36083",
+        "display_name": "Rensselaer County",
+        "aggregated_amount": 0.0,
+        "population": 161130,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "36091",
+        "display_name": "Saratoga County",
+        "aggregated_amount": 877165.0,
+        "population": 235509,
+        "per_capita": 3.72
+      },
+      {
+        "shape_code": "42011",
+        "display_name": "Berks County",
+        "aggregated_amount": 206828.0,
+        "population": 428849,
+        "per_capita": 0.48
+      },
+      {
+        "shape_code": "42039",
+        "display_name": "Crawford County",
+        "aggregated_amount": 0.0,
+        "population": 83938,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "42049",
+        "display_name": "Erie County",
+        "aggregated_amount": 562183.62,
+        "population": 270876,
+        "per_capita": 2.08
+      },
+      {
+        "shape_code": "45051",
+        "display_name": "Horry County",
+        "aggregated_amount": 3533.0,
+        "population": 351029,
+        "per_capita": 0.01
+      },
+      {
+        "shape_code": "46011",
+        "display_name": "Brookings County",
+        "aggregated_amount": 1048764.0,
+        "population": 34375,
+        "per_capita": 30.51
+      },
+      {
+        "shape_code": "46099",
+        "display_name": "Minnehaha County",
+        "aggregated_amount": 1193604.12,
+        "population": 197214,
+        "per_capita": 6.05
+      },
+      {
+        "shape_code": "47065",
+        "display_name": "Hamilton County",
+        "aggregated_amount": 1019999.0,
+        "population": 366207,
+        "per_capita": 2.79
+      },
+      {
+        "shape_code": "47163",
+        "display_name": "Sullivan County",
+        "aggregated_amount": 0.0,
+        "population": 158163,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "47165",
+        "display_name": "Sumner County",
+        "aggregated_amount": 5400.0,
+        "population": 196281,
+        "per_capita": 0.03
+      },
+      {
+        "shape_code": "47187",
+        "display_name": "Williamson County",
+        "aggregated_amount": 205936.75,
+        "population": 247726,
+        "per_capita": 0.83
+      },
+      {
+        "shape_code": "48209",
+        "display_name": "Hays County",
+        "aggregated_amount": 46971.68,
+        "population": 241067,
+        "per_capita": 0.19
+      },
+      {
+        "shape_code": "48251",
+        "display_name": "Johnson County",
+        "aggregated_amount": -35876.33,
+        "population": 179927,
+        "per_capita": -0.2
+      },
+      {
+        "shape_code": "49057",
+        "display_name": "Weber County",
+        "aggregated_amount": 220705.0,
+        "population": 262223,
+        "per_capita": 0.84
+      },
+      {
+        "shape_code": "51139",
+        "display_name": "Page County",
+        "aggregated_amount": 3102593.2,
+        "population": 23709,
+        "per_capita": 130.86
+      },
+      {
+        "shape_code": "51199",
+        "display_name": "York County",
+        "aggregated_amount": -1650.0,
+        "population": 70045,
+        "per_capita": -0.02
+      },
+      {
+        "shape_code": "53075",
+        "display_name": "Whitman County",
+        "aggregated_amount": 73266.5,
+        "population": 47973,
+        "per_capita": 1.53
+      },
+      {
+        "shape_code": "55079",
+        "display_name": "Milwaukee County",
+        "aggregated_amount": 15000.0,
+        "population": 939489,
+        "per_capita": 0.02
+      },
+      {
+        "shape_code": "54109",
+        "display_name": "Wyoming County",
+        "aggregated_amount": 370396.42,
+        "population": 21382,
+        "per_capita": 17.32
+      },
+      {
+        "shape_code": "56001",
+        "display_name": "Albany County",
+        "aggregated_amount": 115189.99,
+        "population": 37066,
+        "per_capita": 3.11
+      },
+      {
+        "shape_code": "56013",
+        "display_name": "Fremont County",
+        "aggregated_amount": 107900.0,
+        "population": 39234,
+        "per_capita": 2.75
+      },
+      {
+        "shape_code": "01101",
+        "display_name": "Montgomery County",
+        "aggregated_amount": 11400.0,
+        "population": 228954,
+        "per_capita": 0.05
+      },
+      {
+        "shape_code": "01117",
+        "display_name": "Shelby County",
+        "aggregated_amount": 13204.72,
+        "population": 223024,
+        "per_capita": 0.06
+      },
+      {
+        "shape_code": "01125",
+        "display_name": "Tuscaloosa County",
+        "aggregated_amount": 59250.0,
+        "population": 227036,
+        "per_capita": 0.26
+      },
+      {
+        "shape_code": "04015",
+        "display_name": "Mohave County",
+        "aggregated_amount": 94700.0,
+        "population": 213267,
+        "per_capita": 0.44
+      },
+      {
+        "shape_code": "06041",
+        "display_name": "Marin County",
+        "aggregated_amount": 70463.0,
+        "population": 262321,
+        "per_capita": 0.27
+      },
+      {
+        "shape_code": "06061",
+        "display_name": "Placer County",
+        "aggregated_amount": 15230.0,
+        "population": 404739,
+        "per_capita": 0.04
+      },
+      {
+        "shape_code": "06069",
+        "display_name": "San Benito County",
+        "aggregated_amount": 43818.0,
+        "population": 64209,
+        "per_capita": 0.68
+      },
+      {
+        "shape_code": "06077",
+        "display_name": "San Joaquin County",
+        "aggregated_amount": 165158.0,
+        "population": 779233,
+        "per_capita": 0.21
+      },
+      {
+        "shape_code": "06095",
+        "display_name": "Solano County",
+        "aggregated_amount": -941.24,
+        "population": 453491,
+        "per_capita": -0.0
+      },
+      {
+        "shape_code": "12021",
+        "display_name": "Collier County",
+        "aggregated_amount": 25000.0,
+        "population": 375752,
+        "per_capita": 0.07
+      },
+      {
+        "shape_code": "12109",
+        "display_name": "St. Johns County",
+        "aggregated_amount": -40181.12,
+        "population": 273425,
+        "per_capita": -0.15
+      },
+      {
+        "shape_code": "13063",
+        "display_name": "Clayton County",
+        "aggregated_amount": 22120.0,
+        "population": 297595,
+        "per_capita": 0.07
+      },
+      {
+        "shape_code": "13077",
+        "display_name": "Coweta County",
+        "aggregated_amount": 45.0,
+        "population": 146158,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "13113",
+        "display_name": "Fayette County",
+        "aggregated_amount": 11910.0,
+        "population": 119194,
+        "per_capita": 0.1
+      },
+      {
+        "shape_code": "15009",
+        "display_name": "Maui County",
+        "aggregated_amount": 154521.0,
+        "population": 164754,
+        "per_capita": 0.94
+      },
+      {
+        "shape_code": "17143",
+        "display_name": "Peoria County",
+        "aggregated_amount": 0.0,
+        "population": 181830,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "17167",
+        "display_name": "Sangamon County",
+        "aggregated_amount": 65731.0,
+        "population": 196343,
+        "per_capita": 0.33
+      },
+      {
+        "shape_code": "24009",
+        "display_name": "Calvert County",
+        "aggregated_amount": 149410.0,
+        "population": 92783,
+        "per_capita": 1.61
+      },
+      {
+        "shape_code": "23009",
+        "display_name": "Hancock County",
+        "aggregated_amount": 19338.7,
+        "population": 55478,
+        "per_capita": 0.35
+      },
+      {
+        "shape_code": "23015",
+        "display_name": "Lincoln County",
+        "aggregated_amount": -46700.0,
+        "population": 35237,
+        "per_capita": -1.33
+      },
+      {
+        "shape_code": "26021",
+        "display_name": "Berrien County",
+        "aggregated_amount": 65099.0,
+        "population": 154316,
+        "per_capita": 0.42
+      },
+      {
+        "shape_code": "26061",
+        "display_name": "Houghton County",
+        "aggregated_amount": 149943.0,
+        "population": 37361,
+        "per_capita": 4.01
+      },
+      {
+        "shape_code": "26077",
+        "display_name": "Kalamazoo County",
+        "aggregated_amount": 60795.45,
+        "population": 261670,
+        "per_capita": 0.23
+      },
+      {
+        "shape_code": "26139",
+        "display_name": "Ottawa County",
+        "aggregated_amount": 11996.0,
+        "population": 296200,
+        "per_capita": 0.04
+      },
+      {
+        "shape_code": "27003",
+        "display_name": "Anoka County",
+        "aggregated_amount": 34875.0,
+        "population": 363887,
+        "per_capita": 0.1
+      },
+      {
+        "shape_code": "27015",
+        "display_name": "Brown County",
+        "aggregated_amount": 124500.0,
+        "population": 25912,
+        "per_capita": 4.8
+      },
+      {
+        "shape_code": "27131",
+        "display_name": "Rice County",
+        "aggregated_amount": 899998.0,
+        "population": 67097,
+        "per_capita": 13.41
+      },
+      {
+        "shape_code": "27169",
+        "display_name": "Winona County",
+        "aggregated_amount": 13826.17,
+        "population": 49671,
+        "per_capita": 0.28
+      },
+      {
+        "shape_code": "29043",
+        "display_name": "Christian County",
+        "aggregated_amount": 50259.59,
+        "population": 88842,
+        "per_capita": 0.57
+      },
+      {
+        "shape_code": "29097",
+        "display_name": "Jasper County",
+        "aggregated_amount": 55103.0,
+        "population": 122761,
+        "per_capita": 0.45
+      },
+      {
+        "shape_code": "28035",
+        "display_name": "Forrest County",
+        "aggregated_amount": 27100.0,
+        "population": 78158,
+        "per_capita": 0.35
+      },
+      {
+        "shape_code": "28109",
+        "display_name": "Pearl River County",
+        "aggregated_amount": 0.0,
+        "population": 56145,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "28121",
+        "display_name": "Rankin County",
+        "aggregated_amount": 0.0,
+        "population": 157031,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "37097",
+        "display_name": "Iredell County",
+        "aggregated_amount": 849979.0,
+        "population": 186693,
+        "per_capita": 4.55
+      },
+      {
+        "shape_code": "38035",
+        "display_name": "Grand Forks County",
+        "aggregated_amount": 156016.0,
+        "population": 73170,
+        "per_capita": 2.13
+      },
+      {
+        "shape_code": "31109",
+        "display_name": "Lancaster County",
+        "aggregated_amount": 18610.68,
+        "population": 322608,
+        "per_capita": 0.06
+      },
+      {
+        "shape_code": "31153",
+        "display_name": "Sarpy County",
+        "aggregated_amount": 16625.0,
+        "population": 190604,
+        "per_capita": 0.09
+      },
+      {
+        "shape_code": "33005",
+        "display_name": "Cheshire County",
+        "aggregated_amount": 0.0,
+        "population": 76458,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "33007",
+        "display_name": "Coos County",
+        "aggregated_amount": 0.0,
+        "population": 31268,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "32005",
+        "display_name": "Douglas County",
+        "aggregated_amount": 74117.81,
+        "population": 49488,
+        "per_capita": 1.5
+      },
+      {
+        "shape_code": "36085",
+        "display_name": "Richmond County",
+        "aggregated_amount": 14781.2,
+        "population": 495747,
+        "per_capita": 0.03
+      },
+      {
+        "shape_code": "36087",
+        "display_name": "Rockland County",
+        "aggregated_amount": 50670.0,
+        "population": 338329,
+        "per_capita": 0.15
+      },
+      {
+        "shape_code": "36089",
+        "display_name": "St. Lawrence County",
+        "aggregated_amount": 202942.0,
+        "population": 108505,
+        "per_capita": 1.87
+      },
+      {
+        "shape_code": "36107",
+        "display_name": "Tioga County",
+        "aggregated_amount": 18360.0,
+        "population": 48455,
+        "per_capita": 0.38
+      },
+      {
+        "shape_code": "39045",
+        "display_name": "Fairfield County",
+        "aggregated_amount": 0.0,
+        "population": 158921,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "39123",
+        "display_name": "Ottawa County",
+        "aggregated_amount": 0.0,
+        "population": 40364,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "39165",
+        "display_name": "Warren County",
+        "aggregated_amount": 10354.5,
+        "population": 242337,
+        "per_capita": 0.04
+      },
+      {
+        "shape_code": "41027",
+        "display_name": "Hood River County",
+        "aggregated_amount": 8672.65,
+        "population": 23977,
+        "per_capita": 0.36
+      },
+      {
+        "shape_code": "41033",
+        "display_name": "Josephine County",
+        "aggregated_amount": 0.0,
+        "population": 88090,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "41071",
+        "display_name": "Yamhill County",
+        "aggregated_amount": 48167.0,
+        "population": 107722,
+        "per_capita": 0.45
+      },
+      {
+        "shape_code": "42005",
+        "display_name": "Armstrong County",
+        "aggregated_amount": 101686.92,
+        "population": 65558,
+        "per_capita": 1.55
+      },
+      {
+        "shape_code": "42047",
+        "display_name": "Elk County",
+        "aggregated_amount": 0.0,
+        "population": 30990,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "44007",
+        "display_name": "Providence County",
+        "aggregated_amount": 0.0,
+        "population": 660741,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "45015",
+        "display_name": "Berkeley County",
+        "aggregated_amount": 449.85,
+        "population": 229861,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "45031",
+        "display_name": "Darlington County",
+        "aggregated_amount": 49950.0,
+        "population": 62905,
+        "per_capita": 0.79
+      },
+      {
+        "shape_code": "45073",
+        "display_name": "Oconee County",
+        "aggregated_amount": 66940.0,
+        "population": 78607,
+        "per_capita": 0.85
+      },
+      {
+        "shape_code": "46103",
+        "display_name": "Pennington County",
+        "aggregated_amount": 497375.0,
+        "population": 109222,
+        "per_capita": 4.55
+      },
+      {
+        "shape_code": "46127",
+        "display_name": "Union County",
+        "aggregated_amount": 13832.03,
+        "population": 16811,
+        "per_capita": 0.82
+      },
+      {
+        "shape_code": "48139",
+        "display_name": "Ellis County",
+        "aggregated_amount": -56050.0,
+        "population": 192455,
+        "per_capita": -0.29
+      },
+      {
+        "shape_code": "48329",
+        "display_name": "Midland County",
+        "aggregated_amount": 0.0,
+        "population": 169983,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "51003",
+        "display_name": "Albemarle County",
+        "aggregated_amount": 0.0,
+        "population": 112395,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "51181",
+        "display_name": "Surry County",
+        "aggregated_amount": 100.0,
+        "population": 6561,
+        "per_capita": 0.02
+      },
+      {
+        "shape_code": "53021",
+        "display_name": "Franklin County",
+        "aggregated_amount": 155478.0,
+        "population": 96749,
+        "per_capita": 1.61
+      },
+      {
+        "shape_code": "53063",
+        "display_name": "Spokane County",
+        "aggregated_amount": 39867.15,
+        "population": 539339,
+        "per_capita": 0.07
+      },
+      {
+        "shape_code": "55133",
+        "display_name": "Waukesha County",
+        "aggregated_amount": 232833.15,
+        "population": 406978,
+        "per_capita": 0.57
+      },
+      {
+        "shape_code": "54079",
+        "display_name": "Putnam County",
+        "aggregated_amount": 31350.0,
+        "population": 57440,
+        "per_capita": 0.55
+      },
+      {
+        "shape_code": "56039",
+        "display_name": "Teton County",
+        "aggregated_amount": 120.0,
+        "population": 23331,
+        "per_capita": 0.01
+      },
+      {
+        "shape_code": "01015",
+        "display_name": "Calhoun County",
+        "aggregated_amount": 273679.32,
+        "population": 116441,
+        "per_capita": 2.35
+      },
+      {
+        "shape_code": "01033",
+        "display_name": "Colbert County",
+        "aggregated_amount": 88425.0,
+        "population": 57227,
+        "per_capita": 1.55
+      },
+      {
+        "shape_code": "01077",
+        "display_name": "Lauderdale County",
+        "aggregated_amount": 405908.0,
+        "population": 93564,
+        "per_capita": 4.34
+      },
+      {
+        "shape_code": "04025",
+        "display_name": "Yavapai County",
+        "aggregated_amount": 15000.0,
+        "population": 236209,
+        "per_capita": 0.06
+      },
+      {
+        "shape_code": "06047",
+        "display_name": "Merced County",
+        "aggregated_amount": -213.79,
+        "population": 281202,
+        "per_capita": -0.0
+      },
+      {
+        "shape_code": "06079",
+        "display_name": "San Luis Obispo County",
+        "aggregated_amount": -0.6,
+        "population": 282424,
+        "per_capita": -0.0
+      },
+      {
+        "shape_code": "06089",
+        "display_name": "Shasta County",
+        "aggregated_amount": 23734.0,
+        "population": 182155,
+        "per_capita": 0.13
+      },
+      {
+        "shape_code": "08067",
+        "display_name": "La Plata County",
+        "aggregated_amount": 0.0,
+        "population": 55638,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "12075",
+        "display_name": "Levy County",
+        "aggregated_amount": 10780.0,
+        "population": 42915,
+        "per_capita": 0.25
+      },
+      {
+        "shape_code": "12083",
+        "display_name": "Marion County",
+        "aggregated_amount": 51001.98,
+        "population": 375908,
+        "per_capita": 0.14
+      },
+      {
+        "shape_code": "13021",
+        "display_name": "Bibb County",
+        "aggregated_amount": 21940.0,
+        "population": 157346,
+        "per_capita": 0.14
+      },
+      {
+        "shape_code": "13107",
+        "display_name": "Emanuel County",
+        "aggregated_amount": 25275.0,
+        "population": 22768,
+        "per_capita": 1.11
+      },
+      {
+        "shape_code": "13139",
+        "display_name": "Hall County",
+        "aggregated_amount": 18511.0,
+        "population": 203136,
+        "per_capita": 0.09
+      },
+      {
+        "shape_code": "13153",
+        "display_name": "Houston County",
+        "aggregated_amount": 26880.0,
+        "population": 163633,
+        "per_capita": 0.16
+      },
+      {
+        "shape_code": "13219",
+        "display_name": "Oconee County",
+        "aggregated_amount": 452636.0,
+        "population": 41799,
+        "per_capita": 10.83
+      },
+      {
+        "shape_code": "15001",
+        "display_name": "Hawaii County",
+        "aggregated_amount": 0.0,
+        "population": 200629,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "19113",
+        "display_name": "Linn County",
+        "aggregated_amount": 0.0,
+        "population": 230299,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "19153",
+        "display_name": "Polk County",
+        "aggregated_amount": 188475.0,
+        "population": 492401,
+        "per_capita": 0.38
+      },
+      {
+        "shape_code": "16055",
+        "display_name": "Kootenai County",
+        "aggregated_amount": 20061.0,
+        "population": 171362,
+        "per_capita": 0.12
+      },
+      {
+        "shape_code": "17073",
+        "display_name": "Henry County",
+        "aggregated_amount": 29840.0,
+        "population": 49284,
+        "per_capita": 0.61
+      },
+      {
+        "shape_code": "17093",
+        "display_name": "Kendall County",
+        "aggregated_amount": 19527.51,
+        "population": 131869,
+        "per_capita": 0.15
+      },
+      {
+        "shape_code": "17115",
+        "display_name": "Macon County",
+        "aggregated_amount": 19687.34,
+        "population": 103998,
+        "per_capita": 0.19
+      },
+      {
+        "shape_code": "18067",
+        "display_name": "Howard County",
+        "aggregated_amount": 0.0,
+        "population": 83658,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "18081",
+        "display_name": "Johnson County",
+        "aggregated_amount": 17463.59,
+        "population": 161765,
+        "per_capita": 0.11
+      },
+      {
+        "shape_code": "18167",
+        "display_name": "Vigo County",
+        "aggregated_amount": 11342.75,
+        "population": 106153,
+        "per_capita": 0.11
+      },
+      {
+        "shape_code": "18169",
+        "display_name": "Wabash County",
+        "aggregated_amount": 63905.0,
+        "population": 30976,
+        "per_capita": 2.06
+      },
+      {
+        "shape_code": "21179",
+        "display_name": "Nelson County",
+        "aggregated_amount": 28203.06,
+        "population": 46738,
+        "per_capita": 0.6
+      },
+      {
+        "shape_code": "21227",
+        "display_name": "Warren County",
+        "aggregated_amount": -5000.0,
+        "population": 134554,
+        "per_capita": -0.04
+      },
+      {
+        "shape_code": "22015",
+        "display_name": "Bossier Parish",
+        "aggregated_amount": -975.0,
+        "population": 128746,
+        "per_capita": -0.01
+      },
+      {
+        "shape_code": "22061",
+        "display_name": "Lincoln Parish",
+        "aggregated_amount": 149928.0,
+        "population": 48396,
+        "per_capita": 3.1
+      },
+      {
+        "shape_code": "22103",
+        "display_name": "St. Tammany Parish",
+        "aggregated_amount": 25000.0,
+        "population": 264570,
+        "per_capita": 0.09
+      },
+      {
+        "shape_code": "22109",
+        "display_name": "Terrebonne Parish",
+        "aggregated_amount": 195000.0,
+        "population": 109580,
+        "per_capita": 1.78
+      },
+      {
+        "shape_code": "24043",
+        "display_name": "Washington County",
+        "aggregated_amount": 0.0,
+        "population": 154705,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "24045",
+        "display_name": "Wicomico County",
+        "aggregated_amount": 25000.0,
+        "population": 103588,
+        "per_capita": 0.24
+      },
+      {
+        "shape_code": "24047",
+        "display_name": "Worcester County",
+        "aggregated_amount": 0.0,
+        "population": 52460,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "26005",
+        "display_name": "Allegan County",
+        "aggregated_amount": 57000.0,
+        "population": 120502,
+        "per_capita": 0.47
+      },
+      {
+        "shape_code": "26075",
+        "display_name": "Jackson County",
+        "aggregated_amount": 75000.0,
+        "population": 160366,
+        "per_capita": 0.47
+      },
+      {
+        "shape_code": "26133",
+        "display_name": "Osceola County",
+        "aggregated_amount": 0.0,
+        "population": 22891,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "27035",
+        "display_name": "Crow Wing County",
+        "aggregated_amount": 0.0,
+        "population": 66123,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "27041",
+        "display_name": "Douglas County",
+        "aggregated_amount": 23580.0,
+        "population": 39006,
+        "per_capita": 0.6
+      },
+      {
+        "shape_code": "27109",
+        "display_name": "Olmsted County",
+        "aggregated_amount": 15653.0,
+        "population": 162847,
+        "per_capita": 0.1
+      },
+      {
+        "shape_code": "27113",
+        "display_name": "Pennington County",
+        "aggregated_amount": -17977.6,
+        "population": 13992,
+        "per_capita": -1.28
+      },
+      {
+        "shape_code": "27171",
+        "display_name": "Wright County",
+        "aggregated_amount": 0.0,
+        "population": 141337,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "28049",
+        "display_name": "Hinds County",
+        "aggregated_amount": 0.0,
+        "population": 227742,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "28087",
+        "display_name": "Lowndes County",
+        "aggregated_amount": 85650.0,
+        "population": 58879,
+        "per_capita": 1.45
+      },
+      {
+        "shape_code": "28105",
+        "display_name": "Oktibbeha County",
+        "aggregated_amount": 50000.0,
+        "population": 51788,
+        "per_capita": 0.97
+      },
+      {
+        "shape_code": "28107",
+        "display_name": "Panola County",
+        "aggregated_amount": 149823.0,
+        "population": 33208,
+        "per_capita": 4.51
+      },
+      {
+        "shape_code": "37019",
+        "display_name": "Brunswick County",
+        "aggregated_amount": 1000.0,
+        "population": 136693,
+        "per_capita": 0.01
+      },
+      {
+        "shape_code": "37021",
+        "display_name": "Buncombe County",
+        "aggregated_amount": 0.0,
+        "population": 269452,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "37081",
+        "display_name": "Guilford County",
+        "aggregated_amount": -16611.72,
+        "population": 541299,
+        "per_capita": -0.03
+      },
+      {
+        "shape_code": "37085",
+        "display_name": "Harnett County",
+        "aggregated_amount": 14775.0,
+        "population": 133568,
+        "per_capita": 0.11
+      },
+      {
+        "shape_code": "37149",
+        "display_name": "Polk County",
+        "aggregated_amount": 0.0,
+        "population": 19328,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "38015",
+        "display_name": "Burleigh County",
+        "aggregated_amount": 4630.0,
+        "population": 98458,
+        "per_capita": 0.05
+      },
+      {
+        "shape_code": "31055",
+        "display_name": "Douglas County",
+        "aggregated_amount": 1000.0,
+        "population": 584526,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "33001",
+        "display_name": "Belknap County",
+        "aggregated_amount": 0.0,
+        "population": 63705,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "33019",
+        "display_name": "Sullivan County",
+        "aggregated_amount": -10000.0,
+        "population": 43063,
+        "per_capita": -0.23
+      },
+      {
+        "shape_code": "34019",
+        "display_name": "Hunterdon County",
+        "aggregated_amount": 34699.04,
+        "population": 128947,
+        "per_capita": 0.27
+      },
+      {
+        "shape_code": "35011",
+        "display_name": "De Baca County",
+        "aggregated_amount": 0.0,
+        "population": 1698,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "35035",
+        "display_name": "Otero County",
+        "aggregated_amount": 0.0,
+        "population": 67839,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "35051",
+        "display_name": "Sierra County",
+        "aggregated_amount": 2100000.0,
+        "population": 11576,
+        "per_capita": 181.41
+      },
+      {
+        "shape_code": "32019",
+        "display_name": "Lyon County",
+        "aggregated_amount": 16820.0,
+        "population": 59235,
+        "per_capita": 0.28
+      },
+      {
+        "shape_code": "36005",
+        "display_name": "Bronx County",
+        "aggregated_amount": 37397.04,
+        "population": 1472654,
+        "per_capita": 0.03
+      },
+      {
+        "shape_code": "36043",
+        "display_name": "Herkimer County",
+        "aggregated_amount": 100504.8,
+        "population": 60139,
+        "per_capita": 1.67
+      },
+      {
+        "shape_code": "36053",
+        "display_name": "Madison County",
+        "aggregated_amount": 0.0,
+        "population": 68016,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "36057",
+        "display_name": "Montgomery County",
+        "aggregated_amount": 47000.0,
+        "population": 49532,
+        "per_capita": 0.95
+      },
+      {
+        "shape_code": "39103",
+        "display_name": "Medina County",
+        "aggregated_amount": 29286.08,
+        "population": 182470,
+        "per_capita": 0.16
+      },
+      {
+        "shape_code": "39155",
+        "display_name": "Trumbull County",
+        "aggregated_amount": 0.0,
+        "population": 201977,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "39157",
+        "display_name": "Tuscarawas County",
+        "aggregated_amount": 22950.0,
+        "population": 93263,
+        "per_capita": 0.25
+      },
+      {
+        "shape_code": "40117",
+        "display_name": "Pawnee County",
+        "aggregated_amount": 56730.0,
+        "population": 15553,
+        "per_capita": 3.65
+      },
+      {
+        "shape_code": "41019",
+        "display_name": "Douglas County",
+        "aggregated_amount": 0.0,
+        "population": 111201,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "41029",
+        "display_name": "Jackson County",
+        "aggregated_amount": 12439.35,
+        "population": 223259,
+        "per_capita": 0.06
+      },
+      {
+        "shape_code": "41043",
+        "display_name": "Linn County",
+        "aggregated_amount": 0.0,
+        "population": 128610,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "41047",
+        "display_name": "Marion County",
+        "aggregated_amount": 0.0,
+        "population": 345920,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "41057",
+        "display_name": "Tillamook County",
+        "aggregated_amount": 0.0,
+        "population": 27390,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "42007",
+        "display_name": "Beaver County",
+        "aggregated_amount": 149963.0,
+        "population": 168215,
+        "per_capita": 0.89
+      },
+      {
+        "shape_code": "42021",
+        "display_name": "Cambria County",
+        "aggregated_amount": 0.0,
+        "population": 133472,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "42041",
+        "display_name": "Cumberland County",
+        "aggregated_amount": 1000.0,
+        "population": 259469,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "42063",
+        "display_name": "Indiana County",
+        "aggregated_amount": 58114.1,
+        "population": 83246,
+        "per_capita": 0.7
+      },
+      {
+        "shape_code": "42073",
+        "display_name": "Lawrence County",
+        "aggregated_amount": -110.0,
+        "population": 86070,
+        "per_capita": -0.0
+      },
+      {
+        "shape_code": "42079",
+        "display_name": "Luzerne County",
+        "aggregated_amount": 0.0,
+        "population": 325594,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "42085",
+        "display_name": "Mercer County",
+        "aggregated_amount": 23342.66,
+        "population": 110652,
+        "per_capita": 0.21
+      },
+      {
+        "shape_code": "42119",
+        "display_name": "Union County",
+        "aggregated_amount": 0.0,
+        "population": 42681,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "42133",
+        "display_name": "York County",
+        "aggregated_amount": 70590.0,
+        "population": 456438,
+        "per_capita": 0.15
+      },
+      {
+        "shape_code": "45021",
+        "display_name": "Cherokee County",
+        "aggregated_amount": 40091.3,
+        "population": 56216,
+        "per_capita": 0.71
+      },
+      {
+        "shape_code": "45077",
+        "display_name": "Pickens County",
+        "aggregated_amount": 32000.0,
+        "population": 131404,
+        "per_capita": 0.24
+      },
+      {
+        "shape_code": "47059",
+        "display_name": "Greene County",
+        "aggregated_amount": 33223.92,
+        "population": 70152,
+        "per_capita": 0.47
+      },
+      {
+        "shape_code": "47149",
+        "display_name": "Rutherford County",
+        "aggregated_amount": 45403.57,
+        "population": 341486,
+        "per_capita": 0.13
+      },
+      {
+        "shape_code": "48141",
+        "display_name": "El Paso County",
+        "aggregated_amount": 0.0,
+        "population": 865657,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "48183",
+        "display_name": "Gregg County",
+        "aggregated_amount": 17172.5,
+        "population": 124239,
+        "per_capita": 0.14
+      },
+      {
+        "shape_code": "48441",
+        "display_name": "Taylor County",
+        "aggregated_amount": 25830.0,
+        "population": 143208,
+        "per_capita": 0.18
+      },
+      {
+        "shape_code": "51085",
+        "display_name": "Hanover County",
+        "aggregated_amount": 49999.16,
+        "population": 109979,
+        "per_capita": 0.45
+      },
+      {
+        "shape_code": "51095",
+        "display_name": "James City County",
+        "aggregated_amount": 85929.9,
+        "population": 78254,
+        "per_capita": 1.1
+      },
+      {
+        "shape_code": "51750",
+        "display_name": "Radford City",
+        "aggregated_amount": 0.0,
+        "population": 16070,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "51775",
+        "display_name": "Salem City",
+        "aggregated_amount": 0.0,
+        "population": 25346,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "53007",
+        "display_name": "Chelan County",
+        "aggregated_amount": 0.0,
+        "population": 79074,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "53011",
+        "display_name": "Clark County",
+        "aggregated_amount": 32800.0,
+        "population": 503311,
+        "per_capita": 0.07
+      },
+      {
+        "shape_code": "55009",
+        "display_name": "Brown County",
+        "aggregated_amount": 8753.3,
+        "population": 268740,
+        "per_capita": 0.03
+      },
+      {
+        "shape_code": "55031",
+        "display_name": "Douglas County",
+        "aggregated_amount": 47500.0,
+        "population": 44295,
+        "per_capita": 1.07
+      },
+      {
+        "shape_code": "55035",
+        "display_name": "Eau Claire County",
+        "aggregated_amount": 4888.0,
+        "population": 105710,
+        "per_capita": 0.05
+      },
+      {
+        "shape_code": "55059",
+        "display_name": "Kenosha County",
+        "aggregated_amount": 23999.24,
+        "population": 169151,
+        "per_capita": 0.14
+      },
+      {
+        "shape_code": "55063",
+        "display_name": "La Crosse County",
+        "aggregated_amount": 2418.09,
+        "population": 120784,
+        "per_capita": 0.02
+      },
+      {
+        "shape_code": "54061",
+        "display_name": "Monongalia County",
+        "aggregated_amount": 0.0,
+        "population": 105822,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "54069",
+        "display_name": "Ohio County",
+        "aggregated_amount": 156498.0,
+        "population": 42425,
+        "per_capita": 3.69
+      },
+      {
+        "shape_code": "56021",
+        "display_name": "Laramie County",
+        "aggregated_amount": 0.0,
+        "population": 100512,
+        "per_capita": 0.0
+      },
+      {
+        "shape_code": "56033",
+        "display_name": "Sheridan County",
+        "aggregated_amount": 73811.87,
+        "population": 30921,
+        "per_capita": 2.39
+      }
+    ],
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. ",
+      "The 'subawards' field will be deprecated in the future. Set 'spending_level' to 'subawards' instead. See documentation for more information."
+    ]
+  },
+  "status": "live_ok"
+}

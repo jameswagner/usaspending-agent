@@ -1,0 +1,34 @@
+{
+  "task_id": "Q053",
+  "requested_at_utc": "2026-10-17T18:53:31.810180+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/autocomplete/psc/",
+    "body": {
+      "search_text": "software",
+      "limit": 3
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/autocomplete/psc/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.313,
+  "response_bytes": 374,
+  "response": {
+    "results": [
+      {
+        "product_or_service_code": "70",
+        "psc_description": "INFORMATION TECHNOLOGY EQUIPMENT (INCLD FIRMWARE) SOFTWARE,SUPPLIES& SUPPORT EQUIPMENT"
+      },
+      {
+        "product_or_service_code": "7030",
+        "psc_description": "INFORMATION TECHNOLOGY SOFTWARE"
+      },
+      {
+        "product_or_service_code": "7A20",
+        "psc_description": "IT AND TELECOM - APPLICATION DEVELOPMENT SOFTWARE (PERPETUAL LICENSE SOFTWARE)"
+      }
+    ]
+  },
+  "status": "live_ok"
+}

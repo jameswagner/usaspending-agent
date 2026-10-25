@@ -1,0 +1,95 @@
+{
+  "task_id": "Q011",
+  "requested_at_utc": "2026-10-17T18:53:04.585889+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "recipient_locations": [
+          {
+            "country": "USA",
+            "state": "CA"
+          }
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.423,
+  "response_bytes": 2807,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 295477233,
+        "Award ID": "DEAC5207NA27344",
+        "Recipient Name": "LAWRENCE LIVERMORE NATIONAL SECURITY, LLC",
+        "Award Amount": 41607031193.88,
+        "Start Date": "2007-05-09",
+        "End Date": "2031-09-30",
+        "Description": "TAS::89 0240::TAS THIS PERFORMANCE-BASED MANAGEMENT CONTRACT (PBMC) IS FOR THE MANAGEMENT AND OPERATION OF THE LAWRENCE LIVERMORE NATIONAL LABORATORY (LLNL). THE CONTRACTOR SHALL, IN ACCORDANCE WITH THE PROVISIONS OF THIS CONTRACT, ACCOMPLISH THE MISSIONS AND PROGRAMS ASSIGNED BY THE U.S. DEPARTMENT OF ENERGY (DOE) AND MANAGE AND OPERATE THE LABORATORY.  THE LABORATORY IS ONE OF DOES OFFICE OF DEFENSE PROGRAM MULTI-PROGRAM LABORATORIES.  THE LABORATORY IS A FEDERALLY FUNDED RESEARCH AND DEVELOPMENT INSTITUTION (ESTABLISHED IN ACCORDANCE WITH THE FEDERAL ACQUISITION REGULATION (FAR) PART 35 AND OPERATED UNDER THIS MANAGEMENT AND OPERATING (M&O) CONTRACT, AS DEFINED IN FAR 17.6 AND DEAR 917.6.",
+        "generated_internal_id": "CONT_AWD_DEAC5207NA27344_8900_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 307885716,
+        "Award ID": "HT940216C0002",
+        "Recipient Name": "HEALTH NET FEDERAL SERVICES, LLC",
+        "Award Amount": 23484451360.07,
+        "Start Date": "2016-08-01",
+        "End Date": "2026-05-01",
+        "Description": "IGF::OT::IGF  MANAGED CARE SUPPORT SERVICES IN SUPPORT OF THE TRICARE PROGRAM",
+        "generated_internal_id": "CONT_AWD_HT940216C0002_9700_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 295475790,
+        "Award ID": "DEAC0205CH11231",
+        "Recipient Name": "THE REGENTS OF THE UNIVERSITY OF CALIFORNIA",
+        "Award Amount": 20011075801.8,
+        "Start Date": "2005-06-01",
+        "End Date": "2030-05-31",
+        "Description": "THIS PERFORMANCE-BASED MANAGEMENT CONTRACT (PBMC) IS FOR THE MANAGEMENT AND OPERATION OF THE ERNEST ORLANDO LAWRENCE BERKELEY NATIONAL LABORATORY (LBNL).  THE CONTRACTOR SHALL, IN ACCORDANCE WITH THE PROVISIONS OF THIS CONTRACT, ACCOMPLISH THE MISSIONS AND PROGRAMS ASSIGNED BY THE U.S. DEPARTMENT OF ENERGY (DOE) AND MANAGE AND OPERATE THE LABORATORY.  THE LABORATORY IS ONE OF THE DOE?S OFFICE OF SCIENCE (SC) MULTI-PROGRAM LABORATORIES.  THE LABORATORY IS A FEDERALLY FUNDED RESEARCH AND DEVELOPMENT CENTER (FFRDC) ESTABLISHED IN ACCORDANCE WITH THE FEDERAL ACQUISITION REGULATION (FAR) PART 35 AND OPERATED UNDER THIS MANAGEMENT AND OPERATING (M&O) CONTRACT, AS DEFINED IN FAR 17.6 AND DEAR 917.6.",
+        "generated_internal_id": "CONT_AWD_DEAC0205CH11231_8900_-NONE-_-NONE-"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 295475790,
+      "last_record_sort_value": "2001107580180"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

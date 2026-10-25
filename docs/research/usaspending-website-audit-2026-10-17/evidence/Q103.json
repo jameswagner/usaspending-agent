@@ -1,0 +1,66 @@
+{
+  "task_id": "Q103",
+  "requested_at_utc": "2026-10-17T18:53:47.858028+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/federal_accounts/",
+    "body": {
+      "filters": {
+        "agency_identifier": "080",
+        "fy": "2025"
+      },
+      "sort": {
+        "field": "budgetary_resources",
+        "direction": "desc"
+      },
+      "limit": 3,
+      "page": 1
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/federal_accounts/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.335,
+  "response_bytes": 987,
+  "response": {
+    "count": 18,
+    "limit": 3,
+    "page": 1,
+    "fy": "2025",
+    "keyword": null,
+    "next": 2,
+    "previous": null,
+    "hasNext": true,
+    "hasPrevious": false,
+    "results": [
+      {
+        "account_id": 5634,
+        "account_number": "080-0124",
+        "account_name": "Exploration, National Aeronautics and Space Administration",
+        "budgetary_resources": 15539496422.29,
+        "agency_identifier": "080",
+        "managing_agency": "National Aeronautics and Space Administration",
+        "managing_agency_acronym": "NASA"
+      },
+      {
+        "account_id": 5630,
+        "account_number": "080-0120",
+        "account_name": "Science, National Aeronautics and Space Administration",
+        "budgetary_resources": 8324955360.39,
+        "agency_identifier": "080",
+        "managing_agency": "National Aeronautics and Space Administration",
+        "managing_agency_acronym": "NASA"
+      },
+      {
+        "account_id": 5627,
+        "account_number": "080-0115",
+        "account_name": "Space Operations, National Aeronautics and Space Administration",
+        "budgetary_resources": 6414294426.85,
+        "agency_identifier": "080",
+        "managing_agency": "National Aeronautics and Space Administration",
+        "managing_agency_acronym": "NASA"
+      }
+    ]
+  },
+  "status": "live_ok"
+}

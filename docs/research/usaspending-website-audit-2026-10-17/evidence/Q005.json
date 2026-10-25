@@ -1,0 +1,88 @@
+{
+  "task_id": "Q005",
+  "requested_at_utc": "2026-10-17T18:53:03.220974+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "09",
+          "11",
+          "-1"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.631,
+  "response_bytes": 1664,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 251783976,
+        "Award ID": "7200EE22IO00002",
+        "Recipient Name": "INTERNATIONAL BANK FOR RECONSTRUCTION AND DEVELOPMENT",
+        "Award Amount": 27513695782.0,
+        "Start Date": "2022-06-29",
+        "End Date": "2025-06-10",
+        "Description": "TO SUPPORT MACROECONOMIC ASSISTANCE FOR THE GOVERNMENT OF UKRAINE.  ADDITIONAL UKRAINE SUPPLEMENTAL APPROPRIATIONS ACT, 2022 (P.L. 117-128) (AUSAA) TO SUPPORT MACROECONOMIC ASSISTANCE FOR THE GOVERNMENT OF UKRAINE.",
+        "generated_internal_id": "ASST_NON_7200EE22IO00002_072"
+      },
+      {
+        "internal_id": 259406544,
+        "Award ID": "AIDGHIO1700003",
+        "Recipient Name": "THE GLOBAL FUND TO FIGHT AIDS, TUBERCULOSIS AND MALARIA (THE GLOBAL FUND)",
+        "Award Amount": 14666543530.0,
+        "Start Date": "2017-09-30",
+        "End Date": "2027-09-30",
+        "Description": "GLOBAL FUNDS CONTRIBUTION",
+        "generated_internal_id": "ASST_NON_AIDGHIO1700003_072"
+      },
+      {
+        "internal_id": 251783982,
+        "Award ID": "7200GH21IO00002",
+        "Recipient Name": "GAVI ALLIANCE",
+        "Award Amount": 4000000000.0,
+        "Start Date": "2021-03-05",
+        "End Date": "2025-02-26",
+        "Description": "NEW PIO GAVI COVAX-TO PREVENT, PREPARE FOR , AND RESPOND TO CORONAVIRUS, INCLUDING FOR VACCINE PROCUREMENT AND DELIVERY.",
+        "generated_internal_id": "ASST_NON_7200GH21IO00002_072"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 251783982,
+      "last_record_sort_value": "400000000000"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

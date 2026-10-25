@@ -1,0 +1,51 @@
+{
+  "task_id": "Q134",
+  "requested_at_utc": "2026-10-17T18:55:02.389859+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/reporting/agencies/080/differences/",
+    "query": {
+      "fiscal_year": 2025,
+      "fiscal_period": 12,
+      "limit": 3
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/reporting/agencies/080/differences/?fiscal_year=2025&fiscal_period=12&limit=3",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.319,
+  "response_bytes": 480,
+  "response": {
+    "page_metadata": {
+      "page": 1,
+      "total": 13,
+      "limit": 3,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "tas": "080-X-0130-000",
+        "file_a_obligation": 538069651.1,
+        "file_b_obligation": 538069651.14,
+        "difference": -0.04
+      },
+      {
+        "tas": "080-2025/2027-0122-000",
+        "file_a_obligation": 505376149.49,
+        "file_b_obligation": 505376149.53,
+        "difference": -0.04
+      },
+      {
+        "tas": "080-2025/2026-0131-000",
+        "file_a_obligation": 884098800.65,
+        "file_b_obligation": 884098800.68,
+        "difference": -0.03
+      }
+    ],
+    "messages": []
+  },
+  "status": "live_ok"
+}

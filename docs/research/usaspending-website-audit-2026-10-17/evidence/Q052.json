@@ -1,0 +1,37 @@
+{
+  "task_id": "Q052",
+  "requested_at_utc": "2026-10-17T18:53:31.724522+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/autocomplete/naics/",
+    "body": {
+      "search_text": "computer",
+      "limit": 3
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/autocomplete/naics/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.334,
+  "response_bytes": 307,
+  "response": {
+    "results": [
+      {
+        "naics": "334113",
+        "naics_description": "Computer Terminal Manufacturing",
+        "year_retired": 2012
+      },
+      {
+        "naics": "334119",
+        "naics_description": "Other Computer Peripheral Equipment Manufacturing",
+        "year_retired": 2012
+      },
+      {
+        "naics": "443120",
+        "naics_description": "Computer and Software Stores",
+        "year_retired": 2012
+      }
+    ]
+  },
+  "status": "live_ok"
+}

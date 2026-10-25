@@ -17,6 +17,7 @@ from langsmith import traceable
 from backend.app.usaspending import (
     AwardFundingResponse,
     IDVAmountsResponse,
+    IDVFundingRollup,
     TransactionHistoryResponse,
     USASpendingAPIError,
 )
@@ -89,6 +90,12 @@ def get_award_funding_breakdown_raw(award_id: str, limit: int = 10) -> AwardFund
     separate call from get_award_details_raw rather than merged into it."""
     client = _get_usaspending_client()
     return client.get_award_funding(award_id, limit=limit)
+
+
+@traceable(run_type="tool", name="get_idv_funding_rollup_raw")
+def get_idv_funding_rollup_raw(award_id: str) -> IDVFundingRollup:
+    client = _get_usaspending_client()
+    return client.get_idv_funding_rollup(award_id)
 
 
 @traceable(run_type="tool", name="get_award_transaction_history_raw")
@@ -476,6 +483,8 @@ def _format_funding_row(row) -> str:
         detail_bits.append(f"DEFC {row.disaster_emergency_fund_code}")
     if detail_bits:
         line += " (" + ", ".join(detail_bits) + ")"
+    if row.piid:
+        line += f" [child award {row.piid}]"
     if row.reporting_fiscal_year:
         period = f"FY{row.reporting_fiscal_year}"
         if row.reporting_fiscal_quarter:
@@ -508,9 +517,28 @@ def get_award_funding_breakdown(award_id: str, limit: int = 10) -> str:
         return f"No federal account funding data found for award {award_id}."
 
     lines = [_format_funding_row(row) for row in response.results]
+    if award_id.startswith("CONT_IDV_"):
+        lines.insert(0, _idv_funding_header(award_id))
     has_next = response.page_metadata.hasNext if response.page_metadata else False
     note = _truncation_note(has_next, len(response.results))
     return _wrap_untrusted("\n".join(lines) + note)
+
+
+def _idv_funding_header(award_id: str) -> str:
+    header = (
+        "This is an IDV: the rows below are funding records (one per account/object class/"
+        "program activity/period) on its child and grandchild awards, not distinct accounts."
+    )
+    try:
+        rollup = get_idv_funding_rollup_raw(award_id)
+    except USASpendingAPIError as e:
+        logger.warning("get_idv_funding_rollup failed for %s: %s", award_id, e)
+        return header
+    if rollup.federal_account_count is not None:
+        header += f" Distinct federal accounts: {rollup.federal_account_count}."
+    if rollup.total_transaction_obligated_amount is not None:
+        header += f" Total obligated across them: ${rollup.total_transaction_obligated_amount:,.2f}."
+    return header
 
 
 def _format_transaction_row(row) -> str:

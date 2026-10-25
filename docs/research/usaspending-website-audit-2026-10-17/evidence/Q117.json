@@ -1,0 +1,484 @@
+{
+  "task_id": "Q117",
+  "requested_at_utc": "2026-10-17T18:53:49.818240+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/references/def_codes/",
+    "query": {}
+  },
+  "url": "https://api.usaspending.gov/api/v2/references/def_codes/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.307,
+  "response_bytes": 12479,
+  "response": {
+    "codes": [
+      {
+        "code": "1",
+        "public_law": "Non-emergency P.L. 117-58",
+        "title": "Infrastructure Investment and Jobs Act",
+        "disaster": "infrastructure",
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ58/pdf/PLAW-117publ58.pdf"
+        ]
+      },
+      {
+        "code": "2",
+        "public_law": "Emergency P.L. 117-70",
+        "title": "Further Extending Government Funding Act",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ70/pdf/PLAW-117publ70.pdf"
+        ]
+      },
+      {
+        "code": "3",
+        "public_law": "Emergency P.L. 117-103",
+        "title": "Consolidated Appropriations Act, 2022",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ103/pdf/PLAW-117publ103.pdf"
+        ]
+      },
+      {
+        "code": "4",
+        "public_law": "Disaster P.L. 117-103",
+        "title": "Consolidated Appropriations Act, 2022",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ103/pdf/PLAW-117publ103.pdf"
+        ]
+      },
+      {
+        "code": "5",
+        "public_law": "Wildfire Suppression P.L. 117-103",
+        "title": "Consolidated Appropriations Act, 2022",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ103/pdf/PLAW-117publ103.pdf"
+        ]
+      },
+      {
+        "code": "6",
+        "public_law": "Emergency P.L. 117-128",
+        "title": "Additional Ukraine Supplemental Appropriations Act, 2022",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ128/pdf/PLAW-117publ128.pdf"
+        ]
+      },
+      {
+        "code": "7",
+        "public_law": "Emergency P.L. 117-159",
+        "title": "Bipartisan Safer Communities Act",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ159/pdf/PLAW-117publ159.pdf"
+        ]
+      },
+      {
+        "code": "8",
+        "public_law": "Emergency P.L. 117-167",
+        "title": "An act making appropriations for Legislative Branch for the fiscal year ending September 30, 2022, and for other purposes.",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ167/pdf/PLAW-117publ167.pdf"
+        ]
+      },
+      {
+        "code": "9",
+        "public_law": "DEFC of '9' Indicates that the data for this row is not related to a COVID-19 P.L. (DEFC not one of the following: ['L', 'M', 'N', 'O', 'P', 'U', 'V']), but that the agency has declined to specify which other DEFC (or combination of DEFCs, in the case that the money hasn't been split out like it would be with a specific DEFC value) applies. This code was discontinued on July 13, 2021.",
+        "title": "DEFC of '9' Indicates that the data for this row is not related to a COVID-19 P.L. (DEFC not one of the following: ['L', 'M', 'N', 'O', 'P', 'U', 'V']), but that the agency has declined to specify which other DEFC (or combination of DEFCs, in the case that the money hasn't been split out like it would be with a specific DEFC value) applies. This code was discontinued on July 13, 2021.",
+        "disaster": null,
+        "urls": null
+      },
+      {
+        "code": "A",
+        "public_law": "Emergency P.L. 115-56",
+        "title": "Continuing Appropriations Act, 2018 and Supplemental Appropriations for Disaster Relief Requirements Act, 2017",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-115publ56/pdf/PLAW-115publ56.pdf"
+        ]
+      },
+      {
+        "code": "AAA",
+        "public_law": "Emergency P.L. 117-180",
+        "title": "Continuing Appropriations and Ukraine Supplemental Appropriations Act, 2023",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ180/pdf/PLAW-117publ180.pdf"
+        ]
+      },
+      {
+        "code": "AAB",
+        "public_law": "Emergency P.L. 117-328",
+        "title": "Consolidated Appropriations Act, 2023",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ328/pdf/PLAW-117publ328.pdf"
+        ]
+      },
+      {
+        "code": "AAC",
+        "public_law": "Wildfire Suppression P.L. 117-328",
+        "title": "Consolidated Appropriations Act, 2023",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ328/pdf/PLAW-117publ328.pdf"
+        ]
+      },
+      {
+        "code": "AAD",
+        "public_law": "Disaster P.L. 117-328",
+        "title": "Consolidated Appropriations Act, 2023",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ328/pdf/PLAW-117publ328.pdf"
+        ]
+      },
+      {
+        "code": "AAE",
+        "public_law": "Emergency P.L. 118-15",
+        "title": "Continuing Appropriations Act, 2024 and Other Extensions Act",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-118publ15/pdf/PLAW-118publ15.pdf"
+        ]
+      },
+      {
+        "code": "AAF",
+        "public_law": "Emergency P.L. 118-42",
+        "title": "Consolidated Appropriations Act, 2024",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-118publ42/pdf/PLAW-118publ42.pdf"
+        ]
+      },
+      {
+        "code": "AAG",
+        "public_law": "Disaster P.L. 118-42",
+        "title": "Consolidated Appropriations Act, 2024",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-118publ42/pdf/PLAW-118publ42.pdf"
+        ]
+      },
+      {
+        "code": "AAH",
+        "public_law": "Emergency P.L. 118-47",
+        "title": "Further Consolidated Appropriations Act, 2024",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-118publ47/pdf/PLAW-118publ47.pdf"
+        ]
+      },
+      {
+        "code": "AAI",
+        "public_law": "Disaster P.L. 118-47",
+        "title": "Further Consolidated Appropriations Act, 2024",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-118publ47/pdf/PLAW-118publ47.pdf"
+        ]
+      },
+      {
+        "code": "AAJ",
+        "public_law": "Emergency P.L. 118-50",
+        "title": "An act making emergency supplemental appropriations for the fiscal year ending September 30, 2024, and for other purposes.",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-118publ50/pdf/PLAW-118publ50.pdf"
+        ]
+      },
+      {
+        "code": "AAK",
+        "public_law": "Emergency P.L. 118-158",
+        "title": "American Relief Act, 2025",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-118publ158/pdf/PLAW-118publ158.pdf"
+        ]
+      },
+      {
+        "code": "AAL",
+        "public_law": "Emergency P.L. 119-4",
+        "title": "Full-Year Continuing Appropriations and Extensions Act, 2025",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-119publ4/pdf/PLAW-119publ4.pdf"
+        ]
+      },
+      {
+        "code": "AAM",
+        "public_law": "Wildfire Suppression P.L. 119-74",
+        "title": "Commerce, Justice, Science; Energy and Water Development; and Interior and Environment Appropriations Act, 2026",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-119publ74/pdf/PLAW-119publ74.pdf"
+        ]
+      },
+      {
+        "code": "AAN",
+        "public_law": "Emergency P.L. 119-75",
+        "title": "Consolidated Appropriations Act, 2026",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-119publ75/pdf/PLAW-119publ75.pdf"
+        ]
+      },
+      {
+        "code": "AAO",
+        "public_law": "Disaster P.L. 119-75",
+        "title": "Consolidated Appropriations Act, 2026",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-119publ75/pdf/PLAW-119publ75.pdf"
+        ]
+      },
+      {
+        "code": "AAP",
+        "public_law": "Disaster P.L. 119-86",
+        "title": "Homeland Security and Further Additional Continuing Appropriations Act, 2026.",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-119publ86/pdf/PLAW-119publ86.pdf"
+        ]
+      },
+      {
+        "code": "B",
+        "public_law": "Emergency P.L. 115-72",
+        "title": "Additional Supplemental Appropriations for Disaster Relief Requirements Act, 2017",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-115publ72/pdf/PLAW-115publ72.pdf"
+        ]
+      },
+      {
+        "code": "C",
+        "public_law": "Emergency P.L. 115-123",
+        "title": "Bipartisan Budget Act of 2018",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-115publ123/pdf/PLAW-115publ123.pdf"
+        ]
+      },
+      {
+        "code": "D",
+        "public_law": "Emergency P.L. 115-254",
+        "title": "FAA Reauthorization Act of 2018",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-115publ254/pdf/PLAW-115publ254.pdf"
+        ]
+      },
+      {
+        "code": "E",
+        "public_law": "Emergency P.L. 116-20",
+        "title": "Additional Supplemental Appropriations for Disaster Relief Act, 2019",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ20/pdf/PLAW-116publ20.pdf"
+        ]
+      },
+      {
+        "code": "F",
+        "public_law": "Emergency P.L. 116-26",
+        "title": "Emergency Supplemental Appropriations for Humanitarian Assistance and Security at the Southern Border Act, 2019",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ26/pdf/PLAW-116publ26.pdf"
+        ]
+      },
+      {
+        "code": "G",
+        "public_law": "Emergency P.L. 116-93",
+        "title": "Consolidated Appropriations Act, 2020",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ93/pdf/PLAW-116publ93.pdf"
+        ]
+      },
+      {
+        "code": "H",
+        "public_law": "Disaster P.L. 116-93",
+        "title": "Consolidated Appropriations Act, 2020",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ93/pdf/PLAW-116publ93.pdf"
+        ]
+      },
+      {
+        "code": "I",
+        "public_law": "Emergency P.L. 116-94",
+        "title": "Further Consolidated Appropriations Act, 2020",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ94/pdf/PLAW-116publ94.pdf"
+        ]
+      },
+      {
+        "code": "J",
+        "public_law": "Wildfire Suppression P.L. 116-94",
+        "title": "Further Consolidated Appropriations Act, 2020",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ94/pdf/PLAW-116publ94.pdf"
+        ]
+      },
+      {
+        "code": "K",
+        "public_law": "Emergency P.L. 116-113",
+        "title": "United States-Mexico-Canada Agreement Implementation Act",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ113/pdf/PLAW-116publ113.pdf"
+        ]
+      },
+      {
+        "code": "L",
+        "public_law": "Emergency P.L. 116-123",
+        "title": "Coronavirus Preparedness and Response Supplemental Appropriations Act, 2020",
+        "disaster": "covid_19",
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ123/pdf/PLAW-116publ123.pdf"
+        ]
+      },
+      {
+        "code": "M",
+        "public_law": "Emergency P.L. 116-127",
+        "title": "Families First Coronavirus Response Act",
+        "disaster": "covid_19",
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ127/pdf/PLAW-116publ127.pdf"
+        ]
+      },
+      {
+        "code": "N",
+        "public_law": "Emergency P.L. 116-136",
+        "title": "Coronavirus Aid, Relief, and Economic Security Act or the CARES Act",
+        "disaster": "covid_19",
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ136/pdf/PLAW-116publ136.pdf"
+        ]
+      },
+      {
+        "code": "O",
+        "public_law": "Non-emergency P.L. 116-136|Non-emergency P.L. 116-139|Non-emergency P.L. 116-260|Non-emergency P.L. 117-2",
+        "title": "Coronavirus Aid, Relief, and Economic Security Act or the CARES Act|Paycheck Protection Program and Health Care Enhancement Act|Consolidated Appropriations Act, 2021|American Rescue Plan Act of 2021",
+        "disaster": "covid_19",
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ136/pdf/PLAW-116publ136.pdf",
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ139/pdf/PLAW-116publ139.pdf",
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ260/pdf/PLAW-116publ260.pdf",
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ2/pdf/PLAW-117publ2.pdf"
+        ]
+      },
+      {
+        "code": "P",
+        "public_law": "Emergency P.L. 116-139",
+        "title": "Paycheck Protection Program and Health Care Enhancement Act",
+        "disaster": "covid_19",
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ139/pdf/PLAW-116publ139.pdf"
+        ]
+      },
+      {
+        "code": "Q",
+        "public_law": "Not Designated Nonemergency/Emergency/Disaster/Wildfire Suppression",
+        "title": "Not Designated Nonemergency/Emergency/Disaster/Wildfire Suppression",
+        "disaster": null,
+        "urls": null
+      },
+      {
+        "code": "QQQ",
+        "public_law": "Excluded from tracking (uses non-emergency/non-disaster designated appropriations)",
+        "title": "Excluded from tracking (uses non-emergency/non-disaster designated appropriations)",
+        "disaster": null,
+        "urls": null
+      },
+      {
+        "code": "R",
+        "public_law": "Emergency P.L. 116-260",
+        "title": "Consolidated Appropriations Act, 2021",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ260/pdf/PLAW-116publ260.pdf"
+        ]
+      },
+      {
+        "code": "S",
+        "public_law": "Disaster P.L. 116-260",
+        "title": "Consolidated Appropriations Act, 2021",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ260/pdf/PLAW-116publ260.pdf"
+        ]
+      },
+      {
+        "code": "T",
+        "public_law": "Wildfire Suppression P.L. 116-260",
+        "title": "Consolidated Appropriations Act, 2021",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ260/pdf/PLAW-116publ260.pdf"
+        ]
+      },
+      {
+        "code": "U",
+        "public_law": "Emergency P.L. 116-260",
+        "title": "Consolidated Appropriations Act, 2021",
+        "disaster": "covid_19",
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-116publ260/pdf/PLAW-116publ260.pdf"
+        ]
+      },
+      {
+        "code": "V",
+        "public_law": "Non-emergency P.L. 117-2",
+        "title": "American Rescue Plan Act of 2021",
+        "disaster": "covid_19",
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ2/pdf/PLAW-117publ2.pdf"
+        ]
+      },
+      {
+        "code": "W",
+        "public_law": "Emergency P.L. 117-31",
+        "title": "Emergency Security Supplemental Appropriations Act, 2021",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ31/pdf/PLAW-117publ31.pdf"
+        ]
+      },
+      {
+        "code": "X",
+        "public_law": "Emergency P.L. 117-43",
+        "title": "Extending Government Funding and Delivering Emergency Assistance Act",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ43/pdf/PLAW-117publ43.pdf"
+        ]
+      },
+      {
+        "code": "Y",
+        "public_law": "Disaster P.L. 117-43",
+        "title": "Extending Government Funding and Delivering Emergency Assistance Act",
+        "disaster": null,
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ43/pdf/PLAW-117publ43.pdf"
+        ]
+      },
+      {
+        "code": "Z",
+        "public_law": "Emergency P.L. 117-58",
+        "title": "Infrastructure Investment and Jobs Act",
+        "disaster": "infrastructure",
+        "urls": [
+          "http://www.govinfo.gov/content/pkg/PLAW-117publ58/pdf/PLAW-117publ58.pdf"
+        ]
+      }
+    ]
+  },
+  "status": "live_ok"
+}

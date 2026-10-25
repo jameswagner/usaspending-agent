@@ -1,0 +1,906 @@
+{
+  "task_id": "Q110",
+  "requested_at_utc": "2026-10-17T18:53:48.497848+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/spending/",
+    "body": {
+      "type": "agency",
+      "filters": {
+        "fy": "2025",
+        "quarter": "4"
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/spending/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.313,
+  "response_bytes": 13316,
+  "response": {
+    "total": 10334224922234.34,
+    "end_date": "2025-09-30T00:00:00Z",
+    "results": [
+      {
+        "id": "806",
+        "code": "075",
+        "type": "agency",
+        "name": "Department of Health and Human Services",
+        "amount": 2794349803088.6,
+        "link": true
+      },
+      {
+        "id": "456",
+        "code": "020",
+        "type": "agency",
+        "name": "Department of the Treasury",
+        "amount": 1953689394142.66,
+        "link": true
+      },
+      {
+        "id": "539",
+        "code": "028",
+        "type": "agency",
+        "name": "Social Security Administration",
+        "amount": 1740398104292.52,
+        "link": true
+      },
+      {
+        "id": "1173",
+        "code": "097",
+        "type": "agency",
+        "name": "Department of Defense",
+        "amount": 1451320548889.53,
+        "link": true
+      },
+      {
+        "id": "561",
+        "code": "036",
+        "type": "agency",
+        "name": "Department of Veterans Affairs",
+        "amount": 412393503628.81,
+        "link": true
+      },
+      {
+        "id": "95",
+        "code": "012",
+        "type": "agency",
+        "name": "Department of Agriculture",
+        "amount": 276630012349.95,
+        "link": true
+      },
+      {
+        "id": "503",
+        "code": "024",
+        "type": "agency",
+        "name": "Office of Personnel Management",
+        "amount": 262040905041.82,
+        "link": true
+      },
+      {
+        "id": null,
+        "code": null,
+        "type": "agency",
+        "name": "Unreported Data",
+        "amount": 206887941906.98
+      },
+      {
+        "id": "1068",
+        "code": "091",
+        "type": "agency",
+        "name": "Department of Education",
+        "amount": 179690157931.34,
+        "link": true
+      },
+      {
+        "id": "766",
+        "code": "070",
+        "type": "agency",
+        "name": "Department of Homeland Security",
+        "amount": 171203552614.18,
+        "link": true
+      },
+      {
+        "id": "731",
+        "code": "069",
+        "type": "agency",
+        "name": "Department of Transportation",
+        "amount": 169614068976.54,
+        "link": true
+      },
+      {
+        "id": "930",
+        "code": "089",
+        "type": "agency",
+        "name": "Department of Energy",
+        "amount": 98524875710.33,
+        "link": true
+      },
+      {
+        "id": "882",
+        "code": "086",
+        "type": "agency",
+        "name": "Department of Housing and Urban Development",
+        "amount": 90532059832.78,
+        "link": true
+      },
+      {
+        "id": "183",
+        "code": "013",
+        "type": "agency",
+        "name": "Department of Commerce",
+        "amount": 71825784798.61,
+        "link": true
+      },
+      {
+        "id": "267",
+        "code": "1601",
+        "type": "agency",
+        "name": "Department of Labor",
+        "amount": 70577614918.43,
+        "link": true
+      },
+      {
+        "id": "252",
+        "code": "015",
+        "type": "agency",
+        "name": "Department of Justice",
+        "amount": 50454183477.6,
+        "link": true
+      },
+      {
+        "id": "315",
+        "code": "019",
+        "type": "agency",
+        "name": "Department of State",
+        "amount": 44468610026.04,
+        "link": true
+      },
+      {
+        "id": "209",
+        "code": "014",
+        "type": "agency",
+        "name": "Department of the Interior",
+        "amount": 42848868679.89,
+        "link": true
+      },
+      {
+        "id": "614",
+        "code": "047",
+        "type": "agency",
+        "name": "General Services Administration",
+        "amount": 41896513755.49,
+        "link": true
+      },
+      {
+        "id": "1412",
+        "code": "096",
+        "type": "agency",
+        "name": "Corps of Engineers - Civil Works",
+        "amount": 35302736346.35,
+        "link": true
+      },
+      {
+        "id": "700",
+        "code": "068",
+        "type": "agency",
+        "name": "Environmental Protection Agency",
+        "amount": 34262577412.72,
+        "link": true
+      },
+      {
+        "id": "862",
+        "code": "080",
+        "type": "agency",
+        "name": "National Aeronautics and Space Administration",
+        "amount": 28773421746.59,
+        "link": true
+      },
+      {
+        "id": "693",
+        "code": "060",
+        "type": "agency",
+        "name": "Railroad Retirement Board",
+        "amount": 17522536724.9,
+        "link": true
+      },
+      {
+        "id": "801",
+        "code": "072",
+        "type": "agency",
+        "name": "Agency for International Development",
+        "amount": 15844167462.19,
+        "link": true
+      },
+      {
+        "id": "308",
+        "code": "1602",
+        "type": "agency",
+        "name": "Pension Benefit Guaranty Corporation",
+        "amount": 13294541941.73,
+        "link": true
+      },
+      {
+        "id": "803",
+        "code": "073",
+        "type": "agency",
+        "name": "Small Business Administration",
+        "amount": 12534817541.37,
+        "link": true
+      },
+      {
+        "id": "538",
+        "code": "027",
+        "type": "agency",
+        "name": "Federal Communications Commission",
+        "amount": 11707138116.59,
+        "link": true
+      },
+      {
+        "id": "655",
+        "code": "049",
+        "type": "agency",
+        "name": "National Science Foundation",
+        "amount": 9885079238.42,
+        "link": true
+      },
+      {
+        "id": "682",
+        "code": "051",
+        "type": "agency",
+        "name": "Federal Deposit Insurance Corporation",
+        "amount": 5110573076.79,
+        "link": true
+      },
+      {
+        "id": "1158",
+        "code": "581",
+        "type": "agency",
+        "name": "Consumer Financial Protection Bureau",
+        "amount": 2582561302.33,
+        "link": true
+      },
+      {
+        "id": "680",
+        "code": "050",
+        "type": "agency",
+        "name": "Securities and Exchange Commission",
+        "amount": 2279809318.74,
+        "link": true
+      },
+      {
+        "id": "1166",
+        "code": "485",
+        "type": "agency",
+        "name": "Corporation for National and Community Service",
+        "amount": 1628697960.11,
+        "link": true
+      },
+      {
+        "id": "1516",
+        "code": "579",
+        "type": "agency",
+        "name": "Patient-Centered Outcomes Research Trust Fund",
+        "amount": 1185134896.83,
+        "link": true
+      },
+      {
+        "id": "1522",
+        "code": "077",
+        "type": "agency",
+        "name": "U.S. International Development Finance Corporation",
+        "amount": 1105779615.45,
+        "link": true
+      },
+      {
+        "id": "48",
+        "code": "1100",
+        "type": "agency",
+        "name": "Executive Office of the President",
+        "amount": 1083639268.25,
+        "link": true
+      },
+      {
+        "id": "554",
+        "code": "031",
+        "type": "agency",
+        "name": "Nuclear Regulatory Commission",
+        "amount": 988090435.96,
+        "link": true
+      },
+      {
+        "id": "11",
+        "code": "005",
+        "type": "agency",
+        "name": "Government Accountability Office",
+        "amount": 943770259.66,
+        "link": true
+      },
+      {
+        "id": "1163",
+        "code": "514",
+        "type": "agency",
+        "name": "U.S. Agency for Global Media",
+        "amount": 762743620.21,
+        "link": true
+      },
+      {
+        "id": "925",
+        "code": "088",
+        "type": "agency",
+        "name": "National Archives and Records Administration",
+        "amount": 747214997.43,
+        "link": true
+      },
+      {
+        "id": "28",
+        "code": "010",
+        "type": "agency",
+        "name": "The Judicial Branch",
+        "amount": 662344993.97,
+        "link": false
+      },
+      {
+        "id": "1154",
+        "code": "524",
+        "type": "agency",
+        "name": "Millennium Challenge Corporation",
+        "amount": 487931638.23,
+        "link": true
+      },
+      {
+        "id": "611",
+        "code": "045",
+        "type": "agency",
+        "name": "Equal Employment Opportunity Commission",
+        "amount": 458978768.26,
+        "link": true
+      },
+      {
+        "id": "89",
+        "code": "1125",
+        "type": "agency",
+        "name": "Peace Corps",
+        "amount": 456879972.55,
+        "link": true
+      },
+      {
+        "id": "552",
+        "code": "029",
+        "type": "agency",
+        "name": "Federal Trade Commission",
+        "amount": 427973866.72,
+        "link": true
+      },
+      {
+        "id": "1129",
+        "code": "339",
+        "type": "agency",
+        "name": "Commodity Futures Trading Commission",
+        "amount": 365969179.87,
+        "link": true
+      },
+      {
+        "id": "1523",
+        "code": "349",
+        "type": "agency",
+        "name": "District of Columbia Courts",
+        "amount": 362748446.19,
+        "link": true
+      },
+      {
+        "id": "697",
+        "code": "420",
+        "type": "agency",
+        "name": "National Labor Relations Board",
+        "amount": 306857241.42,
+        "link": true
+      },
+      {
+        "id": "1474",
+        "code": "474",
+        "type": "agency",
+        "name": "Institute of Museum and Library Services",
+        "amount": 294970942.46,
+        "link": true
+      },
+      {
+        "id": "1528",
+        "code": "9553",
+        "type": "agency",
+        "name": "Court Services and Offender Supervision Agency",
+        "amount": 281968178.49,
+        "link": true
+      },
+      {
+        "id": "878",
+        "code": "083",
+        "type": "agency",
+        "name": "Export-Import Bank of the United States",
+        "amount": 261239723.31,
+        "link": true
+      },
+      {
+        "id": "1165",
+        "code": "513",
+        "type": "agency",
+        "name": "Denali Commission",
+        "amount": 220080708.68,
+        "link": true
+      },
+      {
+        "id": "1164",
+        "code": "512",
+        "type": "agency",
+        "name": "Presidio Trust",
+        "amount": 207710653.33,
+        "link": true
+      },
+      {
+        "id": "1147",
+        "code": "471",
+        "type": "agency",
+        "name": "Gulf Coast Ecosystem Restoration Council",
+        "amount": 196956121.36,
+        "link": true
+      },
+      {
+        "id": "687",
+        "code": "417",
+        "type": "agency",
+        "name": "National Endowment for the Arts",
+        "amount": 176960854.01,
+        "link": true
+      },
+      {
+        "id": "1130",
+        "code": "424",
+        "type": "agency",
+        "name": "National Transportation Safety Board",
+        "amount": 154274105.53,
+        "link": true
+      },
+      {
+        "id": "694",
+        "code": "061",
+        "type": "agency",
+        "name": "Consumer Product Safety Commission",
+        "amount": 152039604.66,
+        "link": true
+      },
+      {
+        "id": "879",
+        "code": "084",
+        "type": "agency",
+        "name": "Armed Forces Retirement Home",
+        "amount": 142878765.4,
+        "link": true
+      },
+      {
+        "id": "560",
+        "code": "034",
+        "type": "agency",
+        "name": "International Trade Commission",
+        "amount": 129667558.27,
+        "link": true
+      },
+      {
+        "id": "805",
+        "code": "074",
+        "type": "agency",
+        "name": "American Battle Monuments Commission",
+        "amount": 126597477.59,
+        "link": true
+      },
+      {
+        "id": "1475",
+        "code": "418",
+        "type": "agency",
+        "name": "National Endowment for the Humanities",
+        "amount": 109789564.89,
+        "link": true
+      },
+      {
+        "id": "1156",
+        "code": "517",
+        "type": "agency",
+        "name": "Delta Regional Authority",
+        "amount": 108247981.2,
+        "link": true
+      },
+      {
+        "id": "1517",
+        "code": "580",
+        "type": "agency",
+        "name": "Corporation for Travel Promotion",
+        "amount": 100000000.0,
+        "link": false
+      },
+      {
+        "id": "1431",
+        "code": "573",
+        "type": "agency",
+        "name": "Northern Border Regional Commission",
+        "amount": 96316585.88,
+        "link": true
+      },
+      {
+        "id": "1128",
+        "code": "360",
+        "type": "agency",
+        "name": "Federal Election Commission",
+        "amount": 83334387.34,
+        "link": true
+      },
+      {
+        "id": "1524",
+        "code": "473",
+        "type": "agency",
+        "name": "Federal Permitting Improvement Steering Council",
+        "amount": 82234873.62,
+        "link": true
+      },
+      {
+        "id": "860",
+        "code": "7802",
+        "type": "agency",
+        "name": "Farm Credit System Insurance Corporation",
+        "amount": 82011373.51,
+        "link": true
+      },
+      {
+        "id": "90",
+        "code": "1133",
+        "type": "agency",
+        "name": "United States Trade and Development Agency",
+        "amount": 59690323.13,
+        "link": true
+      },
+      {
+        "id": "610",
+        "code": "389",
+        "type": "agency",
+        "name": "Merit Systems Protection Board",
+        "amount": 51024006.35,
+        "link": true
+      },
+      {
+        "id": "1125",
+        "code": "093",
+        "type": "agency",
+        "name": "Federal Mediation and Conciliation Service",
+        "amount": 49159149.34,
+        "link": true
+      },
+      {
+        "id": "1484",
+        "code": "472",
+        "type": "agency",
+        "name": "Surface Transportation Board",
+        "amount": 47582198.94,
+        "link": true
+      },
+      {
+        "id": "1169",
+        "code": "345",
+        "type": "agency",
+        "name": "United States Court of Appeals for Veterans Claims",
+        "amount": 45241515.39,
+        "link": true
+      },
+      {
+        "id": "1137",
+        "code": "347",
+        "type": "agency",
+        "name": "Defense Nuclear Facilities Safety Board",
+        "amount": 42587519.71,
+        "link": true
+      },
+      {
+        "id": "1141",
+        "code": "525",
+        "type": "agency",
+        "name": "Election Assistance Commission",
+        "amount": 42380998.93,
+        "link": true
+      },
+      {
+        "id": "699",
+        "code": "065",
+        "type": "agency",
+        "name": "Federal Maritime Commission",
+        "amount": 39295602.34,
+        "link": true
+      },
+      {
+        "id": "1067",
+        "code": "090",
+        "type": "agency",
+        "name": "Selective Service System",
+        "amount": 33929228.47,
+        "link": true
+      },
+      {
+        "id": "1132",
+        "code": "542",
+        "type": "agency",
+        "name": "Council of the Inspectors General on Integrity and Efficiency",
+        "amount": 32574004.3,
+        "link": true
+      },
+      {
+        "id": "695",
+        "code": "062",
+        "type": "agency",
+        "name": "Office of Special Counsel",
+        "amount": 31510829.63,
+        "link": true
+      },
+      {
+        "id": "685",
+        "code": "054",
+        "type": "agency",
+        "name": "Federal Labor Relations Authority",
+        "amount": 29478562.36,
+        "link": true
+      },
+      {
+        "id": "1157",
+        "code": "434",
+        "type": "agency",
+        "name": "Office of Government Ethics",
+        "amount": 21801177.92,
+        "link": true
+      },
+      {
+        "id": "1527",
+        "code": "166",
+        "type": "agency",
+        "name": "African Development Foundation",
+        "amount": 20290440.92,
+        "link": true
+      },
+      {
+        "id": "1526",
+        "code": "164",
+        "type": "agency",
+        "name": "Inter-American Foundation",
+        "amount": 18140283.73,
+        "link": true
+      },
+      {
+        "id": "1127",
+        "code": "368",
+        "type": "agency",
+        "name": "Federal Mine Safety and Health Review Commission",
+        "amount": 17548515.24,
+        "link": true
+      },
+      {
+        "id": "1142",
+        "code": "421",
+        "type": "agency",
+        "name": "National Mediation Board",
+        "amount": 14971320.47,
+        "link": true
+      },
+      {
+        "id": "1162",
+        "code": "510",
+        "type": "agency",
+        "name": "United States Chemical Safety Board",
+        "amount": 14452094.07,
+        "link": true
+      },
+      {
+        "id": "1138",
+        "code": "326",
+        "type": "agency",
+        "name": "Commission on Civil Rights",
+        "amount": 14140597.15,
+        "link": true
+      },
+      {
+        "id": "1135",
+        "code": "432",
+        "type": "agency",
+        "name": "Occupational Safety and Health Review Commission",
+        "amount": 14074434.17,
+        "link": true
+      },
+      {
+        "id": "1143",
+        "code": "535",
+        "type": "agency",
+        "name": "Privacy and Civil Liberties Oversight Board",
+        "amount": 13778832.52,
+        "link": true
+      },
+      {
+        "id": "1148",
+        "code": "373",
+        "type": "agency",
+        "name": "Institute of American Indian and Alaska Native Culture and Arts Development",
+        "amount": 13482000.0,
+        "link": false
+      },
+      {
+        "id": "1139",
+        "code": "338",
+        "type": "agency",
+        "name": "Committee for Purchase from People Who Are Blind or Severely Disabled",
+        "amount": 13114121.25,
+        "link": true
+      },
+      {
+        "id": "1126",
+        "code": "394",
+        "type": "agency",
+        "name": "National Capital Planning Commission",
+        "amount": 12378944.74,
+        "link": true
+      },
+      {
+        "id": "1612",
+        "code": "569",
+        "type": "agency",
+        "name": "Southwest Border Regional Commission",
+        "amount": 11997122.08,
+        "link": true
+      },
+      {
+        "id": "1155",
+        "code": "487",
+        "type": "agency",
+        "name": "Morris K. Udall and Stewart L. Udall Foundation",
+        "amount": 11466700.5,
+        "link": true
+      },
+      {
+        "id": "1144",
+        "code": "306",
+        "type": "agency",
+        "name": "Advisory Council on Historic Preservation",
+        "amount": 11327181.61,
+        "link": true
+      },
+      {
+        "id": "1146",
+        "code": "310",
+        "type": "agency",
+        "name": "Access Board",
+        "amount": 9965498.76,
+        "link": true
+      },
+      {
+        "id": "1416",
+        "code": "309",
+        "type": "agency",
+        "name": "Appalachian Regional Commission",
+        "amount": 9215690.61,
+        "link": true
+      },
+      {
+        "id": "1149",
+        "code": "323",
+        "type": "agency",
+        "name": "Commission of Fine Arts",
+        "amount": 8832245.33,
+        "link": true
+      },
+      {
+        "id": "1131",
+        "code": "372",
+        "type": "agency",
+        "name": "Harry S Truman Scholarship Foundation",
+        "amount": 6095709.81,
+        "link": true
+      },
+      {
+        "id": "650",
+        "code": "435",
+        "type": "agency",
+        "name": "Office of Navajo and Hopi Indian Relocation",
+        "amount": 4797733.71,
+        "link": true
+      },
+      {
+        "id": "1546",
+        "code": "574",
+        "type": "agency",
+        "name": "Southeast Crescent Regional Commission",
+        "amount": 4683253.12,
+        "link": true
+      },
+      {
+        "id": "1134",
+        "code": "387",
+        "type": "agency",
+        "name": "Marine Mammal Commission",
+        "amount": 3999099.8,
+        "link": true
+      },
+      {
+        "id": "1159",
+        "code": "313",
+        "type": "agency",
+        "name": "Barry Goldwater Scholarship and Excellence In Education Foundation",
+        "amount": 3941865.44,
+        "link": true
+      },
+      {
+        "id": "654",
+        "code": "431",
+        "type": "agency",
+        "name": "Nuclear Waste Technical Review Board",
+        "amount": 3906469.41,
+        "link": true
+      },
+      {
+        "id": "1136",
+        "code": "302",
+        "type": "agency",
+        "name": "Administrative Conference of the U.S.",
+        "amount": 3495248.89,
+        "link": true
+      },
+      {
+        "id": "1152",
+        "code": "381",
+        "type": "agency",
+        "name": "James Madison Memorial Fellowship Foundation",
+        "amount": 2640416.62,
+        "link": true
+      },
+      {
+        "id": "1133",
+        "code": "382",
+        "type": "agency",
+        "name": "Japan-United States Friendship Commission",
+        "amount": 2623117.77,
+        "link": true
+      },
+      {
+        "id": "1544",
+        "code": "290",
+        "type": "agency",
+        "name": "Public Buildings Reform Board",
+        "amount": 2014046.92,
+        "link": true
+      },
+      {
+        "id": "535",
+        "code": "025",
+        "type": "agency",
+        "name": "National Credit Union Administration",
+        "amount": 1956489.28,
+        "link": true
+      },
+      {
+        "id": "1426",
+        "code": "321",
+        "type": "agency",
+        "name": "Commission for the Preservation of America's Heritage Abroad",
+        "amount": 838732.15,
+        "link": true
+      },
+      {
+        "id": "1539",
+        "code": "256",
+        "type": "agency",
+        "name": "Commission On Combating Synthetic Opioid Trafficking",
+        "amount": 0.0,
+        "link": false
+      },
+      {
+        "id": "800",
+        "code": "071",
+        "type": "agency",
+        "name": "Overseas Private Investment Corporation",
+        "amount": 0.0,
+        "link": true
+      }
+    ]
+  },
+  "status": "live_ok"
+}

@@ -1,0 +1,76 @@
+{
+  "task_id": "Q112",
+  "requested_at_utc": "2026-10-17T18:53:49.072271+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/spending/",
+    "body": {
+      "type": "object_class",
+      "filters": {
+        "fy": "2025",
+        "quarter": "4"
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/spending/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 6.482,
+  "response_bytes": 780,
+  "response": {
+    "total": 10334224922234.34,
+    "end_date": "2025-09-30T00:00:00Z",
+    "results": [
+      {
+        "id": "40",
+        "code": "40",
+        "type": "object_class",
+        "name": "Grants and fixed charges",
+        "amount": 7386422817943.47
+      },
+      {
+        "id": "20",
+        "code": "20",
+        "type": "object_class",
+        "name": "Contractual services and supplies",
+        "amount": 1199279463593.9
+      },
+      {
+        "id": "10",
+        "code": "10",
+        "type": "object_class",
+        "name": "Personnel compensation and benefits",
+        "amount": 872335179897.74
+      },
+      {
+        "id": "90",
+        "code": "90",
+        "type": "object_class",
+        "name": "Other",
+        "amount": 350469928654.58
+      },
+      {
+        "id": "30",
+        "code": "30",
+        "type": "object_class",
+        "name": "Acquisition of assets",
+        "amount": 298613707831.96
+      },
+      {
+        "id": null,
+        "code": null,
+        "type": "object_class",
+        "name": "Unreported Data",
+        "amount": 206887941906.98
+      },
+      {
+        "id": "00",
+        "code": "00",
+        "type": "object_class",
+        "name": "Unknown",
+        "amount": 20215882405.71
+      }
+    ]
+  },
+  "status": "live_ok"
+}

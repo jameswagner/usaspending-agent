@@ -109,7 +109,10 @@ from backend.app.agent.tools import (
     get_agency_award_breakdown,
     get_agency_budget,
     get_agency_budget_by_subcomponent,
+    get_recipient_children,
+    get_recipient_details,
     get_spending_explorer_breakdown_raw,
+    search_recipients,
 )
 from backend.app.agent.tools.award_type_breakdown import get_award_type_breakdown
 from backend.app.agent.tools.awards import (
@@ -144,12 +147,14 @@ from backend.app.usaspending import (
     FederalAccountBreakdown,
     GeographyTypeResult,
     IDVAmountsResponse,
+    IDVFundingRollup,
     ObligationByPeriod,
     PageMetadata,
     RecipientListing,
     RecipientLocation,
     RecipientOverview,
     SearchAwardsResponse,
+    SearchRecipientsResponse,
     SpendingByAwardCountResponse,
     SpendingByCategoryResponse,
     SpendingByGeographyResponse,
@@ -689,6 +694,19 @@ class TestGetAgencyAwardBreakdownGroupBy:
         result = get_agency_award_breakdown.func(agency_name="Department of Agriculture", fiscal_year=2024, group_by="whole_agency")
         assert "5 transactions" in result
         assert "$10.00" in result
+
+    @pytest.mark.parametrize("group_by", ["whole_agency", "award_category"])
+    def test_parent_wide_modes_refuse_a_sub_agency_name(self, monkeypatch, group_by):
+        hhs = make_agency("Department of Health and Human Services")
+        client = self._mock_client(monkeypatch, hhs)
+        client.find_agency_by_name_with_subagency = lambda name: (hhs, "National Institutes of Health")
+        client.get_agency_awards = lambda *a, **kw: pytest.fail("parent-wide totals fetched for a sub-agency")
+        client.get_agency_obligations_by_award_category = client.get_agency_awards
+        result = get_agency_award_breakdown.func(
+            agency_name="National Institutes of Health", fiscal_year=2024, group_by=group_by,
+        )
+        assert "only reports the whole Department of Health and Human Services" in result
+        assert 'Use group_by="sub_agency" for National Institutes of Health' in result
 
     def test_whole_agency_rejects_include_offices(self):
         result = get_agency_award_breakdown.func(
@@ -1735,14 +1753,14 @@ class TestAwardTypeNormalization:
 
     def test_broad_buckets_still_present(self):
         assert AWARD_TYPE_GROUPS["contracts"] == ["A", "B", "C", "D"]
-        assert AWARD_TYPE_GROUPS["grants"] == ["02", "03", "04", "05"]
-        assert AWARD_TYPE_GROUPS["loans"] == ["07", "08"]
+        assert AWARD_TYPE_GROUPS["grants"] == ["02", "03", "04", "05", "F001", "F002"]
+        assert AWARD_TYPE_GROUPS["loans"] == ["07", "08", "F003", "F004"]
 
     def test_cooperative_agreement_resolves_to_the_correct_single_code(self):
         # Code 05 per USASpending's award_types.md - part of the broader
         # "grants" bucket (02-05), but its own precise code, not the
         # bucket as a whole.
-        assert AWARD_TYPE_GROUPS["cooperative_agreement"] == ["05"]
+        assert AWARD_TYPE_GROUPS["cooperative_agreement"] == ["05", "F002"]
 
     def test_every_specific_subtype_code_is_a_member_of_its_broad_bucket(self):
         # The specific sub-types should be a strict refinement of the
@@ -1758,6 +1776,18 @@ class TestAwardTypeNormalization:
         loan_subtypes = ["direct_loan", "guaranteed_loan"]
         for key in loan_subtypes:
             assert AWARD_TYPE_GROUPS[key][0] in AWARD_TYPE_GROUPS["loans"]
+
+    def test_groups_match_the_api_award_type_groups(self):
+        # Mirrors usaspending_api/awards/v2/lookups/lookups.py: the API's grant, loan,
+        # direct-payment and other groups each include the F-prefixed codes for newer
+        # assistance records, which the older codes alone undercount (FY2025 grants:
+        # 500,419 without F001/F002 vs 537,597 with).
+        assert set(AWARD_TYPE_GROUPS["grants"]) == {"02", "03", "04", "05", "F001", "F002"}
+        assert set(AWARD_TYPE_GROUPS["loans"]) == {"07", "08", "F003", "F004"}
+        direct_payments = set(AWARD_TYPE_GROUPS["direct_payment_specified"]) | set(AWARD_TYPE_GROUPS["direct_payment_unrestricted"])
+        assert direct_payments == {"06", "10", "F006", "F007"}
+        assert set(AWARD_TYPE_GROUPS["insurance"]) == {"09", "F005"}
+        assert set(AWARD_TYPE_GROUPS["other_financial_assistance"]) == {"11", "F008", "F009", "F010"}
 
     def test_idv_codes_are_disjoint_from_contracts(self):
         # Regression coverage for #146: a plain PIID search under the
@@ -1909,11 +1939,26 @@ class TestBuildFilters:
         with pytest.raises(USASpendingAPIError, match="No agency found"):
             _build_filters(FakeClient(None), "Not A Real Agency", "fiscal", 2021, 2024)
 
+    def test_toptier_match_filters_the_whole_agency(self):
+        filters = _build_filters(FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024)
+        agency = filters.model_dump(exclude_none=True)["agencies"][0]
+        assert agency == {"type": "awarding", "tier": "toptier", "name": make_agency().agency_name}
+
+    def test_subtier_match_filters_only_that_sub_agency(self):
+        hhs = make_agency()
+        client = FakeClient(hhs)
+        client.find_agency_by_name_with_subagency = lambda name: (hhs, "National Institutes of Health")
+        filters = _build_filters(client, "NIH", "fiscal", 2024, 2024)
+        agency = filters.model_dump(exclude_none=True)["agencies"][0]
+        assert agency == {
+            "type": "awarding", "tier": "subtier", "name": "National Institutes of Health", "toptier_name": hhs.agency_name,
+        }
+
     def test_award_type_resolves_to_codes(self):
         filters = _build_filters(
             FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, award_type="cooperative_agreement"
         )
-        assert filters.award_type_codes == ["05"]
+        assert filters.award_type_codes == ["05", "F002"]
 
     def test_unknown_award_type_raises(self):
         with pytest.raises(USASpendingAPIError, match="Unknown award_type"):
@@ -2603,8 +2648,8 @@ class TestAmountFieldForAwardType:
         assert _amount_field_for_award_type("guaranteed_loan") == "Loan Value"
 
     def test_loan_award_type_codes_match_the_award_types_contract(self):
-        # 07 = Direct Loan, 08 = Guaranteed/Insured Loan per award_types.md.
-        assert LOAN_AWARD_TYPE_CODES == {"07", "08"}
+        # 07/F003 = Direct Loan, 08/F004 = Guaranteed/Insured Loan per award_types.md and the API's lookups.
+        assert LOAN_AWARD_TYPE_CODES == {"07", "08", "F003", "F004"}
 
     def test_unknown_award_type_falls_back_to_award_amount(self):
         # _build_filters already validated award_type earlier in the same
@@ -3135,6 +3180,57 @@ class TestGetAwardFundingBreakdown:
         self._mock_client(response, monkeypatch)
         result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
         assert "complete" in result.lower() or "exhaustive" in result.lower() or "more" in result.lower()
+
+
+class TestGetAwardFundingBreakdownIDV:
+    def test_idv_rows_derive_federal_account_and_show_rollup_header(self, monkeypatch):
+        response = AwardFundingResponse(
+            results=[
+                AwardFundingRow(
+                    agency_id="020",
+                    main_account_code="0520",
+                    piid="2033H622F00035",
+                    transaction_obligated_amount=10.0,
+                    reporting_fiscal_year=2022,
+                )
+            ],
+            page_metadata=PageMetadata(page=1, hasNext=False),
+        )
+        client = FakeClient(make_agency())
+        client.get_award_funding = lambda *a, **kw: response
+        client.get_idv_funding_rollup = lambda award_id: IDVFundingRollup(
+            federal_account_count=12, total_transaction_obligated_amount=1588635.53
+        )
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+        result = get_award_funding_breakdown.func(award_id="CONT_IDV_X_8000")
+        assert "020-0520" in result
+        assert "child award 2033H622F00035" in result
+        assert "funding records" in result
+        assert "Distinct federal accounts: 12" in result
+        assert "$1,588,635.53" in result
+
+    def test_rollup_failure_still_returns_rows(self, monkeypatch):
+        response = AwardFundingResponse(results=[AwardFundingRow(federal_account="020-0520")])
+        client = FakeClient(make_agency())
+        client.get_award_funding = lambda *a, **kw: response
+
+        def raise_error(*a, **kw):
+            raise USASpendingAPIError("boom")
+
+        client.get_idv_funding_rollup = raise_error
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+        result = get_award_funding_breakdown.func(award_id="CONT_IDV_X_8000")
+        assert "020-0520" in result and "funding records" in result
+
+    def test_client_routes_idv_ids_to_idvs_endpoint(self):
+        from backend.app.usaspending.client import USASpendingClient
+
+        calls = []
+        client = USASpendingClient.__new__(USASpendingClient)
+        client._post = lambda path, body: calls.append(path) or {"results": []}
+        client.get_award_funding("CONT_IDV_X_8000")
+        client.get_award_funding("CONT_AWD_X")
+        assert calls == ["/api/v2/idvs/funding/", "/api/v2/awards/funding/"]
 
 
 class TestGetAwardTransactionHistory:
@@ -3769,6 +3865,101 @@ class TestNormalizeScope:
     def test_garbage_raises_with_the_right_param_name(self):
         with pytest.raises(USASpendingAPIError, match="Unrecognized recipient_scope 'martian'"):
             _normalize_scope("martian", "recipient_scope")
+
+
+class TestSearchRecipientsCollapse:
+    def _search(self, listings, monkeypatch):
+        client = FakeClient(make_agency())
+        client.search_recipients = lambda *a, **kw: SearchRecipientsResponse(results=listings)
+        monkeypatch.setattr("backend.app.agent.tools.recipients._get_usaspending_client", lambda: client)
+        return search_recipients.func(keyword="Lockheed")
+
+    def test_same_hash_collapses_to_parent_row(self, monkeypatch):
+        listings = [
+            RecipientListing(name="LOCKHEED", id="aaa-R", amount=5.0, recipient_level="R"),
+            RecipientListing(name="LOCKHEED", id="aaa-P", amount=5.0, recipient_level="P"),
+            RecipientListing(name="LOCKHEED", id="aaa-C", amount=5.0, recipient_level="C"),
+        ]
+        result = self._search(listings, monkeypatch)
+        assert result.count("recipient_id:") == 1
+        assert "aaa-P" in result
+
+    def test_stale_parent_flagged_and_unnamed_row_last(self, monkeypatch):
+        listings = [
+            RecipientListing(name=None, id="nul-R", amount=99.0, recipient_level="R"),
+            RecipientListing(name="LOCKHEED", id="old-P", amount=0.0, recipient_level="P"),
+            RecipientListing(name="LOCKHEED", id="new-P", amount=48.0, recipient_level="P"),
+        ]
+        result = self._search(listings, monkeypatch)
+        assert result.index("new-P") < result.index("old-P") < result.index("nul-R")
+        assert "[no spending in last 12 months]" in result
+        assert "unnamed record" in result
+        assert "never add their amounts together" in result
+
+
+class TestCurrentParentResolution:
+    STALE = RecipientListing(name="LOCKHEED MARTIN CORPORATION", id="old-P", uei="OLDUEI", duns="834951691", amount=0.0, recipient_level="P")
+    LIVE = RecipientListing(name="LOCKHEED MARTIN CORP", id="new-P", uei="NEWUEI", duns="834951691", amount=50.5e9, recipient_level="P")
+
+    def _client(self, monkeypatch, overview, parents=None, search_error=False):
+        client = FakeClient(make_agency())
+        client.get_recipient = lambda *a, **kw: overview
+        client.children_keys = []
+
+        def search(*a, **kw):
+            if search_error:
+                raise USASpendingAPIError("boom")
+            return SearchRecipientsResponse(results=parents or [])
+
+        def children(key, year=None):
+            client.children_keys.append(key)
+            return [ChildRecipient(name="SIKORSKY", recipient_id="s-C", amount=1.0)]
+
+        client.search_recipients = search
+        client.get_recipient_children = children
+        monkeypatch.setattr("backend.app.agent.tools.recipients._get_usaspending_client", lambda: client)
+        return client
+
+    def _overview(self, **kw):
+        base = {
+            "recipient_id": "div-C", "recipient_level": "C", "name": "LOCKHEED DIVISION", "total_transaction_amount": 1.0,
+            "total_transactions": 1, "total_face_value_loan_amount": 0.0, "total_face_value_loan_transactions": 0,
+        }
+        return RecipientOverview(**(base | kw))
+
+    def test_child_linked_to_stale_parent_shows_current_parent(self, monkeypatch):
+        overview = self._overview(parent_id="old-P", parent_uei="OLDUEI", parent_duns="834951691")
+        self._client(monkeypatch, overview, [self.STALE, self.LIVE])
+        result = get_recipient_details.func(recipient_id="div-C")
+        assert "Parent: LOCKHEED MARTIN CORP [recipient_id: new-P]" in result
+        assert "links to parent old-P, a stale record" in result
+
+    def test_child_linked_to_live_parent_is_unchanged(self, monkeypatch):
+        overview = self._overview(parent_id="new-P", parent_name="LOCKHEED MARTIN CORP", parent_uei="NEWUEI", parent_duns="834951691")
+        self._client(monkeypatch, overview, [self.LIVE, self.STALE])
+        result = get_recipient_details.func(recipient_id="div-C")
+        assert "[recipient_id: new-P]" in result
+        assert "stale" not in result
+
+    def test_stale_parent_points_to_current_record(self, monkeypatch):
+        overview = self._overview(recipient_id="old-P", recipient_level="P", parent_id="old-P", uei="OLDUEI", duns="834951691")
+        self._client(monkeypatch, overview, [self.STALE, self.LIVE])
+        result = get_recipient_details.func(recipient_id="old-P")
+        assert "this parent record is stale" in result
+        assert "[recipient_id: new-P]" in result
+
+    def test_failed_lookup_falls_back_to_linked_parent(self, monkeypatch):
+        overview = self._overview(parent_id="old-P", parent_name="LOCKHEED MARTIN CORPORATION", parent_duns="834951691")
+        self._client(monkeypatch, overview, search_error=True)
+        result = get_recipient_details.func(recipient_id="div-C")
+        assert "[recipient_id: old-P]" in result
+
+    def test_children_of_stale_parent_come_from_current_parent(self, monkeypatch):
+        overview = self._overview(recipient_id="old-P", recipient_level="P", parent_id="old-P", uei="OLDUEI", duns="834951691")
+        client = self._client(monkeypatch, overview, [self.STALE, self.LIVE])
+        result = get_recipient_children.func(recipient_id="old-P")
+        assert client.children_keys == ["NEWUEI"]
+        assert "showing the children of the same company's current parent record new-P" in result
 
 
 class TestNormalizeRecipientType:

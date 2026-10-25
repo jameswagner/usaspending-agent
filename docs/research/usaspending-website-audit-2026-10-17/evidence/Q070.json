@@ -1,0 +1,23 @@
+{
+  "task_id": "Q070",
+  "requested_at_utc": "2026-10-17T19:20:30.746893+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/awards/funding_rollup/",
+    "body": {
+      "award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/awards/funding_rollup/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.291,
+  "response_bytes": 129,
+  "response": {
+    "total_transaction_obligated_amount": 4086791256.43,
+    "awarding_agency_count": 1,
+    "funding_agency_count": 1,
+    "federal_account_count": 4
+  },
+  "status": "live_ok"
+}

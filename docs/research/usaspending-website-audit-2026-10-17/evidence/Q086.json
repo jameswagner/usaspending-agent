@@ -1,0 +1,24 @@
+{
+  "task_id": "Q086",
+  "requested_at_utc": "2026-10-17T18:53:35.188766+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/agency/080/awards/new/count/",
+    "query": {
+      "fiscal_year": 2025
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/agency/080/awards/new/count/?fiscal_year=2025",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.388,
+  "response_bytes": 113,
+  "response": {
+    "toptier_code": "080",
+    "fiscal_year": 2025,
+    "agency_type": "awarding",
+    "award_type_codes": null,
+    "new_award_count": 6730
+  },
+  "status": "live_ok"
+}

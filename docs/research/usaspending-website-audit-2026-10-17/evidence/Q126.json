@@ -1,0 +1,134 @@
+{
+  "task_id": "Q126",
+  "requested_at_utc": "2026-10-17T18:54:26.926876+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/disaster/agency/loans/",
+    "body": {
+      "filter": {
+        "def_codes": [
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "U",
+          "V"
+        ],
+        "award_type_codes": [
+          "07",
+          "08"
+        ]
+      },
+      "pagination": {
+        "limit": 3,
+        "page": 1,
+        "sort": "face_value_of_loan",
+        "order": "desc"
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/disaster/agency/loans/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 34.793,
+  "response_bytes": 1659,
+  "response": {
+    "totals": {
+      "obligation": 857758783774.35,
+      "outlay": 857726028028.51,
+      "face_value_of_loan": 1197511679218.04,
+      "award_count": 15238902
+    },
+    "results": [
+      {
+        "id": 803,
+        "code": "073",
+        "description": "Small Business Administration",
+        "award_count": 15234942,
+        "obligation": 857681957874.72,
+        "outlay": 857672259677.2,
+        "face_value_of_loan": 1195977520536.95,
+        "children": [
+          {
+            "id": 803,
+            "code": "7300",
+            "description": "Small Business Administration",
+            "award_count": 15234942,
+            "obligation": 857681957874.72,
+            "outlay": 857672259677.2,
+            "face_value_of_loan": 1195977520536.95
+          }
+        ]
+      },
+      {
+        "id": 95,
+        "code": "012",
+        "description": "Department of Agriculture",
+        "award_count": 3958,
+        "obligation": 72295598.0,
+        "outlay": 49238049.68,
+        "face_value_of_loan": 1509671847.09,
+        "children": [
+          {
+            "id": 95,
+            "code": "12E3",
+            "description": "Rural Housing Service",
+            "award_count": 3853,
+            "obligation": 27521786.03,
+            "outlay": 16237516.13,
+            "face_value_of_loan": 793421259.77
+          },
+          {
+            "id": 95,
+            "code": "12E4",
+            "description": "Rural Business Cooperative Service",
+            "award_count": 104,
+            "obligation": 26509091.42,
+            "outlay": 33000533.55,
+            "face_value_of_loan": 698379384.0
+          },
+          {
+            "id": 95,
+            "code": "12D2",
+            "description": "Farm Service Agency",
+            "award_count": 1,
+            "obligation": 18264720.55,
+            "outlay": 0.0,
+            "face_value_of_loan": 17871203.32
+          }
+        ]
+      },
+      {
+        "id": 1522,
+        "code": "077",
+        "description": "U.S. International Development Finance Corporation",
+        "award_count": 1,
+        "obligation": 99043.63,
+        "outlay": 99043.63,
+        "face_value_of_loan": 24486834.0,
+        "children": [
+          {
+            "id": 1522,
+            "code": "7700",
+            "description": "U.S. International Development Finance Corporation",
+            "award_count": 1,
+            "obligation": 99043.63,
+            "outlay": 99043.63,
+            "face_value_of_loan": 24486834.0
+          }
+        ]
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "total": 4,
+      "limit": 3,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    }
+  },
+  "status": "live_ok"
+}

@@ -1,0 +1,53 @@
+{
+  "task_id": "Q150",
+  "requested_at_utc": "2026-10-17T18:55:07.015393+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/autocomplete/glossary/",
+    "body": {
+      "search_text": "obligation",
+      "limit": 3
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/autocomplete/glossary/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.298,
+  "response_bytes": 3025,
+  "response": {
+    "search_text": "obligation",
+    "results": [
+      "Deobligation",
+      "Federal Action Obligation",
+      "Obligation"
+    ],
+    "count": 3,
+    "matched_terms": [
+      {
+        "term": "Deobligation",
+        "slug": "deobligation",
+        "data_act_term": null,
+        "plain": "The cancellation or downward adjustment of previously obligated funds. Agencies deobligate funds to decrease the amount available under an award.  Deobligated funds may be reobligated within the period of availability of the appropriation.",
+        "official": null,
+        "resources": null
+      },
+      {
+        "term": "Federal Action Obligation",
+        "slug": "federal-action-obligation",
+        "data_act_term": "Federal Action Obligation",
+        "plain": "Amount of Federal Government\u2019s obligation, de-obligation, or liability, in dollars, for an award transaction.",
+        "official": "Amount of Federal Government\u2019s obligation, de-obligation, or liability, in dollars, for an award transaction.",
+        "resources": null
+      },
+      {
+        "term": "Obligation",
+        "slug": "obligation",
+        "data_act_term": "Obligation",
+        "plain": "When awarding funding, the U.S. government enters a binding agreement called an obligation. The government promises to spend the money, either immediately or in the future. An agency incurs an obligation, for example, when it places an order, signs a contract, awards a grant, purchases a service, or takes other actions that require it to make a payment.\n\nLoan Subsidy Cost has a direct budgetary impact and is factored into obligations and outlays when it is positive.",
+        "official": "Obligation means a legally binding agreement that will result in outlays, immediately or in the future. When you place an order, sign a contract, award a grant, purchase a service, or take other actions that require the Government to make payments to the public or from one Government account to another, you incur an obligation. It is a violation of the Antideficiency Act (31 U.S.C. \u00a7 1341(a)) to involve the Federal Government in a contract or obligation for payment of money before an appropriation is made, unless authorized by law. This means you cannot incur obligations in a vacuum; you incur an obligation against budget authority in a Treasury account that belongs to your agency. It is a violation of the Antideficiency Act to incur an obligation in an amount greater than the amount available in the Treasury account that is available. This means that the account must have budget authority sufficient to cover the total of such obligations at the time the obligation is incurred. In addition, the obligation you incur must conform to other applicable provisions of law, and you must be able to support the amounts reported by the documentary evidence required by 31 U.S.C. \u00a7 1501. Moreover, you are required to maintain certifications and records showing that the amounts have been obligated (31 U.S.C. \u00a7 1108). The following subsections provide additional guidance on when to record obligations for the different types of goods and services or the amount.\n\n \n\nAdditional detail is provided in Circular A\u201011.",
+        "resources": "See also: [Loan Subsidy Cost](?glossary=loan-subsidy-cost)"
+      }
+    ]
+  },
+  "status": "live_ok"
+}

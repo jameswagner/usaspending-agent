@@ -1,0 +1,30 @@
+{
+  "task_id": "Q120",
+  "requested_at_utc": "2026-10-17T18:53:50.696710+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/disaster/agency/count/",
+    "body": {
+      "filter": {
+        "def_codes": [
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "U",
+          "V"
+        ]
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/disaster/agency/count/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.258,
+  "response_bytes": 12,
+  "response": {
+    "count": 48
+  },
+  "status": "live_ok"
+}

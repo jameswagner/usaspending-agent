@@ -1,0 +1,96 @@
+{
+  "task_id": "Q008",
+  "requested_at_utc": "2026-10-17T18:53:03.852737+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "agencies": [
+          {
+            "type": "awarding",
+            "tier": "toptier",
+            "name": "Department of Health and Human Services"
+          }
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.438,
+  "response_bytes": 1616,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 306891989,
+        "Award ID": "HHSN261200800001E",
+        "Recipient Name": "LEIDOS BIOMEDICAL RESEARCH INC",
+        "Award Amount": 4811722791.25,
+        "Start Date": "2008-09-26",
+        "End Date": "2024-09-06",
+        "Description": "TAS::75 0849::TAS  OPER OF GOVT R&D GOCO FACILITIES",
+        "generated_internal_id": "CONT_AWD_HHSN261200800001E_7529_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 291495038,
+        "Award ID": "75ACF121C00020",
+        "Recipient Name": "RAPID DEPLOYMENT INC",
+        "Award Amount": 3516373308.21,
+        "Start Date": "2021-03-24",
+        "End Date": "2025-09-30",
+        "Description": "THE PURPOSE OF THIS CONTRACT IS TO PROVIDE THE FULL COMPLEMENT OF SERVICES NECESSARY TO CARE FOR UC IN ORR CUSTODY INCLUDING FACILITIES SET-UP, MAINTENANCE, AND SUPPORT INTERNAL AND PERIMETER (IF APPLICABLE) SECURITY, DIRECT CARE AND SUPERVISION INC",
+        "generated_internal_id": "CONT_AWD_75ACF121C00020_7590_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 291528736,
+        "Award ID": "75FCMC22C0038",
+        "Recipient Name": "MAXIMUS FEDERAL SERVICES, INC.",
+        "Award Amount": 3314910843.0,
+        "Start Date": "2022-08-31",
+        "End Date": "2027-09-10",
+        "Description": "CONTACT CENTER OPERATIONS",
+        "generated_internal_id": "CONT_AWD_75FCMC22C0038_7530_-NONE-_-NONE-"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 291528736,
+      "last_record_sort_value": "331491084300"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

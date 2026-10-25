@@ -1,0 +1,57 @@
+{
+  "task_id": "Q118",
+  "requested_at_utc": "2026-10-17T18:53:50.125993+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/disaster/overview/",
+    "query": {
+      "def_codes": "L,M,N,O,P,U,V"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/disaster/overview/?def_codes=L%2CM%2CN%2CO%2CP%2CU%2CV",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.266,
+  "response_bytes": 516,
+  "response": {
+    "funding": [
+      {
+        "def_code": "N",
+        "amount": 365165446552.17
+      },
+      {
+        "def_code": "P",
+        "amount": 151206032888.4
+      },
+      {
+        "def_code": "U",
+        "amount": 183512965381.53
+      },
+      {
+        "def_code": "O",
+        "amount": 2512081611147.2
+      },
+      {
+        "def_code": "M",
+        "amount": 17007940774.81
+      },
+      {
+        "def_code": "V",
+        "amount": 1448053608909.87
+      },
+      {
+        "def_code": "L",
+        "amount": 7707863149.53
+      }
+    ],
+    "total_budget_authority": 4684735468803.51,
+    "spending": {
+      "award_obligations": 2540674131711.57,
+      "award_outlays": 2576255918466.34,
+      "total_obligations": 4609546910927.8,
+      "total_outlays": 4572584431719.36
+    },
+    "additional": null
+  },
+  "status": "live_ok"
+}

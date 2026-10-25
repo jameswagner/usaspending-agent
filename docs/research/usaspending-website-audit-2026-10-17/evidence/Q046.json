@@ -1,0 +1,42 @@
+{
+  "task_id": "Q046",
+  "requested_at_utc": "2026-10-17T19:20:29.002094+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/references/hash/",
+    "body": {
+      "hash": "2986f5ef9c9900a71840d8016a3905d6"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/references/hash/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.322,
+  "response_bytes": 234,
+  "response": {
+    "filter": {
+      "filters": {
+        "agencies": [
+          {
+            "name": "National Aeronautics and Space Administration",
+            "tier": "toptier",
+            "type": "awarding"
+          }
+        ],
+        "time_period": [
+          {
+            "end_date": "2025-09-30",
+            "start_date": "2024-10-01"
+          }
+        ],
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      }
+    }
+  },
+  "status": "live_ok"
+}

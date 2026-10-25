@@ -1,0 +1,96 @@
+{
+  "task_id": "Q002",
+  "requested_at_utc": "2026-10-17T18:53:01.693314+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "02",
+          "03",
+          "04",
+          "05"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "agencies": [
+          {
+            "type": "awarding",
+            "tier": "toptier",
+            "name": "National Aeronautics and Space Administration"
+          }
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.497,
+  "response_bytes": 1742,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 269004917,
+        "Award ID": "NNX16AO69A",
+        "Recipient Name": "BAYLOR COLLEGE OF MEDICINE",
+        "Award Amount": 139591379.5,
+        "Start Date": "2016-10-01",
+        "End Date": "2028-09-30",
+        "Description": "THIS PROPOSAL FOR A TRANSLATIONAL RESEARCH INSTITUTE IS SUBMITTED ON BEHALF OF A CONSORTIUM OF NON-PROFIT ACADEMIC INSTITUTIONS IN RESPONSE TO NASA C",
+        "generated_internal_id": "ASST_NON_NNX16AO69A_080"
+      },
+      {
+        "internal_id": 268986143,
+        "Award ID": "NNL09AA00A",
+        "Recipient Name": "NATIONAL INSTITUTE OF AEROSPACE ASSOCIATES",
+        "Award Amount": 127431525.45,
+        "Start Date": "2009-05-28",
+        "End Date": "2019-06-30",
+        "Description": "FACILITATE ESTABLISHMENT AND OPERATION OF SCIENCE AND RESEARCH INSTITUTECONTINUATION TO NCC1-02043",
+        "generated_internal_id": "ASST_NON_NNL09AA00A_080"
+      },
+      {
+        "internal_id": 253715125,
+        "Award ID": "80JSC018M0005",
+        "Recipient Name": "CENTER FOR THE ADVANCEMENT OF SCIENCE IN SPACE, INC.",
+        "Award Amount": 117771847.0,
+        "Start Date": "2011-08-31",
+        "End Date": "2030-09-30",
+        "Description": "INTERNATIONAL SPACE STATION (ISS) NATIONAL LABORATORY MANAGEMENT:MAXIMIZE THE VALUE OF THE INVESTMENT THE U.S. GOVERNMENT HAS MADE IN THE ISS AND DEMONSTRATE THE SCIENTIFIC AND TECHNOLOGICAL PRODUCTIVITY OF THE ISS OVER THE NEXT DECADE.",
+        "generated_internal_id": "ASST_NON_80JSC018M0005_080"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 253715125,
+      "last_record_sort_value": "11777184700"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

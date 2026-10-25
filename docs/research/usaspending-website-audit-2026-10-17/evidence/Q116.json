@@ -1,0 +1,5428 @@
+{
+  "task_id": "Q116",
+  "requested_at_utc": "2026-10-17T19:20:37.340249+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/spending/",
+    "body": {
+      "type": "recipient",
+      "filters": {
+        "fy": "2025",
+        "quarter": "4",
+        "federal_account": 5634
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/spending/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 3.146,
+  "response_bytes": 114452,
+  "response": {
+    "total": 6816438118.56,
+    "end_date": "2025-09-30T00:00:00Z",
+    "results": [
+      {
+        "id": "3632dc26-45b8-9d0e-1128-63e866708c8f",
+        "type": "recipient",
+        "name": "THE BOEING COMPANY",
+        "code": "THE BOEING COMPANY",
+        "amount": 1172217663.0,
+        "total": 1172217663.0
+      },
+      {
+        "id": "6e7a895c-aa57-8600-2a8a-4e237f6213f6",
+        "type": "recipient",
+        "name": "LOCKHEED MARTIN CORP",
+        "code": "LOCKHEED MARTIN CORP",
+        "amount": 1008389220.7,
+        "total": 1008389220.7
+      },
+      {
+        "id": "1bc6570e-8b90-8bba-adc9-a6e5069bcfd3",
+        "type": "recipient",
+        "name": "BLUE ORIGIN MANUFACTURING, LLC",
+        "code": "BLUE ORIGIN MANUFACTURING, LLC",
+        "amount": 767581598.05,
+        "total": 767581598.05
+      },
+      {
+        "id": "64d116c0-8e36-0200-3878-827560dca24a",
+        "type": "recipient",
+        "name": "AMENTUM TECHNOLOGY, INC.",
+        "code": "AMENTUM TECHNOLOGY, INC.",
+        "amount": 578054650.85,
+        "total": 578054650.85
+      },
+      {
+        "id": "d6601efc-adc3-1030-5904-be323dc49433",
+        "type": "recipient",
+        "name": "NORTHROP GRUMMAN SYSTEMS CORPORATION",
+        "code": "NORTHROP GRUMMAN SYSTEMS CORPORATION",
+        "amount": 325307402.77,
+        "total": 325307402.77
+      },
+      {
+        "id": "f87ea7aa-b645-2932-36c2-e89cb4e9a016",
+        "type": "recipient",
+        "name": "AEROJET ROCKETDYNE OF DE, INC",
+        "code": "AEROJET ROCKETDYNE OF DE, INC",
+        "amount": 295756383.44,
+        "total": 295756383.44
+      },
+      {
+        "id": "828ad15f-2b75-eb7a-ab63-b3f56dd45597",
+        "type": "recipient",
+        "name": "NORTHROP GRUMMAN SYSTEMS CORPORATION",
+        "code": "NORTHROP GRUMMAN SYSTEMS CORPORATION",
+        "amount": 286699657.38,
+        "total": 286699657.38
+      },
+      {
+        "id": "7cfe19f0-3996-b85d-3d93-9ebc1c887d0a",
+        "type": "recipient",
+        "name": "BECHTEL NATIONAL, INC.",
+        "code": "BECHTEL NATIONAL, INC.",
+        "amount": 272595909.0,
+        "total": 272595909.0
+      },
+      {
+        "id": "8a3a5525-3218-a488-db0e-4823241ceb90",
+        "type": "recipient",
+        "name": "SPACE EXPLORATION TECHNOLOGIES CORP.",
+        "code": "SPACE EXPLORATION TECHNOLOGIES CORP.",
+        "amount": 257215127.84,
+        "total": 257215127.84
+      },
+      {
+        "id": "435aa33d-8ca5-7631-ec18-85dbb07c6fa1",
+        "type": "recipient",
+        "name": "AMENTUM TECHNOLOGY, INC.",
+        "code": "AMENTUM TECHNOLOGY, INC.",
+        "amount": 192731852.53,
+        "total": 192731852.53
+      },
+      {
+        "id": "eb13e842-2068-e3ee-0453-d02b9582e5cd",
+        "type": "recipient",
+        "name": "KBR WYLE SERVICES, LLC",
+        "code": "KBR WYLE SERVICES, LLC",
+        "amount": 180533947.45,
+        "total": 180533947.45
+      },
+      {
+        "id": "b86453e4-d917-78e1-6af2-eb04bcaf9b47",
+        "type": "recipient",
+        "name": "AXIOM SPACE INC",
+        "code": "AXIOM SPACE INC",
+        "amount": 130495882.76,
+        "total": 130495882.76
+      },
+      {
+        "id": "95dd1a2e-3014-8349-70d8-933b7e8cd43e",
+        "type": "recipient",
+        "name": "LANTERIS SPACE LLC",
+        "code": "LANTERIS SPACE LLC",
+        "amount": 105827201.0,
+        "total": 105827201.0
+      },
+      {
+        "id": "dcc79470-09a7-95dd-2480-cabd01a3eab7",
+        "type": "recipient",
+        "name": "AEROJET ROCKETDYNE, INC.",
+        "code": "AEROJET ROCKETDYNE, INC.",
+        "amount": 76102408.0,
+        "total": 76102408.0
+      },
+      {
+        "id": "6e76fa33-2d96-c636-941c-bca1997db076",
+        "type": "recipient",
+        "name": "CALIFORNIA INSTITUTE OF TECHNOLOGY",
+        "code": "CALIFORNIA INSTITUTE OF TECHNOLOGY",
+        "amount": 64658788.22,
+        "total": 64658788.22
+      },
+      {
+        "id": "28eee911-76af-7147-f760-4ec5f90bec2d",
+        "type": "recipient",
+        "name": "CACI, INC. - FEDERAL",
+        "code": "CACI, INC. - FEDERAL",
+        "amount": 53531600.93,
+        "total": 53531600.93
+      },
+      {
+        "id": "83f39725-68ce-aaf2-164d-475e790e2b8e",
+        "type": "recipient",
+        "name": "DYNETICS, INC.",
+        "code": "DYNETICS, INC.",
+        "amount": 46353179.33,
+        "total": 46353179.33
+      },
+      {
+        "id": "6cbea0a9-b56a-1fd8-3dee-e808ea373a4b",
+        "type": "recipient",
+        "name": "THE AEROSPACE CORPORATION",
+        "code": "THE AEROSPACE CORPORATION",
+        "amount": 46280036.37,
+        "total": 46280036.37
+      },
+      {
+        "id": "690fafd3-ecd8-1228-92a0-07aa28dd1ee2",
+        "type": "recipient",
+        "name": "THE BOEING COMPANY",
+        "code": "THE BOEING COMPANY",
+        "amount": 44323032.19,
+        "total": 44323032.19
+      },
+      {
+        "id": "ab6154d4-55f4-bacc-962f-e4c111812d7e",
+        "type": "recipient",
+        "name": "BASTION TECHNOLOGIES, INC.",
+        "code": "BASTION TECHNOLOGIES, INC.",
+        "amount": 39871393.68,
+        "total": 39871393.68
+      },
+      {
+        "id": "b37ddcf2-0924-f6e0-0fee-c40823f5789b",
+        "type": "recipient",
+        "name": "LEIDOS, INC.",
+        "code": "LEIDOS, INC.",
+        "amount": 38756989.73,
+        "total": 38756989.73
+      },
+      {
+        "id": "ffca72e5-fba2-798a-6969-2a6c45e9f985",
+        "type": "recipient",
+        "name": "BOOZ ALLEN HAMILTON INC",
+        "code": "BOOZ ALLEN HAMILTON INC",
+        "amount": 38006226.57,
+        "total": 38006226.57
+      },
+      {
+        "id": "6d7248f9-fd1b-2fe9-b188-b5e95ce285bf",
+        "type": "recipient",
+        "name": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION",
+        "code": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION",
+        "amount": 36190648.02,
+        "total": 36190648.02
+      },
+      {
+        "id": "8b5328a1-a579-d89a-5423-6ac8d4577551",
+        "type": "recipient",
+        "name": "BARRIOS TECHNOLOGY, LLC",
+        "code": "BARRIOS TECHNOLOGY, LLC",
+        "amount": 34576407.13,
+        "total": 34576407.13
+      },
+      {
+        "id": "d86df7af-f6c1-a07a-ccc4-ec74331bafc5",
+        "type": "recipient",
+        "name": "CGI FEDERAL INC.",
+        "code": "CGI FEDERAL INC.",
+        "amount": 33477961.22,
+        "total": 33477961.22
+      },
+      {
+        "id": "e1b55302-90bb-96ac-3428-ed567cfa9713",
+        "type": "recipient",
+        "name": "RSI-QUANTITECH JV LLC",
+        "code": "RSI-QUANTITECH JV LLC",
+        "amount": 31503808.12,
+        "total": 31503808.12
+      },
+      {
+        "id": "3375aa27-1225-18d6-7c4b-a7f4a005ef92",
+        "type": "recipient",
+        "name": "NOVA SPACE SOLUTIONS, LLC",
+        "code": "NOVA SPACE SOLUTIONS, LLC",
+        "amount": 29831497.94,
+        "total": 29831497.94
+      },
+      {
+        "id": "6137d64e-d928-ed49-f0a9-dab96b1bf047",
+        "type": "recipient",
+        "name": "SYNCOM SPACE SERVICES LLC",
+        "code": "SYNCOM SPACE SERVICES LLC",
+        "amount": 26904186.09,
+        "total": 26904186.09
+      },
+      {
+        "id": "a01c5eb0-9d0f-4631-24a6-75917712d54d",
+        "type": "recipient",
+        "name": "AMENTUM SPACEPORT LLC",
+        "code": "AMENTUM SPACEPORT LLC",
+        "amount": 26660757.67,
+        "total": 26660757.67
+      },
+      {
+        "id": "dcad095e-996c-f2b3-8b60-c90693b9bb9b",
+        "type": "recipient",
+        "name": "SIERRA LOBO INC",
+        "code": "SIERRA LOBO INC",
+        "amount": 25166431.17,
+        "total": 25166431.17
+      },
+      {
+        "id": "fb0538c5-199f-69f8-9e3c-d40c49d6d6ce",
+        "type": "recipient",
+        "name": "ASTRION GROUP, LLC",
+        "code": "ASTRION GROUP, LLC",
+        "amount": 23327521.45,
+        "total": 23327521.45
+      },
+      {
+        "id": "25cf5892-4aa6-0f1c-dc9e-85d179842e26",
+        "type": "recipient",
+        "name": "MACLEAN ENGINEERING & APPLIED TECHNOLOGIES, L.L.C.",
+        "code": "MACLEAN ENGINEERING & APPLIED TECHNOLOGIES, L.L.C.",
+        "amount": 20782222.42,
+        "total": 20782222.42
+      },
+      {
+        "id": "78ec491d-7c2b-71fe-33cf-48692f533970",
+        "type": "recipient",
+        "name": "TELEDYNE BROWN ENGINEERING, INC.",
+        "code": "TELEDYNE BROWN ENGINEERING, INC.",
+        "amount": 18701149.6,
+        "total": 18701149.6
+      },
+      {
+        "id": "385dd1df-55cb-ae3f-a24c-0b7430d4ae02",
+        "type": "recipient",
+        "name": "HX5 LLC",
+        "code": "HX5 LLC",
+        "amount": 17495034.81,
+        "total": 17495034.81
+      },
+      {
+        "id": "769b30c5-f581-2336-293e-7bcc355da737",
+        "type": "recipient",
+        "name": "AEROJET ROCKETDYNE, INC.",
+        "code": "AEROJET ROCKETDYNE, INC.",
+        "amount": 15369348.3,
+        "total": 15369348.3
+      },
+      {
+        "id": "78b77c74-bfa8-da47-3898-97879670c1d8",
+        "type": "recipient",
+        "name": "VICTORY SOLUTIONS, LLC",
+        "code": "VICTORY SOLUTIONS, LLC",
+        "amount": 15289024.83,
+        "total": 15289024.83
+      },
+      {
+        "id": "fb63ba18-02ee-d557-7366-681926c60e0d",
+        "type": "recipient",
+        "name": "V2X AEROSPACE LLC",
+        "code": "V2X AEROSPACE LLC",
+        "amount": 14178374.79,
+        "total": 14178374.79
+      },
+      {
+        "id": "67f1c4ec-fdbb-7c33-6996-799adb433cbd",
+        "type": "recipient",
+        "name": "ARES TECHNICAL SERVICES CORPORATION",
+        "code": "ARES TECHNICAL SERVICES CORPORATION",
+        "amount": 12531078.52,
+        "total": 12531078.52
+      },
+      {
+        "id": "c263591e-5a6b-d322-adea-36329bb8b217",
+        "type": "recipient",
+        "name": "ANALYTICAL MECHANICS ASSOCIATES, INC.",
+        "code": "ANALYTICAL MECHANICS ASSOCIATES, INC.",
+        "amount": 11733496.52,
+        "total": 11733496.52
+      },
+      {
+        "id": "3170de1d-7eb4-ebf6-0384-3ed9bba36703",
+        "type": "recipient",
+        "name": "VISTA PHOTONICS, INC",
+        "code": "VISTA PHOTONICS, INC",
+        "amount": 11214774.1,
+        "total": 11214774.1
+      },
+      {
+        "id": "32109085-1976-8da6-d5cd-7c8077389b75",
+        "type": "recipient",
+        "name": "LEIDOS, INC.",
+        "code": "LEIDOS, INC.",
+        "amount": 9676048.23,
+        "total": 9676048.23
+      },
+      {
+        "id": "f79fd35f-2df2-c088-b484-ee4ba8b764c4",
+        "type": "recipient",
+        "name": "MESSER LLC",
+        "code": "MESSER LLC",
+        "amount": 9206658.25,
+        "total": 9206658.25
+      },
+      {
+        "id": "99253b24-712b-034b-e1a4-77c8e86b4b5b",
+        "type": "recipient",
+        "name": "COUNTERTRADE PRODUCTS, INC.",
+        "code": "COUNTERTRADE PRODUCTS, INC.",
+        "amount": 9195293.63,
+        "total": 9195293.63
+      },
+      {
+        "id": "c7f04ad8-94b7-0e6f-e07d-253a5c8a12e6",
+        "type": "recipient",
+        "name": "SIERRA SPACE CORP",
+        "code": "SIERRA SPACE CORP",
+        "amount": 9124779.3,
+        "total": 9124779.3
+      },
+      {
+        "id": "5c560163-cea6-8604-26cb-84e63fd6cdef",
+        "type": "recipient",
+        "name": "AIR PRODUCTS AND CHEMICALS, INC",
+        "code": "AIR PRODUCTS AND CHEMICALS, INC",
+        "amount": 8762213.38,
+        "total": 8762213.38
+      },
+      {
+        "id": "fe5366b4-84c8-12ff-126f-f123de29819c",
+        "type": "recipient",
+        "name": "AMENTUM SERVICES, INC.",
+        "code": "AMENTUM SERVICES, INC.",
+        "amount": 8639386.15,
+        "total": 8639386.15
+      },
+      {
+        "id": "875a4072-7b37-6250-a5ab-8428c8e47565",
+        "type": "recipient",
+        "name": "THE CHARLES STARK DRAPER LABORATORY, INC.",
+        "code": "THE CHARLES STARK DRAPER LABORATORY, INC.",
+        "amount": 8511111.55,
+        "total": 8511111.55
+      },
+      {
+        "id": "da90bb48-a4e2-3068-d8d8-dbad32ddcffa",
+        "type": "recipient",
+        "name": "ODYSSEY SPACE RESEARCH, L.L.C.",
+        "code": "ODYSSEY SPACE RESEARCH, L.L.C.",
+        "amount": 8424073.58,
+        "total": 8424073.58
+      },
+      {
+        "id": "2216e294-2740-10ec-3a26-206f735230c3",
+        "type": "recipient",
+        "name": "ROTHE ARES JV, LLC",
+        "code": "ROTHE ARES JV, LLC",
+        "amount": 8046655.55,
+        "total": 8046655.55
+      },
+      {
+        "id": "40ed4eec-af42-15cf-f36d-7a56194f7f4b",
+        "type": "recipient",
+        "name": "AMENTUM TECHNOLOGY, INC.",
+        "code": "AMENTUM TECHNOLOGY, INC.",
+        "amount": 7664169.01,
+        "total": 7664169.01
+      },
+      {
+        "id": "ded7256c-011c-2248-ec90-35326ab8066e",
+        "type": "recipient",
+        "name": "AKIMA GLOBAL LOGISTICS, LLC",
+        "code": "AKIMA GLOBAL LOGISTICS, LLC",
+        "amount": 7160114.66,
+        "total": 7160114.66
+      },
+      {
+        "id": "ebfaba2f-88df-188b-0c40-848e63926c8b",
+        "type": "recipient",
+        "name": "PAE APPLIED TECHNOLOGIES LLC",
+        "code": "PAE APPLIED TECHNOLOGIES LLC",
+        "amount": 6651070.14,
+        "total": 6651070.14
+      },
+      {
+        "id": "1d9c5580-b697-2aa5-fe87-4de883da79ae",
+        "type": "recipient",
+        "name": "CEPEDA SYSTEMS & SOFTWARE ANALYSIS, INC.",
+        "code": "CEPEDA SYSTEMS & SOFTWARE ANALYSIS, INC.",
+        "amount": 6125863.56,
+        "total": 6125863.56
+      },
+      {
+        "id": "a3dca9a1-e9d8-84cf-319d-89482407e6a0",
+        "type": "recipient",
+        "name": "CHENEGA GLOBAL PROTECTION, LLC",
+        "code": "CHENEGA GLOBAL PROTECTION, LLC",
+        "amount": 5932491.17,
+        "total": 5932491.17
+      },
+      {
+        "id": "48fe6158-2893-2e5c-8422-653cc63fd375",
+        "type": "recipient",
+        "name": "AIRGAS USA LLC",
+        "code": "AIRGAS USA LLC",
+        "amount": 5318838.32,
+        "total": 5318838.32
+      },
+      {
+        "id": "9f530cbd-c105-834a-3991-a6dee863edec",
+        "type": "recipient",
+        "name": "AEGIS AEROSPACE INC",
+        "code": "AEGIS AEROSPACE INC",
+        "amount": 5110416.18,
+        "total": 5110416.18
+      },
+      {
+        "id": "488a4c50-93d9-2716-995a-ef6322ddb9cf",
+        "type": "recipient",
+        "name": "REDWIRE SPACE TECHNOLOGIES, INC.",
+        "code": "REDWIRE SPACE TECHNOLOGIES, INC.",
+        "amount": 4999929.17,
+        "total": 4999929.17
+      },
+      {
+        "id": "625ff1da-e9a2-cbdc-c8b3-fdd521fd1efc",
+        "type": "recipient",
+        "name": "MINBURN TECHNOLOGY GROUP, LLC",
+        "code": "MINBURN TECHNOLOGY GROUP, LLC",
+        "amount": 4877332.25,
+        "total": 4877332.25
+      },
+      {
+        "id": "cb2bf127-e4eb-0988-d4f1-52724d1a0eff",
+        "type": "recipient",
+        "name": "ALEUT CONSTRUCTION LLC",
+        "code": "ALEUT CONSTRUCTION LLC",
+        "amount": 4845334.0,
+        "total": 4845334.0
+      },
+      {
+        "id": "31bb62a0-6175-facc-abfd-b87e0ad5022e",
+        "type": "recipient",
+        "name": "ADVANCED SPACE LLC",
+        "code": "ADVANCED SPACE LLC",
+        "amount": 4798097.0,
+        "total": 4798097.0
+      },
+      {
+        "id": "260acf9e-9c14-e287-5699-fcd36eb7bca9",
+        "type": "recipient",
+        "name": "FIREFLY AEROSPACE INC.",
+        "code": "FIREFLY AEROSPACE INC.",
+        "amount": 4797086.54,
+        "total": 4797086.54
+      },
+      {
+        "id": "a75c7598-0344-3dd0-6883-c9ecb62fd31e",
+        "type": "recipient",
+        "name": "FLORIDA POWER & LIGHT COMPANY",
+        "code": "FLORIDA POWER & LIGHT COMPANY",
+        "amount": 4785924.16,
+        "total": 4785924.16
+      },
+      {
+        "id": "183311d4-0050-4afd-6eed-2008cf231cd8",
+        "type": "recipient",
+        "name": "S&K ENGINEERING AND RESEARCH, LLC",
+        "code": "S&K ENGINEERING AND RESEARCH, LLC",
+        "amount": 4764528.64,
+        "total": 4764528.64
+      },
+      {
+        "id": "ce3f9e01-961e-06a0-262c-00c1a57ece26",
+        "type": "recipient",
+        "name": "DISTRIBUTED TECHNOLOGY GROUP LLC",
+        "code": "DISTRIBUTED TECHNOLOGY GROUP LLC",
+        "amount": 4763254.72,
+        "total": 4763254.72
+      },
+      {
+        "id": "129fccb1-783c-9fd1-7b6d-6ddea65ace79",
+        "type": "recipient",
+        "name": "PERATON INC.",
+        "code": "PERATON INC.",
+        "amount": 4744468.16,
+        "total": 4744468.16
+      },
+      {
+        "id": "92663aec-4451-0476-502b-d8c6919e98e0",
+        "type": "recipient",
+        "name": "DELOITTE CONSULTING LLP",
+        "code": "DELOITTE CONSULTING LLP",
+        "amount": 4699997.22,
+        "total": 4699997.22
+      },
+      {
+        "id": "9f20528a-21e4-d147-fdd6-f7b8ab786bc4",
+        "type": "recipient",
+        "name": "A-P-T RESEARCH, INC.",
+        "code": "A-P-T RESEARCH, INC.",
+        "amount": 4569884.95,
+        "total": 4569884.95
+      },
+      {
+        "id": "2c023317-2253-d360-9710-a68608d3963f",
+        "type": "recipient",
+        "name": "BLUE ORIGIN, LLC",
+        "code": "BLUE ORIGIN, LLC",
+        "amount": 4463549.0,
+        "total": 4463549.0
+      },
+      {
+        "id": "da4094a2-52d8-978f-dea9-611775895a79",
+        "type": "recipient",
+        "name": "INTUITIVE MACHINES, LLC",
+        "code": "INTUITIVE MACHINES, LLC",
+        "amount": 4312419.85,
+        "total": 4312419.85
+      },
+      {
+        "id": "8b710730-7be7-678b-2acd-b20b6d21ac2c",
+        "type": "recipient",
+        "name": "PCI PRODUCTIONS LLC",
+        "code": "PCI PRODUCTIONS LLC",
+        "amount": 4096433.78,
+        "total": 4096433.78
+      },
+      {
+        "id": "b8289dc0-984f-6d16-9d31-0ac8ab3f63ec",
+        "type": "recipient",
+        "name": "RED RIVER TECHNOLOGY LLC",
+        "code": "RED RIVER TECHNOLOGY LLC",
+        "amount": 4055745.13,
+        "total": 4055745.13
+      },
+      {
+        "id": "a3c06661-ff50-47dd-a969-064246b7cd4e",
+        "type": "recipient",
+        "name": "SPECIAL AEROSPACE SERVICES, LLC",
+        "code": "SPECIAL AEROSPACE SERVICES, LLC",
+        "amount": 3999522.0,
+        "total": 3999522.0
+      },
+      {
+        "id": "02e3f99f-0f5b-4f3c-e365-5da045eae439",
+        "type": "recipient",
+        "name": "HAMILTON SUNDSTRAND SPACE SYSTEMS INTERNATIONAL, INC",
+        "code": "HAMILTON SUNDSTRAND SPACE SYSTEMS INTERNATIONAL, INC",
+        "amount": 3901487.5,
+        "total": 3901487.5
+      },
+      {
+        "id": "265ef913-7aeb-4f28-cb7f-4c9ede8dfbb7",
+        "type": "recipient",
+        "name": "SAN JOSE STATE UNIVERSITY RESEARCH FOUNDATION",
+        "code": "SAN JOSE STATE UNIVERSITY RESEARCH FOUNDATION",
+        "amount": 3880176.64,
+        "total": 3880176.64
+      },
+      {
+        "id": "ec746899-7854-fc94-7464-f7945cf0b15c",
+        "type": "recipient",
+        "name": "1 - 8A ISO9001 FEDSYNC-BFS, LLC",
+        "code": "1 - 8A ISO9001 FEDSYNC-BFS, LLC",
+        "amount": 3818355.59,
+        "total": 3818355.59
+      },
+      {
+        "id": "ed1a383f-2c46-62d9-c439-f6db26332db3",
+        "type": "recipient",
+        "name": "GUARDIANS OF HONOR, LLC",
+        "code": "GUARDIANS OF HONOR, LLC",
+        "amount": 3667244.13,
+        "total": 3667244.13
+      },
+      {
+        "id": "b1a911b7-86af-d1e6-3873-60db5ac87c21",
+        "type": "recipient",
+        "name": "PRECISION MECHANICAL INC",
+        "code": "PRECISION MECHANICAL INC",
+        "amount": 3658340.0,
+        "total": 3658340.0
+      },
+      {
+        "id": "7e6c3dc3-078c-82a1-b9fa-759732330570",
+        "type": "recipient",
+        "name": "MEDIA FUSION, LLC",
+        "code": "MEDIA FUSION, LLC",
+        "amount": 3614526.79,
+        "total": 3614526.79
+      },
+      {
+        "id": "d89399d0-7b37-a01c-db81-1d39f920f4ea",
+        "type": "recipient",
+        "name": "ROTHE DEVELOPMENT, INC",
+        "code": "ROTHE DEVELOPMENT, INC",
+        "amount": 3583598.13,
+        "total": 3583598.13
+      },
+      {
+        "id": "6157ad00-d5e0-5665-ab8e-9da37404377e",
+        "type": "recipient",
+        "name": "OPR LLC",
+        "code": "OPR LLC",
+        "amount": 3533789.87,
+        "total": 3533789.87
+      },
+      {
+        "id": "c5019ae8-a3f1-5db6-2b4f-3d791871a8c4",
+        "type": "recipient",
+        "name": "MM TECHNOLOGIES, LLC",
+        "code": "MM TECHNOLOGIES, LLC",
+        "amount": 3424941.27,
+        "total": 3424941.27
+      },
+      {
+        "id": "e65a895a-031e-9f7b-d750-c6557d314cb2",
+        "type": "recipient",
+        "name": "AI SOLUTIONS INC",
+        "code": "AI SOLUTIONS INC",
+        "amount": 3295041.94,
+        "total": 3295041.94
+      },
+      {
+        "id": "ab31bfe9-b318-214a-7705-2e7acc80675b",
+        "type": "recipient",
+        "name": "TECHTRANS INTERNATIONAL INC",
+        "code": "TECHTRANS INTERNATIONAL INC",
+        "amount": 3262185.23,
+        "total": 3262185.23
+      },
+      {
+        "id": "5b1908f2-bf77-5bdf-3ecc-bbfbccd735ab",
+        "type": "recipient",
+        "name": "HX5 SIERRA LLC",
+        "code": "HX5 SIERRA LLC",
+        "amount": 3243370.82,
+        "total": 3243370.82
+      },
+      {
+        "id": "e0f8746a-9a3b-810a-257a-cae2d63868da",
+        "type": "recipient",
+        "name": "NEW TECH SOLUTIONS, INC.",
+        "code": "NEW TECH SOLUTIONS, INC.",
+        "amount": 3224844.93,
+        "total": 3224844.93
+      },
+      {
+        "id": "4b05f6bb-c9ce-8ef9-4701-7ba8cd771827",
+        "type": "recipient",
+        "name": "AGILE DECISION SCIENCES, LLC",
+        "code": "AGILE DECISION SCIENCES, LLC",
+        "amount": 3155505.13,
+        "total": 3155505.13
+      },
+      {
+        "id": "22021257-b692-098e-faf3-97cbc9944288",
+        "type": "recipient",
+        "name": "DIVERSIFIED CONSTRUCTION OF OKLAHOMA, INC.",
+        "code": "DIVERSIFIED CONSTRUCTION OF OKLAHOMA, INC.",
+        "amount": 2958879.07,
+        "total": 2958879.07
+      },
+      {
+        "id": "43ab278f-fa39-d00e-8373-18bca2b3a88f",
+        "type": "recipient",
+        "name": "THE MATHWORKS, INC.",
+        "code": "THE MATHWORKS, INC.",
+        "amount": 2920590.82,
+        "total": 2920590.82
+      },
+      {
+        "id": "e5e26718-e7d4-b144-60f7-3cd9c128dfa1",
+        "type": "recipient",
+        "name": "CBF PARTNERS JV LLC",
+        "code": "CBF PARTNERS JV LLC",
+        "amount": 2584867.02,
+        "total": 2584867.02
+      },
+      {
+        "id": "3b8298c2-5bfd-7fc4-bb07-ad4c20d92543",
+        "type": "recipient",
+        "name": "DH TECHNOLOGIES, INC.",
+        "code": "DH TECHNOLOGIES, INC.",
+        "amount": 2542837.11,
+        "total": 2542837.11
+      },
+      {
+        "id": "d345a8ea-b0ac-7e5d-b949-6507917f2140",
+        "type": "recipient",
+        "name": "UTAH STATE UNIVERSITY",
+        "code": "UTAH STATE UNIVERSITY",
+        "amount": 2394310.56,
+        "total": 2394310.56
+      },
+      {
+        "id": "b110d188-09c7-a7cb-fa72-769e5c3924a6",
+        "type": "recipient",
+        "name": "HSG, LLC",
+        "code": "HSG, LLC",
+        "amount": 2385560.24,
+        "total": 2385560.24
+      },
+      {
+        "id": "4cbd3de5-5169-391d-09e9-c6d842564884",
+        "type": "recipient",
+        "name": "ANSYS INC",
+        "code": "ANSYS INC",
+        "amount": 2349247.91,
+        "total": 2349247.91
+      },
+      {
+        "id": "dc86b1b7-121c-4683-ba12-4101b6be98a8",
+        "type": "recipient",
+        "name": "ASRC FEDERAL DATA SOLUTIONS, LLC",
+        "code": "ASRC FEDERAL DATA SOLUTIONS, LLC",
+        "amount": 2203823.29,
+        "total": 2203823.29
+      },
+      {
+        "id": "b1f7c489-d7e0-fb70-c94e-7c61d0ea0b28",
+        "type": "recipient",
+        "name": "METIS TECHNOLOGY SOLUTIONS, INC.",
+        "code": "METIS TECHNOLOGY SOLUTIONS, INC.",
+        "amount": 2187292.75,
+        "total": 2187292.75
+      },
+      {
+        "id": "0acde395-3ff9-27b7-b2c1-04c1ef07b4f7",
+        "type": "recipient",
+        "name": "CONCURRENT REAL-TIME, INC.",
+        "code": "CONCURRENT REAL-TIME, INC.",
+        "amount": 2162663.0,
+        "total": 2162663.0
+      },
+      {
+        "id": "81b30b92-b692-dd27-1b45-076554236854",
+        "type": "recipient",
+        "name": "EMF ENGINEERED COMPONENTS LLC",
+        "code": "EMF ENGINEERED COMPONENTS LLC",
+        "amount": 2058733.39,
+        "total": 2058733.39
+      },
+      {
+        "id": "70064d95-43ea-d703-a8af-63d23686f07f",
+        "type": "recipient",
+        "name": "NANORACKS, LLC",
+        "code": "NANORACKS, LLC",
+        "amount": 2027309.4,
+        "total": 2027309.4
+      },
+      {
+        "id": "88c1f279-78c7-b0fa-cb0f-8817758e6582",
+        "type": "recipient",
+        "name": "ATLAS DEVICES, LLC",
+        "code": "ATLAS DEVICES, LLC",
+        "amount": 1844042.33,
+        "total": 1844042.33
+      },
+      {
+        "id": "b96957e3-94d9-23c1-1285-7c714ffb1bc3",
+        "type": "recipient",
+        "name": "AEROSPACE APPLICATIONS NORTH AMERICA INC.",
+        "code": "AEROSPACE APPLICATIONS NORTH AMERICA INC.",
+        "amount": 1780804.78,
+        "total": 1780804.78
+      },
+      {
+        "id": "ae479c65-476c-754e-aad9-af12367a8790",
+        "type": "recipient",
+        "name": "SCIENCE & TECHNOLOGY CORPORATION",
+        "code": "SCIENCE & TECHNOLOGY CORPORATION",
+        "amount": 1678772.47,
+        "total": 1678772.47
+      },
+      {
+        "id": "9d50dd73-034e-e827-a9eb-7f707cb3200c",
+        "type": "recipient",
+        "name": "WRIGHT BROS LLC",
+        "code": "WRIGHT BROS LLC",
+        "amount": 1657016.0,
+        "total": 1657016.0
+      },
+      {
+        "id": "ed5c0d8b-948f-46dd-1d54-5046ef45ef2d",
+        "type": "recipient",
+        "name": "THE BOEING COMPANY",
+        "code": "THE BOEING COMPANY",
+        "amount": 1626712.0,
+        "total": 1626712.0
+      },
+      {
+        "id": "9461b0cb-18af-fbb5-0423-3da0b9ba4dd3",
+        "type": "recipient",
+        "name": "BREVARD ACHIEVEMENT CENTER, INC.",
+        "code": "BREVARD ACHIEVEMENT CENTER, INC.",
+        "amount": 1600461.85,
+        "total": 1600461.85
+      },
+      {
+        "id": "8438aaa7-380d-bc73-5fcc-b8d80836c989",
+        "type": "recipient",
+        "name": "NATIONAL INSTITUTE OF AEROSPACE ASSOCIATES",
+        "code": "NATIONAL INSTITUTE OF AEROSPACE ASSOCIATES",
+        "amount": 1551185.5,
+        "total": 1551185.5
+      },
+      {
+        "id": "85175c1c-93eb-a4a6-5eda-511e6458a5d7",
+        "type": "recipient",
+        "name": "PARAGON SPACE DEVELOPMENT CORPORATION",
+        "code": "PARAGON SPACE DEVELOPMENT CORPORATION",
+        "amount": 1548465.27,
+        "total": 1548465.27
+      },
+      {
+        "id": "62156152-706c-e1b2-2e14-29733d46ed6f",
+        "type": "recipient",
+        "name": "ERIE AFFILIATES INC",
+        "code": "ERIE AFFILIATES INC",
+        "amount": 1532393.0,
+        "total": 1532393.0
+      },
+      {
+        "id": "cf84d383-a58c-fc3f-4835-a1c3280936a6",
+        "type": "recipient",
+        "name": "AERODYNE-SGT ENGINEERING SERVICES, LLC",
+        "code": "AERODYNE-SGT ENGINEERING SERVICES, LLC",
+        "amount": 1521598.99,
+        "total": 1521598.99
+      },
+      {
+        "id": "e59f81cd-b2c0-1238-7ebe-f6816a437243",
+        "type": "recipient",
+        "name": "VETERAN INFORMATION TECHNOLOGIES, LLC",
+        "code": "VETERAN INFORMATION TECHNOLOGIES, LLC",
+        "amount": 1513935.74,
+        "total": 1513935.74
+      },
+      {
+        "id": "378fe7f9-e157-cd75-80cc-97cbe1a426db",
+        "type": "recipient",
+        "name": "BROWN UNIVERSITY",
+        "code": "BROWN UNIVERSITY",
+        "amount": 1500000.0,
+        "total": 1500000.0
+      },
+      {
+        "id": "3792ca7f-d5d2-d89c-872b-8c64e4e6390e",
+        "type": "recipient",
+        "name": "FCN, INC.",
+        "code": "FCN, INC.",
+        "amount": 1479082.02,
+        "total": 1479082.02
+      },
+      {
+        "id": "07ceacb3-cdec-40c1-2c4b-93afbe1894cf",
+        "type": "recipient",
+        "name": "GEXA ENERGY, LP",
+        "code": "GEXA ENERGY, LP",
+        "amount": 1444412.88,
+        "total": 1444412.88
+      },
+      {
+        "id": "3eda8291-569e-3f56-7b42-ec280edfe31c",
+        "type": "recipient",
+        "name": "ADVANCED COOLING TECHNOLOGIES INC",
+        "code": "ADVANCED COOLING TECHNOLOGIES INC",
+        "amount": 1431112.0,
+        "total": 1431112.0
+      },
+      {
+        "id": "c07a6919-cdf9-7d1f-a566-40a65f12479b",
+        "type": "recipient",
+        "name": "FOUR LLC",
+        "code": "FOUR LLC",
+        "amount": 1413911.56,
+        "total": 1413911.56
+      },
+      {
+        "id": "c1ed1988-e0b2-667c-5ed8-237090e974d1",
+        "type": "recipient",
+        "name": "QUINTRON SYSTEMS, LLC",
+        "code": "QUINTRON SYSTEMS, LLC",
+        "amount": 1393440.82,
+        "total": 1393440.82
+      },
+      {
+        "id": "7ab6c690-0efa-eb7c-894f-362b65287f9d",
+        "type": "recipient",
+        "name": "GAS SOUTH, LLC",
+        "code": "GAS SOUTH, LLC",
+        "amount": 1372352.14,
+        "total": 1372352.14
+      },
+      {
+        "id": "4eae43e5-e1f1-0e77-b2fe-09a12a9a552c",
+        "type": "recipient",
+        "name": "THE JOHNS HOPKINS UNIVERSITY APPLIED PHYSICS LABORATORY LLC",
+        "code": "THE JOHNS HOPKINS UNIVERSITY APPLIED PHYSICS LABORATORY LLC",
+        "amount": 1344072.47,
+        "total": 1344072.47
+      },
+      {
+        "id": "6b21b69c-859a-d089-fc37-835d8da62383",
+        "type": "recipient",
+        "name": "FREEDOM INFORMATION SYSTEMS, INC.",
+        "code": "FREEDOM INFORMATION SYSTEMS, INC.",
+        "amount": 1294045.33,
+        "total": 1294045.33
+      },
+      {
+        "id": "f7c481d7-071a-ead9-3bda-e4e7d1e903a7",
+        "type": "recipient",
+        "name": "GEORGIA TECH RESEARCH CORP",
+        "code": "GEORGIA TECH RESEARCH CORP",
+        "amount": 1265529.0,
+        "total": 1265529.0
+      },
+      {
+        "id": "72067fac-0ca1-c385-07a1-3db3b8f3411f",
+        "type": "recipient",
+        "name": "ASRC FEDERAL SYSTEM SOLUTIONS LLC",
+        "code": "ASRC FEDERAL SYSTEM SOLUTIONS LLC",
+        "amount": 1265029.69,
+        "total": 1265029.69
+      },
+      {
+        "id": "2a4d3db7-e268-7b36-3610-c75337f0b7e1",
+        "type": "recipient",
+        "name": "FOUR POINTS TECHNOLOGY, L.L.C.",
+        "code": "FOUR POINTS TECHNOLOGY, L.L.C.",
+        "amount": 1202757.07,
+        "total": 1202757.07
+      },
+      {
+        "id": "36b267db-ad1b-d570-3b2b-524b706cc12a",
+        "type": "recipient",
+        "name": "RPM INNOVATIONS INC",
+        "code": "RPM INNOVATIONS INC",
+        "amount": 1195470.0,
+        "total": 1195470.0
+      },
+      {
+        "id": "0ff83a4e-4d94-d62e-51a5-12605b5ae1b1",
+        "type": "recipient",
+        "name": "GYRO STABILIZED SYSTEMS LLC",
+        "code": "GYRO STABILIZED SYSTEMS LLC",
+        "amount": 1187000.0,
+        "total": 1187000.0
+      },
+      {
+        "id": "1eea5782-6482-cbd9-3b56-46796659129e",
+        "type": "recipient",
+        "name": "NELSON ENGINEERING CO.",
+        "code": "NELSON ENGINEERING CO.",
+        "amount": 1151106.0,
+        "total": 1151106.0
+      },
+      {
+        "id": "20af0683-f17d-1f8f-38ee-2f11bd124559",
+        "type": "recipient",
+        "name": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION",
+        "code": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION",
+        "amount": 1143399.63,
+        "total": 1143399.63
+      },
+      {
+        "id": "be0a48f1-0e53-58aa-6072-79a283364628",
+        "type": "recipient",
+        "name": "LINDE INC.",
+        "code": "LINDE INC.",
+        "amount": 1130721.13,
+        "total": 1130721.13
+      },
+      {
+        "id": "cfa659e4-14b3-731a-b7b9-8d63b9444180",
+        "type": "recipient",
+        "name": "ALUTIIQ ESSENTIAL SERVICES LLC",
+        "code": "ALUTIIQ ESSENTIAL SERVICES LLC",
+        "amount": 1117872.87,
+        "total": 1117872.87
+      },
+      {
+        "id": "c01c82a2-19f5-ecc1-dacc-7d00b93e94b9",
+        "type": "recipient",
+        "name": "BIRMINGHAM INDUSTRIAL CONSTRUCTION, LLC",
+        "code": "BIRMINGHAM INDUSTRIAL CONSTRUCTION, LLC",
+        "amount": 1078226.56,
+        "total": 1078226.56
+      },
+      {
+        "id": "29f3fe09-4b74-0d2c-34d7-ab0123cc45bc",
+        "type": "recipient",
+        "name": "AIR-LOCK, INCORPORATED",
+        "code": "AIR-LOCK, INCORPORATED",
+        "amount": 1058770.0,
+        "total": 1058770.0
+      },
+      {
+        "id": "84c4480b-c78b-e4d4-cfd9-078c221561cc",
+        "type": "recipient",
+        "name": "PERATON SERVICES & SOLUTIONS INC.",
+        "code": "PERATON SERVICES & SOLUTIONS INC.",
+        "amount": 1027689.87,
+        "total": 1027689.87
+      },
+      {
+        "id": "8d0bab2b-09d8-7908-feb2-a83fd69da755",
+        "type": "recipient",
+        "name": "TESLA LABORATORIES INC.",
+        "code": "TESLA LABORATORIES INC.",
+        "amount": 1017043.11,
+        "total": 1017043.11
+      },
+      {
+        "id": "83253a28-d5e4-17db-0aa6-15d2c71ba1fa",
+        "type": "recipient",
+        "name": "INUTEQ, LLC",
+        "code": "INUTEQ, LLC",
+        "amount": 1012525.95,
+        "total": 1012525.95
+      },
+      {
+        "id": "445af2f9-543d-9e63-c6fd-0feebf238d59",
+        "type": "recipient",
+        "name": "SOUTHWEST RESEARCH INSTITUTE",
+        "code": "SOUTHWEST RESEARCH INSTITUTE",
+        "amount": 1000000.0,
+        "total": 1000000.0
+      },
+      {
+        "id": "e895f676-c226-223f-b5ed-dda80c2ec73a",
+        "type": "recipient",
+        "name": "THE JOHNS HOPKINS UNIVERSITY",
+        "code": "THE JOHNS HOPKINS UNIVERSITY",
+        "amount": 999878.15,
+        "total": 999878.15
+      },
+      {
+        "id": "7b5e0827-5517-2479-1cb0-4b7718a449fe",
+        "type": "recipient",
+        "name": "PRATT & MILLER ENGINEERING & FABRICATION, LLC",
+        "code": "PRATT & MILLER ENGINEERING & FABRICATION, LLC",
+        "amount": 999329.52,
+        "total": 999329.52
+      },
+      {
+        "id": "360760cb-a2ed-6aa4-2d81-a7909557d12c",
+        "type": "recipient",
+        "name": "HONEYWELL INTERNATIONAL INC.",
+        "code": "HONEYWELL INTERNATIONAL INC.",
+        "amount": 991946.16,
+        "total": 991946.16
+      },
+      {
+        "id": "13d01494-a685-5148-c975-c580702908fd",
+        "type": "recipient",
+        "name": "OPTICAL SCIENCES, LLC",
+        "code": "OPTICAL SCIENCES, LLC",
+        "amount": 976828.84,
+        "total": 976828.84
+      },
+      {
+        "id": "37f4eaa6-d414-f77f-2acf-4a3e63fa13da",
+        "type": "recipient",
+        "name": "BOEING AEROSPACE OPERATIONS, INC.",
+        "code": "BOEING AEROSPACE OPERATIONS, INC.",
+        "amount": 964493.91,
+        "total": 964493.91
+      },
+      {
+        "id": "064ae3ed-3369-713b-8489-8ff60e8be050",
+        "type": "recipient",
+        "name": "IMMIXTECHNOLOGY INC",
+        "code": "IMMIXTECHNOLOGY INC",
+        "amount": 962617.31,
+        "total": 962617.31
+      },
+      {
+        "id": "468d803c-f129-ea56-fb84-fa6056eee746",
+        "type": "recipient",
+        "name": "PBG FEDSYNC JV LLC",
+        "code": "PBG FEDSYNC JV LLC",
+        "amount": 925652.78,
+        "total": 925652.78
+      },
+      {
+        "id": "733fc2c7-e78d-4646-d013-54824210a7fa",
+        "type": "recipient",
+        "name": "JENA-OPTRONIK GESELLSCHAFT MIT BESCHRAENKTER HAFTUNG",
+        "code": "JENA-OPTRONIK GESELLSCHAFT MIT BESCHRAENKTER HAFTUNG",
+        "amount": 897100.0,
+        "total": 897100.0
+      },
+      {
+        "id": "1ba18759-9db7-ef20-f2ff-396145eb517e",
+        "type": "recipient",
+        "name": "ROHMANN SERVICES, INC.",
+        "code": "ROHMANN SERVICES, INC.",
+        "amount": 890799.22,
+        "total": 890799.22
+      },
+      {
+        "id": "f1f50946-ee4d-0be3-e55a-3f69e7998c1b",
+        "type": "recipient",
+        "name": "LUNAR OUTPOST INC",
+        "code": "LUNAR OUTPOST INC",
+        "amount": 883578.9,
+        "total": 883578.9
+      },
+      {
+        "id": "2ac0fe55-ae6c-b7d9-52db-64b03066659b",
+        "type": "recipient",
+        "name": "FORT WAYNE METALS RESEARCH PRODUCTS, LLC",
+        "code": "FORT WAYNE METALS RESEARCH PRODUCTS, LLC",
+        "amount": 854345.0,
+        "total": 854345.0
+      },
+      {
+        "id": "02a3b8ca-076b-31e1-5ef3-8acd423608f6",
+        "type": "recipient",
+        "name": "4M RESEARCH, INC",
+        "code": "4M RESEARCH, INC",
+        "amount": 850600.0,
+        "total": 850600.0
+      },
+      {
+        "id": "dbceb126-f729-60e7-d55a-ba235f519653",
+        "type": "recipient",
+        "name": "THUNDERCAT TECHNOLOGY, LLC",
+        "code": "THUNDERCAT TECHNOLOGY, LLC",
+        "amount": 843542.15,
+        "total": 843542.15
+      },
+      {
+        "id": "9c2eabea-0186-95c9-d2bc-7fa9b3af1758",
+        "type": "recipient",
+        "name": "VENTURI ASTROLAB INC",
+        "code": "VENTURI ASTROLAB INC",
+        "amount": 829327.6,
+        "total": 829327.6
+      },
+      {
+        "id": "7989ebd6-c61e-0675-fe9e-6560c6ec46b0",
+        "type": "recipient",
+        "name": "ALCYON TECHNICAL SERVICES (ATS) JV, LLC",
+        "code": "ALCYON TECHNICAL SERVICES (ATS) JV, LLC",
+        "amount": 814439.49,
+        "total": 814439.49
+      },
+      {
+        "id": "9d446292-c342-42e3-5715-76f8fe17acf8",
+        "type": "recipient",
+        "name": "COLUMBUS TECHNOLOGIES AND SERVICES, INC",
+        "code": "COLUMBUS TECHNOLOGIES AND SERVICES, INC",
+        "amount": 813441.8,
+        "total": 813441.8
+      },
+      {
+        "id": "a27a581f-b0cc-2d56-b618-7715192eaa07",
+        "type": "recipient",
+        "name": "SMITHSONIAN INSTITUTION",
+        "code": "SMITHSONIAN INSTITUTION",
+        "amount": 812500.0,
+        "total": 812500.0
+      },
+      {
+        "id": "a5f6949c-9b6f-fc5a-1918-0994ff6cccfa",
+        "type": "recipient",
+        "name": "MOONPRINT SOLUTIONS LLC",
+        "code": "MOONPRINT SOLUTIONS LLC",
+        "amount": 812356.0,
+        "total": 812356.0
+      },
+      {
+        "id": "efc5f063-27af-3505-b2ba-0942484a744f",
+        "type": "recipient",
+        "name": "HAMILTON SUNDSTRAND SPACE SYSTEMS INTERNATIONAL, INC.",
+        "code": "HAMILTON SUNDSTRAND SPACE SYSTEMS INTERNATIONAL, INC.",
+        "amount": 748147.9,
+        "total": 748147.9
+      },
+      {
+        "id": "a979fd6c-4976-8cb9-7246-3a1402d1173f",
+        "type": "recipient",
+        "name": "ZIN TECHNOLOGIES, INC.",
+        "code": "ZIN TECHNOLOGIES, INC.",
+        "amount": 746683.5,
+        "total": 746683.5
+      },
+      {
+        "id": "a991e88c-195f-cea0-18d2-314e52327db4",
+        "type": "recipient",
+        "name": "CINKA CONSTRUCTION & CONSULTING SERVICES LLC",
+        "code": "CINKA CONSTRUCTION & CONSULTING SERVICES LLC",
+        "amount": 731555.23,
+        "total": 731555.23
+      },
+      {
+        "id": "7de167f2-aecd-5b97-b09e-5e4d5cf22111",
+        "type": "recipient",
+        "name": "SEVENTH SENSE, LLC",
+        "code": "SEVENTH SENSE, LLC",
+        "amount": 709663.79,
+        "total": 709663.79
+      },
+      {
+        "id": "4a9c9672-6773-31da-5ee2-cc4b1cd36e1d",
+        "type": "recipient",
+        "name": "NLT MANAGEMENT SERVICES LLC",
+        "code": "NLT MANAGEMENT SERVICES LLC",
+        "amount": 702571.88,
+        "total": 702571.88
+      },
+      {
+        "id": "62bc4f58-51ea-2f6f-8a60-eb7cfc972357",
+        "type": "recipient",
+        "name": "WILDFLOWER INTERNATIONAL, LTD.",
+        "code": "WILDFLOWER INTERNATIONAL, LTD.",
+        "amount": 696469.96,
+        "total": 696469.96
+      },
+      {
+        "id": "bcd07db9-001a-b962-dbab-d463bb99028f",
+        "type": "recipient",
+        "name": "GOVERNMENT ACQUISITIONS LLC",
+        "code": "GOVERNMENT ACQUISITIONS LLC",
+        "amount": 694851.75,
+        "total": 694851.75
+      },
+      {
+        "id": "645c4737-caef-ce68-2bfb-9b507be06ddd",
+        "type": "recipient",
+        "name": "THE UNIVERSITY OF ALABAMA IN HUNTSVILLE",
+        "code": "THE UNIVERSITY OF ALABAMA IN HUNTSVILLE",
+        "amount": 636536.47,
+        "total": 636536.47
+      },
+      {
+        "id": "aee61a2e-0c08-3804-7535-ecd9f40bd752",
+        "type": "recipient",
+        "name": "VETERAN ENTERPRISE TECHNOLOGY SERVICES LLC",
+        "code": "VETERAN ENTERPRISE TECHNOLOGY SERVICES LLC",
+        "amount": 623458.66,
+        "total": 623458.66
+      },
+      {
+        "id": "aba77b60-fb42-85c3-10df-c3686c66f837",
+        "type": "recipient",
+        "name": "IDEAL SYSTEM SOLUTIONS, INC.",
+        "code": "IDEAL SYSTEM SOLUTIONS, INC.",
+        "amount": 612784.65,
+        "total": 612784.65
+      },
+      {
+        "id": "1c17d1f2-7a6b-eace-d980-3659081fc26a",
+        "type": "recipient",
+        "name": "MATHEMATICAL RESEARCH, INC.",
+        "code": "MATHEMATICAL RESEARCH, INC.",
+        "amount": 601565.32,
+        "total": 601565.32
+      },
+      {
+        "id": "b6010741-8577-b3d7-bed6-b9fcff3518e1",
+        "type": "recipient",
+        "name": "REGENCY CONSULTING INC",
+        "code": "REGENCY CONSULTING INC",
+        "amount": 590961.56,
+        "total": 590961.56
+      },
+      {
+        "id": "0347a12c-6b74-43ee-1e94-4986e09d6a5e",
+        "type": "recipient",
+        "name": "BLUE ORIGIN WASHINGTON, LLC",
+        "code": "BLUE ORIGIN WASHINGTON, LLC",
+        "amount": 590155.0,
+        "total": 590155.0
+      },
+      {
+        "id": "07691132-2f7d-975c-381d-5d81ffc99564",
+        "type": "recipient",
+        "name": "ASTROBOTIC TECHNOLOGY INC",
+        "code": "ASTROBOTIC TECHNOLOGY INC",
+        "amount": 588057.6,
+        "total": 588057.6
+      },
+      {
+        "id": "c37f4e53-8649-e11b-bd51-1b138d3e8dde",
+        "type": "recipient",
+        "name": "MITCHELL VANTAGE SYSTEMS LLC",
+        "code": "MITCHELL VANTAGE SYSTEMS LLC",
+        "amount": 566410.84,
+        "total": 566410.84
+      },
+      {
+        "id": "e04c3b49-28c8-efb6-f8ea-b4c853900d6f",
+        "type": "recipient",
+        "name": "UNIVERSITY OF MARYLAND, COLLEGE PARK",
+        "code": "UNIVERSITY OF MARYLAND, COLLEGE PARK",
+        "amount": 550406.0,
+        "total": 550406.0
+      },
+      {
+        "id": "de5734f2-c51e-1278-035b-d879dc6e84aa",
+        "type": "recipient",
+        "name": "THE BOEING COMPANY",
+        "code": "THE BOEING COMPANY",
+        "amount": 518841.89,
+        "total": 518841.89
+      },
+      {
+        "id": "c2aa17b5-433e-eec4-c6c6-afd0d239332c",
+        "type": "recipient",
+        "name": "SYFT TECHNOLOGIES, INC.",
+        "code": "SYFT TECHNOLOGIES, INC.",
+        "amount": 515924.0,
+        "total": 515924.0
+      },
+      {
+        "id": "b583fade-4c02-5228-87e0-1b9834b79156",
+        "type": "recipient",
+        "name": "DAVID CLARK COMPANY INCORPORATED",
+        "code": "DAVID CLARK COMPANY INCORPORATED",
+        "amount": 504030.3,
+        "total": 504030.3
+      },
+      {
+        "id": "88c747ba-e197-d370-0f48-dc2f58b4d3a9",
+        "type": "recipient",
+        "name": "UNIVERSITY OF NEW MEXICO",
+        "code": "UNIVERSITY OF NEW MEXICO",
+        "amount": 500000.0,
+        "total": 500000.0
+      },
+      {
+        "id": "1bb8a70c-3d26-3c25-a35c-4ad447e4265a",
+        "type": "recipient",
+        "name": "NORTH AMERICAN MANUFACTURING PROS LLC",
+        "code": "NORTH AMERICAN MANUFACTURING PROS LLC",
+        "amount": 494110.0,
+        "total": 494110.0
+      },
+      {
+        "id": "c40081ed-4b8d-bd7f-53dc-c1abdf369073",
+        "type": "recipient",
+        "name": "BQMI-PEERLESS JOINT VENTURE LLC",
+        "code": "BQMI-PEERLESS JOINT VENTURE LLC",
+        "amount": 483780.07,
+        "total": 483780.07
+      },
+      {
+        "id": "b8d01603-144c-7b0c-ecf0-24060cd72b94",
+        "type": "recipient",
+        "name": "AFFIGENT, LLC",
+        "code": "AFFIGENT, LLC",
+        "amount": 482987.07,
+        "total": 482987.07
+      },
+      {
+        "id": "e6a61a85-1001-661c-91f3-ea6cc9787859",
+        "type": "recipient",
+        "name": "MAINTHIA TECHNOLOGIES INC",
+        "code": "MAINTHIA TECHNOLOGIES INC",
+        "amount": 461686.0,
+        "total": 461686.0
+      },
+      {
+        "id": "a8bf5c84-481c-deb8-6466-163fcf388ba8",
+        "type": "recipient",
+        "name": "QUALTECH SYSTEMS, INC.",
+        "code": "QUALTECH SYSTEMS, INC.",
+        "amount": 434000.0,
+        "total": 434000.0
+      },
+      {
+        "id": "54ae2ad9-170f-349e-87c8-769e84c78278",
+        "type": "recipient",
+        "name": "XPLOSAFE LLC",
+        "code": "XPLOSAFE LLC",
+        "amount": 424998.0,
+        "total": 424998.0
+      },
+      {
+        "id": "ccbaf12a-8635-e71b-ef00-b8e4719948ed",
+        "type": "recipient",
+        "name": "APACHE ELECTRICAL CONTRACTORS INC",
+        "code": "APACHE ELECTRICAL CONTRACTORS INC",
+        "amount": 399481.0,
+        "total": 399481.0
+      },
+      {
+        "id": "06ca1e58-d452-3ce3-2d68-d9020cbece47",
+        "type": "recipient",
+        "name": "YULISTA SOLUTIONS, LLC",
+        "code": "YULISTA SOLUTIONS, LLC",
+        "amount": 394280.44,
+        "total": 394280.44
+      },
+      {
+        "id": "d2b5ff5a-1425-d674-ff77-0251ff0b4c16",
+        "type": "recipient",
+        "name": "PROCON CONSULTING LLC",
+        "code": "PROCON CONSULTING LLC",
+        "amount": 388917.16,
+        "total": 388917.16
+      },
+      {
+        "id": "087732ba-e1be-6dba-4b75-4b2cb084a601",
+        "type": "recipient",
+        "name": "MATERIALS MODIFICATIONS INC",
+        "code": "MATERIALS MODIFICATIONS INC",
+        "amount": 375000.0,
+        "total": 375000.0
+      },
+      {
+        "id": "beabe236-bb12-98be-ec20-54896d688169",
+        "type": "recipient",
+        "name": "MAKEL ENGINEERING, INC.",
+        "code": "MAKEL ENGINEERING, INC.",
+        "amount": 375000.0,
+        "total": 375000.0
+      },
+      {
+        "id": "5613b50e-28cb-41f8-331e-2fc18e08b0ae",
+        "type": "recipient",
+        "name": "AECOM TECHNICAL SERVICES, INC.",
+        "code": "AECOM TECHNICAL SERVICES, INC.",
+        "amount": 369365.34,
+        "total": 369365.34
+      },
+      {
+        "id": "609cb7a2-ca91-e8c4-3a97-726bb40d3da4",
+        "type": "recipient",
+        "name": "OGIS COMMUNICATION GROUP INC",
+        "code": "OGIS COMMUNICATION GROUP INC",
+        "amount": 363429.31,
+        "total": 363429.31
+      },
+      {
+        "id": "ca1d8714-8617-b848-252b-5b3982a4107d",
+        "type": "recipient",
+        "name": "MDA SYSTEMS INC",
+        "code": "MDA SYSTEMS INC",
+        "amount": 360000.0,
+        "total": 360000.0
+      },
+      {
+        "id": "58f27a06-8b13-db66-44e8-66fff87b6bb7",
+        "type": "recipient",
+        "name": "SCIENCE SYSTEMS AND APPLICATIONS, INC.",
+        "code": "SCIENCE SYSTEMS AND APPLICATIONS, INC.",
+        "amount": 358508.04,
+        "total": 358508.04
+      },
+      {
+        "id": "c95986aa-959f-7a97-30e4-6921b9f4eb9a",
+        "type": "recipient",
+        "name": "BAILEY COLLABORATIVE SOLUTIONS, LLC",
+        "code": "BAILEY COLLABORATIVE SOLUTIONS, LLC",
+        "amount": 357379.89,
+        "total": 357379.89
+      },
+      {
+        "id": "f4223f6d-2717-905a-63a5-61c7a59391ed",
+        "type": "recipient",
+        "name": "ACCURA ENGINEERING AND CONSULTING SERVICES, INC.",
+        "code": "ACCURA ENGINEERING AND CONSULTING SERVICES, INC.",
+        "amount": 353985.01,
+        "total": 353985.01
+      },
+      {
+        "id": "7e065c40-a95e-1eb9-97d3-af9529767049",
+        "type": "recipient",
+        "name": "TENNESSEE VALLEY SERVICES INC",
+        "code": "TENNESSEE VALLEY SERVICES INC",
+        "amount": 351947.0,
+        "total": 351947.0
+      },
+      {
+        "id": "10efc83e-47b0-0e63-d0d7-52f861ff3b3b",
+        "type": "recipient",
+        "name": "HEALTHEON, INC",
+        "code": "HEALTHEON, INC",
+        "amount": 350651.0,
+        "total": 350651.0
+      },
+      {
+        "id": "870f4637-fa8a-9ba4-8881-49acf6176c3d",
+        "type": "recipient",
+        "name": "AMERICAN OXYGEN LLC",
+        "code": "AMERICAN OXYGEN LLC",
+        "amount": 349983.0,
+        "total": 349983.0
+      },
+      {
+        "id": "76564285-1960-95ab-e43d-8698b1358c41",
+        "type": "recipient",
+        "name": "JONES, EDMUNDS & ASSOCIATES, INC.",
+        "code": "JONES, EDMUNDS & ASSOCIATES, INC.",
+        "amount": 343822.0,
+        "total": 343822.0
+      },
+      {
+        "id": "94569594-c513-1d1d-b488-76ed207641bc",
+        "type": "recipient",
+        "name": "SETI INSTITUTE",
+        "code": "SETI INSTITUTE",
+        "amount": 343460.0,
+        "total": 343460.0
+      },
+      {
+        "id": "4dd7351a-9be9-5168-4b7e-f7d931bb64d2",
+        "type": "recipient",
+        "name": "CASTRO & COMPANY, LLC",
+        "code": "CASTRO & COMPANY, LLC",
+        "amount": 341647.0,
+        "total": 341647.0
+      },
+      {
+        "id": "0c1f24c9-76c9-ab37-cb68-324e1e1f5046",
+        "type": "recipient",
+        "name": "WARWICK MILLS INC",
+        "code": "WARWICK MILLS INC",
+        "amount": 339810.27,
+        "total": 339810.27
+      },
+      {
+        "id": "a4ce814d-f601-2150-98bf-6f203db0ea2f",
+        "type": "recipient",
+        "name": "GOVSMART, INC.",
+        "code": "GOVSMART, INC.",
+        "amount": 334564.11,
+        "total": 334564.11
+      },
+      {
+        "id": "abcf355f-e83d-1a30-4a40-0b8324343f0b",
+        "type": "recipient",
+        "name": "THE NATIONAL SPACE GRANT FOUNDATION, INC.",
+        "code": "THE NATIONAL SPACE GRANT FOUNDATION, INC.",
+        "amount": 326119.3,
+        "total": 326119.3
+      },
+      {
+        "id": "70d4cb29-decf-99f5-3711-e46b009d4d2a",
+        "type": "recipient",
+        "name": "VINCO INC",
+        "code": "VINCO INC",
+        "amount": 321941.0,
+        "total": 321941.0
+      },
+      {
+        "id": "e307e4d2-dec1-f2ab-64e4-d4fce6dfd431",
+        "type": "recipient",
+        "name": "QUADRUS CORPORATION",
+        "code": "QUADRUS CORPORATION",
+        "amount": 320099.0,
+        "total": 320099.0
+      },
+      {
+        "id": "6772ffdc-4fae-43e8-c3c3-f13f174977a4",
+        "type": "recipient",
+        "name": "PC KRAUSE & ASSOCIATES INC",
+        "code": "PC KRAUSE & ASSOCIATES INC",
+        "amount": 319634.0,
+        "total": 319634.0
+      },
+      {
+        "id": "adf04e31-9f3e-dfc7-b7fe-cff6f9cd7bda",
+        "type": "recipient",
+        "name": "CYFOR TECHNOLOGIES LLC",
+        "code": "CYFOR TECHNOLOGIES LLC",
+        "amount": 307803.47,
+        "total": 307803.47
+      },
+      {
+        "id": "cec59a85-7ed7-8033-f914-5c6cf17590ac",
+        "type": "recipient",
+        "name": "ASCEND AEROSPACE AND TECHNOLOGY, LLC",
+        "code": "ASCEND AEROSPACE AND TECHNOLOGY, LLC",
+        "amount": 302932.8,
+        "total": 302932.8
+      },
+      {
+        "id": "dcd060be-e344-0448-ed21-c2ece53159c4",
+        "type": "recipient",
+        "name": "OCEANEERING INTERNATIONAL INC",
+        "code": "OCEANEERING INTERNATIONAL INC",
+        "amount": 294059.99,
+        "total": 294059.99
+      },
+      {
+        "id": "9669604f-4d27-3568-c3df-ff74486a93ea",
+        "type": "recipient",
+        "name": "ROCKET LAB USA INC",
+        "code": "ROCKET LAB USA INC",
+        "amount": 286522.0,
+        "total": 286522.0
+      },
+      {
+        "id": "3b5b3071-54b8-49dc-37a3-9ef0ba5e3e68",
+        "type": "recipient",
+        "name": "KRATOS SRE, INC.",
+        "code": "KRATOS SRE, INC.",
+        "amount": 284728.35,
+        "total": 284728.35
+      },
+      {
+        "id": "754396f8-a6f0-765a-59eb-76999e6b1420",
+        "type": "recipient",
+        "name": "SHAPEFIDELITY, INC.",
+        "code": "SHAPEFIDELITY, INC.",
+        "amount": 277500.0,
+        "total": 277500.0
+      },
+      {
+        "id": "b45806b7-be49-76aa-f978-483af1be5355",
+        "type": "recipient",
+        "name": "TICHENOR & ASSOCIATES, LLP",
+        "code": "TICHENOR & ASSOCIATES, LLP",
+        "amount": 273397.53,
+        "total": 273397.53
+      },
+      {
+        "id": "afe126aa-c93d-158e-4c97-8b76c44ae87c",
+        "type": "recipient",
+        "name": "MOTION ENGINEERING COMPANY",
+        "code": "MOTION ENGINEERING COMPANY",
+        "amount": 259965.0,
+        "total": 259965.0
+      },
+      {
+        "id": "019652ee-6141-bb27-723a-20b1fc6f1568",
+        "type": "recipient",
+        "name": "CALNETIX TECHNOLOGIES LLC",
+        "code": "CALNETIX TECHNOLOGIES LLC",
+        "amount": 257263.0,
+        "total": 257263.0
+      },
+      {
+        "id": "348db3b4-6416-df4e-20e3-07d4dbe868a7",
+        "type": "recipient",
+        "name": "BURGESS & NIPLE INC",
+        "code": "BURGESS & NIPLE INC",
+        "amount": 256350.23,
+        "total": 256350.23
+      },
+      {
+        "id": "16f52671-7b45-dac1-efba-68c65e5352fc",
+        "type": "recipient",
+        "name": "8-KOI INC",
+        "code": "8-KOI INC",
+        "amount": 255664.0,
+        "total": 255664.0
+      },
+      {
+        "id": "4614835c-7f6e-ca80-e952-10941615eed6",
+        "type": "recipient",
+        "name": "D'NOVO SERVICES, LLC",
+        "code": "D'NOVO SERVICES, LLC",
+        "amount": 255426.0,
+        "total": 255426.0
+      },
+      {
+        "id": "42a8879c-846e-f347-6d3b-bb58a4d4fedb",
+        "type": "recipient",
+        "name": "HOMOGENEOUS METALS, INC.",
+        "code": "HOMOGENEOUS METALS, INC.",
+        "amount": 250500.6,
+        "total": 250500.6
+      },
+      {
+        "id": "ced46d27-6650-ea4e-80a1-1dc423b6d245",
+        "type": "recipient",
+        "name": "SERIOUS MANUFACTURING SOLUTIONS LLC",
+        "code": "SERIOUS MANUFACTURING SOLUTIONS LLC",
+        "amount": 249900.0,
+        "total": 249900.0
+      },
+      {
+        "id": "f800210c-a8ee-92db-1e35-d627d74a87b2",
+        "type": "recipient",
+        "name": "INTERCONN RESOURCES LLC",
+        "code": "INTERCONN RESOURCES LLC",
+        "amount": 249174.9,
+        "total": 249174.9
+      },
+      {
+        "id": "a0a87c1c-b46f-7c1f-9eb0-a389f77904a8",
+        "type": "recipient",
+        "name": "KBR WYLE SERVICES, LLC",
+        "code": "KBR WYLE SERVICES, LLC",
+        "amount": 249141.0,
+        "total": 249141.0
+      },
+      {
+        "id": "ab726589-b4c4-bea2-d749-fe3d919775a2",
+        "type": "recipient",
+        "name": "TTTECH NORTH AMERICA, INC.",
+        "code": "TTTECH NORTH AMERICA, INC.",
+        "amount": 246777.0,
+        "total": 246777.0
+      },
+      {
+        "id": "e43f24b5-2540-eb93-aba7-f7fd8b26da84",
+        "type": "recipient",
+        "name": "NATIONAL INSTRUMENTS CORP",
+        "code": "NATIONAL INSTRUMENTS CORP",
+        "amount": 244085.0,
+        "total": 244085.0
+      },
+      {
+        "id": "1c1fcbef-30d5-6d21-42b9-fe9865cb62e0",
+        "type": "recipient",
+        "name": "FLORIDA POWER & LIGHT COMPANY",
+        "code": "FLORIDA POWER & LIGHT COMPANY",
+        "amount": 242051.47,
+        "total": 242051.47
+      },
+      {
+        "id": "96b9d7ec-4f76-3e5d-ef47-355f7ce954df",
+        "type": "recipient",
+        "name": "UNITED LAUNCH SERVICES, LLC",
+        "code": "UNITED LAUNCH SERVICES, LLC",
+        "amount": 241190.0,
+        "total": 241190.0
+      },
+      {
+        "id": "63d967d4-ec3e-daa9-b729-952a80c05eb5",
+        "type": "recipient",
+        "name": "ACCESSAGILITY LLC",
+        "code": "ACCESSAGILITY LLC",
+        "amount": 239946.74,
+        "total": 239946.74
+      },
+      {
+        "id": "e65ac258-fc58-864a-a7bd-2fc374a50731",
+        "type": "recipient",
+        "name": "IMPULSE SPACE, INC.",
+        "code": "IMPULSE SPACE, INC.",
+        "amount": 239116.0,
+        "total": 239116.0
+      },
+      {
+        "id": "927919c2-a462-b5c7-6fcd-f0b341953ed8",
+        "type": "recipient",
+        "name": "AI SIGNAL RESEARCH INC",
+        "code": "AI SIGNAL RESEARCH INC",
+        "amount": 238700.0,
+        "total": 238700.0
+      },
+      {
+        "id": "d51002a7-15a7-41d3-b7d2-5ae1ddf73332",
+        "type": "recipient",
+        "name": "SAMUEL D. BURCHFIELD",
+        "code": "SAMUEL D. BURCHFIELD",
+        "amount": 232645.0,
+        "total": 232645.0
+      },
+      {
+        "id": "3672bd82-c578-772a-838e-c01086acc37c",
+        "type": "recipient",
+        "name": "PRECISION FABRICATING & CLEANING COMPANY, INC.",
+        "code": "PRECISION FABRICATING & CLEANING COMPANY, INC.",
+        "amount": 232479.66,
+        "total": 232479.66
+      },
+      {
+        "id": "72ca0d6d-bfb3-664d-fa88-47cacc8687d3",
+        "type": "recipient",
+        "name": "ADVANCED COMPUTER CONCEPTS, INC.",
+        "code": "ADVANCED COMPUTER CONCEPTS, INC.",
+        "amount": 229127.18,
+        "total": 229127.18
+      },
+      {
+        "id": "cec23536-2efb-f3ae-82f6-0fd4ebb2fec0",
+        "type": "recipient",
+        "name": "FIRELAKE-ARROWHEAD NASA SERVICES 2",
+        "code": "FIRELAKE-ARROWHEAD NASA SERVICES 2",
+        "amount": 227292.0,
+        "total": 227292.0
+      },
+      {
+        "id": "b3bf0045-a393-0c84-7e1c-41efc4b25c9e",
+        "type": "recipient",
+        "name": "ENTERPRISE TECHNOLOGY SOLUTIONS, INC.",
+        "code": "ENTERPRISE TECHNOLOGY SOLUTIONS, INC.",
+        "amount": 220170.91,
+        "total": 220170.91
+      },
+      {
+        "id": "c21351af-6a16-da23-a058-94dd7e44162a",
+        "type": "recipient",
+        "name": "DS GOVERNMENT SOLUTIONS CORP",
+        "code": "DS GOVERNMENT SOLUTIONS CORP",
+        "amount": 213432.96,
+        "total": 213432.96
+      },
+      {
+        "id": "ddbb3ca8-6dae-5c4f-d160-0f86fe39a008",
+        "type": "recipient",
+        "name": "NANOPLUS AMERICA, INC.",
+        "code": "NANOPLUS AMERICA, INC.",
+        "amount": 212409.6,
+        "total": 212409.6
+      },
+      {
+        "id": "44b1849e-3ebf-cbf8-7c2c-35e16b94824b",
+        "type": "recipient",
+        "name": "EAU GALLIE ELECTRIC, INC.",
+        "code": "EAU GALLIE ELECTRIC, INC.",
+        "amount": 212086.0,
+        "total": 212086.0
+      },
+      {
+        "id": "78b2c5e2-ffe0-79d4-f52c-d4918f55404a",
+        "type": "recipient",
+        "name": "TRAX INTERNATIONAL CORPORATION",
+        "code": "TRAX INTERNATIONAL CORPORATION",
+        "amount": 201807.93,
+        "total": 201807.93
+      },
+      {
+        "id": "d691f4e5-7b8b-7cf5-bffe-2269859722e3",
+        "type": "recipient",
+        "name": "HONEYWELL INTERNATIONAL INC.",
+        "code": "HONEYWELL INTERNATIONAL INC.",
+        "amount": 201098.0,
+        "total": 201098.0
+      },
+      {
+        "id": "72b6e447-1bdb-cce2-7fa4-88faf899eb5a",
+        "type": "recipient",
+        "name": "PHILLIPS CORPORATION",
+        "code": "PHILLIPS CORPORATION",
+        "amount": 196815.0,
+        "total": 196815.0
+      },
+      {
+        "id": "0221e33d-48f3-10cd-de08-54d4d62c873f",
+        "type": "recipient",
+        "name": "WESTEX GROUP, INC",
+        "code": "WESTEX GROUP, INC",
+        "amount": 190951.0,
+        "total": 190951.0
+      },
+      {
+        "id": "849ae61c-ed23-eb68-97f9-15fb376d7fcf",
+        "type": "recipient",
+        "name": "DOUGLAS ELECTRICAL COMPONENTS INC",
+        "code": "DOUGLAS ELECTRICAL COMPONENTS INC",
+        "amount": 187900.0,
+        "total": 187900.0
+      },
+      {
+        "id": "091405de-8793-ccdd-977b-a6b0d9c20aaa",
+        "type": "recipient",
+        "name": "CHAPSVISION AMERICAS INC.",
+        "code": "CHAPSVISION AMERICAS INC.",
+        "amount": 185000.0,
+        "total": 185000.0
+      },
+      {
+        "id": "df2749e0-f782-839a-a4d8-8e5d17335a7d",
+        "type": "recipient",
+        "name": "TEXAS TECH UNIVERSITY SYSTEM",
+        "code": "TEXAS TECH UNIVERSITY SYSTEM",
+        "amount": 181976.0,
+        "total": 181976.0
+      },
+      {
+        "id": "2f14ac11-bc8d-d1e9-d103-1585414b0792",
+        "type": "recipient",
+        "name": "REGENTS OF THE UNIVERSITY OF CALIFORNIA, THE",
+        "code": "REGENTS OF THE UNIVERSITY OF CALIFORNIA, THE",
+        "amount": 180000.0,
+        "total": 180000.0
+      },
+      {
+        "id": "aecb38be-7374-96e4-4d69-0161c36a758d",
+        "type": "recipient",
+        "name": "PIVOTAL UTILITY HOLDINGS INC",
+        "code": "PIVOTAL UTILITY HOLDINGS INC",
+        "amount": 178545.04,
+        "total": 178545.04
+      },
+      {
+        "id": "a7c2dc7d-fa7d-12bf-202b-b851a8bed08c",
+        "type": "recipient",
+        "name": "THORNHILL RESEARCH INC",
+        "code": "THORNHILL RESEARCH INC",
+        "amount": 176433.6,
+        "total": 176433.6
+      },
+      {
+        "id": "3d0e924f-2881-5f66-8511-7122b17340d9",
+        "type": "recipient",
+        "name": "PURDUE UNIVERSITY",
+        "code": "PURDUE UNIVERSITY",
+        "amount": 174541.02,
+        "total": 174541.02
+      },
+      {
+        "id": "2f9b400e-dc80-c49f-f49b-d0f639359e45",
+        "type": "recipient",
+        "name": "METGREEN SOLUTIONS INC",
+        "code": "METGREEN SOLUTIONS INC",
+        "amount": 173781.53,
+        "total": 173781.53
+      },
+      {
+        "id": "8110badf-9f29-b1c1-6f1f-fd2f2b1a69c9",
+        "type": "recipient",
+        "name": "OMNI MEASUREMENT SYSTEMS, INC.",
+        "code": "OMNI MEASUREMENT SYSTEMS, INC.",
+        "amount": 171560.0,
+        "total": 171560.0
+      },
+      {
+        "id": "26e104c4-1307-f677-c014-ac7fe7ab9e6d",
+        "type": "recipient",
+        "name": "UNIVERSITIES SPACE RESEARCH ASSOCIATION",
+        "code": "UNIVERSITIES SPACE RESEARCH ASSOCIATION",
+        "amount": 171240.69,
+        "total": 171240.69
+      },
+      {
+        "id": "afdb5528-e0ac-3206-584e-b3140fd75926",
+        "type": "recipient",
+        "name": "MONTANA STATE UNIVERSITY",
+        "code": "MONTANA STATE UNIVERSITY",
+        "amount": 170485.0,
+        "total": 170485.0
+      },
+      {
+        "id": "dc7919c9-89e8-0544-8134-72af94f68104",
+        "type": "recipient",
+        "name": "SPIRENT FEDERAL SYSTEMS INC",
+        "code": "SPIRENT FEDERAL SYSTEMS INC",
+        "amount": 169320.0,
+        "total": 169320.0
+      },
+      {
+        "id": "9ad4fbf3-5b8d-7dbd-9fc6-85989b712a64",
+        "type": "recipient",
+        "name": "TA INSTRUMENTS - WATERS L.L.C.",
+        "code": "TA INSTRUMENTS - WATERS L.L.C.",
+        "amount": 166430.0,
+        "total": 166430.0
+      },
+      {
+        "id": "fcdb5bed-3384-b90d-09ec-13439f38079e",
+        "type": "recipient",
+        "name": "ENSIGN-BICKFORD AEROSPACE & DEFENSE COMPANY",
+        "code": "ENSIGN-BICKFORD AEROSPACE & DEFENSE COMPANY",
+        "amount": 166235.0,
+        "total": 166235.0
+      },
+      {
+        "id": "36aa9191-5927-3028-63a0-84c20b6fd624",
+        "type": "recipient",
+        "name": "MID ATLANTIC MACHINERY INC",
+        "code": "MID ATLANTIC MACHINERY INC",
+        "amount": 164492.94,
+        "total": 164492.94
+      },
+      {
+        "id": "2818cf6e-a9ee-f5b3-4557-dd4d4d1e8cc1",
+        "type": "recipient",
+        "name": "RED CEDAR MANAGEMENT SOLUTIONS II LLC",
+        "code": "RED CEDAR MANAGEMENT SOLUTIONS II LLC",
+        "amount": 160250.0,
+        "total": 160250.0
+      },
+      {
+        "id": "dc66ae6f-e7ac-a701-10fb-cf3aa9ebd311",
+        "type": "recipient",
+        "name": "HOTTINGER BRUEL & KJAER INC.",
+        "code": "HOTTINGER BRUEL & KJAER INC.",
+        "amount": 159407.56,
+        "total": 159407.56
+      },
+      {
+        "id": "a47c49d4-71bf-1e42-a3ea-b0a6e5b00280",
+        "type": "recipient",
+        "name": "COMSOL, INC.",
+        "code": "COMSOL, INC.",
+        "amount": 156000.0,
+        "total": 156000.0
+      },
+      {
+        "id": "1775cb94-985f-f257-2b5f-0b4f6f1755dd",
+        "type": "recipient",
+        "name": "CADENCE DESIGN SYSTEMS INC",
+        "code": "CADENCE DESIGN SYSTEMS INC",
+        "amount": 153547.86,
+        "total": 153547.86
+      },
+      {
+        "id": "b57aca37-e609-e1f0-bb13-222830eab1e2",
+        "type": "recipient",
+        "name": "STANDARD-BLAZAR, LLC",
+        "code": "STANDARD-BLAZAR, LLC",
+        "amount": 152147.26,
+        "total": 152147.26
+      },
+      {
+        "id": "7bf98643-03e4-b0dd-074f-f40fd278f74a",
+        "type": "recipient",
+        "name": "JOHN H CARTER CO INC",
+        "code": "JOHN H CARTER CO INC",
+        "amount": 151946.41,
+        "total": 151946.41
+      },
+      {
+        "id": "4d6be1f4-afa5-ef3e-a626-6d057f6b70d9",
+        "type": "recipient",
+        "name": "ELEMENTUM 3D, INC.",
+        "code": "ELEMENTUM 3D, INC.",
+        "amount": 150764.39,
+        "total": 150764.39
+      },
+      {
+        "id": "39d3c95e-0582-45e9-0fdf-c914af50953d",
+        "type": "recipient",
+        "name": "GUICE OFFSHORE LLC",
+        "code": "GUICE OFFSHORE LLC",
+        "amount": 150375.0,
+        "total": 150375.0
+      },
+      {
+        "id": "59649428-1ebf-ef93-ea43-2491b55b3188",
+        "type": "recipient",
+        "name": "CASE WESTERN RESERVE UNIVERSITY",
+        "code": "CASE WESTERN RESERVE UNIVERSITY",
+        "amount": 150000.0,
+        "total": 150000.0
+      },
+      {
+        "id": "a2c9f5f5-dbeb-9142-a312-7a60adecf0f2",
+        "type": "recipient",
+        "name": "ROBOCASTING ENTERPRISES LLC",
+        "code": "ROBOCASTING ENTERPRISES LLC",
+        "amount": 150000.0,
+        "total": 150000.0
+      },
+      {
+        "id": "094aa398-54b8-254b-29bf-ef3054c5c72f",
+        "type": "recipient",
+        "name": "STARFISH SPACE INC.",
+        "code": "STARFISH SPACE INC.",
+        "amount": 149995.0,
+        "total": 149995.0
+      },
+      {
+        "id": "cf371f00-a344-aa24-9624-20f239c15196",
+        "type": "recipient",
+        "name": "OTS R&D, INC.",
+        "code": "OTS R&D, INC.",
+        "amount": 149826.0,
+        "total": 149826.0
+      },
+      {
+        "id": "4a27304b-4625-ea6e-0139-626879b6cae9",
+        "type": "recipient",
+        "name": "H2O INSIGHTS LLC",
+        "code": "H2O INSIGHTS LLC",
+        "amount": 144513.0,
+        "total": 144513.0
+      },
+      {
+        "id": "cf998673-342a-ddfb-d3d3-98de70de591f",
+        "type": "recipient",
+        "name": "CRANE ELECTRONICS INC",
+        "code": "CRANE ELECTRONICS INC",
+        "amount": 142322.0,
+        "total": 142322.0
+      },
+      {
+        "id": "d99bd182-0d0b-cbfb-3298-53fd780f7f3e",
+        "type": "recipient",
+        "name": "PRECISION FILTERS, INC.",
+        "code": "PRECISION FILTERS, INC.",
+        "amount": 142218.0,
+        "total": 142218.0
+      },
+      {
+        "id": "21d757b9-1913-de59-011c-75cc4cd153b0",
+        "type": "recipient",
+        "name": "S R DAVIS INC",
+        "code": "S R DAVIS INC",
+        "amount": 140785.0,
+        "total": 140785.0
+      },
+      {
+        "id": "a8f654a4-d0f7-09eb-e00d-c238839203d9",
+        "type": "recipient",
+        "name": "S. C. JONES SERVICES, INC.",
+        "code": "S. C. JONES SERVICES, INC.",
+        "amount": 140383.52,
+        "total": 140383.52
+      },
+      {
+        "id": "3072f51e-2905-ceff-0624-b3ce04a217aa",
+        "type": "recipient",
+        "name": "MICROCHIP TECHNOLOGY INC",
+        "code": "MICROCHIP TECHNOLOGY INC",
+        "amount": 138800.62,
+        "total": 138800.62
+      },
+      {
+        "id": "152b99cf-6ce9-f848-ea23-fd251a49dfe3",
+        "type": "recipient",
+        "name": "PRECISION COMBUSTION, INC.",
+        "code": "PRECISION COMBUSTION, INC.",
+        "amount": 138477.0,
+        "total": 138477.0
+      },
+      {
+        "id": "70566577-6d0c-5385-f22f-9b5a7fdf452a",
+        "type": "recipient",
+        "name": "JVCKENWOOD USA CORPORATION",
+        "code": "JVCKENWOOD USA CORPORATION",
+        "amount": 138000.0,
+        "total": 138000.0
+      },
+      {
+        "id": "cea4e745-29bd-57c3-9a88-976a4a8dd095",
+        "type": "recipient",
+        "name": "SIEMENS INDUSTRY SOFTWARE INC.",
+        "code": "SIEMENS INDUSTRY SOFTWARE INC.",
+        "amount": 137585.18,
+        "total": 137585.18
+      },
+      {
+        "id": "1d2b86ed-22ef-ab63-ef2c-787925497c54",
+        "type": "recipient",
+        "name": "BLUE TECH INC.",
+        "code": "BLUE TECH INC.",
+        "amount": 136653.52,
+        "total": 136653.52
+      },
+      {
+        "id": "56f087fe-0cfb-6279-b4a4-ff7165801043",
+        "type": "recipient",
+        "name": "NUMERICALLY AUTOMATED CUTTING SYSTEMS, LLC",
+        "code": "NUMERICALLY AUTOMATED CUTTING SYSTEMS, LLC",
+        "amount": 135645.0,
+        "total": 135645.0
+      },
+      {
+        "id": "711c8d6c-e61e-ff97-78a4-2240a45d8684",
+        "type": "recipient",
+        "name": "SIEMENS GOVERNMENT TECHNOLOGIES INC",
+        "code": "SIEMENS GOVERNMENT TECHNOLOGIES INC",
+        "amount": 135429.37,
+        "total": 135429.37
+      },
+      {
+        "id": "ec863509-2db0-dd3b-81f5-2b6c239c1583",
+        "type": "recipient",
+        "name": "PICARRO, INC",
+        "code": "PICARRO, INC",
+        "amount": 134614.75,
+        "total": 134614.75
+      },
+      {
+        "id": "4caf4530-d6f6-67fb-407c-1518e55bcf1a",
+        "type": "recipient",
+        "name": "3SL INC",
+        "code": "3SL INC",
+        "amount": 132623.0,
+        "total": 132623.0
+      },
+      {
+        "id": "ab73e0dd-87e7-74a1-eb50-2f11a7ed42d7",
+        "type": "recipient",
+        "name": "EAS BATTERIES GMBH",
+        "code": "EAS BATTERIES GMBH",
+        "amount": 128750.42,
+        "total": 128750.42
+      },
+      {
+        "id": "3cf1ccc3-f6d6-5b23-7387-20538fe10ed8",
+        "type": "recipient",
+        "name": "DEVA & ASSOCIATES PC",
+        "code": "DEVA & ASSOCIATES PC",
+        "amount": 127963.77,
+        "total": 127963.77
+      },
+      {
+        "id": "5b19def8-b13f-7e06-a185-d05cdceaad8a",
+        "type": "recipient",
+        "name": "PLASTOMETREX USA, INC.",
+        "code": "PLASTOMETREX USA, INC.",
+        "amount": 127500.0,
+        "total": 127500.0
+      },
+      {
+        "id": "9c2ec966-9f75-9fa7-2847-28f13b49693d",
+        "type": "recipient",
+        "name": "ALTAIR ENGINEERING INC.",
+        "code": "ALTAIR ENGINEERING INC.",
+        "amount": 125134.71,
+        "total": 125134.71
+      },
+      {
+        "id": "8a022699-f7be-356a-f01a-3aa6f76016ef",
+        "type": "recipient",
+        "name": "UNIVERSITY OF WASHINGTON",
+        "code": "UNIVERSITY OF WASHINGTON",
+        "amount": 125000.0,
+        "total": 125000.0
+      },
+      {
+        "id": "385fc558-6774-83d9-9b51-953dec04283b",
+        "type": "recipient",
+        "name": "BAHFED CORP",
+        "code": "BAHFED CORP",
+        "amount": 122373.93,
+        "total": 122373.93
+      },
+      {
+        "id": "9314750a-5d90-c084-34ef-53c1d5c822f7",
+        "type": "recipient",
+        "name": "UNIQUE TECHNOLOGY SYSTEMS LLC",
+        "code": "UNIQUE TECHNOLOGY SYSTEMS LLC",
+        "amount": 121728.18,
+        "total": 121728.18
+      },
+      {
+        "id": "f347df6d-243a-b756-04e1-4203c91b7d9b",
+        "type": "recipient",
+        "name": "NTS TECHNICAL SYSTEMS, LLC",
+        "code": "NTS TECHNICAL SYSTEMS, LLC",
+        "amount": 119584.0,
+        "total": 119584.0
+      },
+      {
+        "id": "a571b8ca-4e15-4ca8-37c3-cc0169f57bda",
+        "type": "recipient",
+        "name": "BETA CAE SYSTEMS USA INC",
+        "code": "BETA CAE SYSTEMS USA INC",
+        "amount": 118745.0,
+        "total": 118745.0
+      },
+      {
+        "id": "347b660a-d3af-4297-a282-822af9134268",
+        "type": "recipient",
+        "name": "CATHOLIC UNIVERSITY OF AMERICA (THE)",
+        "code": "CATHOLIC UNIVERSITY OF AMERICA (THE)",
+        "amount": 117941.38,
+        "total": 117941.38
+      },
+      {
+        "id": "61f07ca9-edbe-3b4f-f220-a2b9191741f9",
+        "type": "recipient",
+        "name": "SAGE ENERGY TRADING LLC",
+        "code": "SAGE ENERGY TRADING LLC",
+        "amount": 117864.12,
+        "total": 117864.12
+      },
+      {
+        "id": "202929d6-82be-448c-9ddd-faefb5e9e0c3",
+        "type": "recipient",
+        "name": "KULR TECHNOLOGY CORP",
+        "code": "KULR TECHNOLOGY CORP",
+        "amount": 117250.0,
+        "total": 117250.0
+      },
+      {
+        "id": "245b5a62-6fda-d4b8-a8fe-efc55177719f",
+        "type": "recipient",
+        "name": "CONCEPTS NREC, LLC",
+        "code": "CONCEPTS NREC, LLC",
+        "amount": 115717.0,
+        "total": 115717.0
+      },
+      {
+        "id": "917186a0-fd90-1bfb-7bcb-3026fa70477d",
+        "type": "recipient",
+        "name": "ALICAT SCIENTIFIC INC.",
+        "code": "ALICAT SCIENTIFIC INC.",
+        "amount": 115355.0,
+        "total": 115355.0
+      },
+      {
+        "id": "6dc8d8b6-2021-4058-26d4-c2f4bd8bf0d5",
+        "type": "recipient",
+        "name": "GLOBAL EFFECTS, INC",
+        "code": "GLOBAL EFFECTS, INC",
+        "amount": 114630.0,
+        "total": 114630.0
+      },
+      {
+        "id": "f9e3784d-308b-d229-f1fa-ec07ceaaadbb",
+        "type": "recipient",
+        "name": "BRYCE SPACE AND TECHNOLOGY, LLC",
+        "code": "BRYCE SPACE AND TECHNOLOGY, LLC",
+        "amount": 114016.25,
+        "total": 114016.25
+      },
+      {
+        "id": "b7787d94-07de-0730-9c9e-7a977086957d",
+        "type": "recipient",
+        "name": "CHROME ELECTRIC, LLC",
+        "code": "CHROME ELECTRIC, LLC",
+        "amount": 113900.0,
+        "total": 113900.0
+      },
+      {
+        "id": "b6707107-de83-bbce-00bc-96af3622fbd9",
+        "type": "recipient",
+        "name": "SES CIVIL AND ENVIRONMENTAL LLC",
+        "code": "SES CIVIL AND ENVIRONMENTAL LLC",
+        "amount": 113005.0,
+        "total": 113005.0
+      },
+      {
+        "id": "3366eecb-22bb-5143-9cd6-8a8bac2cec5f",
+        "type": "recipient",
+        "name": "PAYDARFAR INDUSTRIES, INC.",
+        "code": "PAYDARFAR INDUSTRIES, INC.",
+        "amount": 112481.0,
+        "total": 112481.0
+      },
+      {
+        "id": "b3f05ae7-0fa2-cd25-c86c-c2c49e1f4bfb",
+        "type": "recipient",
+        "name": "DARTMOUTH OCEAN TECHNOLOGIES INC",
+        "code": "DARTMOUTH OCEAN TECHNOLOGIES INC",
+        "amount": 106380.0,
+        "total": 106380.0
+      },
+      {
+        "id": "7faa604e-689b-9dbe-52b7-23ce06938e24",
+        "type": "recipient",
+        "name": "EOS OF NORTH AMERICA, INC.",
+        "code": "EOS OF NORTH AMERICA, INC.",
+        "amount": 106025.0,
+        "total": 106025.0
+      },
+      {
+        "id": "af8850df-7469-be9b-104e-e8e1f10514ab",
+        "type": "recipient",
+        "name": "HEWLETT PACKARD ENTERPRISE COMPANY",
+        "code": "HEWLETT PACKARD ENTERPRISE COMPANY",
+        "amount": 104775.85,
+        "total": 104775.85
+      },
+      {
+        "id": "4a1f028e-c2db-7515-800b-214ca781631c",
+        "type": "recipient",
+        "name": "ILLINOIS TOOL WORKS INC",
+        "code": "ILLINOIS TOOL WORKS INC",
+        "amount": 104565.0,
+        "total": 104565.0
+      },
+      {
+        "id": "aef809da-b578-91b7-0cd6-7b650eec38f3",
+        "type": "recipient",
+        "name": "CHIRICAHUA-LOGICAL JV",
+        "code": "CHIRICAHUA-LOGICAL JV",
+        "amount": 102241.98,
+        "total": 102241.98
+      },
+      {
+        "id": "0a70590a-04ad-134b-3d31-33683c58274f",
+        "type": "recipient",
+        "name": "HPNOW APS",
+        "code": "HPNOW APS",
+        "amount": 100000.0,
+        "total": 100000.0
+      },
+      {
+        "id": "1aeb5ab9-a2fe-b55e-2e74-4d8a9747588c",
+        "type": "recipient",
+        "name": "ULTRASONIC TECHNOLOGY SOLUTIONS, LLC",
+        "code": "ULTRASONIC TECHNOLOGY SOLUTIONS, LLC",
+        "amount": 100000.0,
+        "total": 100000.0
+      },
+      {
+        "id": "867850a1-1693-4b2a-3ff5-034554d322e1",
+        "type": "recipient",
+        "name": "DREXEL UNIVERSITY",
+        "code": "DREXEL UNIVERSITY",
+        "amount": 100000.0,
+        "total": 100000.0
+      },
+      {
+        "id": "8a97b483-a237-d46a-d79b-15d987dc5a4f",
+        "type": "recipient",
+        "name": "BRIGHAM YOUNG UNIVERSITY",
+        "code": "BRIGHAM YOUNG UNIVERSITY",
+        "amount": 100000.0,
+        "total": 100000.0
+      },
+      {
+        "id": "2bc4451e-f29d-e3aa-b134-875b9b795562",
+        "type": "recipient",
+        "name": "M + P INTERNATIONAL INC.",
+        "code": "M + P INTERNATIONAL INC.",
+        "amount": 99754.74,
+        "total": 99754.74
+      },
+      {
+        "id": "4284ab48-e1bd-14c9-10fa-cb796357bf81",
+        "type": "recipient",
+        "name": "TECPLOT INC",
+        "code": "TECPLOT INC",
+        "amount": 99100.0,
+        "total": 99100.0
+      },
+      {
+        "id": "9b157496-ac66-a3cd-59fd-cdc4697b28f9",
+        "type": "recipient",
+        "name": "MAZZELLA LIFTING TECHNOLOGIES, INC.",
+        "code": "MAZZELLA LIFTING TECHNOLOGIES, INC.",
+        "amount": 96752.2,
+        "total": 96752.2
+      },
+      {
+        "id": "82e23a00-9cbe-1eae-bd5b-c5fb35721674",
+        "type": "recipient",
+        "name": "THREE-DIMENSIONAL SERVICES, INC.",
+        "code": "THREE-DIMENSIONAL SERVICES, INC.",
+        "amount": 96650.0,
+        "total": 96650.0
+      },
+      {
+        "id": "ceec5ef7-d6a5-28f0-e23f-ec61155b7078",
+        "type": "recipient",
+        "name": "UNIVERSITY OF SOUTH FLORIDA",
+        "code": "UNIVERSITY OF SOUTH FLORIDA",
+        "amount": 96300.0,
+        "total": 96300.0
+      },
+      {
+        "id": "5d48671a-9784-4a5b-b425-c183304c5eec",
+        "type": "recipient",
+        "name": "SPACE LAB TECHNOLOGIES, LLC",
+        "code": "SPACE LAB TECHNOLOGIES, LLC",
+        "amount": 96141.24,
+        "total": 96141.24
+      },
+      {
+        "id": "7e29d787-6472-8c8c-2360-ff95a9c118d1",
+        "type": "recipient",
+        "name": "ADNET SYSTEMS INC",
+        "code": "ADNET SYSTEMS INC",
+        "amount": 95551.8,
+        "total": 95551.8
+      },
+      {
+        "id": "efea895c-cc1c-db87-fa08-223dc9c38cbf",
+        "type": "recipient",
+        "name": "EMC SHOP, LLC, THE",
+        "code": "EMC SHOP, LLC, THE",
+        "amount": 94710.0,
+        "total": 94710.0
+      },
+      {
+        "id": "9b6cccf5-80d4-3746-5446-e45244f27dd7",
+        "type": "recipient",
+        "name": "INTERNATIONAL MANUFACTURERS REPRESENTATIVES, INC",
+        "code": "INTERNATIONAL MANUFACTURERS REPRESENTATIVES, INC",
+        "amount": 94585.0,
+        "total": 94585.0
+      },
+      {
+        "id": "ad35c12e-7105-a0e3-d98a-5918beef4c6a",
+        "type": "recipient",
+        "name": "KEYSIGHT TECHNOLOGIES INC",
+        "code": "KEYSIGHT TECHNOLOGIES INC",
+        "amount": 94452.5,
+        "total": 94452.5
+      },
+      {
+        "id": "2a71ed51-39c8-082f-31a0-f31d55a0a651",
+        "type": "recipient",
+        "name": "SOFTWARE INFORMATION RESOURCE CORP.",
+        "code": "SOFTWARE INFORMATION RESOURCE CORP.",
+        "amount": 94000.4,
+        "total": 94000.4
+      },
+      {
+        "id": "4cdc643a-731c-0e8c-297d-0b132b1bcc31",
+        "type": "recipient",
+        "name": "FLOW SCIENCE, INC",
+        "code": "FLOW SCIENCE, INC",
+        "amount": 93100.0,
+        "total": 93100.0
+      },
+      {
+        "id": "6733d324-9431-4347-c402-8bde64bd97e3",
+        "type": "recipient",
+        "name": "LINDE ADVANCED MATERIAL TECHNOLOGIES INC.",
+        "code": "LINDE ADVANCED MATERIAL TECHNOLOGIES INC.",
+        "amount": 92500.0,
+        "total": 92500.0
+      },
+      {
+        "id": "c9f9719b-8e91-57e0-3b7c-ec0adeacaa5d",
+        "type": "recipient",
+        "name": "CLEAR LAKE CITY WATER AUTHORITY",
+        "code": "CLEAR LAKE CITY WATER AUTHORITY",
+        "amount": 92230.0,
+        "total": 92230.0
+      },
+      {
+        "id": "0e06d3b1-7f4f-3eba-75fb-1e6d97caf64e",
+        "type": "recipient",
+        "name": "TECHNICAL COMMUNITIES, INC.",
+        "code": "TECHNICAL COMMUNITIES, INC.",
+        "amount": 91120.18,
+        "total": 91120.18
+      },
+      {
+        "id": "adea3b2e-904a-c011-6df4-e7b06999aa36",
+        "type": "recipient",
+        "name": "PREVO TECHNOLOGIES, INC.",
+        "code": "PREVO TECHNOLOGIES, INC.",
+        "amount": 89824.17,
+        "total": 89824.17
+      },
+      {
+        "id": "4d005983-f24c-1c17-d9d6-d008594aace4",
+        "type": "recipient",
+        "name": "222 HOLDINGS LLC",
+        "code": "222 HOLDINGS LLC",
+        "amount": 89580.0,
+        "total": 89580.0
+      },
+      {
+        "id": "934ef782-0001-1824-d260-6d9abb699123",
+        "type": "recipient",
+        "name": "HART MACHINE TOOL INC",
+        "code": "HART MACHINE TOOL INC",
+        "amount": 88425.0,
+        "total": 88425.0
+      },
+      {
+        "id": "beb0c5ea-ba59-21ed-b708-46035f5490e4",
+        "type": "recipient",
+        "name": "EPSILON3, INC.",
+        "code": "EPSILON3, INC.",
+        "amount": 86280.0,
+        "total": 86280.0
+      },
+      {
+        "id": "dff5ea13-87ef-1d23-7ba0-fbf570ef2475",
+        "type": "recipient",
+        "name": "AUBURN UNIVERSITY",
+        "code": "AUBURN UNIVERSITY",
+        "amount": 85911.0,
+        "total": 85911.0
+      },
+      {
+        "id": "4d293d8a-e8f8-a9f7-7d09-7fe705b4e510",
+        "type": "recipient",
+        "name": "GLENN MACHINE WORKS INC",
+        "code": "GLENN MACHINE WORKS INC",
+        "amount": 85650.0,
+        "total": 85650.0
+      },
+      {
+        "id": "d119d8d1-8dbb-8ca2-b742-18449924d78a",
+        "type": "recipient",
+        "name": "INFICON INC",
+        "code": "INFICON INC",
+        "amount": 85580.0,
+        "total": 85580.0
+      },
+      {
+        "id": "8e61689a-474f-d1d7-e23e-dc33ec529549",
+        "type": "recipient",
+        "name": "EDWARD BUIEL CONSULTING LLC",
+        "code": "EDWARD BUIEL CONSULTING LLC",
+        "amount": 85000.0,
+        "total": 85000.0
+      },
+      {
+        "id": "5096454a-bba8-c740-d70e-9ba834079cf7",
+        "type": "recipient",
+        "name": "IRPI LLC",
+        "code": "IRPI LLC",
+        "amount": 84839.0,
+        "total": 84839.0
+      },
+      {
+        "id": "02d8999c-ab34-9149-1d0c-f5c5d7deb1e2",
+        "type": "recipient",
+        "name": "RELIANCE RELOCATION SERVICES, INC",
+        "code": "RELIANCE RELOCATION SERVICES, INC",
+        "amount": 82170.6,
+        "total": 82170.6
+      },
+      {
+        "id": "a9fd1697-ae30-2fb8-0635-ea30f09c47d7",
+        "type": "recipient",
+        "name": "SEAN ENGINEERING LLC",
+        "code": "SEAN ENGINEERING LLC",
+        "amount": 81840.0,
+        "total": 81840.0
+      },
+      {
+        "id": "63cd1335-0617-6181-b5c2-c12f2a748ae3",
+        "type": "recipient",
+        "name": "ELECTROIMPACT INC.",
+        "code": "ELECTROIMPACT INC.",
+        "amount": 81088.16,
+        "total": 81088.16
+      },
+      {
+        "id": "bf13c3e1-3402-03ba-44d3-2349f4a792b0",
+        "type": "recipient",
+        "name": "NATIONAL ACADEMY OF SCIENCES",
+        "code": "NATIONAL ACADEMY OF SCIENCES",
+        "amount": 80994.0,
+        "total": 80994.0
+      },
+      {
+        "id": "07e266b6-43ba-9a6e-d728-26402d0c450e",
+        "type": "recipient",
+        "name": "TECHNOLOGY INTERNATIONAL INC",
+        "code": "TECHNOLOGY INTERNATIONAL INC",
+        "amount": 80360.0,
+        "total": 80360.0
+      },
+      {
+        "id": "None",
+        "type": "recipient",
+        "name": "Blank Recipient",
+        "code": null,
+        "amount": 78881.04,
+        "total": 78881.04
+      },
+      {
+        "id": "8750bd3c-8566-e7ef-46bc-f41e3f77ddee",
+        "type": "recipient",
+        "name": "GINER, INC.",
+        "code": "GINER, INC.",
+        "amount": 78257.0,
+        "total": 78257.0
+      },
+      {
+        "id": "c2ba496d-9e04-e0de-68c2-92a1661834a0",
+        "type": "recipient",
+        "name": "D2K TECHNOLOGIES LLC",
+        "code": "D2K TECHNOLOGIES LLC",
+        "amount": 78074.73,
+        "total": 78074.73
+      },
+      {
+        "id": "c86f1b27-6be6-4e75-9457-2e092d3985b7",
+        "type": "recipient",
+        "name": "REGIS & ASSOCIATES, PC",
+        "code": "REGIS & ASSOCIATES, PC",
+        "amount": 77982.38,
+        "total": 77982.38
+      },
+      {
+        "id": "929e13b4-6491-e236-e58d-b50d88408550",
+        "type": "recipient",
+        "name": "AZ TECHNOLOGY INC",
+        "code": "AZ TECHNOLOGY INC",
+        "amount": 77350.0,
+        "total": 77350.0
+      },
+      {
+        "id": "38947731-4982-4435-2ba2-25b404e2a41c",
+        "type": "recipient",
+        "name": "GRANDIDA, LLC",
+        "code": "GRANDIDA, LLC",
+        "amount": 77044.96,
+        "total": 77044.96
+      },
+      {
+        "id": "a1325d8f-009d-25ec-dda0-6d8798b06a4c",
+        "type": "recipient",
+        "name": "JULABO USA INC",
+        "code": "JULABO USA INC",
+        "amount": 74471.9,
+        "total": 74471.9
+      },
+      {
+        "id": "0976236f-de6a-778e-be7a-7a2cda39fb3d",
+        "type": "recipient",
+        "name": "KURT J LESKER CO",
+        "code": "KURT J LESKER CO",
+        "amount": 72648.11,
+        "total": 72648.11
+      },
+      {
+        "id": "89df323a-4f91-a270-e7bf-430c9c1a1844",
+        "type": "recipient",
+        "name": "AVIENT CORP",
+        "code": "AVIENT CORP",
+        "amount": 72500.0,
+        "total": 72500.0
+      },
+      {
+        "id": "bef4d3a7-8d45-ff8c-9880-16e729ed795e",
+        "type": "recipient",
+        "name": "AHMIC AEROSPACE LLC",
+        "code": "AHMIC AEROSPACE LLC",
+        "amount": 72000.0,
+        "total": 72000.0
+      },
+      {
+        "id": "4a9f9f84-66df-2558-adc6-6766c64d2af2",
+        "type": "recipient",
+        "name": "RIMINI STREET, INC.",
+        "code": "RIMINI STREET, INC.",
+        "amount": 71576.4,
+        "total": 71576.4
+      },
+      {
+        "id": "02432872-310c-9ade-8319-61d96b6c3918",
+        "type": "recipient",
+        "name": "EXACT MACHINE SERVICE, INC.",
+        "code": "EXACT MACHINE SERVICE, INC.",
+        "amount": 70590.0,
+        "total": 70590.0
+      },
+      {
+        "id": "9daf14be-cb64-1af4-dbc8-35b5d1af6339",
+        "type": "recipient",
+        "name": "FOTRONIC CORPORATION",
+        "code": "FOTRONIC CORPORATION",
+        "amount": 70333.0,
+        "total": 70333.0
+      },
+      {
+        "id": "4e802a80-a59d-179f-655c-2d66cfaa9de9",
+        "type": "recipient",
+        "name": "NIDAZ LLC",
+        "code": "NIDAZ LLC",
+        "amount": 70313.0,
+        "total": 70313.0
+      },
+      {
+        "id": "18478032-6084-4969-2e94-0f121ba8b8b2",
+        "type": "recipient",
+        "name": "OHIO STATE UNIVERSITY, THE",
+        "code": "OHIO STATE UNIVERSITY, THE",
+        "amount": 70105.0,
+        "total": 70105.0
+      },
+      {
+        "id": "a89c5b11-0264-6721-841b-a42285063a2d",
+        "type": "recipient",
+        "name": "FREELANCER INTERNATIONAL PTY LTD",
+        "code": "FREELANCER INTERNATIONAL PTY LTD",
+        "amount": 70000.0,
+        "total": 70000.0
+      },
+      {
+        "id": "e2378437-c0b4-6d28-8cf7-0ef0b23f80df",
+        "type": "recipient",
+        "name": "EXTREME ENGINEERING SOLUTIONS, INC.",
+        "code": "EXTREME ENGINEERING SOLUTIONS, INC.",
+        "amount": 70000.0,
+        "total": 70000.0
+      },
+      {
+        "id": "43f43d49-b0f5-0339-89a0-372d8a66bd80",
+        "type": "recipient",
+        "name": "LYME COMPUTER SYSTEMS, INC.",
+        "code": "LYME COMPUTER SYSTEMS, INC.",
+        "amount": 69515.45,
+        "total": 69515.45
+      },
+      {
+        "id": "68bcca58-fa10-51bf-461b-3396e0c0969c",
+        "type": "recipient",
+        "name": "BACIK GROUP LLC",
+        "code": "BACIK GROUP LLC",
+        "amount": 68859.0,
+        "total": 68859.0
+      },
+      {
+        "id": "6e51cd69-79cc-0e1b-04fa-6a23c8d18c0a",
+        "type": "recipient",
+        "name": "A. WEST ENTERPRISE, LLC",
+        "code": "A. WEST ENTERPRISE, LLC",
+        "amount": 68839.0,
+        "total": 68839.0
+      },
+      {
+        "id": "57bbe4c6-4da0-dae1-4105-9f5a8e940235",
+        "type": "recipient",
+        "name": "KIN-TEK ANALYTICAL, INC",
+        "code": "KIN-TEK ANALYTICAL, INC",
+        "amount": 68772.8,
+        "total": 68772.8
+      },
+      {
+        "id": "e4f80b7a-5e27-decc-84ee-2790e8737c62",
+        "type": "recipient",
+        "name": "AXIENT LLC",
+        "code": "AXIENT LLC",
+        "amount": 68425.72,
+        "total": 68425.72
+      },
+      {
+        "id": "919bbb0e-a242-8ee1-720d-ab2addf56ef6",
+        "type": "recipient",
+        "name": "LABORATORY TESTING, LLC",
+        "code": "LABORATORY TESTING, LLC",
+        "amount": 68000.0,
+        "total": 68000.0
+      },
+      {
+        "id": "fa820806-29fa-98f9-03f1-3229f33a8347",
+        "type": "recipient",
+        "name": "JP DONOVAN CONSTRUCTION INC",
+        "code": "JP DONOVAN CONSTRUCTION INC",
+        "amount": 67164.0,
+        "total": 67164.0
+      },
+      {
+        "id": "e64ca4f5-fe52-9b8d-9be9-f7230445580a",
+        "type": "recipient",
+        "name": "INTEGRATED SUPPORT SYSTEMS INC",
+        "code": "INTEGRATED SUPPORT SYSTEMS INC",
+        "amount": 66940.0,
+        "total": 66940.0
+      },
+      {
+        "id": "8fbc2f8c-3e1f-4c6a-6ef8-fd88a1e7c9de",
+        "type": "recipient",
+        "name": "PRIMEPRO BUSINESS SOLUTIONS LLC",
+        "code": "PRIMEPRO BUSINESS SOLUTIONS LLC",
+        "amount": 66871.26,
+        "total": 66871.26
+      },
+      {
+        "id": "bb46eeb2-b02b-0c60-74ec-8bb9465d3660",
+        "type": "recipient",
+        "name": "LOMA LINDA UNIVERSITY MEDICAL CENTER",
+        "code": "LOMA LINDA UNIVERSITY MEDICAL CENTER",
+        "amount": 65625.0,
+        "total": 65625.0
+      },
+      {
+        "id": "e22d0f79-380b-45df-3c4d-514079a3257d",
+        "type": "recipient",
+        "name": "CARDINAL SCIENTIFIC, INC.",
+        "code": "CARDINAL SCIENTIFIC, INC.",
+        "amount": 65105.58,
+        "total": 65105.58
+      },
+      {
+        "id": "92fda02c-4ebc-47e4-021b-6ad5f479084f",
+        "type": "recipient",
+        "name": "THE UNIVERSITY OF TEXAS AT EL PASO",
+        "code": "THE UNIVERSITY OF TEXAS AT EL PASO",
+        "amount": 64358.0,
+        "total": 64358.0
+      },
+      {
+        "id": "5c3d2628-0297-607a-6d59-d72db45b9a46",
+        "type": "recipient",
+        "name": "MERRICK & COMPANY",
+        "code": "MERRICK & COMPANY",
+        "amount": 64151.78,
+        "total": 64151.78
+      },
+      {
+        "id": "4e18f6eb-d67c-c514-b074-171a29889607",
+        "type": "recipient",
+        "name": "CROTHALL FACILITIES MANAGEMENT INC",
+        "code": "CROTHALL FACILITIES MANAGEMENT INC",
+        "amount": 63186.0,
+        "total": 63186.0
+      },
+      {
+        "id": "ce42d274-7283-659b-de1c-e11666794c48",
+        "type": "recipient",
+        "name": "UNIVERSITY OF CALIFORNIA, SAN DIEGO",
+        "code": "UNIVERSITY OF CALIFORNIA, SAN DIEGO",
+        "amount": 63059.0,
+        "total": 63059.0
+      },
+      {
+        "id": "2edd13ba-f2ee-c8f9-2664-8c571b6cd4ba",
+        "type": "recipient",
+        "name": "WILLIAM PHELAN",
+        "code": "WILLIAM PHELAN",
+        "amount": 62750.0,
+        "total": 62750.0
+      },
+      {
+        "id": "edca6ec7-5f43-d180-7e53-bf44bcddc10c",
+        "type": "recipient",
+        "name": "SANATRON, INC",
+        "code": "SANATRON, INC",
+        "amount": 61398.0,
+        "total": 61398.0
+      },
+      {
+        "id": "d035b043-1694-6193-563e-4e6b32dbf656",
+        "type": "recipient",
+        "name": "BATTELLE MEMORIAL INSTITUTE",
+        "code": "BATTELLE MEMORIAL INSTITUTE",
+        "amount": 60000.0,
+        "total": 60000.0
+      },
+      {
+        "id": "61ee3e07-e942-59fb-0ef0-1ffc9aa9bc27",
+        "type": "recipient",
+        "name": "BAY AREA ENVIRONMENTAL RESEARCH INSTITUTE",
+        "code": "BAY AREA ENVIRONMENTAL RESEARCH INSTITUTE",
+        "amount": 60000.0,
+        "total": 60000.0
+      },
+      {
+        "id": "8985c6d3-13c5-90e8-23cd-0032ccea31e4",
+        "type": "recipient",
+        "name": "MCCALLIE ASSOCIATES, INC.",
+        "code": "MCCALLIE ASSOCIATES, INC.",
+        "amount": 60000.0,
+        "total": 60000.0
+      },
+      {
+        "id": "f838b0f1-f54e-2e30-b76c-3bc46ef5316c",
+        "type": "recipient",
+        "name": "ARROW SCIENCE AND TECHNOLOGY, L.L.C.",
+        "code": "ARROW SCIENCE AND TECHNOLOGY, L.L.C.",
+        "amount": 59040.0,
+        "total": 59040.0
+      },
+      {
+        "id": "02ee24ab-283f-deb8-1c1e-08a62ad1a6de",
+        "type": "recipient",
+        "name": "CRYOGENIC INDUSTRIES SERVICE COMPANIES, LLC",
+        "code": "CRYOGENIC INDUSTRIES SERVICE COMPANIES, LLC",
+        "amount": 58826.25,
+        "total": 58826.25
+      },
+      {
+        "id": "b988f4a0-aa91-19f8-8ef5-81b1a21859b7",
+        "type": "recipient",
+        "name": "CTRL IQ, INC.",
+        "code": "CTRL IQ, INC.",
+        "amount": 58500.0,
+        "total": 58500.0
+      },
+      {
+        "id": "f5e292ff-c136-0e6a-c460-b8a7402cc622",
+        "type": "recipient",
+        "name": "UNITED ELECTRONIC INDUSTRIES INC",
+        "code": "UNITED ELECTRONIC INDUSTRIES INC",
+        "amount": 55150.0,
+        "total": 55150.0
+      },
+      {
+        "id": "96e88604-269a-1028-2fe6-c6d9661fe844",
+        "type": "recipient",
+        "name": "ALL AXIS PRECISION LLC",
+        "code": "ALL AXIS PRECISION LLC",
+        "amount": 53832.8,
+        "total": 53832.8
+      },
+      {
+        "id": "49e9a357-286d-81eb-4e4e-16c406dd072c",
+        "type": "recipient",
+        "name": "BOTFACTORY, INC.",
+        "code": "BOTFACTORY, INC.",
+        "amount": 53755.47,
+        "total": 53755.47
+      },
+      {
+        "id": "286e238f-205b-e07a-0d77-5d63a2dfc1f5",
+        "type": "recipient",
+        "name": "RJ LEE GROUP INC",
+        "code": "RJ LEE GROUP INC",
+        "amount": 53000.0,
+        "total": 53000.0
+      },
+      {
+        "id": "6d18831f-83cd-ea7a-dade-237b369e24f0",
+        "type": "recipient",
+        "name": "GREEN HILLS SOFTWARE LLC",
+        "code": "GREEN HILLS SOFTWARE LLC",
+        "amount": 51452.0,
+        "total": 51452.0
+      },
+      {
+        "id": "4c61a834-8a33-b7ca-aaa3-d58f9baf2e49",
+        "type": "recipient",
+        "name": "REDHAWK IT SOLUTIONS, LLC",
+        "code": "REDHAWK IT SOLUTIONS, LLC",
+        "amount": 51037.83,
+        "total": 51037.83
+      },
+      {
+        "id": "f6c833d1-7c0a-02b8-feac-ffed72b41342",
+        "type": "recipient",
+        "name": "COLLIER RESEARCH & DEVELOPMENT CORP",
+        "code": "COLLIER RESEARCH & DEVELOPMENT CORP",
+        "amount": 50960.0,
+        "total": 50960.0
+      },
+      {
+        "id": "dd74efaa-3104-cc57-a0b2-cd85635727ca",
+        "type": "recipient",
+        "name": "DEWESOFT LLC",
+        "code": "DEWESOFT LLC",
+        "amount": 50750.0,
+        "total": 50750.0
+      },
+      {
+        "id": "a5c05e25-976d-a4b8-5ed9-d5defbbc053d",
+        "type": "recipient",
+        "name": "GLOBAL TEST SUPPLY LLC",
+        "code": "GLOBAL TEST SUPPLY LLC",
+        "amount": 50651.16,
+        "total": 50651.16
+      },
+      {
+        "id": "bebdc7d4-a8c7-bc03-5528-cae4362b2957",
+        "type": "recipient",
+        "name": "ALTASIM TECHNOLOGIES LLC",
+        "code": "ALTASIM TECHNOLOGIES LLC",
+        "amount": 50000.0,
+        "total": 50000.0
+      },
+      {
+        "id": "b82c00e0-55f7-580b-c38b-6ff4e109c35d",
+        "type": "recipient",
+        "name": "TMC TECHNOLOGIES OF WEST VIRGINIA CORP",
+        "code": "TMC TECHNOLOGIES OF WEST VIRGINIA CORP",
+        "amount": 50000.0,
+        "total": 50000.0
+      },
+      {
+        "id": "b67cfe97-dd44-17f6-7ec7-ea043f86125b",
+        "type": "recipient",
+        "name": "SOTERIX MEDICAL, INC.",
+        "code": "SOTERIX MEDICAL, INC.",
+        "amount": 50000.0,
+        "total": 50000.0
+      },
+      {
+        "id": "e5f6682d-7387-e7ed-d2ad-7a8b093cddc4",
+        "type": "recipient",
+        "name": "CODESECURE, INC.",
+        "code": "CODESECURE, INC.",
+        "amount": 50000.0,
+        "total": 50000.0
+      },
+      {
+        "id": "030686d4-c47e-73d6-300a-5c57bef9b5db",
+        "type": "recipient",
+        "name": "PROGRAMMING RESEARCH LIMITED",
+        "code": "PROGRAMMING RESEARCH LIMITED",
+        "amount": 49709.12,
+        "total": 49709.12
+      },
+      {
+        "id": "4d00841d-380f-ab45-a236-64fdc4754d13",
+        "type": "recipient",
+        "name": "GLIMPSE ENGINEERING, INC.",
+        "code": "GLIMPSE ENGINEERING, INC.",
+        "amount": 49600.0,
+        "total": 49600.0
+      },
+      {
+        "id": "321aaf00-7854-f4e1-c38a-0506e7eceb85",
+        "type": "recipient",
+        "name": "KERR PANEL MANUFACTURING, LLC",
+        "code": "KERR PANEL MANUFACTURING, LLC",
+        "amount": 49055.0,
+        "total": 49055.0
+      },
+      {
+        "id": "525ae41a-476d-89ae-8261-61ea4ddafa0a",
+        "type": "recipient",
+        "name": "DELILLE OXYGEN CO",
+        "code": "DELILLE OXYGEN CO",
+        "amount": 49000.0,
+        "total": 49000.0
+      },
+      {
+        "id": "9085de44-ce29-0d52-b616-cc5a848b7e08",
+        "type": "recipient",
+        "name": "SWAGELOK CO",
+        "code": "SWAGELOK CO",
+        "amount": 48524.15,
+        "total": 48524.15
+      },
+      {
+        "id": "4be94f8c-e6d3-cabe-f8dc-99d402f572a0",
+        "type": "recipient",
+        "name": "GENERAL ELECTRIC COMPANY",
+        "code": "GENERAL ELECTRIC COMPANY",
+        "amount": 48464.24,
+        "total": 48464.24
+      },
+      {
+        "id": "0a2e4f97-04a3-c6cd-39c1-c3663600cd86",
+        "type": "recipient",
+        "name": "BANNER QUALITY MANAGEMENT INC",
+        "code": "BANNER QUALITY MANAGEMENT INC",
+        "amount": 48411.0,
+        "total": 48411.0
+      },
+      {
+        "id": "6181a4d1-cd82-4b42-0ada-6ef138a92afc",
+        "type": "recipient",
+        "name": "FEDERAL CONTRACTS LLC",
+        "code": "FEDERAL CONTRACTS LLC",
+        "amount": 47895.0,
+        "total": 47895.0
+      },
+      {
+        "id": "bc0b5232-1b38-d896-4c34-5d0b99469908",
+        "type": "recipient",
+        "name": "SUFFOLK UNIVERSITY",
+        "code": "SUFFOLK UNIVERSITY",
+        "amount": 47812.62,
+        "total": 47812.62
+      },
+      {
+        "id": "41318da3-9f7f-aad5-b196-42c1bc470581",
+        "type": "recipient",
+        "name": "SUPERIOR-LIDGERWOOD-MUNDY CORP",
+        "code": "SUPERIOR-LIDGERWOOD-MUNDY CORP",
+        "amount": 47500.0,
+        "total": 47500.0
+      },
+      {
+        "id": "4f756753-5dce-91b9-c3b7-95c0a1bca18f",
+        "type": "recipient",
+        "name": "NATIONAL OUTDOOR LEADERSHIP SCHOOL",
+        "code": "NATIONAL OUTDOOR LEADERSHIP SCHOOL",
+        "amount": 47300.0,
+        "total": 47300.0
+      },
+      {
+        "id": "42dc0646-6372-6377-2170-beea408452c4",
+        "type": "recipient",
+        "name": "KPAUL PROPERTIES LLC",
+        "code": "KPAUL PROPERTIES LLC",
+        "amount": 47063.0,
+        "total": 47063.0
+      },
+      {
+        "id": "074861b5-1a01-d0a8-0009-46626c7f9742",
+        "type": "recipient",
+        "name": "OUTPOST TECHNOLOGIES, INC.",
+        "code": "OUTPOST TECHNOLOGIES, INC.",
+        "amount": 46720.0,
+        "total": 46720.0
+      },
+      {
+        "id": "ca64fd1d-45fc-7a56-3370-b3c5cdf67d87",
+        "type": "recipient",
+        "name": "POTSDAM SENSORS LLC",
+        "code": "POTSDAM SENSORS LLC",
+        "amount": 46442.0,
+        "total": 46442.0
+      },
+      {
+        "id": "d2a78c3b-f20c-7e94-4071-79714ff2595e",
+        "type": "recipient",
+        "name": "THE BENNU GROUP INC",
+        "code": "THE BENNU GROUP INC",
+        "amount": 46170.0,
+        "total": 46170.0
+      },
+      {
+        "id": "4ce6eeeb-63ee-2c15-8232-b456d1a41ce2",
+        "type": "recipient",
+        "name": "HEXAGON MANUFACTURING INTELLIGENCE, LLC",
+        "code": "HEXAGON MANUFACTURING INTELLIGENCE, LLC",
+        "amount": 45381.6,
+        "total": 45381.6
+      },
+      {
+        "id": "837e4ece-7fdf-a5c9-db11-1d4aaea94b68",
+        "type": "recipient",
+        "name": "UNIVERSITY OF TENNESSEE",
+        "code": "UNIVERSITY OF TENNESSEE",
+        "amount": 45267.0,
+        "total": 45267.0
+      },
+      {
+        "id": "d2451904-5e9f-d65b-49d6-5fbe521abbe0",
+        "type": "recipient",
+        "name": "FEI COMPANY",
+        "code": "FEI COMPANY",
+        "amount": 45128.72,
+        "total": 45128.72
+      },
+      {
+        "id": "3f850453-f285-3c96-f9b5-5dad099a4d5e",
+        "type": "recipient",
+        "name": "OXFORD NANOPORE TECHNOLOGIES, INC.",
+        "code": "OXFORD NANOPORE TECHNOLOGIES, INC.",
+        "amount": 44029.44,
+        "total": 44029.44
+      },
+      {
+        "id": "100ba859-ab63-f364-17d7-37cd2afbb4ad",
+        "type": "recipient",
+        "name": "SPACE GENERATION ADVISORY COUNCIL",
+        "code": "SPACE GENERATION ADVISORY COUNCIL",
+        "amount": 44000.0,
+        "total": 44000.0
+      },
+      {
+        "id": "cb2ea47e-99b2-d011-8d9e-8cadc5992774",
+        "type": "recipient",
+        "name": "SYMMETRY RESOURCES, INC",
+        "code": "SYMMETRY RESOURCES, INC",
+        "amount": 43720.0,
+        "total": 43720.0
+      },
+      {
+        "id": "7082fa53-4c4c-0a12-0f8d-ffc5c74f4f55",
+        "type": "recipient",
+        "name": "MADISON ELECTRIC INC",
+        "code": "MADISON ELECTRIC INC",
+        "amount": 43698.0,
+        "total": 43698.0
+      },
+      {
+        "id": "1dd1aa7d-4300-d909-be88-7fa85b39f6fe",
+        "type": "recipient",
+        "name": "HAMILTON COMPANY",
+        "code": "HAMILTON COMPANY",
+        "amount": 42965.0,
+        "total": 42965.0
+      },
+      {
+        "id": "400312b0-4b8c-bdbe-3fba-ece385c755f1",
+        "type": "recipient",
+        "name": "QUEST INTEGRITY USA, LLC",
+        "code": "QUEST INTEGRITY USA, LLC",
+        "amount": 42685.0,
+        "total": 42685.0
+      },
+      {
+        "id": "bb339e02-af19-df9d-190c-948231e61530",
+        "type": "recipient",
+        "name": "IBASET, INC.",
+        "code": "IBASET, INC.",
+        "amount": 41508.6,
+        "total": 41508.6
+      },
+      {
+        "id": "34071056-44d2-e9d7-8e51-6020803f7a2a",
+        "type": "recipient",
+        "name": "ARCHITECHTURE SOLUTIONS LLC",
+        "code": "ARCHITECHTURE SOLUTIONS LLC",
+        "amount": 41424.5,
+        "total": 41424.5
+      },
+      {
+        "id": "055f800b-ec27-5e08-20c2-6056b6899051",
+        "type": "recipient",
+        "name": "SOLVENTUM US LLC",
+        "code": "SOLVENTUM US LLC",
+        "amount": 41170.58,
+        "total": 41170.58
+      },
+      {
+        "id": "7d586cfa-95f6-0e31-3589-fbd59b788eda",
+        "type": "recipient",
+        "name": "THE REGENTS OF THE UNIVERSITY OF COLORADO",
+        "code": "THE REGENTS OF THE UNIVERSITY OF COLORADO",
+        "amount": 41125.97,
+        "total": 41125.97
+      },
+      {
+        "id": "7a422313-6ae7-6be6-b5d6-199afd8713c1",
+        "type": "recipient",
+        "name": "MICHIGAN SCIENTIFIC CORP",
+        "code": "MICHIGAN SCIENTIFIC CORP",
+        "amount": 40460.0,
+        "total": 40460.0
+      },
+      {
+        "id": "a92340b2-f63f-88db-47a4-5e69d51bb21e",
+        "type": "recipient",
+        "name": "BRPH ARCHITECTS ENGINEERS INC",
+        "code": "BRPH ARCHITECTS ENGINEERS INC",
+        "amount": 39484.0,
+        "total": 39484.0
+      },
+      {
+        "id": "907d2534-bcc7-40e4-2429-b5fde690f022",
+        "type": "recipient",
+        "name": "TEMPTRONIC CORP",
+        "code": "TEMPTRONIC CORP",
+        "amount": 38595.0,
+        "total": 38595.0
+      },
+      {
+        "id": "48b2e0eb-9878-e04b-0b91-16a3739532e1",
+        "type": "recipient",
+        "name": "KIJERO, LLC",
+        "code": "KIJERO, LLC",
+        "amount": 38435.4,
+        "total": 38435.4
+      },
+      {
+        "id": "a4b0711c-d751-62de-da82-7900c1864014",
+        "type": "recipient",
+        "name": "PRECISION MEASUREMENTS AND INSTRUMENTS CORPORATION",
+        "code": "PRECISION MEASUREMENTS AND INSTRUMENTS CORPORATION",
+        "amount": 38400.0,
+        "total": 38400.0
+      },
+      {
+        "id": "f42d2cb1-8d50-b1cd-e3e8-86d6dc0f67fc",
+        "type": "recipient",
+        "name": "INTERNATIONAL TELEVISION CORPORATION",
+        "code": "INTERNATIONAL TELEVISION CORPORATION",
+        "amount": 38081.0,
+        "total": 38081.0
+      },
+      {
+        "id": "cf0c4935-80f8-a725-e78a-cb6a91be72bb",
+        "type": "recipient",
+        "name": "VACUUM INSTRUMENTS CORPORATION, LLC",
+        "code": "VACUUM INSTRUMENTS CORPORATION, LLC",
+        "amount": 37477.0,
+        "total": 37477.0
+      },
+      {
+        "id": "393afccd-128a-8d77-526a-eca9abb2e560",
+        "type": "recipient",
+        "name": "NRG BUSINESS MARKETING LLC",
+        "code": "NRG BUSINESS MARKETING LLC",
+        "amount": 36840.0,
+        "total": 36840.0
+      },
+      {
+        "id": "1740028c-1cd2-c2c6-a67b-639db78a96be",
+        "type": "recipient",
+        "name": "RS&H, INC.",
+        "code": "RS&H, INC.",
+        "amount": 36227.0,
+        "total": 36227.0
+      },
+      {
+        "id": "ff113e3f-930e-5e7d-b95c-3fee1e948353",
+        "type": "recipient",
+        "name": "G. C. MICRO CORPORATION",
+        "code": "G. C. MICRO CORPORATION",
+        "amount": 35916.38,
+        "total": 35916.38
+      },
+      {
+        "id": "8d04d837-99ae-4183-4700-17a34832383e",
+        "type": "recipient",
+        "name": "SAVE AGAIN.COM",
+        "code": "SAVE AGAIN.COM",
+        "amount": 35757.77,
+        "total": 35757.77
+      },
+      {
+        "id": "29c256a2-412c-a9e6-78bf-19ae6cd65e00",
+        "type": "recipient",
+        "name": "REMCOM INC",
+        "code": "REMCOM INC",
+        "amount": 35696.44,
+        "total": 35696.44
+      },
+      {
+        "id": "4b3c34ed-aecb-8c53-d0e9-3bdadee5f2c9",
+        "type": "recipient",
+        "name": "WILLIAMSON & WILMER, INCORPORATED",
+        "code": "WILLIAMSON & WILMER, INCORPORATED",
+        "amount": 35512.0,
+        "total": 35512.0
+      },
+      {
+        "id": "33d8b324-0ca5-2c7a-c457-c7a626a9cff2",
+        "type": "recipient",
+        "name": "TECH SERVICE SOLUTIONS LLC",
+        "code": "TECH SERVICE SOLUTIONS LLC",
+        "amount": 35342.19,
+        "total": 35342.19
+      },
+      {
+        "id": "456a17c9-3bd9-f107-77ee-816e474d173e",
+        "type": "recipient",
+        "name": "STERLING COMPUTERS CORPORATION",
+        "code": "STERLING COMPUTERS CORPORATION",
+        "amount": 35230.96,
+        "total": 35230.96
+      },
+      {
+        "id": "482cb908-1ac4-d3a1-1bdb-3aa62aff9f2e",
+        "type": "recipient",
+        "name": "SEVENTH GENIUS LLC",
+        "code": "SEVENTH GENIUS LLC",
+        "amount": 35030.0,
+        "total": 35030.0
+      },
+      {
+        "id": "b64b25d0-9da4-7452-c6b9-2366de8df9d3",
+        "type": "recipient",
+        "name": "KBR WYLE SERVICES, LLC",
+        "code": "KBR WYLE SERVICES, LLC",
+        "amount": 34378.81,
+        "total": 34378.81
+      },
+      {
+        "id": "b1baaf20-a58f-3538-dfd8-aea4bf62b27c",
+        "type": "recipient",
+        "name": "INNOVATIVE SCIENTIFIC SOLUTIONS INC",
+        "code": "INNOVATIVE SCIENTIFIC SOLUTIONS INC",
+        "amount": 33646.61,
+        "total": 33646.61
+      },
+      {
+        "id": "12aef444-08a4-04a3-cbce-89419ed3b49d",
+        "type": "recipient",
+        "name": "INTERGRAPH CORPORATION",
+        "code": "INTERGRAPH CORPORATION",
+        "amount": 33480.0,
+        "total": 33480.0
+      },
+      {
+        "id": "52f5937d-6be4-05b7-5dc4-7101c986345e",
+        "type": "recipient",
+        "name": "FABRIC DEVELOPMENT INC",
+        "code": "FABRIC DEVELOPMENT INC",
+        "amount": 33411.3,
+        "total": 33411.3
+      },
+      {
+        "id": "bf5395fb-4397-7a38-2e35-dcc121f16d5e",
+        "type": "recipient",
+        "name": "KEYENCE CORPORATION OF AMERICA",
+        "code": "KEYENCE CORPORATION OF AMERICA",
+        "amount": 33213.5,
+        "total": 33213.5
+      },
+      {
+        "id": "943ec147-f5c6-16b9-dcc4-5f05b20cde06",
+        "type": "recipient",
+        "name": "SITEC CONSULTING LLC",
+        "code": "SITEC CONSULTING LLC",
+        "amount": 33139.0,
+        "total": 33139.0
+      },
+      {
+        "id": "dbd9e37d-6e6e-ec15-5ac7-f6d9f5bed4c3",
+        "type": "recipient",
+        "name": "BUENDEA, LLC",
+        "code": "BUENDEA, LLC",
+        "amount": 32000.0,
+        "total": 32000.0
+      },
+      {
+        "id": "f166043b-9508-0b77-c02e-49882c6a9a32",
+        "type": "recipient",
+        "name": "COMPUGOV INC",
+        "code": "COMPUGOV INC",
+        "amount": 31995.08,
+        "total": 31995.08
+      },
+      {
+        "id": "5782006c-db2a-12b0-7408-20c2b3c0fa15",
+        "type": "recipient",
+        "name": "FSR CONSULTING LLC",
+        "code": "FSR CONSULTING LLC",
+        "amount": 31692.0,
+        "total": 31692.0
+      },
+      {
+        "id": "1284b145-dde1-5dff-a3e8-e0a453dfec65",
+        "type": "recipient",
+        "name": "BRUKER BIOSPIN CORP",
+        "code": "BRUKER BIOSPIN CORP",
+        "amount": 31353.0,
+        "total": 31353.0
+      },
+      {
+        "id": "578b5eea-4f8e-0304-0a5a-f7b34494948c",
+        "type": "recipient",
+        "name": "TOUCHSTONE TESTING LABORATORY LLC",
+        "code": "TOUCHSTONE TESTING LABORATORY LLC",
+        "amount": 31350.0,
+        "total": 31350.0
+      },
+      {
+        "id": "5b3dc27a-43d9-a593-89b4-aa402a2c205c",
+        "type": "recipient",
+        "name": "TRAD TESTS AND RADIATIONS, INC",
+        "code": "TRAD TESTS AND RADIATIONS, INC",
+        "amount": 30450.0,
+        "total": 30450.0
+      },
+      {
+        "id": "1faf93c1-be20-a35d-578d-4dc2a9448167",
+        "type": "recipient",
+        "name": "HITACHI HIGH-TECH AMERICA, INC.",
+        "code": "HITACHI HIGH-TECH AMERICA, INC.",
+        "amount": 30175.8,
+        "total": 30175.8
+      },
+      {
+        "id": "16d63ee6-7e36-1db6-7841-c5774d31e56d",
+        "type": "recipient",
+        "name": "BECKMAN COULTER, INC.",
+        "code": "BECKMAN COULTER, INC.",
+        "amount": 30141.24,
+        "total": 30141.24
+      },
+      {
+        "id": "f29db84a-8cfc-13a2-77cf-1a6a8dd9a1dc",
+        "type": "recipient",
+        "name": "DM3D TECHNOLOGY LLC",
+        "code": "DM3D TECHNOLOGY LLC",
+        "amount": 30056.0,
+        "total": 30056.0
+      },
+      {
+        "id": "e6b7e416-a508-1880-a035-fd6fd043049b",
+        "type": "recipient",
+        "name": "OAK RIDGE ASSOCIATED UNIVERSITIES, INCORPORATED",
+        "code": "OAK RIDGE ASSOCIATED UNIVERSITIES, INCORPORATED",
+        "amount": 30000.0,
+        "total": 30000.0
+      },
+      {
+        "id": "37bb9c4b-6e53-17b5-d37b-6fe3d61e1a68",
+        "type": "recipient",
+        "name": "HUMANETICS DIGITAL NORTH AMERICA, INC.",
+        "code": "HUMANETICS DIGITAL NORTH AMERICA, INC.",
+        "amount": 30000.0,
+        "total": 30000.0
+      },
+      {
+        "id": "066b0e36-d4d1-a3c0-d8ab-76a6c0492242",
+        "type": "recipient",
+        "name": "YET2.COM, INC",
+        "code": "YET2.COM, INC",
+        "amount": 30000.0,
+        "total": 30000.0
+      },
+      {
+        "id": "4f196fab-e960-4645-8d45-6a9a73b11df9",
+        "type": "recipient",
+        "name": "CENTRAL ALABAMA TRAINING SOLUTIONS, INC.",
+        "code": "CENTRAL ALABAMA TRAINING SOLUTIONS, INC.",
+        "amount": 29625.0,
+        "total": 29625.0
+      },
+      {
+        "id": "32d55ce8-93e5-f077-fdec-f8eb0c83c700",
+        "type": "recipient",
+        "name": "NORTH STAR IMAGING INCORPORATED",
+        "code": "NORTH STAR IMAGING INCORPORATED",
+        "amount": 29268.0,
+        "total": 29268.0
+      },
+      {
+        "id": "421dd52e-b6e3-ac4e-a7e4-29d1ace13939",
+        "type": "recipient",
+        "name": "CURTISS-WRIGHT DS, INC.",
+        "code": "CURTISS-WRIGHT DS, INC.",
+        "amount": 28644.0,
+        "total": 28644.0
+      },
+      {
+        "id": "2f4b8043-1280-ba87-0a61-69fb4aa717c5",
+        "type": "recipient",
+        "name": "PARSONS GOVERNMENT SERVICES INC.",
+        "code": "PARSONS GOVERNMENT SERVICES INC.",
+        "amount": 28490.0,
+        "total": 28490.0
+      },
+      {
+        "id": "5f27e4ad-56cc-0f09-dc0f-cbfaaa816974",
+        "type": "recipient",
+        "name": "LACO TECHNOLOGIES INC",
+        "code": "LACO TECHNOLOGIES INC",
+        "amount": 28391.0,
+        "total": 28391.0
+      },
+      {
+        "id": "b3a61104-a963-b34d-b5cc-aa335db4f496",
+        "type": "recipient",
+        "name": "LDRA TECHNOLOGY, INC.",
+        "code": "LDRA TECHNOLOGY, INC.",
+        "amount": 28338.6,
+        "total": 28338.6
+      },
+      {
+        "id": "ce38ee25-3c4a-9bf7-191d-fead83162ebf",
+        "type": "recipient",
+        "name": "SAUNDERS CONTRACTING SERVICES, INC.",
+        "code": "SAUNDERS CONTRACTING SERVICES, INC.",
+        "amount": 27315.0,
+        "total": 27315.0
+      },
+      {
+        "id": "0b2d7e89-eb49-bcc1-5f50-60ac81478a01",
+        "type": "recipient",
+        "name": "BP ENERGY COMPANY",
+        "code": "BP ENERGY COMPANY",
+        "amount": 27000.0,
+        "total": 27000.0
+      },
+      {
+        "id": "73ec9767-ffa3-81ed-5a47-5b403e1c8182",
+        "type": "recipient",
+        "name": "FRONTGRADE GAISLER AB",
+        "code": "FRONTGRADE GAISLER AB",
+        "amount": 26641.0,
+        "total": 26641.0
+      },
+      {
+        "id": "b9ad58ed-a291-e10d-7c37-2ad6125f5383",
+        "type": "recipient",
+        "name": "SCHEDMD LLC",
+        "code": "SCHEDMD LLC",
+        "amount": 25890.0,
+        "total": 25890.0
+      },
+      {
+        "id": "817a95dd-cd8c-484c-4a25-334ad922ba6f",
+        "type": "recipient",
+        "name": "MORGAN INGLAND LLC",
+        "code": "MORGAN INGLAND LLC",
+        "amount": 25789.49,
+        "total": 25789.49
+      },
+      {
+        "id": "6f191f83-6024-f2be-3012-4b740b10ac7a",
+        "type": "recipient",
+        "name": "DUKE UNIVERSITY",
+        "code": "DUKE UNIVERSITY",
+        "amount": 25737.0,
+        "total": 25737.0
+      },
+      {
+        "id": "355a08fa-cc76-9f84-303d-5a1cf5dc0f5d",
+        "type": "recipient",
+        "name": "CARL ZEISS INDUSTRIAL QUALITY SOLUTIONS LLC",
+        "code": "CARL ZEISS INDUSTRIAL QUALITY SOLUTIONS LLC",
+        "amount": 25494.9,
+        "total": 25494.9
+      },
+      {
+        "id": "4e74aeb5-dd21-20a7-63bd-e9f934d69583",
+        "type": "recipient",
+        "name": "CARAHSOFT TECHNOLOGY CORP",
+        "code": "CARAHSOFT TECHNOLOGY CORP",
+        "amount": 25407.41,
+        "total": 25407.41
+      },
+      {
+        "id": "317fc3e2-799e-223a-a252-574a611d60cd",
+        "type": "recipient",
+        "name": "TEJAS OFFICE PRODUCTS INC",
+        "code": "TEJAS OFFICE PRODUCTS INC",
+        "amount": 25272.28,
+        "total": 25272.28
+      },
+      {
+        "id": "d6763765-2a05-12a5-720f-61385bc0c601",
+        "type": "recipient",
+        "name": "MELWOOD HORTICULTURAL TRAINING CENTER, INC.",
+        "code": "MELWOOD HORTICULTURAL TRAINING CENTER, INC.",
+        "amount": 25087.0,
+        "total": 25087.0
+      },
+      {
+        "id": "edfd30de-9ed6-2620-e33a-84b550e09914",
+        "type": "recipient",
+        "name": "L2 SOLUTIONS LLC",
+        "code": "L2 SOLUTIONS LLC",
+        "amount": 25022.0,
+        "total": 25022.0
+      },
+      {
+        "id": "e310e27b-a2d9-ade6-1fca-6fb9ab25ecfd",
+        "type": "recipient",
+        "name": "BLUEHALO LLC",
+        "code": "BLUEHALO LLC",
+        "amount": 25000.0,
+        "total": 25000.0
+      },
+      {
+        "id": "a560dc75-2cd0-baf4-415b-f60d20ba8491",
+        "type": "recipient",
+        "name": "OREGON STATE UNIVERSITY",
+        "code": "OREGON STATE UNIVERSITY",
+        "amount": 25000.0,
+        "total": 25000.0
+      },
+      {
+        "id": "00724a74-d168-753c-840f-67c9691cbe50",
+        "type": "recipient",
+        "name": "SCIPERIO INC",
+        "code": "SCIPERIO INC",
+        "amount": 25000.0,
+        "total": 25000.0
+      },
+      {
+        "id": "15f31999-c1ee-1b43-38a4-7c1a898e114c",
+        "type": "recipient",
+        "name": "ILC ASTROSPACE LLC",
+        "code": "ILC ASTROSPACE LLC",
+        "amount": 25000.0,
+        "total": 25000.0
+      },
+      {
+        "id": "b11d30d2-a2e5-995b-077e-5d78ed2a4cf4",
+        "type": "recipient",
+        "name": "TROXEL AEROSPACE INDUSTRIES INCORPORATED",
+        "code": "TROXEL AEROSPACE INDUSTRIES INCORPORATED",
+        "amount": 24875.0,
+        "total": 24875.0
+      },
+      {
+        "id": "31610df9-61c3-d6a4-53e2-b76b454f44bf",
+        "type": "recipient",
+        "name": "LIGHTHOUSE WORLDWIDE SOLUTIONS, INC",
+        "code": "LIGHTHOUSE WORLDWIDE SOLUTIONS, INC",
+        "amount": 24616.41,
+        "total": 24616.41
+      },
+      {
+        "id": "7628518a-2adb-60c6-56b2-23581aebcf65",
+        "type": "recipient",
+        "name": "AMERICAN AUTOCLAVE CO., INC.",
+        "code": "AMERICAN AUTOCLAVE CO., INC.",
+        "amount": 24550.0,
+        "total": 24550.0
+      },
+      {
+        "id": "416761be-5434-007d-c8d5-29de860812a7",
+        "type": "recipient",
+        "name": "MIDWEST ENGINEERING INC",
+        "code": "MIDWEST ENGINEERING INC",
+        "amount": 24000.0,
+        "total": 24000.0
+      },
+      {
+        "id": "5225c2b7-b56d-f58e-ddcd-6ec59224d8ad",
+        "type": "recipient",
+        "name": "MISSION TECHNOLOGY",
+        "code": "MISSION TECHNOLOGY",
+        "amount": 23758.5,
+        "total": 23758.5
+      },
+      {
+        "id": "f2c9274a-83d3-eb8b-ed5d-08ca4316be64",
+        "type": "recipient",
+        "name": "BLUE MARBLE SPACE",
+        "code": "BLUE MARBLE SPACE",
+        "amount": 23755.19,
+        "total": 23755.19
+      },
+      {
+        "id": "622d35b6-32bc-08bf-6166-53a270c6277e",
+        "type": "recipient",
+        "name": "AATD LLC",
+        "code": "AATD LLC",
+        "amount": 23407.16,
+        "total": 23407.16
+      },
+      {
+        "id": "840ef321-47d1-1ec9-7fb6-995131c2b843",
+        "type": "recipient",
+        "name": "MATERIALISE USA LLC",
+        "code": "MATERIALISE USA LLC",
+        "amount": 23222.0,
+        "total": 23222.0
+      },
+      {
+        "id": "64bbc0fa-f70c-fcd4-ce87-2a74497a6595",
+        "type": "recipient",
+        "name": "LIBERTY PROCUREMENT SOLUTIONS LLC",
+        "code": "LIBERTY PROCUREMENT SOLUTIONS LLC",
+        "amount": 22907.88,
+        "total": 22907.88
+      },
+      {
+        "id": "06bd35e9-a901-577c-9974-18633bc78314",
+        "type": "recipient",
+        "name": "ANDOVER CORPORATION",
+        "code": "ANDOVER CORPORATION",
+        "amount": 22832.0,
+        "total": 22832.0
+      },
+      {
+        "id": "a4c57384-784d-857b-2315-a29d6e39dcd5",
+        "type": "recipient",
+        "name": "HEMBREE MACHINE INC",
+        "code": "HEMBREE MACHINE INC",
+        "amount": 22525.0,
+        "total": 22525.0
+      },
+      {
+        "id": "ca42bca0-ad02-a165-bace-22cf52d85069",
+        "type": "recipient",
+        "name": "SUMITOMO (SHI) CRYOGENICS OF AMERICA INC",
+        "code": "SUMITOMO (SHI) CRYOGENICS OF AMERICA INC",
+        "amount": 22437.0,
+        "total": 22437.0
+      },
+      {
+        "id": "27224327-9dfe-44a6-d2fe-50e1c3da1654",
+        "type": "recipient",
+        "name": "MSE SUPPLIES LLC",
+        "code": "MSE SUPPLIES LLC",
+        "amount": 22154.93,
+        "total": 22154.93
+      },
+      {
+        "id": "4a1bbac0-a17c-be1a-09c6-15a8ea97f828",
+        "type": "recipient",
+        "name": "SONOTEC US INC.",
+        "code": "SONOTEC US INC.",
+        "amount": 22088.95,
+        "total": 22088.95
+      },
+      {
+        "id": "c1f08ab1-ea90-b826-a406-e6cd33148ba4",
+        "type": "recipient",
+        "name": "OMEGA ENGINEERING, INC.",
+        "code": "OMEGA ENGINEERING, INC.",
+        "amount": 21885.8,
+        "total": 21885.8
+      },
+      {
+        "id": "9bdb837e-2bd2-afaa-ba54-d2824919b36c",
+        "type": "recipient",
+        "name": "PROTEUS INC",
+        "code": "PROTEUS INC",
+        "amount": 21835.0,
+        "total": 21835.0
+      },
+      {
+        "id": "8f74c5be-4c58-7e7f-45e4-89c08bee5e96",
+        "type": "recipient",
+        "name": "SMARTBEAR SOFTWARE INC",
+        "code": "SMARTBEAR SOFTWARE INC",
+        "amount": 21625.0,
+        "total": 21625.0
+      },
+      {
+        "id": "4ba1c9ff-1fb0-0526-0e97-141b4471deba",
+        "type": "recipient",
+        "name": "NEMALUX INC.",
+        "code": "NEMALUX INC.",
+        "amount": 21430.3,
+        "total": 21430.3
+      },
+      {
+        "id": "c9e80d69-7419-ab9c-d446-fc931c8dc4c0",
+        "type": "recipient",
+        "name": "3DCERAM SINTO, INC.",
+        "code": "3DCERAM SINTO, INC.",
+        "amount": 20650.0,
+        "total": 20650.0
+      },
+      {
+        "id": "decd8e4d-0c57-0c5c-0a05-c76dce02e356",
+        "type": "recipient",
+        "name": "COLOSSAL CONTRACTING LLC",
+        "code": "COLOSSAL CONTRACTING LLC",
+        "amount": 20483.82,
+        "total": 20483.82
+      },
+      {
+        "id": "a386cbae-c433-168a-fa24-2ec06e43bcf4",
+        "type": "recipient",
+        "name": "CORRELATED SOLUTIONS INC",
+        "code": "CORRELATED SOLUTIONS INC",
+        "amount": 20413.51,
+        "total": 20413.51
+      },
+      {
+        "id": "0f00259c-3a68-a622-672c-ad6b0ed3237d",
+        "type": "recipient",
+        "name": "VWR INTERNATIONAL LLC",
+        "code": "VWR INTERNATIONAL LLC",
+        "amount": 20355.3,
+        "total": 20355.3
+      },
+      {
+        "id": "d585d137-b11b-3634-57ec-e7ddcf3529b0",
+        "type": "recipient",
+        "name": "KENDALL HOLDINGS LTD.",
+        "code": "KENDALL HOLDINGS LTD.",
+        "amount": 20150.24,
+        "total": 20150.24
+      },
+      {
+        "id": "04910201-c25d-ae1b-eb45-08efdf6ea34e",
+        "type": "recipient",
+        "name": "THE ASTRONAUTS MEMORIAL FOUNDATION INC",
+        "code": "THE ASTRONAUTS MEMORIAL FOUNDATION INC",
+        "amount": 20000.0,
+        "total": 20000.0
+      },
+      {
+        "id": "30e6eb8f-34a0-68e0-555d-b8dab78ee75a",
+        "type": "recipient",
+        "name": "ABSOLUTE CALIBRATION & CONSULTING SERVICES LLC",
+        "code": "ABSOLUTE CALIBRATION & CONSULTING SERVICES LLC",
+        "amount": 20000.0,
+        "total": 20000.0
+      },
+      {
+        "id": "0782df6e-9839-5676-f150-e4a4cdc0d28f",
+        "type": "recipient",
+        "name": "AMERICAN CRANE & EQUIPMENT CORP",
+        "code": "AMERICAN CRANE & EQUIPMENT CORP",
+        "amount": 19950.0,
+        "total": 19950.0
+      },
+      {
+        "id": "f65778e8-fff5-3458-c043-28447b7ae4d7",
+        "type": "recipient",
+        "name": "CRYOWORKS, INC.",
+        "code": "CRYOWORKS, INC.",
+        "amount": 19849.76,
+        "total": 19849.76
+      },
+      {
+        "id": "9ccfe8e4-c7f0-d750-ec17-8ce9735f3b21",
+        "type": "recipient",
+        "name": "NTOPOLOGY INC",
+        "code": "NTOPOLOGY INC",
+        "amount": 19674.08,
+        "total": 19674.08
+      },
+      {
+        "id": "0bddbdb8-b788-9770-47a6-b397c8d28687",
+        "type": "recipient",
+        "name": "COMPUTATIONAL MECHANICS INTERNATIONAL INC",
+        "code": "COMPUTATIONAL MECHANICS INTERNATIONAL INC",
+        "amount": 19527.05,
+        "total": 19527.05
+      },
+      {
+        "id": "a86b442b-31f1-7bc2-7f2c-18126d23dfe7",
+        "type": "recipient",
+        "name": "SCOFIELD GROUP, LLC",
+        "code": "SCOFIELD GROUP, LLC",
+        "amount": 19507.0,
+        "total": 19507.0
+      },
+      {
+        "id": "7efc003a-1f6a-75d9-b314-3d1ec0c826b8",
+        "type": "recipient",
+        "name": "CGTECH",
+        "code": "CGTECH",
+        "amount": 19440.0,
+        "total": 19440.0
+      },
+      {
+        "id": "26ff7147-76d7-788e-d44a-c5e1094e2fa4",
+        "type": "recipient",
+        "name": "KRATOS S1, INC.",
+        "code": "KRATOS S1, INC.",
+        "amount": 19306.6,
+        "total": 19306.6
+      },
+      {
+        "id": "0632448c-c360-28d7-8445-d188f6489560",
+        "type": "recipient",
+        "name": "CREATIVE MANAGEMENT TECHNOLOGY, INC.",
+        "code": "CREATIVE MANAGEMENT TECHNOLOGY, INC.",
+        "amount": 18800.02,
+        "total": 18800.02
+      },
+      {
+        "id": "5efd1069-d7f9-0bc5-33e7-ab8fcbbe9cf9",
+        "type": "recipient",
+        "name": "SYNOPSYS, INC.",
+        "code": "SYNOPSYS, INC.",
+        "amount": 18620.0,
+        "total": 18620.0
+      },
+      {
+        "id": "6e4162b2-75e6-50a5-9abe-2e0ac7a53e89",
+        "type": "recipient",
+        "name": "HYDRO EXTRUSION USA, LLC",
+        "code": "HYDRO EXTRUSION USA, LLC",
+        "amount": 18511.0,
+        "total": 18511.0
+      },
+      {
+        "id": "3b0959ab-1433-664c-2eba-eb810d6999ab",
+        "type": "recipient",
+        "name": "ENSCO AVIONICS, INC.",
+        "code": "ENSCO AVIONICS, INC.",
+        "amount": 18360.0,
+        "total": 18360.0
+      },
+      {
+        "id": "c587380c-fe2b-292c-888b-4cd2249f856a",
+        "type": "recipient",
+        "name": "SAUER CONSTRUCTION, LLC",
+        "code": "SAUER CONSTRUCTION, LLC",
+        "amount": 18325.0,
+        "total": 18325.0
+      },
+      {
+        "id": "7c18b44e-374c-5a4c-217a-97b766205b83",
+        "type": "recipient",
+        "name": "GAP WIRELESS INC",
+        "code": "GAP WIRELESS INC",
+        "amount": 18289.2,
+        "total": 18289.2
+      },
+      {
+        "id": "e0b5af79-c5f1-9b7a-4b63-73f3085d42e7",
+        "type": "recipient",
+        "name": "TOTAL PARTS PLUS, LLC",
+        "code": "TOTAL PARTS PLUS, LLC",
+        "amount": 18150.0,
+        "total": 18150.0
+      },
+      {
+        "id": "4ccebb0e-3bf7-245d-03f1-7ccb83f6322b",
+        "type": "recipient",
+        "name": "ROSE-A-LEE TECHNOLOGIES, INC",
+        "code": "ROSE-A-LEE TECHNOLOGIES, INC",
+        "amount": 17825.72,
+        "total": 17825.72
+      },
+      {
+        "id": "7b22c0a5-a987-8586-1f0b-edd80276efe4",
+        "type": "recipient",
+        "name": "MALVERN PANALYTICAL INC",
+        "code": "MALVERN PANALYTICAL INC",
+        "amount": 17745.0,
+        "total": 17745.0
+      },
+      {
+        "id": "c1c9c985-ba5b-dd57-c4c3-851c8e664072",
+        "type": "recipient",
+        "name": "APPLIED TECHNICAL SERVICES, LLC",
+        "code": "APPLIED TECHNICAL SERVICES, LLC",
+        "amount": 17700.0,
+        "total": 17700.0
+      },
+      {
+        "id": "6a65aa83-c3f7-8dce-243f-4ca300f847dc",
+        "type": "recipient",
+        "name": "AVL TEST SYSTEMS INC",
+        "code": "AVL TEST SYSTEMS INC",
+        "amount": 17526.0,
+        "total": 17526.0
+      },
+      {
+        "id": "a7d8e093-053e-c76a-210d-8b3f849db019",
+        "type": "recipient",
+        "name": "DISON GROUP LLC",
+        "code": "DISON GROUP LLC",
+        "amount": 17409.0,
+        "total": 17409.0
+      },
+      {
+        "id": "c7226dc7-b81c-de83-6d74-5f4d35afbccb",
+        "type": "recipient",
+        "name": "KIMBALL PHYSICS INC",
+        "code": "KIMBALL PHYSICS INC",
+        "amount": 17299.59,
+        "total": 17299.59
+      },
+      {
+        "id": "ffbb2368-1115-45b6-8340-2b5fcdfe429f",
+        "type": "recipient",
+        "name": "KULITE SEMICONDUCTOR PRODUCTS INC",
+        "code": "KULITE SEMICONDUCTOR PRODUCTS INC",
+        "amount": 17284.0,
+        "total": 17284.0
+      },
+      {
+        "id": "5b3fc520-b817-52c8-79a7-43601e353738",
+        "type": "recipient",
+        "name": "PRECISION WELDING TECHNOLOGIES, INC.",
+        "code": "PRECISION WELDING TECHNOLOGIES, INC.",
+        "amount": 16820.0,
+        "total": 16820.0
+      },
+      {
+        "id": "86d8e6b9-db67-2488-0e20-cc480561ebdb",
+        "type": "recipient",
+        "name": "ADVANCED MANAGEMENT GROUP, L.L.C.",
+        "code": "ADVANCED MANAGEMENT GROUP, L.L.C.",
+        "amount": 16703.0,
+        "total": 16703.0
+      },
+      {
+        "id": "4c6dc5a8-6e40-7de4-83f3-5724d10d7e40",
+        "type": "recipient",
+        "name": "NEOLA GROUP LLC",
+        "code": "NEOLA GROUP LLC",
+        "amount": 16659.3,
+        "total": 16659.3
+      },
+      {
+        "id": "ecbeb8a7-3391-80fd-1a9c-93f9119f5249",
+        "type": "recipient",
+        "name": "ARHAB LLC",
+        "code": "ARHAB LLC",
+        "amount": 16590.61,
+        "total": 16590.61
+      },
+      {
+        "id": "7e94f475-5ef8-624a-8b7e-0753b43b0fd6",
+        "type": "recipient",
+        "name": "SKYDIO, INC",
+        "code": "SKYDIO, INC",
+        "amount": 16498.09,
+        "total": 16498.09
+      },
+      {
+        "id": "d9dc7b5a-15a6-5f3f-7186-cf1224852063",
+        "type": "recipient",
+        "name": "APPLICA SOLUTIONS, INC.",
+        "code": "APPLICA SOLUTIONS, INC.",
+        "amount": 16421.71,
+        "total": 16421.71
+      },
+      {
+        "id": "9e2b3c14-08a1-5c95-033f-08704a7ed0bd",
+        "type": "recipient",
+        "name": "VPRIME TECH INC",
+        "code": "VPRIME TECH INC",
+        "amount": 16410.0,
+        "total": 16410.0
+      },
+      {
+        "id": "c37ed355-cb9c-bbe3-b51e-f1e8e6fb9923",
+        "type": "recipient",
+        "name": "CYNERGY PROFESSIONAL SYSTEMS LLC",
+        "code": "CYNERGY PROFESSIONAL SYSTEMS LLC",
+        "amount": 16386.06,
+        "total": 16386.06
+      },
+      {
+        "id": "59086e25-25d4-133f-580d-3cf28baf3a90",
+        "type": "recipient",
+        "name": "ACCURA ROSSER 8A JV LLC",
+        "code": "ACCURA ROSSER 8A JV LLC",
+        "amount": 16332.0,
+        "total": 16332.0
+      },
+      {
+        "id": "290cc663-7bb0-a751-ab85-e5126c8b7402",
+        "type": "recipient",
+        "name": "UNIFIRST CORPORATION",
+        "code": "UNIFIRST CORPORATION",
+        "amount": 16250.0,
+        "total": 16250.0
+      },
+      {
+        "id": "8760369c-5d3b-9151-a862-a380f9788f88",
+        "type": "recipient",
+        "name": "INTERNATIONAL CRYSTAL LABORATORIES",
+        "code": "INTERNATIONAL CRYSTAL LABORATORIES",
+        "amount": 16150.0,
+        "total": 16150.0
+      },
+      {
+        "id": "d9b11659-26a5-8d4a-540d-e15da3f29f79",
+        "type": "recipient",
+        "name": "VACUUM TECHNIQUE LLC",
+        "code": "VACUUM TECHNIQUE LLC",
+        "amount": 16129.0,
+        "total": 16129.0
+      },
+      {
+        "id": "17f96fb4-6480-9ae4-c587-07684d5eb037",
+        "type": "recipient",
+        "name": "OHIO EDISON COMPANY",
+        "code": "OHIO EDISON COMPANY",
+        "amount": 16000.0,
+        "total": 16000.0
+      },
+      {
+        "id": "de3ed44f-4ce5-0140-3aab-581fb156cb0d",
+        "type": "recipient",
+        "name": "AANTILIA LLC",
+        "code": "AANTILIA LLC",
+        "amount": 15970.94,
+        "total": 15970.94
+      },
+      {
+        "id": "9109dddf-9d24-b283-4f85-8857f41c3eec",
+        "type": "recipient",
+        "name": "QUSTOM APPS LLC",
+        "code": "QUSTOM APPS LLC",
+        "amount": 15867.0,
+        "total": 15867.0
+      },
+      {
+        "id": "d46ad2a7-ed19-9535-4f24-787705845610",
+        "type": "recipient",
+        "name": "V3GATE, LLC",
+        "code": "V3GATE, LLC",
+        "amount": 15668.2,
+        "total": 15668.2
+      },
+      {
+        "id": "aa1475e1-f1c4-3658-0713-4994dfcec400",
+        "type": "recipient",
+        "name": "MATTERHACKERS, INC.",
+        "code": "MATTERHACKERS, INC.",
+        "amount": 15351.38,
+        "total": 15351.38
+      },
+      {
+        "id": "e6ee4b1e-77ed-93f2-628e-664878734e20",
+        "type": "recipient",
+        "name": "3D SYSTEMS, INC.",
+        "code": "3D SYSTEMS, INC.",
+        "amount": 15100.0,
+        "total": 15100.0
+      },
+      {
+        "id": "1765a982-1d07-ca47-8816-803a6ccdb0d4",
+        "type": "recipient",
+        "name": "AURORA SYSTEMS CONSULTING INC",
+        "code": "AURORA SYSTEMS CONSULTING INC",
+        "amount": 15074.92,
+        "total": 15074.92
+      },
+      {
+        "id": "9c29bf7d-86fa-ec8d-5232-4b51701b3586",
+        "type": "recipient",
+        "name": "MOOG INC.",
+        "code": "MOOG INC.",
+        "amount": 14397.2,
+        "total": 14397.2
+      },
+      {
+        "id": "bce8d786-e171-fa80-f521-a48ac19e7469",
+        "type": "recipient",
+        "name": "ANGSTROM DESIGNS INC",
+        "code": "ANGSTROM DESIGNS INC",
+        "amount": 14076.0,
+        "total": 14076.0
+      },
+      {
+        "id": "f969896a-1ebe-30f3-d3c5-98b2e8618143",
+        "type": "recipient",
+        "name": "IMATEST LLC",
+        "code": "IMATEST LLC",
+        "amount": 14013.0,
+        "total": 14013.0
+      },
+      {
+        "id": "c60c53cb-38be-396b-3812-d8e43b42d6d3",
+        "type": "recipient",
+        "name": "CAPITAL MACHINE TECHNOLOGIES, INC.",
+        "code": "CAPITAL MACHINE TECHNOLOGIES, INC.",
+        "amount": 13934.15,
+        "total": 13934.15
+      },
+      {
+        "id": "d20dbc28-ffde-003c-e506-9e3a16d343b6",
+        "type": "recipient",
+        "name": "EMERGENT, LLC",
+        "code": "EMERGENT, LLC",
+        "amount": 13906.44,
+        "total": 13906.44
+      },
+      {
+        "id": "258226b6-504d-afdd-19f9-d44ccc479d83",
+        "type": "recipient",
+        "name": "FASTENAL COMPANY",
+        "code": "FASTENAL COMPANY",
+        "amount": 13826.17,
+        "total": 13826.17
+      },
+      {
+        "id": "298b93b4-6afd-00ea-5d98-2c387d98b447",
+        "type": "recipient",
+        "name": "AMERICAN WORDATA, INC",
+        "code": "AMERICAN WORDATA, INC",
+        "amount": 13800.0,
+        "total": 13800.0
+      },
+      {
+        "id": "6886d17f-6f9c-740a-e4ed-1a5f341492cb",
+        "type": "recipient",
+        "name": "AZENTA US INC",
+        "code": "AZENTA US INC",
+        "amount": 13715.05,
+        "total": 13715.05
+      },
+      {
+        "id": "e2102bc4-173b-f856-a627-e1db61d214c9",
+        "type": "recipient",
+        "name": "ARGONAUT SCIENTIFIC CORPORATION",
+        "code": "ARGONAUT SCIENTIFIC CORPORATION",
+        "amount": 13580.0,
+        "total": 13580.0
+      },
+      {
+        "id": "2b306b53-60ac-d69a-7469-0df64ec098b4",
+        "type": "recipient",
+        "name": "GENERAL STANDARDS CORP",
+        "code": "GENERAL STANDARDS CORP",
+        "amount": 13253.36,
+        "total": 13253.36
+      },
+      {
+        "id": "437d4b2c-d0d8-1126-94bb-23f60fb01992",
+        "type": "recipient",
+        "name": "DASSAULT SYSTEMES AMERICAS CORP.",
+        "code": "DASSAULT SYSTEMES AMERICAS CORP.",
+        "amount": 13225.3,
+        "total": 13225.3
+      },
+      {
+        "id": "42e4caed-d01d-0bba-05d2-1ed9daea59d3",
+        "type": "recipient",
+        "name": "MARIECO, LLC",
+        "code": "MARIECO, LLC",
+        "amount": 13204.72,
+        "total": 13204.72
+      },
+      {
+        "id": "3335f88b-a1b9-4e45-3d96-38f63da8a875",
+        "type": "recipient",
+        "name": "TEKTRONIX, INC.",
+        "code": "TEKTRONIX, INC.",
+        "amount": 13200.0,
+        "total": 13200.0
+      },
+      {
+        "id": "3864d3c1-ec8c-db57-dd65-c094438d0e08",
+        "type": "recipient",
+        "name": "S I T CORPORATION",
+        "code": "S I T CORPORATION",
+        "amount": 13050.0,
+        "total": 13050.0
+      },
+      {
+        "id": "f83ebfd7-40de-5586-f848-7085e80f7572",
+        "type": "recipient",
+        "name": "BOOTH MANAGEMENT CONSULTING, LLC",
+        "code": "BOOTH MANAGEMENT CONSULTING, LLC",
+        "amount": 13048.57,
+        "total": 13048.57
+      },
+      {
+        "id": "b0c905e3-6e6c-054d-18b3-07a29d6e73ff",
+        "type": "recipient",
+        "name": "AITECH DEFENSE SYSTEMS INC",
+        "code": "AITECH DEFENSE SYSTEMS INC",
+        "amount": 12717.0,
+        "total": 12717.0
+      },
+      {
+        "id": "6dfa6b06-3235-7704-f560-bf20830a4254",
+        "type": "recipient",
+        "name": "NEWPORT CORP",
+        "code": "NEWPORT CORP",
+        "amount": 12476.2,
+        "total": 12476.2
+      },
+      {
+        "id": "cc9d155f-0f82-2144-6da7-d8d26a903cb6",
+        "type": "recipient",
+        "name": "MANAGEMENT CONCEPTS, INC",
+        "code": "MANAGEMENT CONCEPTS, INC",
+        "amount": 12427.0,
+        "total": 12427.0
+      },
+      {
+        "id": "1f83784a-bef1-92fc-11b1-dcfa8c7ec0a3",
+        "type": "recipient",
+        "name": "INTEGRATION TECHNOLOGIES GROUP, INC.",
+        "code": "INTEGRATION TECHNOLOGIES GROUP, INC.",
+        "amount": 12391.6,
+        "total": 12391.6
+      },
+      {
+        "id": "64e9bea8-7d86-21c0-03c2-8e955e9dd9e3",
+        "type": "recipient",
+        "name": "TEKNA ADVANCED MATERIALS",
+        "code": "TEKNA ADVANCED MATERIALS",
+        "amount": 12382.18,
+        "total": 12382.18
+      },
+      {
+        "id": "784a9f86-2cdf-4f4e-e128-c2af3b687694",
+        "type": "recipient",
+        "name": "DIFFRACTION LIMITED",
+        "code": "DIFFRACTION LIMITED",
+        "amount": 12348.0,
+        "total": 12348.0
+      },
+      {
+        "id": "5db795d2-8cd4-f80f-1752-6c5478aeba78",
+        "type": "recipient",
+        "name": "SPACE NETWORK SOLUTIONS LLC",
+        "code": "SPACE NETWORK SOLUTIONS LLC",
+        "amount": 12000.0,
+        "total": 12000.0
+      },
+      {
+        "id": "67427090-de5a-3f91-7f50-f1c349c27dda",
+        "type": "recipient",
+        "name": "LINDE ENGINEERING NORTH AMERICA LLC",
+        "code": "LINDE ENGINEERING NORTH AMERICA LLC",
+        "amount": 12000.0,
+        "total": 12000.0
+      },
+      {
+        "id": "d96f3486-0fa5-045a-5da7-9cffc0b4a114",
+        "type": "recipient",
+        "name": "AT&T ENTERPRISES, LLC",
+        "code": "AT&T ENTERPRISES, LLC",
+        "amount": 11516.51,
+        "total": 11516.51
+      },
+      {
+        "id": "9478d58f-e5df-cc7a-8a68-9d7bac92955e",
+        "type": "recipient",
+        "name": "THERMTEST INC",
+        "code": "THERMTEST INC",
+        "amount": 11209.0,
+        "total": 11209.0
+      },
+      {
+        "id": "cb0d434a-9ad7-93b5-09dc-6067d8c45d71",
+        "type": "recipient",
+        "name": "PARSONS GOVERNMENT SERVICES INC.",
+        "code": "PARSONS GOVERNMENT SERVICES INC.",
+        "amount": 11123.2,
+        "total": 11123.2
+      },
+      {
+        "id": "fc7e5e45-9a8c-6b22-d717-eb8ca5617201",
+        "type": "recipient",
+        "name": "BLUESTONE ENVIRONMENTAL GROUP, INC.",
+        "code": "BLUESTONE ENVIRONMENTAL GROUP, INC.",
+        "amount": 11113.39,
+        "total": 11113.39
+      },
+      {
+        "id": "d55dabdb-0c89-b6e8-e4f5-5817d2be7b63",
+        "type": "recipient",
+        "name": "ALVAREZ LLC",
+        "code": "ALVAREZ LLC",
+        "amount": 11095.79,
+        "total": 11095.79
+      },
+      {
+        "id": "d3d2b614-b0b4-28a8-9ea5-73ebe43cb2fa",
+        "type": "recipient",
+        "name": "SHIMADZU SCIENTIFIC INSTRUMENTS, INC.",
+        "code": "SHIMADZU SCIENTIFIC INSTRUMENTS, INC.",
+        "amount": 11069.74,
+        "total": 11069.74
+      },
+      {
+        "id": "088e65c2-2b0e-9b5c-d6fd-207142152cda",
+        "type": "recipient",
+        "name": "ROHDE & SCHWARZ USA, INC.",
+        "code": "ROHDE & SCHWARZ USA, INC.",
+        "amount": 10930.0,
+        "total": 10930.0
+      },
+      {
+        "id": "00635903-01b3-15f9-31c6-14bb499f2f46",
+        "type": "recipient",
+        "name": "D6 INDUSTRIES INCORPORATED",
+        "code": "D6 INDUSTRIES INCORPORATED",
+        "amount": 10850.0,
+        "total": 10850.0
+      },
+      {
+        "id": "7847c527-9c88-b82b-30c7-317e861163e0",
+        "type": "recipient",
+        "name": "SUNCORE DISTRIBUTION LLC",
+        "code": "SUNCORE DISTRIBUTION LLC",
+        "amount": 10759.0,
+        "total": 10759.0
+      },
+      {
+        "id": "06e9928a-bba6-3589-e19b-86985e38faf4",
+        "type": "recipient",
+        "name": "TOM & JERRY, INC.",
+        "code": "TOM & JERRY, INC.",
+        "amount": 10740.0,
+        "total": 10740.0
+      },
+      {
+        "id": "30be24f4-6a9d-a60d-a837-20939009bfc0",
+        "type": "recipient",
+        "name": "PARTICLE INSTRUMENTS LLC",
+        "code": "PARTICLE INSTRUMENTS LLC",
+        "amount": 10700.0,
+        "total": 10700.0
+      },
+      {
+        "id": "7f79b927-979d-c84c-1120-e71b8e014ab8",
+        "type": "recipient",
+        "name": "MICROMERITICS INSTRUMENT CORPORATION",
+        "code": "MICROMERITICS INSTRUMENT CORPORATION",
+        "amount": 10680.0,
+        "total": 10680.0
+      },
+      {
+        "id": "8af7a524-75f7-51ca-81fa-0088789f9f10",
+        "type": "recipient",
+        "name": "COASTAL MECHANICS COMPANY, INC.",
+        "code": "COASTAL MECHANICS COMPANY, INC.",
+        "amount": 10511.0,
+        "total": 10511.0
+      },
+      {
+        "id": "b3f4a970-826f-4d84-8f0f-3b66cffeb27d",
+        "type": "recipient",
+        "name": "DYNAMIC SYSTEMS INC",
+        "code": "DYNAMIC SYSTEMS INC",
+        "amount": 10387.7,
+        "total": 10387.7
+      },
+      {
+        "id": "25e232c0-856b-ea29-e87e-4dbfaf84dbb3",
+        "type": "recipient",
+        "name": "SEATTLE MARINE & FISHING SUPPLY CO.",
+        "code": "SEATTLE MARINE & FISHING SUPPLY CO.",
+        "amount": 10192.22,
+        "total": 10192.22
+      },
+      {
+        "id": "95461d50-d116-e3a5-b390-021971a75d58",
+        "type": "recipient",
+        "name": "UNIVERSITY SYSTEM OF NEW HAMPSHIRE",
+        "code": "UNIVERSITY SYSTEM OF NEW HAMPSHIRE",
+        "amount": 9720.5,
+        "total": 9720.5
+      },
+      {
+        "id": "a1b04887-0fb0-3f8b-c4b5-d4f34b7fc1ae",
+        "type": "recipient",
+        "name": "BRYCE SOLUTIONS, LLC",
+        "code": "BRYCE SOLUTIONS, LLC",
+        "amount": 9439.02,
+        "total": 9439.02
+      },
+      {
+        "id": "327d9ae6-ae11-c8c8-38cf-aac2730c767f",
+        "type": "recipient",
+        "name": "ALLIED MODULAR BUILDING SYSTEMS, INC.",
+        "code": "ALLIED MODULAR BUILDING SYSTEMS, INC.",
+        "amount": 7578.56,
+        "total": 7578.56
+      },
+      {
+        "id": "97339821-2ec9-1b3a-e408-9d1696d709c7",
+        "type": "recipient",
+        "name": "THE CLEVELAND ELECTRIC ILLUMINATING CO",
+        "code": "THE CLEVELAND ELECTRIC ILLUMINATING CO",
+        "amount": 7560.0,
+        "total": 7560.0
+      },
+      {
+        "id": "0796d80e-1947-21e6-994a-daac49f8b4b0",
+        "type": "recipient",
+        "name": "ON-SHORE USA, LLC",
+        "code": "ON-SHORE USA, LLC",
+        "amount": 7406.1,
+        "total": 7406.1
+      },
+      {
+        "id": "8467a285-b38f-7ccf-fb4c-9c52c4762e7c",
+        "type": "recipient",
+        "name": "GOVPLACE, LLC",
+        "code": "GOVPLACE, LLC",
+        "amount": 7356.66,
+        "total": 7356.66
+      },
+      {
+        "id": "a9b548ee-d783-2545-a5fb-181c4fa29b7b",
+        "type": "recipient",
+        "name": "UNISON COST ENGINEERING LLC",
+        "code": "UNISON COST ENGINEERING LLC",
+        "amount": 7336.58,
+        "total": 7336.58
+      },
+      {
+        "id": "32195b45-f1b8-604d-caf7-474ba8f82743",
+        "type": "recipient",
+        "name": "LEYBOLD USA INC.",
+        "code": "LEYBOLD USA INC.",
+        "amount": 6700.0,
+        "total": 6700.0
+      },
+      {
+        "id": "c03eb3c5-8138-8c35-48c8-0a3ea4580a19",
+        "type": "recipient",
+        "name": "AMITABH NAG",
+        "code": "AMITABH NAG",
+        "amount": 6266.75,
+        "total": 6266.75
+      },
+      {
+        "id": "17129f15-ee78-f634-b9dd-d59533e0ca8e",
+        "type": "recipient",
+        "name": "UNIVERSITY CORPORATION FOR ATMOSPHERIC RESEARCH",
+        "code": "UNIVERSITY CORPORATION FOR ATMOSPHERIC RESEARCH",
+        "amount": 5745.0,
+        "total": 5745.0
+      },
+      {
+        "id": "3b7d27f7-7e2a-029c-321d-0b6b3d963d95",
+        "type": "recipient",
+        "name": "PRADEEP K. GUPTA, INC.",
+        "code": "PRADEEP K. GUPTA, INC.",
+        "amount": 5580.94,
+        "total": 5580.94
+      },
+      {
+        "id": "ac16f77f-bfdc-dc7c-d42e-cb067dc7090b",
+        "type": "recipient",
+        "name": "CHEMSTEEL CONSTRUCTION COMPANY",
+        "code": "CHEMSTEEL CONSTRUCTION COMPANY",
+        "amount": 5254.91,
+        "total": 5254.91
+      },
+      {
+        "id": "a8ad0e9f-40c7-95d2-848b-0a89cbe0e88b",
+        "type": "recipient",
+        "name": "THERMO-CALC SOFTWARE INC.",
+        "code": "THERMO-CALC SOFTWARE INC.",
+        "amount": 5000.0,
+        "total": 5000.0
+      },
+      {
+        "id": "40903d18-c98f-56cd-6d15-7ddb975571d3",
+        "type": "recipient",
+        "name": "COMPU DYNAMICS LLC",
+        "code": "COMPU DYNAMICS LLC",
+        "amount": 4982.1,
+        "total": 4982.1
+      },
+      {
+        "id": "398289dc-2dae-0faa-2d42-65740f79dd0e",
+        "type": "recipient",
+        "name": "MIKROLAR INC",
+        "code": "MIKROLAR INC",
+        "amount": 4947.0,
+        "total": 4947.0
+      },
+      {
+        "id": "31a48083-38b6-288f-93a4-acb371f700ab",
+        "type": "recipient",
+        "name": "NAVARRO RESEARCH AND ENGINEERING, INC.",
+        "code": "NAVARRO RESEARCH AND ENGINEERING, INC.",
+        "amount": 4770.21,
+        "total": 4770.21
+      },
+      {
+        "id": "7450661f-75d8-d6de-4a72-07a30e2db944",
+        "type": "recipient",
+        "name": "NV5 GEOSPATIAL SOLUTIONS, INC.",
+        "code": "NV5 GEOSPATIAL SOLUTIONS, INC.",
+        "amount": 4680.0,
+        "total": 4680.0
+      },
+      {
+        "id": "0a3dd52c-9095-4925-8224-b37849e54197",
+        "type": "recipient",
+        "name": "XACT METAL INC",
+        "code": "XACT METAL INC",
+        "amount": 4320.0,
+        "total": 4320.0
+      },
+      {
+        "id": "849ad378-1343-0bb7-d8c5-e57e2a255a8d",
+        "type": "recipient",
+        "name": "STATELINE SOLUTION LLC",
+        "code": "STATELINE SOLUTION LLC",
+        "amount": 3896.33,
+        "total": 3896.33
+      },
+      {
+        "id": "c26fd0ee-9777-5d09-8189-a9b89ea1ece5",
+        "type": "recipient",
+        "name": "IRON MOUNTAIN INFORMATION MANAGEMENT LLC",
+        "code": "IRON MOUNTAIN INFORMATION MANAGEMENT LLC",
+        "amount": 3035.52,
+        "total": 3035.52
+      },
+      {
+        "id": "2c451ef0-bed2-c76b-4c99-b33ef2119145",
+        "type": "recipient",
+        "name": "VENTUREDYNE LTD",
+        "code": "VENTUREDYNE LTD",
+        "amount": 3000.0,
+        "total": 3000.0
+      },
+      {
+        "id": "d4c84786-879c-19de-86bf-15e7539b21d1",
+        "type": "recipient",
+        "name": "FISHBOWL SOLUTIONS LLC",
+        "code": "FISHBOWL SOLUTIONS LLC",
+        "amount": 2849.4,
+        "total": 2849.4
+      },
+      {
+        "id": "a1b51d2e-a28b-b753-bd26-7808cbc17d34",
+        "type": "recipient",
+        "name": "PROTO LABS, INC.",
+        "code": "PROTO LABS, INC.",
+        "amount": 2491.36,
+        "total": 2491.36
+      },
+      {
+        "id": "bfdb1bfe-4a6b-9339-778a-4c82eeb3b65e",
+        "type": "recipient",
+        "name": "GUARDTECH SYSTEMS LLC",
+        "code": "GUARDTECH SYSTEMS LLC",
+        "amount": 2107.05,
+        "total": 2107.05
+      },
+      {
+        "id": "4115393f-7477-7df0-2bab-3c537fe87f36",
+        "type": "recipient",
+        "name": "MSM GROUP INC",
+        "code": "MSM GROUP INC",
+        "amount": 2033.34,
+        "total": 2033.34
+      },
+      {
+        "id": "b532b615-2968-5fe6-e434-f14cb5f41c8b",
+        "type": "recipient",
+        "name": "TUNISTA LOGISTICS SOLUTIONS, LLC",
+        "code": "TUNISTA LOGISTICS SOLUTIONS, LLC",
+        "amount": 1458.98,
+        "total": 1458.98
+      },
+      {
+        "id": "642018de-7c78-e100-092e-883883247c40",
+        "type": "recipient",
+        "name": "SOUTHERN COMPANY GAS",
+        "code": "SOUTHERN COMPANY GAS",
+        "amount": 1400.0,
+        "total": 1400.0
+      },
+      {
+        "id": "25bed424-595c-f091-acaa-5ccdea9eed59",
+        "type": "recipient",
+        "name": "VIRGINIA ELECTRIC AND POWER COMPANY",
+        "code": "VIRGINIA ELECTRIC AND POWER COMPANY",
+        "amount": 1398.0,
+        "total": 1398.0
+      },
+      {
+        "id": "b654ad2e-0298-f171-671c-74d149944fed",
+        "type": "recipient",
+        "name": "ONE TECH SOL, LLC",
+        "code": "ONE TECH SOL, LLC",
+        "amount": 1145.0,
+        "total": 1145.0
+      },
+      {
+        "id": "133a382d-109f-7d5b-6678-287ff918cca6",
+        "type": "recipient",
+        "name": "AMERICAN FELT AND FILTER COMPANY INC",
+        "code": "AMERICAN FELT AND FILTER COMPANY INC",
+        "amount": 960.0,
+        "total": 960.0
+      },
+      {
+        "id": "3b313870-326d-82d5-c20b-b1d5cf11cf6b",
+        "type": "recipient",
+        "name": "THERMO ENVIRONMENTAL INSTRUMENTS LLC",
+        "code": "THERMO ENVIRONMENTAL INSTRUMENTS LLC",
+        "amount": 899.07,
+        "total": 899.07
+      },
+      {
+        "id": "8fb97c8a-695f-c0c7-b852-ce03636f78da",
+        "type": "recipient",
+        "name": "CNC SOFTWARE LLC",
+        "code": "CNC SOFTWARE LLC",
+        "amount": 703.33,
+        "total": 703.33
+      },
+      {
+        "id": "6b0ef8ab-6da1-5ccb-ff78-7f579aeee4a2",
+        "type": "recipient",
+        "name": "TOBII TECHNOLOGY, INC",
+        "code": "TOBII TECHNOLOGY, INC",
+        "amount": 394.8,
+        "total": 394.8
+      },
+      {
+        "id": "8f649c8d-785c-3bae-d20d-1d0a9495ac92",
+        "type": "recipient",
+        "name": "VEC VALLEY ELECTRIC, INC.",
+        "code": "VEC VALLEY ELECTRIC, INC.",
+        "amount": 232.0,
+        "total": 232.0
+      },
+      {
+        "id": "989155b3-53f4-2009-680b-4eb346ace299",
+        "type": "recipient",
+        "name": "ATA ENGINEERING, INC.",
+        "code": "ATA ENGINEERING, INC.",
+        "amount": 137.59,
+        "total": 137.59
+      },
+      {
+        "id": "2aa902f0-8c49-17f7-5f0f-f69e1a9ea2de",
+        "type": "recipient",
+        "name": "EPSILON TECHNOLOGY CORPORATION",
+        "code": "EPSILON TECHNOLOGY CORPORATION",
+        "amount": 120.0,
+        "total": 120.0
+      },
+      {
+        "id": "d8331ce4-2229-a201-1202-b89da2e6174c",
+        "type": "recipient",
+        "name": "TROY SIERRA JV LLC",
+        "code": "TROY SIERRA JV LLC",
+        "amount": 5.0,
+        "total": 5.0
+      },
+      {
+        "id": "432579a0-773a-8b4a-dc89-4958e47d10ac",
+        "type": "recipient",
+        "name": "FORTIUS METALS, INC.",
+        "code": "FORTIUS METALS, INC.",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "5d1d8d13-74dc-a528-35b5-16d41efc9914",
+        "type": "recipient",
+        "name": "NATIONAL ACADEMY OF EDUCATION",
+        "code": "NATIONAL ACADEMY OF EDUCATION",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "b780a7bb-e7b9-1a7c-ce20-ae3fccbe8e8f",
+        "type": "recipient",
+        "name": "BAE SYSTEMS ORDNANCE SYSTEMS INC",
+        "code": "BAE SYSTEMS ORDNANCE SYSTEMS INC",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "d54602ce-a7d3-820b-d0c9-8055886f176b",
+        "type": "recipient",
+        "name": "THE POTOMAC INSTITUTE FOR POLICY STUDIES",
+        "code": "THE POTOMAC INSTITUTE FOR POLICY STUDIES",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "882b9d91-0527-b7fe-bba6-629a192a063e",
+        "type": "recipient",
+        "name": "STRUERS INC",
+        "code": "STRUERS INC",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "0977ec49-dcbe-f03c-b9db-be7bd8d00432",
+        "type": "recipient",
+        "name": "MISSION SYSTEMS ORCHARD PARK INC",
+        "code": "MISSION SYSTEMS ORCHARD PARK INC",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "6044199c-0dc8-6657-4b47-240ef194c6c7",
+        "type": "recipient",
+        "name": "HKD CORPORATION",
+        "code": "HKD CORPORATION",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "5ca88440-a6c3-e664-edc6-4cff137c4fa1",
+        "type": "recipient",
+        "name": "GREENBRIER GOVERNMENT SOLUTIONS INC",
+        "code": "GREENBRIER GOVERNMENT SOLUTIONS INC",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "8d8a1d76-dd8b-7240-28bb-047284269c04",
+        "type": "recipient",
+        "name": "AEROFAB NDT LLC",
+        "code": "AEROFAB NDT LLC",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "1a50466d-6525-383c-dda3-76608d71d0c5",
+        "type": "recipient",
+        "name": "ROBERTS RESEARCH LABORATORY",
+        "code": "ROBERTS RESEARCH LABORATORY",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "e5c52a8e-7146-517b-e4e1-d529815de84c",
+        "type": "recipient",
+        "name": "TARAZI LLC",
+        "code": "TARAZI LLC",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "12921a39-7b07-14a6-6f6d-fc00168ed481",
+        "type": "recipient",
+        "name": "LEECH HOLDINGS, LLC",
+        "code": "LEECH HOLDINGS, LLC",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "333659cb-2d1b-b1a0-8bf5-76ac64ca994a",
+        "type": "recipient",
+        "name": "PERFORCE SOFTWARE INC",
+        "code": "PERFORCE SOFTWARE INC",
+        "amount": 0.0,
+        "total": 0.0
+      },
+      {
+        "id": "dacc1929-712f-b38d-cfa0-aa6982ecba5b",
+        "type": "recipient",
+        "name": "BOEING COMPANY, THE",
+        "code": "BOEING COMPANY, THE",
+        "amount": -0.09,
+        "total": -0.09
+      },
+      {
+        "id": "fb8099df-df9c-1d96-f19c-f3a00b918c86",
+        "type": "recipient",
+        "name": "THE MEDICAL COLLEGE OF WISCONSIN, INC.",
+        "code": "THE MEDICAL COLLEGE OF WISCONSIN, INC.",
+        "amount": -0.09,
+        "total": -0.09
+      },
+      {
+        "id": "caca8c0b-1687-4c28-5d19-ce7eabec7c68",
+        "type": "recipient",
+        "name": "HANKS, HANKS AND ASSOCIATES, LLC",
+        "code": "HANKS, HANKS AND ASSOCIATES, LLC",
+        "amount": -0.41,
+        "total": -0.41
+      },
+      {
+        "id": "7148b6ec-c422-d557-aa04-0c8488cc6775",
+        "type": "recipient",
+        "name": "IOWA STATE UNIVERSITY OF SCIENCE AND TECHNOLOGY",
+        "code": "IOWA STATE UNIVERSITY OF SCIENCE AND TECHNOLOGY",
+        "amount": -0.42,
+        "total": -0.42
+      },
+      {
+        "id": "88a2b27d-b103-32bb-8e3d-a4bffdbafb78",
+        "type": "recipient",
+        "name": "AS AND D, LLC",
+        "code": "AS AND D, LLC",
+        "amount": -7.04,
+        "total": -7.04
+      },
+      {
+        "id": "68d490bf-5f8d-3201-20d6-3d2aa7ace51d",
+        "type": "recipient",
+        "name": "UNIVERSITY OF NORTH DAKOTA",
+        "code": "UNIVERSITY OF NORTH DAKOTA",
+        "amount": -7.3,
+        "total": -7.3
+      },
+      {
+        "id": "e83cd5e0-65e4-5bc8-7e21-10be9e9f91f0",
+        "type": "recipient",
+        "name": "SAF-GARD SAFETY SHOE CO",
+        "code": "SAF-GARD SAFETY SHOE CO",
+        "amount": -10.02,
+        "total": -10.02
+      },
+      {
+        "id": "4e27419a-2613-f1d3-181f-0137429a80e4",
+        "type": "recipient",
+        "name": "AEROSOL DYNAMICS INC",
+        "code": "AEROSOL DYNAMICS INC",
+        "amount": -11.0,
+        "total": -11.0
+      },
+      {
+        "id": "a82c5225-acc0-a414-9697-67c39c66fd11",
+        "type": "recipient",
+        "name": "SECURITY WALLS LLC",
+        "code": "SECURITY WALLS LLC",
+        "amount": -37.33,
+        "total": -37.33
+      },
+      {
+        "id": "6bd3bd91-af62-81c2-4360-37bd845b06c7",
+        "type": "recipient",
+        "name": "CASCADE TEK SOLUTIONS, LLC",
+        "code": "CASCADE TEK SOLUTIONS, LLC",
+        "amount": -50.0,
+        "total": -50.0
+      },
+      {
+        "id": "395e4a2c-bac8-c9f0-4271-75643a4de192",
+        "type": "recipient",
+        "name": "UNIVERSITY OF TEXAS AT AUSTIN",
+        "code": "UNIVERSITY OF TEXAS AT AUSTIN",
+        "amount": -120.94,
+        "total": -120.94
+      },
+      {
+        "id": "0746856f-3bad-08a5-fb4e-d9c858edc527",
+        "type": "recipient",
+        "name": "FANUC AMERICA CORPORATION",
+        "code": "FANUC AMERICA CORPORATION",
+        "amount": -183.0,
+        "total": -183.0
+      },
+      {
+        "id": "2810ba36-d61d-9002-7941-dada57351752",
+        "type": "recipient",
+        "name": "AETOS SYSTEMS INC",
+        "code": "AETOS SYSTEMS INC",
+        "amount": -214.2,
+        "total": -214.2
+      },
+      {
+        "id": "7a4dd461-d825-ff7c-0721-cc4592e160be",
+        "type": "recipient",
+        "name": "TELTRIUM, INC.",
+        "code": "TELTRIUM, INC.",
+        "amount": -248.41,
+        "total": -248.41
+      },
+      {
+        "id": "bb86d47d-0e1a-7d08-2c40-c291ac767ff6",
+        "type": "recipient",
+        "name": "HARVEY MUDD COLLEGE",
+        "code": "HARVEY MUDD COLLEGE",
+        "amount": -253.56,
+        "total": -253.56
+      },
+      {
+        "id": "5f6a3877-304a-f4ec-9bd4-082c57aa1297",
+        "type": "recipient",
+        "name": "THE TRUSTEES OF COLUMBIA UNIVERSITY IN THE CITY OF NEW YORK",
+        "code": "THE TRUSTEES OF COLUMBIA UNIVERSITY IN THE CITY OF NEW YORK",
+        "amount": -465.84,
+        "total": -465.84
+      },
+      {
+        "id": "32c03814-f7d4-1913-76d4-bcaa3977ab6f",
+        "type": "recipient",
+        "name": "THE AMERICAN SOCIETY OF MECHANICAL ENGINEERS",
+        "code": "THE AMERICAN SOCIETY OF MECHANICAL ENGINEERS",
+        "amount": -750.0,
+        "total": -750.0
+      },
+      {
+        "id": "b9005698-3bae-6302-6301-5f20af0aa1d2",
+        "type": "recipient",
+        "name": "CINTAS CORPORATION NO. 2",
+        "code": "CINTAS CORPORATION NO. 2",
+        "amount": -760.73,
+        "total": -760.73
+      },
+      {
+        "id": "55136438-e3b4-a2e2-dfc1-27697e016695",
+        "type": "recipient",
+        "name": "METTLER-TOLEDO LLC",
+        "code": "METTLER-TOLEDO LLC",
+        "amount": -1063.3,
+        "total": -1063.3
+      },
+      {
+        "id": "62d2c092-1bf4-38fe-a98a-18db18f74f12",
+        "type": "recipient",
+        "name": "VANTAGE PARTNERS LLC",
+        "code": "VANTAGE PARTNERS LLC",
+        "amount": -1100.11,
+        "total": -1100.11
+      },
+      {
+        "id": "0b9a7c91-ddd2-9bec-d6f2-35ef42f6b642",
+        "type": "recipient",
+        "name": "CYTEC INDUSTRIAL MATERIALS (OK) INC.",
+        "code": "CYTEC INDUSTRIAL MATERIALS (OK) INC.",
+        "amount": -1537.5,
+        "total": -1537.5
+      },
+      {
+        "id": "8c256bdb-b823-d06d-51a7-3a1e655f0a11",
+        "type": "recipient",
+        "name": "AIRGAS USA LLC",
+        "code": "AIRGAS USA LLC",
+        "amount": -1560.36,
+        "total": -1560.36
+      },
+      {
+        "id": "cd00c8bb-94c8-384c-872f-1d1781c0bb1d",
+        "type": "recipient",
+        "name": "AIR MOVEMENT & CONTROL ASSOCIATION INTERNATIONAL, INC.",
+        "code": "AIR MOVEMENT & CONTROL ASSOCIATION INTERNATIONAL, INC.",
+        "amount": -1910.0,
+        "total": -1910.0
+      },
+      {
+        "id": "447f0d61-068e-5e68-d34d-947732ac1612",
+        "type": "recipient",
+        "name": "ELECTRIC POWER RESEARCH INSTITUTE INC",
+        "code": "ELECTRIC POWER RESEARCH INSTITUTE INC",
+        "amount": -1936.43,
+        "total": -1936.43
+      },
+      {
+        "id": "788539d0-3ea5-c34f-0e05-499b8c9f3913",
+        "type": "recipient",
+        "name": "CELLBLOCK FCS LLC",
+        "code": "CELLBLOCK FCS LLC",
+        "amount": -2638.25,
+        "total": -2638.25
+      },
+      {
+        "id": "d67f31a6-87d0-60da-9776-d14519db240a",
+        "type": "recipient",
+        "name": "BSN MEDICAL INC",
+        "code": "BSN MEDICAL INC",
+        "amount": -2650.48,
+        "total": -2650.48
+      },
+      {
+        "id": "db1a1bb3-7f23-d23a-49cd-425efda6da4c",
+        "type": "recipient",
+        "name": "ILLINOIS PROTON CENTER, LLC",
+        "code": "ILLINOIS PROTON CENTER, LLC",
+        "amount": -2700.0,
+        "total": -2700.0
+      },
+      {
+        "id": "bafb486f-a388-32c3-77e1-c7cb9530bdad",
+        "type": "recipient",
+        "name": "JACOBS TECHNOLOGY INC",
+        "code": "JACOBS TECHNOLOGY INC",
+        "amount": -2786.98,
+        "total": -2786.98
+      },
+      {
+        "id": "514122d6-b3a0-230f-b8e9-1f5dab5f1c6b",
+        "type": "recipient",
+        "name": "SPRINGER NATURE CUSTOMER SERVICE CENTER LLC",
+        "code": "SPRINGER NATURE CUSTOMER SERVICE CENTER LLC",
+        "amount": -3170.0,
+        "total": -3170.0
+      },
+      {
+        "id": "6b325329-8496-bc83-28f4-45c0a94990d3",
+        "type": "recipient",
+        "name": "INFRASTRUCTURE SOLUTION SERVICES, LLC",
+        "code": "INFRASTRUCTURE SOLUTION SERVICES, LLC",
+        "amount": -3400.0,
+        "total": -3400.0
+      },
+      {
+        "id": "da1391cf-2bfb-6baf-1eb4-314416931b12",
+        "type": "recipient",
+        "name": "NIPPON SANSO MATHESON, INC.",
+        "code": "NIPPON SANSO MATHESON, INC.",
+        "amount": -3404.6,
+        "total": -3404.6
+      },
+      {
+        "id": "7065db60-7c6b-6f33-7e02-0a771ee9dc61",
+        "type": "recipient",
+        "name": "ASR INTERNATIONAL CORP.",
+        "code": "ASR INTERNATIONAL CORP.",
+        "amount": -4027.24,
+        "total": -4027.24
+      },
+      {
+        "id": "6d1c8ec8-745d-7729-6f6a-65308336f65f",
+        "type": "recipient",
+        "name": "IMEC USA NANOELECTRONICS DESIGN CENTER, INC",
+        "code": "IMEC USA NANOELECTRONICS DESIGN CENTER, INC",
+        "amount": -4219.53,
+        "total": -4219.53
+      },
+      {
+        "id": "91c9a724-e1d9-b204-67f3-c1a78ebad844",
+        "type": "recipient",
+        "name": "REED & ASSOCIATES, CPAS, INC.",
+        "code": "REED & ASSOCIATES, CPAS, INC.",
+        "amount": -6600.0,
+        "total": -6600.0
+      },
+      {
+        "id": "4a536007-27e4-2194-a125-f4b8c55294db",
+        "type": "recipient",
+        "name": "VANDERBILT UNIVERSITY",
+        "code": "VANDERBILT UNIVERSITY",
+        "amount": -7108.74,
+        "total": -7108.74
+      },
+      {
+        "id": "a5b58147-0ac6-4994-14be-5e7ce156060b",
+        "type": "recipient",
+        "name": "FLORIDA INSTITUTE FOR HUMAN & MACHINE COGNITION INC",
+        "code": "FLORIDA INSTITUTE FOR HUMAN & MACHINE COGNITION INC",
+        "amount": -8259.69,
+        "total": -8259.69
+      },
+      {
+        "id": "2b375c29-a4b3-51c8-608c-ab829c40e2c0",
+        "type": "recipient",
+        "name": "ELECTROSOFT SERVICES, LLC",
+        "code": "ELECTROSOFT SERVICES, LLC",
+        "amount": -8264.62,
+        "total": -8264.62
+      },
+      {
+        "id": "0790449e-06e6-8211-1fd7-51c6b5a0effb",
+        "type": "recipient",
+        "name": "SAITECH INC",
+        "code": "SAITECH INC",
+        "amount": -10838.53,
+        "total": -10838.53
+      },
+      {
+        "id": "4e171915-4f7b-1603-88d9-2f37f69017e2",
+        "type": "recipient",
+        "name": "INOMEDIC HEALTH APPLICATIONS, INC.",
+        "code": "INOMEDIC HEALTH APPLICATIONS, INC.",
+        "amount": -11837.94,
+        "total": -11837.94
+      },
+      {
+        "id": "d385ccb7-faa4-eade-fb0d-27c0032bffde",
+        "type": "recipient",
+        "name": "PROTON THERAPY CENTER LLC, THE",
+        "code": "PROTON THERAPY CENTER LLC, THE",
+        "amount": -12000.0,
+        "total": -12000.0
+      },
+      {
+        "id": "c51792de-50eb-2fb0-f184-e3f125f001ab",
+        "type": "recipient",
+        "name": "SAN DIEGO COMPOSITES, INC",
+        "code": "SAN DIEGO COMPOSITES, INC",
+        "amount": -12789.69,
+        "total": -12789.69
+      },
+      {
+        "id": "a11a2c49-b200-c5b0-6719-7b2d0bb9764c",
+        "type": "recipient",
+        "name": "LOYAL SOURCE GOVERNMENT SERVICES LLC",
+        "code": "LOYAL SOURCE GOVERNMENT SERVICES LLC",
+        "amount": -15692.72,
+        "total": -15692.72
+      },
+      {
+        "id": "3294cc04-83cf-4581-08ad-a0417f1af11b",
+        "type": "recipient",
+        "name": "TWO INDEPENDENCE HANA OW, LLC",
+        "code": "TWO INDEPENDENCE HANA OW, LLC",
+        "amount": -18315.91,
+        "total": -18315.91
+      },
+      {
+        "id": "272cdd97-1304-e077-9b88-45af65ef0c11",
+        "type": "recipient",
+        "name": "FRANCONIA REAL ESTATE SERVICES, INC.",
+        "code": "FRANCONIA REAL ESTATE SERVICES, INC.",
+        "amount": -25330.93,
+        "total": -25330.93
+      },
+      {
+        "id": "9cf780f3-7116-cf1f-fe9d-dc4eaf1aa349",
+        "type": "recipient",
+        "name": "ARCTIC SLOPE TECHNICAL SERVICES, INC.",
+        "code": "ARCTIC SLOPE TECHNICAL SERVICES, INC.",
+        "amount": -25746.56,
+        "total": -25746.56
+      },
+      {
+        "id": "ab0c3d37-b0e3-ca99-2f8b-921b4cd4699e",
+        "type": "recipient",
+        "name": "STRATASYS, INC",
+        "code": "STRATASYS, INC",
+        "amount": -26250.0,
+        "total": -26250.0
+      },
+      {
+        "id": "48af9cdf-c8e5-b713-2f9e-62bb8c4977c7",
+        "type": "recipient",
+        "name": "REM CHEMICALS, INC.",
+        "code": "REM CHEMICALS, INC.",
+        "amount": -27041.32,
+        "total": -27041.32
+      },
+      {
+        "id": "95193a78-4978-7aa4-ef3c-78aaf785569e",
+        "type": "recipient",
+        "name": "OLD DOMINION UNIVERSITY RESEARCH FOUNDATION",
+        "code": "OLD DOMINION UNIVERSITY RESEARCH FOUNDATION",
+        "amount": -31932.5,
+        "total": -31932.5
+      },
+      {
+        "id": "48541913-b9a2-56d0-fdec-205251823d73",
+        "type": "recipient",
+        "name": "THE PERFORMANCE KNOWLEDGE GROUP, LLC",
+        "code": "THE PERFORMANCE KNOWLEDGE GROUP, LLC",
+        "amount": -46330.9,
+        "total": -46330.9
+      },
+      {
+        "id": "48982193-55a4-e7af-ab11-a84b1eea6d8b",
+        "type": "recipient",
+        "name": "VENESCO & SAITECH JOINT VENTURE, LLC",
+        "code": "VENESCO & SAITECH JOINT VENTURE, LLC",
+        "amount": -56869.08,
+        "total": -56869.08
+      },
+      {
+        "id": "ac40bb0a-3734-4e0d-c4c0-23f1df8c4d18",
+        "type": "recipient",
+        "name": "KECK GRADUATE INSTITUTE OF APPLIED LIFE SCIENCES",
+        "code": "KECK GRADUATE INSTITUTE OF APPLIED LIFE SCIENCES",
+        "amount": -63060.48,
+        "total": -63060.48
+      },
+      {
+        "id": "7a75b760-3fe6-21ea-3ada-514084ce1025",
+        "type": "recipient",
+        "name": "RAYTHEON COMPANY",
+        "code": "RAYTHEON COMPANY",
+        "amount": -102779.63,
+        "total": -102779.63
+      },
+      {
+        "id": "b0975da3-0899-4ce4-287a-bd4601779b80",
+        "type": "recipient",
+        "name": "METIS FLIGHT RESEARCH ASSOCIATES, LLC",
+        "code": "METIS FLIGHT RESEARCH ASSOCIATES, LLC",
+        "amount": -277722.75,
+        "total": -277722.75
+      }
+    ]
+  },
+  "status": "live_ok"
+}

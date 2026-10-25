@@ -1,0 +1,90 @@
+{
+  "task_id": "Q012",
+  "requested_at_utc": "2026-10-17T18:53:04.684618+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "place_of_performance_scope": "foreign"
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.612,
+  "response_bytes": 1903,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 272595544,
+        "Award ID": "0005",
+        "Recipient Name": "FLUOR INTERCONTINENTAL, INC",
+        "Award Amount": 12568636130.95,
+        "Start Date": "2009-07-07",
+        "End Date": "2025-09-30",
+        "Description": "LOGCAP IV SERVICES AFGHANISTAN",
+        "generated_internal_id": "CONT_AWD_0005_9700_W52P1J07D0008_9700"
+      },
+      {
+        "internal_id": 274817171,
+        "Award ID": "0159",
+        "Recipient Name": "KBR SERVICES, LLC",
+        "Award Amount": 8949368388.58,
+        "Start Date": "2008-09-24",
+        "End Date": "2012-09-30",
+        "Description": "FOLLOW ON TASK ORDER TO 139 IS NOW TASK ORDER 159",
+        "generated_internal_id": "CONT_AWD_0159_9700_DAAA0902D0007_9700"
+      },
+      {
+        "internal_id": 274735749,
+        "Award ID": "0139",
+        "Recipient Name": "KBR SERVICES, LLC",
+        "Award Amount": 7865825758.15,
+        "Start Date": "2006-08-22",
+        "End Date": "2012-12-30",
+        "Description": "200612!001884!2100!W52P1J!U.S. ARMY INDUSTRIAL OPERATIONS !DAAA0902D0007  !A!N! !Y!0139         !      !20060822!20120131!133469119!133469119!964409007!N!KELLOGG BROWN&ROOT SERVICES,!4100 CLINTON DRY          !HOUSTON             !TX!77020!00000!   !IZ!                    !                      !IRAQ      !+000400000000!N!N!000000000000!R706!LOGISTICS SUPPORT SERVICES                        !S1 !SERVICES                            !000 !NOT DISCERNABLE               !561210!E! !5!B!S! ! ! !99990909!B! ! !A! !A!U!R!2!003!B!  !Z!N!Z! !  !N!M!N! ! ! ! ! !A!A!000!A!B!N! ! ! ! !    !      !0001! !",
+        "generated_internal_id": "CONT_AWD_0139_9700_DAAA0902D0007_9700"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 274735749,
+      "last_record_sort_value": "786582575815"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

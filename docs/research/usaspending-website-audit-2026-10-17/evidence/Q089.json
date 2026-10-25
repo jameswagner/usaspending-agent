@@ -1,0 +1,109 @@
+{
+  "task_id": "Q089",
+  "requested_at_utc": "2026-10-17T19:20:32.295599+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/agency/080/sub_components/national-aeronautics-and-space-administration/",
+    "query": {
+      "fiscal_year": 2025
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/agency/080/sub_components/national-aeronautics-and-space-administration/?fiscal_year=2025",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 2.614,
+  "response_bytes": 2406,
+  "response": {
+    "toptier_code": "080",
+    "bureau_slug": "national-aeronautics-and-space-administration",
+    "fiscal_year": 2025,
+    "totals": {
+      "total_obligations": 28773421746.59,
+      "total_outlays": 26820529908.4,
+      "total_budgetary_resources": 41459964664.05
+    },
+    "page_metadata": {
+      "page": 1,
+      "total": 14,
+      "limit": 10,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "name": "Exploration, National Aeronautics and Space Administration",
+        "id": "080-0124",
+        "total_obligations": 7923866974.38,
+        "total_outlays": 7666106608.36,
+        "total_budgetary_resources": 15539496422.29
+      },
+      {
+        "name": "Science, National Aeronautics and Space Administration",
+        "id": "080-0120",
+        "total_obligations": 7602831572.14,
+        "total_outlays": 7524542025.38,
+        "total_budgetary_resources": 8324955360.39
+      },
+      {
+        "name": "Space Operations, National Aeronautics and Space Administration",
+        "id": "080-0115",
+        "total_obligations": 4987619274.54,
+        "total_outlays": 3964845402.06,
+        "total_budgetary_resources": 6414294426.85
+      },
+      {
+        "name": "Safety, Security and Mission Services, National Aeronautics and Space Administration",
+        "id": "080-0122",
+        "total_obligations": 4910282778.64,
+        "total_outlays": 4860713044.83,
+        "total_budgetary_resources": 5882642239.67
+      },
+      {
+        "name": "Construction and Environmental Compliance and Restoration, National Aeronautics and Space Administration",
+        "id": "080-0130",
+        "total_obligations": 993612802.47,
+        "total_outlays": 456338370.13,
+        "total_budgetary_resources": 2596817175.02
+      },
+      {
+        "name": "Aeronautics, National Aeronautics and Space Administration",
+        "id": "080-0126",
+        "total_obligations": 966809834.67,
+        "total_outlays": 974033323.44,
+        "total_budgetary_resources": 994893436.31
+      },
+      {
+        "name": "Space Technology, National Aeronautics Space Administration",
+        "id": "080-0131",
+        "total_obligations": 965938992.68,
+        "total_outlays": 911404368.47,
+        "total_budgetary_resources": 1193097481.06
+      },
+      {
+        "name": "Working Capital Fund, National Aeronautics and Space Administration",
+        "id": "080-4546",
+        "total_obligations": 246061113.82,
+        "total_outlays": 272031758.86,
+        "total_budgetary_resources": 295488946.14
+      },
+      {
+        "name": "Science, Technology, Engineering, and Mathematics Engagement, National Aeronautics and Space Administration",
+        "id": "080-0128",
+        "total_obligations": 127822400.41,
+        "total_outlays": 141798225.97,
+        "total_budgetary_resources": 154594669.25
+      },
+      {
+        "name": "Office of Inspector General, National Aeronautics and Space Administration",
+        "id": "080-0109",
+        "total_obligations": 47811002.74,
+        "total_outlays": 47951780.9,
+        "total_budgetary_resources": 52441175.45
+      }
+    ],
+    "messages": []
+  },
+  "status": "live_ok"
+}

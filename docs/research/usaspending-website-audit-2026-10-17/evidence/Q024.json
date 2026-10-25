@@ -1,0 +1,168 @@
+{
+  "task_id": "Q024",
+  "requested_at_utc": "2026-10-17T19:22:26.865235+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "award_ids": [
+          "NAS1510000"
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.443,
+  "response_bytes": 756,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 311267295,
+        "Award ID": "NAS1510000",
+        "Recipient Name": "THE BOEING COMPANY",
+        "Award Amount": 22653589199.84,
+        "Start Date": "1993-11-15",
+        "End Date": "2031-09-30",
+        "Description": "INTERNATIONAL SPACE STATION",
+        "generated_internal_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": false,
+      "last_record_unique_id": null,
+      "last_record_sort_value": "None"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok",
+  "previous_attempts": [
+    {
+      "task_id": "Q024",
+      "requested_at_utc": "2026-10-17T19:20:29.001509+00:00",
+      "request": {
+        "method": "POST",
+        "path": "/api/v2/search/spending_by_award/",
+        "body": {
+          "filters": {
+            "award_type_codes": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "time_period": [
+              {
+                "start_date": "2024-10-01",
+                "end_date": "2025-09-30"
+              }
+            ],
+            "award_ids": [
+              "\"NAS1510000\""
+            ]
+          },
+          "fields": [
+            "Award ID",
+            "Recipient Name",
+            "Award Amount",
+            "Start Date",
+            "End Date",
+            "Description",
+            "generated_internal_id"
+          ],
+          "limit": 3,
+          "page": 1,
+          "sort": "Award Amount",
+          "order": "desc",
+          "spending_level": "awards"
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+      "http_status": 503,
+      "elapsed_seconds": 0.326,
+      "response_bytes": 0,
+      "response_text": "",
+      "status": "non_json_response"
+    },
+    {
+      "task_id": "Q024",
+      "requested_at_utc": "2026-10-17T19:21:36.700076+00:00",
+      "request": {
+        "method": "POST",
+        "path": "/api/v2/search/spending_by_award/",
+        "body": {
+          "filters": {
+            "award_type_codes": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "time_period": [
+              {
+                "start_date": "2024-10-01",
+                "end_date": "2025-09-30"
+              }
+            ],
+            "award_ids": [
+              "\"NAS1510000\""
+            ]
+          },
+          "fields": [
+            "Award ID",
+            "Recipient Name",
+            "Award Amount",
+            "Start Date",
+            "End Date",
+            "Description",
+            "generated_internal_id"
+          ],
+          "limit": 3,
+          "page": 1,
+          "sort": "Award Amount",
+          "order": "desc",
+          "spending_level": "awards"
+        }
+      },
+      "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+      "http_status": 503,
+      "elapsed_seconds": 0.357,
+      "response_bytes": 0,
+      "response_text": "",
+      "status": "non_json_response"
+    }
+  ]
+}

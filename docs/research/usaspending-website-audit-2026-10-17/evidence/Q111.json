@@ -1,0 +1,167 @@
+{
+  "task_id": "Q111",
+  "requested_at_utc": "2026-10-17T18:53:48.811610+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/spending/",
+    "body": {
+      "type": "budget_function",
+      "filters": {
+        "fy": "2025",
+        "quarter": "4"
+      }
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/spending/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.26,
+  "response_bytes": 2195,
+  "response": {
+    "total": 10334224922234.34,
+    "end_date": "2025-09-30T00:00:00Z",
+    "results": [
+      {
+        "id": "570",
+        "code": "570",
+        "type": "budget_function",
+        "name": "Medicare",
+        "amount": 1836688276389.77
+      },
+      {
+        "id": "650",
+        "code": "650",
+        "type": "budget_function",
+        "name": "Social Security",
+        "amount": 1667788719716.72
+      },
+      {
+        "id": "050",
+        "code": "050",
+        "type": "budget_function",
+        "name": "National Defense",
+        "amount": 1416466958304.84
+      },
+      {
+        "id": "900",
+        "code": "900",
+        "type": "budget_function",
+        "name": "Net Interest",
+        "amount": 1250796514304.93
+      },
+      {
+        "id": "550",
+        "code": "550",
+        "type": "budget_function",
+        "name": "Health",
+        "amount": 1145485923479.83
+      },
+      {
+        "id": "600",
+        "code": "600",
+        "type": "budget_function",
+        "name": "Income Security",
+        "amount": 759048551195.99
+      },
+      {
+        "id": "800",
+        "code": "800",
+        "type": "budget_function",
+        "name": "General Government",
+        "amount": 511427222162.72
+      },
+      {
+        "id": "700",
+        "code": "700",
+        "type": "budget_function",
+        "name": "Veterans Benefits and Services",
+        "amount": 413322282987.23
+      },
+      {
+        "id": "500",
+        "code": "500",
+        "type": "budget_function",
+        "name": "Education, Training, Employment, and Social Services",
+        "amount": 221514008215.09
+      },
+      {
+        "id": null,
+        "code": null,
+        "type": "budget_function",
+        "name": "Unreported Data",
+        "amount": 206887941906.98
+      },
+      {
+        "id": "400",
+        "code": "400",
+        "type": "budget_function",
+        "name": "Transportation",
+        "amount": 197806022689.98
+      },
+      {
+        "id": "300",
+        "code": "300",
+        "type": "budget_function",
+        "name": "Natural Resources and Environment",
+        "amount": 133406050475.69
+      },
+      {
+        "id": "750",
+        "code": "750",
+        "type": "budget_function",
+        "name": "Administration of Justice",
+        "amount": 115354127604.21
+      },
+      {
+        "id": "450",
+        "code": "450",
+        "type": "budget_function",
+        "name": "Community and Regional Development",
+        "amount": 106470038438.98
+      },
+      {
+        "id": "370",
+        "code": "370",
+        "type": "budget_function",
+        "name": "Commerce and Housing Credit",
+        "amount": 95854563162.6
+      },
+      {
+        "id": "350",
+        "code": "350",
+        "type": "budget_function",
+        "name": "Agriculture",
+        "amount": 73447290508.83
+      },
+      {
+        "id": "150",
+        "code": "150",
+        "type": "budget_function",
+        "name": "International Affairs",
+        "amount": 71578245633.92
+      },
+      {
+        "id": "270",
+        "code": "270",
+        "type": "budget_function",
+        "name": "Energy",
+        "amount": 63239998705.64
+      },
+      {
+        "id": "250",
+        "code": "250",
+        "type": "budget_function",
+        "name": "General Science, Space, and Technology",
+        "amount": 47642186350.39
+      },
+      {
+        "id": "000",
+        "code": "000",
+        "type": "budget_function",
+        "name": "Governmental Receipts",
+        "amount": 0.0
+      }
+    ]
+  },
+  "status": "live_ok"
+}

@@ -1,0 +1,59 @@
+{
+  "task_id": "Q158",
+  "requested_at_utc": "2026-10-17T19:38:51.643954+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/tas/categories/total/",
+    "body": {
+      "group": "program_activity__program_activity_name",
+      "field": "obligations_incurred_by_program_object_class_cpe",
+      "aggregate": "sum",
+      "order": [
+        "-aggregate"
+      ],
+      "filters": [
+        {
+          "field": "treasury_account__federal_account",
+          "operation": "equals",
+          "value": 5634
+        }
+      ],
+      "page": 1,
+      "limit": 5
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v1/tas/categories/total/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.268,
+  "response_bytes": 602,
+  "response": {
+    "page_metadata": {
+      "count": 3,
+      "page": 1,
+      "has_next_page": false,
+      "has_previous_page": false,
+      "next": null,
+      "current": "https://api.usaspending.gov/api/v1/tas/categories/total/?limit=5&page=1",
+      "previous": null
+    },
+    "results": [
+      {
+        "item": "EXPLORATION (DIRECT)",
+        "aggregate": "33591666034.81",
+        "program_activity__program_activity_name": "EXPLORATION (DIRECT)"
+      },
+      {
+        "item": "DEEP SPACE EXPLORATION SYSTEMS (DIRECT)",
+        "aggregate": "23373899716.58",
+        "program_activity__program_activity_name": "DEEP SPACE EXPLORATION SYSTEMS (DIRECT)"
+      },
+      {
+        "item": "UNKNOWN/OTHER",
+        "aggregate": "0.00",
+        "program_activity__program_activity_name": "UNKNOWN/OTHER"
+      }
+    ]
+  },
+  "status": "live_ok"
+}

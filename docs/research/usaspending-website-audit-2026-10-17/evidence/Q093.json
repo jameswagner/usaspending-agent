@@ -1,0 +1,80 @@
+{
+  "task_id": "Q093",
+  "requested_at_utc": "2026-10-17T19:20:32.856666+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/recipient/6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C/",
+    "query": {
+      "year": "all"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/recipient/6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C/?year=all",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 1.485,
+  "response_bytes": 1507,
+  "response": {
+    "name": "LOCKHEED MARTIN CORPORATION",
+    "alternate_names": [
+      "GENERAL DYNAMICS CORPORATION",
+      "GENERAL DYNMICS/FORT WORTH DIV",
+      "LOCKHEED MARTIN CORPORATION (3632)"
+    ],
+    "duns": "008016958",
+    "uei": "G4KDGE4JFFK7",
+    "recipient_id": "6cf5fb1b-4988-d087-5dc1-70939d8fc6c4-C",
+    "recipient_level": "C",
+    "parent_id": "8e2862a3-62bd-4514-180d-47f089a24644-P",
+    "parent_name": "LOCKHEED MARTIN CORPORATION",
+    "parent_duns": "834951691",
+    "parent_uei": "JSQTW5L2SSM1",
+    "parents": [
+      {
+        "parent_duns": "834951691",
+        "parent_name": "LOCKHEED MARTIN CORPORATION",
+        "parent_id": "8e2862a3-62bd-4514-180d-47f089a24644-P",
+        "parent_uei": "JSQTW5L2SSM1"
+      },
+      {
+        "parent_duns": null,
+        "parent_name": "SIKORSKY SUPPORT SERVICES INC",
+        "parent_id": "738b71ca-a1fd-b59f-ab44-c884d1bc7b2b-P",
+        "parent_uei": "WXTSNW5E97R6"
+      },
+      {
+        "parent_duns": "834951691",
+        "parent_name": "LOCKHEED MARTIN CORP",
+        "parent_id": "b97d19b0-833c-8d8f-3a2c-157d04ea55ef-P",
+        "parent_uei": "ZFN2JJXBLZT3"
+      }
+    ],
+    "business_types": [
+      "category_business",
+      "corporate_entity_not_tax_exempt",
+      "manufacturer_of_goods",
+      "other_than_small_business",
+      "special_designations",
+      "us_owned_business"
+    ],
+    "location": {
+      "address_line1": "1 LOCKHEED BLVD",
+      "address_line2": null,
+      "address_line3": null,
+      "foreign_province": null,
+      "city_name": "FORT WORTH",
+      "county_name": null,
+      "state_code": "TX",
+      "zip": "76108",
+      "zip4": "3619",
+      "foreign_postal_code": null,
+      "country_name": "UNITED STATES",
+      "country_code": "USA",
+      "congressional_code": "12"
+    },
+    "total_transaction_amount": 313955959562.06,
+    "total_transactions": 41938,
+    "total_face_value_loan_amount": 0.0,
+    "total_face_value_loan_transactions": 0
+  },
+  "status": "live_ok"
+}

@@ -1,0 +1,44 @@
+{
+  "task_id": "Q132",
+  "requested_at_utc": "2026-10-17T18:55:01.723643+00:00",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/reporting/agencies/080/2025/12/submission_history/",
+    "query": {
+      "limit": 3,
+      "page": 1
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/reporting/agencies/080/2025/12/submission_history/?limit=3&page=1",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 0.371,
+  "response_bytes": 474,
+  "response": {
+    "page_metadata": {
+      "page": 1,
+      "total": 3,
+      "limit": 3,
+      "next": null,
+      "previous": null,
+      "hasNext": false,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "publication_date": "2025-12-29T19:43:57.059633+00:00",
+        "certification_date": "2025-12-29T19:43:57.097431+00:00"
+      },
+      {
+        "publication_date": "2025-12-05T16:12:31.266053+00:00",
+        "certification_date": "2025-12-05T16:12:31.305725+00:00"
+      },
+      {
+        "publication_date": "2025-12-05T15:58:36.191484+00:00",
+        "certification_date": "2025-12-05T15:58:36.289523+00:00"
+      }
+    ],
+    "messages": []
+  },
+  "status": "live_ok"
+}

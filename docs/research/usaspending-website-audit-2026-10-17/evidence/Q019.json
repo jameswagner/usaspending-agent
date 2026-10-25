@@ -1,0 +1,92 @@
+{
+  "task_id": "Q019",
+  "requested_at_utc": "2026-10-17T18:53:06.159519+00:00",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/search/spending_by_award/",
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "time_period": [
+          {
+            "start_date": "2024-10-01",
+            "end_date": "2025-09-30"
+          }
+        ],
+        "recipient_search_text": [
+          "LOCKHEED MARTIN"
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Description",
+        "generated_internal_id"
+      ],
+      "limit": 3,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "spending_level": "awards"
+    }
+  },
+  "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+  "http_status": 200,
+  "content_type": "application/json",
+  "elapsed_seconds": 9.216,
+  "response_bytes": 1918,
+  "response": {
+    "spending_level": "awards",
+    "limit": 3,
+    "results": [
+      {
+        "internal_id": 295476065,
+        "Award ID": "DEAC0494AL85000",
+        "Recipient Name": "LOCKHEED MARTIN CORP",
+        "Award Amount": 48063737196.35,
+        "Start Date": "1993-10-15",
+        "End Date": "2017-04-30",
+        "Description": null,
+        "generated_internal_id": "CONT_AWD_DEAC0494AL85000_8900_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 309494502,
+        "Award ID": "N0001917C0001",
+        "Recipient Name": "LOCKHEED MARTIN CORPORATION",
+        "Award Amount": 35135514910.2,
+        "Start Date": "2017-11-17",
+        "End Date": "2031-03-31",
+        "Description": "LRIP LOT 12 ADVANCE ACQUISITION CONTRACT",
+        "generated_internal_id": "CONT_AWD_N0001917C0001_9700_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 309493328,
+        "Award ID": "N0001902C3002",
+        "Recipient Name": "LOCKHEED MARTIN CORPORATION",
+        "Award Amount": 34173959111.96,
+        "Start Date": "2001-10-26",
+        "End Date": "2022-12-16",
+        "Description": "200204!008532!1700!AF600 !NAVAL AIR SYSTEMS COMMAND       !N0001902C3002  !A!N! !N!                   !20011026!20120430!008016958!008016958!834951691!N!LOCKHEED MARTIN CORPORATION   !LOCKHEED BLVD             !FORT WORTH          !TX!76108!27000!439!48!FORT WORTH          !TARRANT               !TEXAS     !+000026000000!N!N!018981928201!AC15!RDTE/AIRCRAFT-ENG/MANUF DEVELOP                   !A1A!AIRFRAMES AND SPARES          !2AMA!JAST/JSF                      !336411!E! !3! ! ! ! ! !99990909!B! ! !A! !A!N!R!2!002!N!1A!A!N!Z!  !  !N!C!N! ! ! !A!A!A!A!000!A!C!N! ! ! !Y!    !N00019!0001!",
+        "generated_internal_id": "CONT_AWD_N0001902C3002_9700_-NONE-_-NONE-"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true,
+      "last_record_unique_id": 309493328,
+      "last_record_sort_value": "3417395911196"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "status": "live_ok"
+}

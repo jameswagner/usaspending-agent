@@ -44,6 +44,35 @@ def current_fiscal_year(today: date | None = None) -> int:
     return today.year + 1 if today.month >= 10 else today.year
 
 
+def relative_year_guidance(today=None) -> str:
+    """Prompt text for resolving "this/latest/current year". In the first
+    quarter of a fiscal year (Oct-Dec) the new year has almost no data and
+    some endpoints reject it, so the phrase is ambiguous: answer with the
+    last completed year and also report the in-progress one when it has data."""
+    today = today or datetime.now(timezone.utc).date()
+    current_fy = current_fiscal_year(today)
+    last_completed = current_fy - 1
+    guidance = (
+        f"The in-progress fiscal year is FY{current_fy} and the most recently completed one is "
+        f"FY{last_completed}. "
+    )
+    if today.month >= 10:
+        guidance += (
+            f"FY{current_fy} only started on {today.year}-10-01, so it has little data and some "
+            f"endpoints reject it. For 'this year', 'latest' or 'current' with no year stated, report "
+            f"FY{last_completed} as the main answer and, where FY{current_fy} returns data, also give "
+            f"it labeled as partial, so the user sees both readings; if FY{current_fy} is rejected or "
+            f"empty, say it has no data yet. Never pass year='latest' to an endpoint expecting a "
+            f"fiscal year, since it means trailing 12 months. "
+        )
+    else:
+        guidance += (
+            f"For 'this year', 'latest' or 'current' with no year stated, FY{current_fy} is in "
+            f"progress: label it partial, and also give FY{last_completed} for a full-year comparison. "
+        )
+    return guidance
+
+
 EARLIEST_SUPPORTED_FISCAL_YEAR = 2008
 
 

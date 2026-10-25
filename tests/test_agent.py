@@ -147,6 +147,7 @@ from backend.app.usaspending import (
     FederalAccountBreakdown,
     GeographyTypeResult,
     IDVAmountsResponse,
+    IDVFundingRollup,
     ObligationByPeriod,
     PageMetadata,
     RecipientListing,
@@ -1752,14 +1753,14 @@ class TestAwardTypeNormalization:
 
     def test_broad_buckets_still_present(self):
         assert AWARD_TYPE_GROUPS["contracts"] == ["A", "B", "C", "D"]
-        assert AWARD_TYPE_GROUPS["grants"] == ["02", "03", "04", "05"]
-        assert AWARD_TYPE_GROUPS["loans"] == ["07", "08"]
+        assert AWARD_TYPE_GROUPS["grants"] == ["02", "03", "04", "05", "F001", "F002"]
+        assert AWARD_TYPE_GROUPS["loans"] == ["07", "08", "F003", "F004"]
 
     def test_cooperative_agreement_resolves_to_the_correct_single_code(self):
         # Code 05 per USASpending's award_types.md - part of the broader
         # "grants" bucket (02-05), but its own precise code, not the
         # bucket as a whole.
-        assert AWARD_TYPE_GROUPS["cooperative_agreement"] == ["05"]
+        assert AWARD_TYPE_GROUPS["cooperative_agreement"] == ["05", "F002"]
 
     def test_every_specific_subtype_code_is_a_member_of_its_broad_bucket(self):
         # The specific sub-types should be a strict refinement of the
@@ -1775,6 +1776,18 @@ class TestAwardTypeNormalization:
         loan_subtypes = ["direct_loan", "guaranteed_loan"]
         for key in loan_subtypes:
             assert AWARD_TYPE_GROUPS[key][0] in AWARD_TYPE_GROUPS["loans"]
+
+    def test_groups_match_the_api_award_type_groups(self):
+        # Mirrors usaspending_api/awards/v2/lookups/lookups.py: the API's grant, loan,
+        # direct-payment and other groups each include the F-prefixed codes for newer
+        # assistance records, which the older codes alone undercount (FY2025 grants:
+        # 500,419 without F001/F002 vs 537,597 with).
+        assert set(AWARD_TYPE_GROUPS["grants"]) == {"02", "03", "04", "05", "F001", "F002"}
+        assert set(AWARD_TYPE_GROUPS["loans"]) == {"07", "08", "F003", "F004"}
+        direct_payments = set(AWARD_TYPE_GROUPS["direct_payment_specified"]) | set(AWARD_TYPE_GROUPS["direct_payment_unrestricted"])
+        assert direct_payments == {"06", "10", "F006", "F007"}
+        assert set(AWARD_TYPE_GROUPS["insurance"]) == {"09", "F005"}
+        assert set(AWARD_TYPE_GROUPS["other_financial_assistance"]) == {"11", "F008", "F009", "F010"}
 
     def test_idv_codes_are_disjoint_from_contracts(self):
         # Regression coverage for #146: a plain PIID search under the
@@ -1945,7 +1958,7 @@ class TestBuildFilters:
         filters = _build_filters(
             FakeClient(make_agency()), "NSF", "fiscal", 2021, 2024, award_type="cooperative_agreement"
         )
-        assert filters.award_type_codes == ["05"]
+        assert filters.award_type_codes == ["05", "F002"]
 
     def test_unknown_award_type_raises(self):
         with pytest.raises(USASpendingAPIError, match="Unknown award_type"):
@@ -2635,8 +2648,8 @@ class TestAmountFieldForAwardType:
         assert _amount_field_for_award_type("guaranteed_loan") == "Loan Value"
 
     def test_loan_award_type_codes_match_the_award_types_contract(self):
-        # 07 = Direct Loan, 08 = Guaranteed/Insured Loan per award_types.md.
-        assert LOAN_AWARD_TYPE_CODES == {"07", "08"}
+        # 07/F003 = Direct Loan, 08/F004 = Guaranteed/Insured Loan per award_types.md and the API's lookups.
+        assert LOAN_AWARD_TYPE_CODES == {"07", "08", "F003", "F004"}
 
     def test_unknown_award_type_falls_back_to_award_amount(self):
         # _build_filters already validated award_type earlier in the same
@@ -3167,6 +3180,57 @@ class TestGetAwardFundingBreakdown:
         self._mock_client(response, monkeypatch)
         result = get_award_funding_breakdown.func(award_id="CONT_AWD_X")
         assert "complete" in result.lower() or "exhaustive" in result.lower() or "more" in result.lower()
+
+
+class TestGetAwardFundingBreakdownIDV:
+    def test_idv_rows_derive_federal_account_and_show_rollup_header(self, monkeypatch):
+        response = AwardFundingResponse(
+            results=[
+                AwardFundingRow(
+                    agency_id="020",
+                    main_account_code="0520",
+                    piid="2033H622F00035",
+                    transaction_obligated_amount=10.0,
+                    reporting_fiscal_year=2022,
+                )
+            ],
+            page_metadata=PageMetadata(page=1, hasNext=False),
+        )
+        client = FakeClient(make_agency())
+        client.get_award_funding = lambda *a, **kw: response
+        client.get_idv_funding_rollup = lambda award_id: IDVFundingRollup(
+            federal_account_count=12, total_transaction_obligated_amount=1588635.53
+        )
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+        result = get_award_funding_breakdown.func(award_id="CONT_IDV_X_8000")
+        assert "020-0520" in result
+        assert "child award 2033H622F00035" in result
+        assert "funding records" in result
+        assert "Distinct federal accounts: 12" in result
+        assert "$1,588,635.53" in result
+
+    def test_rollup_failure_still_returns_rows(self, monkeypatch):
+        response = AwardFundingResponse(results=[AwardFundingRow(federal_account="020-0520")])
+        client = FakeClient(make_agency())
+        client.get_award_funding = lambda *a, **kw: response
+
+        def raise_error(*a, **kw):
+            raise USASpendingAPIError("boom")
+
+        client.get_idv_funding_rollup = raise_error
+        monkeypatch.setattr("backend.app.agent.tools.awards._get_usaspending_client", lambda: client)
+        result = get_award_funding_breakdown.func(award_id="CONT_IDV_X_8000")
+        assert "020-0520" in result and "funding records" in result
+
+    def test_client_routes_idv_ids_to_idvs_endpoint(self):
+        from backend.app.usaspending.client import USASpendingClient
+
+        calls = []
+        client = USASpendingClient.__new__(USASpendingClient)
+        client._post = lambda path, body: calls.append(path) or {"results": []}
+        client.get_award_funding("CONT_IDV_X_8000")
+        client.get_award_funding("CONT_AWD_X")
+        assert calls == ["/api/v2/idvs/funding/", "/api/v2/awards/funding/"]
 
 
 class TestGetAwardTransactionHistory:

@@ -57,3 +57,46 @@ def test_placeholder_only_matches_a_backend_placeholder():
 @pytest.mark.parametrize("pattern", [*PLUMBING, *LOCAL])
 def test_every_listed_pattern_matches_an_inventory_task(tasks, pattern):
     assert any(_matches(_segments(t["request"]["path"]), _segments(pattern), lambda s: s == "*") for t in tasks.values())
+
+
+# The website's Advanced Search filters (usaspending-website src/js/dataMapping/search/awardsOperationKeys.js rootKeys)
+# and the tool parameter that sets each one.
+WEBSITE_SEARCH_FILTERS = {
+    "keywords": "keywords",
+    "description": "description",
+    "time_period": "start_year",
+    "award_type_codes": "award_type",
+    "agencies": "agency_name",
+    "treasury_account_components": "federal_account",
+    "tas_codes": "tas_code",
+    "recipient_search_text": "recipient_name",
+    "recipient_scope": "recipient_scope",
+    "recipient_locations": "recipient_in_state",
+    "recipient_type_names": "recipient_type",
+    "place_of_performance_scope": "place_of_performance_scope",
+    "place_of_performance_locations": "performed_in_state",
+    "award_amounts": "min_amount",
+    "award_ids": "award_id",
+    "program_numbers": "cfda_program",
+    "naics_codes": "naics_code",
+    "psc_codes": "psc_code",
+    "def_codes": "def_codes",
+    "contract_pricing_type_codes": "contract_pricing_type",
+    "set_aside_type_codes": "set_aside_type",
+    "extent_competed_type_codes": "extent_competed_type",
+}
+
+
+@pytest.fixture(scope="module")
+def query_spending_args():
+    from backend.app.agent.consolidated_tools import CONSOLIDATED_TOOLS
+    from backend.app.agent.langgraph_tools import LANGGRAPH_TOOLS
+
+    return {name: set(next(t for t in tools if t.name == "query_spending").args)
+            for name, tools in (("current", LANGGRAPH_TOOLS), ("consolidated", CONSOLIDATED_TOOLS))}
+
+
+@pytest.mark.parametrize(("field", "param"), WEBSITE_SEARCH_FILTERS.items())
+def test_query_spending_exposes_every_website_search_filter(query_spending_args, field, param):
+    for toolset, args in query_spending_args.items():
+        assert param in args, f"{toolset} query_spending has no {param} for the website's {field} filter"

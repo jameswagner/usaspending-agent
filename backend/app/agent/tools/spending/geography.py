@@ -141,9 +141,8 @@ def get_spending_by_geography(
 ) -> str:
     """Get spending broken down by geographic region (state, county, congressional district, or country) for a fiscal year range, ranked by total amount descending. Use this for "which states/counties/districts/countries got the most X funding" — a full breakdown in one call, instead of checking one place at a time.
 
-    At least one of agency_name, recipient_name, recipient_id, performed_in_state, recipient_in_state,
-    naics_code, psc_code, cfda_program, or keywords must be given - a query scoped by none of them
-    would mean all federal spending, ever, which this tool refuses rather than silently running.
+    Government-wide maps work as long as the question names an award_type or covers a single year.
+    Only every award type over several years with no other filter is refused, as too slow for the live API.
 
     Population and per-capita spending are computed by the live API itself and included automatically
     when available. Both reflect current data, not the population/geography at the time of the

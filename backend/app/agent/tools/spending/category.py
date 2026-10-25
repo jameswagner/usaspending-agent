@@ -203,13 +203,11 @@ def get_spending_by_category(
     def_codes: list[str] | None = None,
     spending_level: SpendingLevel = "transactions",
 ) -> str:
-    """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for a fiscal year range, scoped by a real scoping filter, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions. Returns only the top `limit` categories, not a grand total - for "what is the total/how much funding" questions, use get_spending_over_time instead (grouped by fiscal_year), never this tool's top-N rows.
+    """Get USASpending spending broken down by a category (e.g. industry, product/service code, sub-agency) for a fiscal year range, ranked by total amount descending. Use this for "how is X's spending broken down by Y" questions. Returns only the top `limit` categories, not a grand total - for "what is the total/how much funding" questions, use get_spending_over_time instead (grouped by fiscal_year), never this tool's top-N rows.
 
-    At least one real scoping filter must be given - agency_name, recipient_name,
-    recipient_id, a location filter (performed_in_*/recipient_in_*), naics_code, psc_code,
-    cfda_program, keywords, award_id, description, or recipient_type. A query scoped by
-    none of them would mean all federal spending, ever, which this tool refuses rather than
-    silently running.
+    Government-wide rankings work (e.g. "which agency awarded the most contract dollars in
+    FY2025") as long as the question names an award_type or covers a single year. Only every
+    award type over several years with no other filter is refused, as too slow for the live API.
 
     Args:
         category: One of: awarding_agency, awarding_subagency, cfda, country, county, defc, district, federal_account, funding_agency, funding_subagency, naics, psc, recipient, recipient_duns, state_territory. Enforced in code - any other value (including ones the API's own docs list, like object_class or tas, which 404 in practice) fails cleanly with this exact list rather than reaching the live API. recipient and recipient_duns return the same results for every case tested - either works for "top recipients" questions.

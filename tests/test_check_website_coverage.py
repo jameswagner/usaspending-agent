@@ -29,6 +29,7 @@ def backend():
         ("Q001", "covered"),
         ("Q032", "covered"),
         ("Q121", "gap"),
+        ("Q070", "gap"),
         ("Q104", "gap"),
         ("Q045", "plumbing"),
         ("Q052", "local"),
@@ -52,6 +53,14 @@ def test_docstring_mentions_are_not_endpoints(backend):
 def test_placeholder_only_matches_a_backend_placeholder():
     assert _matches(["awards", "{{contract_id}}"], ["awards", "{award_id}"], lambda s: s.startswith("{"))
     assert not _matches(["awards", "{{contract_id}}"], ["awards", "funding"], lambda s: s.startswith("{"))
+
+
+def test_backend_placeholder_does_not_swallow_an_endpoint_name():
+    def placeholder(s):
+        return s.startswith("{")
+
+    assert not _matches(["awards", "funding_rollup"], ["awards", "{award_id}"], placeholder, identifiers_only=True)
+    assert _matches(["agency", "080"], ["agency", "{toptier_code}"], placeholder, identifiers_only=True)
 
 
 @pytest.mark.parametrize("pattern", [*PLUMBING, *LOCAL])

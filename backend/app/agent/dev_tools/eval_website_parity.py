@@ -167,8 +167,21 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.rescore:
-        rows = [json.loads(line) for line in args.rescore.read_text(encoding="utf-8").splitlines() if line.strip()]
-        toolsets = [t for t in ("current", "consolidated") if any(t in r for r in rows)]
+        saved = {r["task"]: r for r in (json.loads(line) for line in args.rescore.read_text(encoding="utf-8").splitlines() if line.strip())}
+        toolsets = [t for t in ("current", "consolidated") if any(t in r for r in saved.values())]
+        rows = build_rows(load_cases())
+        reworded = [r for r in rows if r["task"] not in saved or saved[r["task"]]["question"] != r["question"]]
+        for row in rows:
+            if row not in reworded:
+                row.update({t: saved[row["task"]][t] for t in toolsets})
+        if reworded:
+            from backend.app.agent.singletons import warm_up
+
+            warm_up()
+            for row in reworded:
+                print(f"re-asking reworded {row['task']}", flush=True)
+                for toolset in toolsets:
+                    row[toolset] = _ask(row["question"], toolset)
         score_rows(rows, toolsets)
         _write(rows, toolsets, args.rescore.stem.removeprefix("parity-") + "-rescored")
         return

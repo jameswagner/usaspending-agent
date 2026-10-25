@@ -76,10 +76,15 @@ def backend_endpoints() -> list[list[str]]:
     return [list(t) for t in sorted(templates)]
 
 
-def _matches(path: list[str], pattern: list[str], wildcard) -> bool:
+def _is_identifier(segment: str) -> bool:
+    """An ID or code like 080, CONT_AWD_..., 2025 - not an endpoint name like funding_rollup."""
+    return bool(_PLACEHOLDER.match(segment)) or any(c.isdigit() or c.isupper() for c in segment)
+
+
+def _matches(path: list[str], pattern: list[str], wildcard, identifiers_only: bool = False) -> bool:
     if len(path) != len(pattern):
         return False
-    return all(p == q or wildcard(q) or (_PLACEHOLDER.match(p) and _PLACEHOLDER.match(q)) for p, q in zip(path, pattern))
+    return all(p == q or (wildcard(q) and (not identifiers_only or _is_identifier(p))) for p, q in zip(path, pattern))
 
 
 def classify(task: dict, backend: list[list[str]]) -> tuple[str, str]:
@@ -90,7 +95,7 @@ def classify(task: dict, backend: list[list[str]]) -> tuple[str, str]:
         return "dead", "the website never calls it"
     if path.split("?")[0] == AI_SEARCH:
         return "ai_search", "the website's own AI search"
-    if any(_matches(segments, b, lambda s: bool(_PLACEHOLDER.match(s))) for b in backend):
+    if any(_matches(segments, b, lambda s: bool(_PLACEHOLDER.match(s)), identifiers_only=True) for b in backend):
         return "covered", ""
     for status, table in (("local", LOCAL), ("plumbing", PLUMBING)):
         for pattern, reason in table.items():

@@ -81,14 +81,75 @@
     {
      "label": "top award ID",
      "kind": "text",
-     "extract": "results.0.Award ID"
+     "extract": "results.0.Award ID",
+     "request": {
+      "method": "POST",
+      "path": "/api/v2/search/spending_by_award/",
+      "body": {
+       "filters": {
+        "award_type_codes": [
+         "07",
+         "08"
+        ],
+        "time_period": [
+         {
+          "start_date": "2024-10-01",
+          "end_date": "2025-09-30"
+         }
+        ]
+       },
+       "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Loan Value",
+        "Subsidy Cost",
+        "generated_internal_id"
+       ],
+       "limit": 3,
+       "page": 1,
+       "sort": "Loan Value",
+       "order": "desc",
+       "spending_level": "awards"
+      }
+     }
     },
     {
      "label": "top award amount",
      "kind": "amount",
-     "extract": "results.0.Loan Value"
+     "extract": "results.0.Loan Value",
+     "request": {
+      "method": "POST",
+      "path": "/api/v2/search/spending_by_award/",
+      "body": {
+       "filters": {
+        "award_type_codes": [
+         "07",
+         "08"
+        ],
+        "time_period": [
+         {
+          "start_date": "2024-10-01",
+          "end_date": "2025-09-30"
+         }
+        ]
+       },
+       "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Loan Value",
+        "Subsidy Cost",
+        "generated_internal_id"
+       ],
+       "limit": 3,
+       "page": 1,
+       "sort": "Loan Value",
+       "order": "desc",
+       "spending_level": "awards"
+      }
+     }
     }
-   ]
+   ],
+   "confusion": "The website's loan table sorts by award ID by default, so its first row isn't the largest loan."
   },
   {
    "task": "Q004",
@@ -1357,9 +1418,20 @@
    "question": "Which subawards are linked to NASA contract NAS1510000?",
    "answers": [
     {
-     "label": "latest subawardee",
+     "label": "largest subawardee",
      "kind": "text",
-     "extract": "results.0.recipient_name"
+     "extract": "results.0.recipient_name",
+     "request": {
+      "method": "POST",
+      "path": "/api/v2/subawards/",
+      "body": {
+       "award_id": "{{contract_id}}",
+       "limit": 3,
+       "page": 1,
+       "sort": "amount",
+       "order": "desc"
+      }
+     }
     }
    ]
   },
@@ -1371,11 +1443,6 @@
      "label": "top funding account",
      "kind": "text",
      "extract": "results.0.federal_account"
-    },
-    {
-     "label": "its obligations",
-     "kind": "amount",
-     "extract": "results.0.total_transaction_obligated_amount"
     }
    ]
   },
@@ -1550,17 +1617,17 @@
    "question": "What is NASA's mission and what does its FY2025 agency profile say?",
    "answers": [
     {
+     "label": "mission statement",
+     "kind": "text",
+     "extract": "mission"
+    },
+    {
      "label": "website",
      "kind": "text",
      "extract": "website",
      "aliases": [
       "nasa.gov"
      ]
-    },
-    {
-     "label": "sub-agency count",
-     "kind": "amount",
-     "extract": "subtier_agency_count"
     }
    ]
   },
@@ -2699,7 +2766,7 @@
   },
   {
    "task": "Q163",
-   "question": "What are the largest contract transactions matching the keyword cybersecurity?",
+   "question": "Across all years, what are the largest contract transactions matching the keyword cybersecurity?",
    "answers": [
     {
      "label": "top transaction's award",

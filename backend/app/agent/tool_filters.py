@@ -112,23 +112,23 @@ class SpendingFilterParams(TypedDict, total=False):
 # "idv" specifically needs a real, distinct value to reach for.
 AWARD_TYPE_GROUPS: dict[str, list[str]] = {
     "contracts": ["A", "B", "C", "D"],
-    "grants": ["02", "03", "04", "05"],
-    "loans": ["07", "08"],
+    "grants": ["02", "03", "04", "05", "F001", "F002"],
+    "loans": ["07", "08", "F003", "F004"],
     "bpa_call": ["A"],
     "purchase_order": ["B"],
     "delivery_order": ["C"],
     "definitive_contract": ["D"],
     "idv": ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"],
-    "direct_loan": ["07"],
-    "guaranteed_loan": ["08"],
+    "direct_loan": ["07", "F003"],
+    "guaranteed_loan": ["08", "F004"],
     "block_grant": ["02"],
     "formula_grant": ["03"],
     "project_grant": ["04"],
-    "cooperative_agreement": ["05"],
-    "insurance": ["09"],
-    "other_financial_assistance": ["11"],
-    "direct_payment_specified": ["06"],
-    "direct_payment_unrestricted": ["10"],
+    "cooperative_agreement": ["05", "F002"],
+    "insurance": ["09", "F005"],
+    "other_financial_assistance": ["11", "F008", "F009", "F010"],
+    "direct_payment_specified": ["06", "F006"],
+    "direct_payment_unrestricted": ["10", "F007"],
 }
 
 
@@ -909,7 +909,7 @@ TRANSACTION_FIELDS_BASE = [
     "Awarding Agency", "Awarding Sub Agency", "Award Type", "Transaction Description",
 ]
 
-LOAN_AWARD_TYPE_CODES = {"07", "08"}
+LOAN_AWARD_TYPE_CODES = {"07", "08", "F003", "F004"}
 
 
 def _amount_field_for_award_type(award_type: str) -> str:

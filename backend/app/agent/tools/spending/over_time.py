@@ -165,13 +165,11 @@ def get_spending_over_time(
     def_codes: list[str] | None = None,
     spending_level: SpendingLevel = "transactions",
 ) -> str:
-    """Get USASpending spending trends over time for a fiscal year range, scoped by a real scoping filter, grouped by period. Use this for "how much/what total funding went to X" questions (group by fiscal_year over the requested range - the response's aggregated_amount for a single-period range is the exact grand total, computed server-side, not a top-N slice) as well as "how has X's spending changed/trended over time" questions.
+    """Get USASpending spending trends over time for a fiscal year range, grouped by period. Use this for "how much/what total funding went to X" questions (group by fiscal_year over the requested range - the response's aggregated_amount for a single-period range is the exact grand total, computed server-side, not a top-N slice) as well as "how has X's spending changed/trended over time" questions.
 
-    At least one real scoping filter must be given - agency_name, recipient_name,
-    recipient_id, a location filter (performed_in_*/recipient_in_*), naics_code, psc_code,
-    cfda_program, keywords, award_id, description, or recipient_type. A query scoped by
-    none of them would mean all federal spending, ever, which this tool refuses rather than
-    silently running.
+    Government-wide totals work (e.g. "total contract obligations in FY2025") as long as the
+    question names an award_type or covers a single year. Only every award type over several
+    years with no other filter is refused, as too slow for the live API.
 
     Args:
         time_period_type: "fiscal" (default) for federal fiscal years (Oct-Sep, named by the

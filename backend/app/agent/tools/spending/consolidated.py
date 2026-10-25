@@ -315,7 +315,9 @@ def query_spending(
             level (sort_by controls ranking). Set to a category name (naics, psc,
             cfda, awarding_agency, awarding_subagency, funding_agency,
             funding_subagency, recipient, recipient_duns, federal_account, defc)
-            for a summed breakdown by that dimension, "time" for a
+            for a summed breakdown by that dimension (funding_* for "funded by"
+            questions, the agency whose money paid; awarding_* for "awarded by",
+            the agency that signed - they differ), "time" for a
             period-over-period trend (time_grouping controls the period size), or
             "geography" for a state/county/district/country breakdown by
             place-of-performance or recipient-location (scope and geo_layer become

@@ -556,7 +556,6 @@ def _build_filters(
     start_year: int,
     end_year: int,
     *,
-    award_type_counts_as_scope: bool = False,
     scope_required: bool = True,
     **filters: Unpack[SpendingFilterParams],
 ) -> AdvancedFilters:
@@ -614,17 +613,11 @@ def _build_filters(
     which still raises rather than guessing.
 
     agency_name is optional - a recipient-only, cross-agency question needs
-    to work too. At least one of agency_name/recipient_name/recipient_id/
-    performed_in_state/recipient_in_state/naics_code/psc_code/cfda_program/
-    keywords/award_id/description/recipient_type must be given, or this
-    raises; award_type/min_amount/max_amount/date_type/*_scope don't count
-    on their own (see #16) - UNLESS award_type_counts_as_scope=True, which
-    search_awards_raw passes (see #125): unlike the aggregate tools, where
-    an unscoped whole-of-government breakdown can time out live (see
-    get_spending_by_category's docstring), search_awards just returns a
-    ranked/paginated list, which works fine with an award-type +
-    fiscal-year filter alone, so that combination is real scope for this
-    tool specifically.
+    to work too. A government-wide question is fine as long as it names an
+    award type or covers a single fiscal year; only every award type over
+    several years at once is refused, since that is what runs past the
+    client timeout live. min_amount/max_amount/date_type/*_scope don't
+    count as scope on their own.
 
     scope_required=False skips the mandatory-scope check entirely -
     for get_award_type_breakdown (#123), whose underlying
@@ -721,22 +714,15 @@ def _build_filters(
         tas_code, federal_account, def_codes,
         contract_pricing_type, set_aside_type, extent_competed_type,
     )
-    has_real_scope = any(f is not None for f in real_scoping_filters)
-    if not has_real_scope and award_type_counts_as_scope and award_type is not None:
-        has_real_scope = True
+    has_real_scope = (
+        any(f is not None for f in real_scoping_filters) or award_type is not None or start_year == end_year
+    )
     if not has_real_scope and scope_required:
-        message = (
-            "At least one of agency_name, recipient_name, recipient_id, performed_in_state, "
-            "recipient_in_state, performed_in_county, recipient_in_county, performed_in_city, "
-            "recipient_in_city, performed_in_zip, recipient_in_zip, performed_in_district, "
-            "recipient_in_district, naics_code, psc_code, cfda_program, keywords, award_id, "
-            "description, recipient_type, tas_code, federal_account, def_codes, "
-            "contract_pricing_type, set_aside_type, or extent_competed_type must be given"
+        raise USASpendingAPIError(
+            "Every award type across several years at once is too slow for the live API. Narrow it with "
+            "award_type, a single year (start_year == end_year), or a filter such as agency_name, "
+            "recipient_name, recipient_id, a location, naics_code, psc_code, cfda_program, or keywords."
         )
-        if award_type_counts_as_scope:
-            message += ", or award_type (browsing by award type + fiscal year alone is fine here)"
-        message += " - a question scoped by none of them would mean all federal spending, ever."
-        raise USASpendingAPIError(message)
 
     start_date, end_date = year_range_to_date_range(time_period_type, start_year, end_year)
     kwargs: dict = {

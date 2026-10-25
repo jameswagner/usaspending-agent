@@ -105,11 +105,8 @@ def search_awards_raw(
     so explicitly) - recipient_name (an approximate text match) is the
     only recipient-scoping option this specific tool has.
 
-    Unlike the other two spending tools, award_type alone (which every
-    call here has - it defaults to "contracts") counts as real scope
-    (award_type_counts_as_scope=True), so this never raises for missing
-    scope the way get_spending_by_category/get_spending_over_time can -
-    see _build_filters' docstring and #125.
+    award_type (which every call here has - it defaults to "contracts")
+    counts as scope, so this never raises for missing scope.
 
     contract_pricing_type/set_aside_type/extent_competed_type (issue #27)
     are only wired here, not on get_spending_by_category/get_spending_over_time/
@@ -153,7 +150,6 @@ def search_awards_raw(
         contract_pricing_type=contract_pricing_type,
         set_aside_type=set_aside_type,
         extent_competed_type=extent_competed_type,
-        award_type_counts_as_scope=True,
     )
     amount_field = _amount_field_for_award_type(award_type)
     sort_field = _sort_field_for_award_type(award_type, sort_by)
@@ -892,7 +888,7 @@ def search_transactions_raw(
     def_codes: list[str] | None = None,
 ) -> SearchAwardsResponse:
     """Call the API once, return the structured response - same filter
-    resolution (_build_filters, award_type_counts_as_scope=True) as
+    resolution (_build_filters) as
     search_awards_raw, but hits search/spending_by_transaction/ instead of
     search/spending_by_award/, so each result is one transaction/
     modification rather than one award's cumulative lifetime total (issue
@@ -932,7 +928,6 @@ def search_transactions_raw(
         tas_code=tas_code,
         federal_account=federal_account,
         def_codes=def_codes,
-        award_type_counts_as_scope=True,
     )
     amount_field = _transaction_amount_field_for_award_type(award_type)
     sort_field = amount_field if sort_by == "amount" else "Action Date"

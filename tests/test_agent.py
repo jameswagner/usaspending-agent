@@ -2272,7 +2272,7 @@ class TestBuildFilters:
         assert filters.recipient_id == "abc-P"
 
     def test_all_scoping_params_none_raises(self):
-        with pytest.raises(USASpendingAPIError, match="At least one of"):
+        with pytest.raises(USASpendingAPIError, match="too slow"):
             _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024)
 
     # Place/code/keyword filters are equally legitimate scoping on their
@@ -2344,14 +2344,18 @@ class TestBuildFilters:
         filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, recipient_type="nonprofit")
         assert filters.recipient_type_names == ["nonprofit"]
 
-    def test_award_type_alone_is_not_sufficient_scope(self):
-        with pytest.raises(USASpendingAPIError, match="At least one of"):
-            _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, award_type="grants")
+    def test_award_type_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, award_type="grants")
+        assert filters.agencies is None
+        assert filters.award_type_codes is not None
+
+    def test_single_year_alone_is_sufficient_scope(self):
+        filters = _build_filters(FakeClient(make_agency()), None, "fiscal", 2025, 2025)
+        assert filters.model_dump(exclude_none=True) == {
+            "time_period": [{"start_date": "2024-10-01", "end_date": "2025-09-30"}]
+        }
 
     def test_recipient_type_plus_award_type_is_sufficient_scope(self):
-        # Even though award_type alone doesn't count as scope, combining
-        # it with recipient_type (which does count) is sufficient - answering
-        # "top contracts to nonprofits" directly (#128).
         filters = _build_filters(
             FakeClient(make_agency()), None, "fiscal", 2021, 2024,
             recipient_type="nonprofit", award_type="contracts"
@@ -2360,27 +2364,8 @@ class TestBuildFilters:
         assert filters.award_type_codes == ["A", "B", "C", "D"]
 
     def test_min_amount_alone_is_not_sufficient_scope(self):
-        with pytest.raises(USASpendingAPIError, match="At least one of"):
+        with pytest.raises(USASpendingAPIError, match="too slow"):
             _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, min_amount=1_000_000)
-
-    # search_awards_raw passes award_type_counts_as_scope=True (#125): the
-    # real site's Advanced Search answers "FY + award type alone" directly,
-    # and unlike the aggregate tools this one can't run away (a paginated,
-    # ranked list, not a whole-of-government sum).
-
-    def test_award_type_counts_as_scope_when_opted_in(self):
-        filters = _build_filters(
-            FakeClient(make_agency()), None, "fiscal", 2021, 2024,
-            award_type="grants", award_type_counts_as_scope=True,
-        )
-        assert filters.agencies is None
-        assert filters.award_type_codes is not None
-
-    def test_award_type_counts_as_scope_does_not_relax_other_tools(self):
-        # Opting in doesn't help without award_type actually set - still
-        # needs a real scoping filter or award_type itself.
-        with pytest.raises(USASpendingAPIError, match="At least one of"):
-            _build_filters(FakeClient(make_agency()), None, "fiscal", 2021, 2024, award_type_counts_as_scope=True)
 
     def test_agency_name_given_still_resolves_normally(self):
         # Regression: the common case (agency_name alone) must be
@@ -2400,7 +2385,7 @@ class TestBuildFilters:
         }
 
     def test_scope_required_true_by_default_still_rejects_unscoped(self):
-        with pytest.raises(USASpendingAPIError, match="At least one of"):
+        with pytest.raises(USASpendingAPIError, match="too slow"):
             _build_filters(FakeClient(None), None, "fiscal", 2021, 2024)
 
     def test_recipient_id_passthrough(self):

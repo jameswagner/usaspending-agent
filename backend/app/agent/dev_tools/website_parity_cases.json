@@ -913,14 +913,48 @@
     {
      "label": "grant count",
      "kind": "amount",
-     "extract": "results.grants"
+     "extract": "results.grants",
+     "request": {
+      "method": "POST",
+      "path": "/api/v2/search/spending_by_award_count/",
+      "body": {
+       "filters": {
+        "time_period": [
+         {
+          "start_date": "2024-10-01",
+          "end_date": "2025-09-30"
+         }
+        ],
+        "agencies": [
+         {
+          "type": "awarding",
+          "tier": "toptier",
+          "name": "National Aeronautics and Space Administration"
+         }
+        ]
+       },
+       "subawards": false
+      }
+     }
     },
     {
      "label": "IDV count",
      "kind": "amount",
      "extract": "results.idvs"
+    },
+    {
+     "label": "explains why its grant count differs from the website's",
+     "kind": "mentions",
+     "any": [
+      "F0",
+      "F-prefixed",
+      "newer",
+      "website",
+      "usaspending.gov's"
+     ]
     }
-   ]
+   ],
+   "confusion": "The website's award-type tabs omit the F-prefixed assistance codes (614 NASA grants in FY2025), so its Grants count (8,258) is lower than the full count (8,872)."
   },
   {
    "task": "Q026",

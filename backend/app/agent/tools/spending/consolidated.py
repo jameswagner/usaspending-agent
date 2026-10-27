@@ -113,7 +113,7 @@ def _route_records(
         return search_transactions(
             **shared,
             limit=limit,
-            sort_by=sort_by if sort_by in ("amount", "recency") else "amount",
+            sort_by=sort_by,
             recipient_name=recipient_name,
             recipient_in_state=recipient_in_state, recipient_in_county=recipient_in_county,
             recipient_in_city=recipient_in_city, recipient_in_zip=recipient_in_zip,
@@ -218,6 +218,8 @@ def _route_aggregate(
         unsupported = [k for k, v in {**account_and_contract, "def_codes": def_codes}.items() if v]
         if unsupported:
             return f"This query failed: group_by='geography' can't filter by {', '.join(unsupported)} yet."
+        if level == "subaward":
+            return "This query failed: group_by='geography' covers prime awards only, not subawards."
         if scope is None or geo_layer is None:
             return "This query failed: group_by='geography' requires scope and geo_layer."
         # spending_by_geography has no spending_level - hardcoded to "transactions" by
@@ -342,9 +344,9 @@ def query_spending(
             total/trend (not individual subaward records - use group_by=None for
             those instead). level="award" vs "transaction" makes no difference to
             an aggregate - both compute the same period-scoped grand total; that
-            distinction only matters for individual rows (group_by=None). Has no
-            effect on group_by="geography", which only ever aggregates prime
-            transactions.
+            distinction only matters for individual rows (group_by=None).
+            group_by="geography" only aggregates prime transactions and rejects
+            level="subaward".
         group_by: Optional. Omit to return individual ranked rows for the chosen
             level (sort_by controls ranking). Set to a category name (naics, psc,
             cfda, awarding_agency, awarding_subagency, funding_agency,
@@ -366,7 +368,7 @@ def query_spending(
         limit: Max rows/categories to return (default 5). Ignored for group_by="time" and
             group_by="geography" (always capped at 20 regions internally, not this value).
         sort_by: Ranking field for record rows only (amount default, outlays, subsidy_cost,
-            recency). Ignored when group_by is set.
+            recency; level="transaction" takes amount or recency only). Ignored when group_by is set.
         time_grouping: Period size when group_by="time" - fiscal_year (default),
             calendar_year, quarter, month. Ignored otherwise.
         scope: Required when group_by="geography" - "place_of_performance" or "recipient_location".
@@ -381,8 +383,8 @@ def query_spending(
             search_recipients/get_recipient_details), pass THAT here instead of the bare name -
             it's still a text match, but a uei/duns has no other entity to collide with, giving
             the same effective precision recipient_id gives non-subaward calls.
-        recipient_id: Optional. Exact recipient id - only honored for group_by aggregates, not
-            records, and NOT supported at all when level="subaward" (a live API restriction -
+        recipient_id: Optional. Exact recipient id - only for group_by aggregates (records reject
+            it), and NOT supported at all when level="subaward" (a live API restriction -
             use recipient_name there instead, every time, not just after this fails once).
             Otherwise prefer this over recipient_name whenever you have it (e.g. from
             search_recipients), and once you've used it for an entity, keep using it for every
@@ -433,6 +435,13 @@ def query_spending(
                 "can't mix award type groups in one search) - pick one, e.g. contracts, "
                 "grants, loans, idv, or a sub-type, and query each separately if needed."
             )
+        if recipient_id is not None:
+            return (
+                "This query failed: recipient_id only applies to aggregates (group_by set) - for "
+                "record searches use recipient_name, ideally the recipient's UEI."
+            )
+        if level == "transaction" and sort_by not in ("amount", "recency"):
+            return f"This query failed: level='transaction' records sort only by amount or recency, not {sort_by}."
         return _route_records(
             level,
             time_period_type=time_period_type, start_year=start_year, end_year=end_year,

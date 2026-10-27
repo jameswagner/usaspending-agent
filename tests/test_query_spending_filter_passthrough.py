@@ -44,3 +44,24 @@ def test_category_sends_the_federal_account_to_the_api():
         category.get_spending_by_category_raw("recipient", None, "fiscal", 2025, 2025, federal_account="080-0124")
     filters = client.spending_by_category.call_args.args[1]
     assert [(c.aid, c.main) for c in filters.treasury_account_components] == [("080", "0124")]
+
+
+def test_records_refuse_recipient_id():
+    with patch.object(consolidated, "search_awards", return_value="ok") as rec:
+        result = _call(level="award", award_type="contracts", recipient_id="abc-C", **_BASE)
+    assert result.startswith("This query failed") and "recipient_id" in result
+    rec.assert_not_called()
+
+
+def test_transactions_refuse_an_outlays_sort_instead_of_sorting_by_amount():
+    with patch.object(consolidated, "search_transactions", return_value="ok") as rec:
+        result = _call(level="transaction", award_type="contracts", sort_by="outlays", **_BASE)
+    assert result.startswith("This query failed") and "outlays" in result
+    rec.assert_not_called()
+
+
+def test_geography_refuses_the_subaward_level():
+    with patch.object(consolidated, "get_spending_by_geography", return_value="ok") as agg:
+        result = _call(level="subaward", group_by="geography", scope="place_of_performance", geo_layer="state", agency_name="NASA", **_BASE)
+    assert result.startswith("This query failed") and "subaward" in result
+    agg.assert_not_called()

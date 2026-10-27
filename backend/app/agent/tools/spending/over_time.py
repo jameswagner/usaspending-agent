@@ -11,6 +11,7 @@ from langsmith import traceable
 
 from backend.app.usaspending import SpendingOverTimeResponse, USASpendingAPIError
 
+from ...contract_type_codes import ContractPricingType, ExtentCompetedType, SetAsideType
 from ...recipient_types import RecipientType
 from ...response_shaping import _format_time_period, year_label
 from ...singletons import _get_usaspending_client
@@ -86,6 +87,11 @@ def get_spending_over_time_raw(
     recipient_type: RecipientType | None = None,
     description: str | None = None,
     def_codes: list[str] | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
+    contract_pricing_type: list[ContractPricingType] | None = None,
+    set_aside_type: list[SetAsideType] | None = None,
+    extent_competed_type: list[ExtentCompetedType] | None = None,
     spending_level: SpendingLevel = "transactions",
 ) -> SpendingOverTimeResponse:
     """Call the API once, return the structured response. Same filter
@@ -125,6 +131,11 @@ def get_spending_over_time_raw(
         recipient_type=recipient_type,
         description=description,
         def_codes=def_codes,
+        tas_code=tas_code,
+        federal_account=federal_account,
+        contract_pricing_type=contract_pricing_type,
+        set_aside_type=set_aside_type,
+        extent_competed_type=extent_competed_type,
     )
     return client.spending_over_time(filters, group=_normalize_group(group), spending_level=spending_level)
 
@@ -163,6 +174,11 @@ def get_spending_over_time(
     recipient_type: RecipientType | None = None,
     description: str | None = None,
     def_codes: list[str] | None = None,
+    tas_code: str | None = None,
+    federal_account: str | None = None,
+    contract_pricing_type: list[ContractPricingType] | None = None,
+    set_aside_type: list[SetAsideType] | None = None,
+    extent_competed_type: list[ExtentCompetedType] | None = None,
     spending_level: SpendingLevel = "transactions",
 ) -> str:
     """Get USASpending spending trends over time for a fiscal year range, grouped by period. Use this for "how much/what total funding went to X" questions (group by fiscal_year over the requested range - the response's aggregated_amount for a single-period range is the exact grand total, computed server-side, not a top-N slice) as well as "how has X's spending changed/trended over time" questions.
@@ -251,6 +267,13 @@ def get_spending_over_time(
             phrase, e.g. "vaccine research". Distinct from keywords - keywords also matches
             recipient name, PIID/FAIN/URI, and NAICS/PSC description text, so a keywords hit
             doesn't imply a description hit or vice versa.
+        tas_code: Optional. Restrict to spending funded by this exact Treasury Account Symbol,
+            e.g. "020-2020/2021-1521" - get it from a get_award_funding_breakdown call, not guessed.
+        federal_account: Optional. Restrict to spending funded by this exact federal account
+            (AID-MAIN, e.g. "080-0124"). Groups multiple TAS together.
+        contract_pricing_type: Optional. Contract-only Type of Contract Pricing values, OR'd together.
+        set_aside_type: Optional. Contract-only Type of Set Aside values, OR'd together.
+        extent_competed_type: Optional. Contract-only Extent Competed values, OR'd together.
         def_codes: Optional. Restrict to spending tagged with these Disaster Emergency Fund
             Codes (DEFC), e.g. ["L"] for a single code. Use the group alias "covid" (or
             "covid_19") or "infrastructure" (or "iija") instead of listing every individual
@@ -272,6 +295,9 @@ def get_spending_over_time(
         performed_in_district=performed_in_district, recipient_in_district=recipient_in_district,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program, keywords=keywords,
         award_id=award_id, description=description, def_codes=def_codes,
+        tas_code=tas_code, federal_account=federal_account,
+        contract_pricing_type=contract_pricing_type, set_aside_type=set_aside_type,
+        extent_competed_type=extent_competed_type,
     )
     try:
         response = get_spending_over_time_raw(
@@ -306,6 +332,11 @@ def get_spending_over_time(
             recipient_type=recipient_type,
             description=description,
             def_codes=def_codes,
+            tas_code=tas_code,
+            federal_account=federal_account,
+            contract_pricing_type=contract_pricing_type,
+            set_aside_type=set_aside_type,
+            extent_competed_type=extent_competed_type,
             spending_level=spending_level,
         )
     except USASpendingAPIError as e:
@@ -349,6 +380,11 @@ def get_spending_over_time(
         recipient_type=recipient_type,
         description=description,
         def_codes=def_codes,
+        tas_code=tas_code,
+        federal_account=federal_account,
+        contract_pricing_type=contract_pricing_type,
+        set_aside_type=set_aside_type,
+        extent_competed_type=extent_competed_type,
     )
     if naics_note:
         context["naics_auto_resolved"] = naics_note

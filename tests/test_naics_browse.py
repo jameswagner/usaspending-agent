@@ -57,3 +57,19 @@ def test_browse_results_can_be_cited(monkeypatch):
     resolve_naics_code.func(description="54")
     context, result = recorded[0]
     assert build_tool_citation("resolve_naics_code", context, result) is not None
+
+
+def test_a_description_starting_with_a_code_browses_it(monkeypatch):
+    seen = []
+    children = [NaicsNode(naics="5411", naics_description="Legal Services")]
+    monkeypatch.setattr("backend.app.agent.tools.naics._get_usaspending_client", lambda: _client(children, seen))
+    assert "5411 - Legal Services" in resolve_naics_code.func(description="NAICS 54 professional, scientific and technical services")
+    assert seen == ["54"]
+
+
+def test_sectors_lists_the_top_level(monkeypatch):
+    sectors = [NaicsNode(naics="11", naics_description="Agriculture, Forestry, Fishing and Hunting")]
+    client = SimpleNamespace(get_naics_sectors=lambda: sectors)
+    monkeypatch.setattr("backend.app.agent.tools.naics._get_usaspending_client", lambda: client)
+    out = resolve_naics_code.func(description="Sectors")
+    assert "Top-level NAICS sectors" in out and "11 - Agriculture" in out

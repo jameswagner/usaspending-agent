@@ -1657,14 +1657,6 @@
      "label": "mission statement",
      "kind": "text",
      "extract": "mission"
-    },
-    {
-     "label": "website",
-     "kind": "text",
-     "extract": "website",
-     "aliases": [
-      "nasa.gov"
-     ]
     }
    ]
   },

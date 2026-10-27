@@ -50,6 +50,14 @@ from .._shared import (
 logger = logging.getLogger(__name__)
 
 
+def _parent_vehicle_label(award_id: str, internal_id: str) -> str:
+    """Names the IDV a contract order sits under; its PIID is the internal id's next-to-last part."""
+    if not internal_id.startswith("CONT_AWD_"):
+        return ""
+    parent = internal_id.rsplit("_", 2)[-2]
+    return "" if parent == "-NONE-" else f" [order under vehicle {parent} - this award's own ID is {award_id}]"
+
+
 @traceable(run_type="tool", name="search_awards_raw")
 def search_awards_raw(
     agency_name: str | None,
@@ -524,7 +532,8 @@ def search_awards(
                 disaster_str += f"; Infrastructure Obligations: ${infra_obligations:,.2f}, Infrastructure Outlays: ${infra_outlays:,.2f}"
             disaster_str += "]"
         lines.append(
-            f"{result_award_id} — {recipient}: {amount_str}{sort_str} [internal_id: {internal_id}]{flag_str}{disaster_str}"
+            f"{result_award_id} — {recipient}: {amount_str}{sort_str}"
+            f"{_parent_vehicle_label(result_award_id, internal_id)} [internal_id: {internal_id}]{flag_str}{disaster_str}"
         )
     has_next = results.page_metadata.hasNext if results.page_metadata else False
     note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)
@@ -1166,7 +1175,8 @@ def search_transactions(
         amount = r.get(amount_field)
         amount_str = f"${amount:,.2f}" if isinstance(amount, (int, float)) else "unknown amount"
         lines.append(
-            f"{award_id_val} Mod {mod} — {recipient}: {amount_str} on {action_date} [internal_id: {internal_id}]"
+            f"{award_id_val} Mod {mod} — {recipient}: {amount_str} on {action_date}"
+            f"{_parent_vehicle_label(award_id_val, internal_id)} [internal_id: {internal_id}]"
         )
     has_next = results.page_metadata.hasNext if results.page_metadata else False
     note = _truncation_note(has_next, len(results.results)) + _format_api_messages(results.messages)

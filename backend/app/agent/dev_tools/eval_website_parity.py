@@ -4,6 +4,7 @@ audit and checks its answer against the website's own request, replayed live.
 Asking the agent makes real, billed API calls. Not part of CI:
     uv run python -m backend.app.agent.dev_tools.eval_website_parity --toolsets current consolidated
     uv run python -m backend.app.agent.dev_tools.eval_website_parity --tasks Q001 Q102 --toolsets current
+    uv run python -m backend.app.agent.dev_tools.eval_website_parity --langsmith --toolsets consolidated
 Free modes:
     uv run python -m backend.app.agent.dev_tools.eval_website_parity --check-references
     uv run python -m backend.app.agent.dev_tools.eval_website_parity --rescore data/website_parity/parity-<stamp>.jsonl
@@ -31,6 +32,8 @@ CASES_PATH = Path(__file__).parent / "website_parity_cases.json"
 CONTEXT_PATH = INVENTORY_PATH.parent / "context.json"
 OUTPUT_DIR = Path("data/website_parity")
 REACHABLE = {"covered", "local"}
+DATASET_NAME = "website-parity"
+_REPLAY_CACHE: dict[str, dict] = {}
 
 
 def load_cases() -> list[dict]:
@@ -157,12 +160,73 @@ def _write(rows: list[dict], toolsets: list[str], stamp: str) -> Path:
     return out_path
 
 
+def sync_dataset(client, rows: list[dict]) -> None:
+    from langsmith.schemas import ExampleUpdate
+
+    # Matched by task id: LangSmith 409s on a self-assigned example id reused after its dataset was deleted.
+    if not client.has_dataset(dataset_name=DATASET_NAME):
+        client.create_dataset(DATASET_NAME, description="Website parity eval - synced from website_parity_cases.json, do not hand-edit.")
+    dataset = client.read_dataset(dataset_name=DATASET_NAME)
+    existing = {e.inputs["task"]: e for e in client.list_examples(dataset_id=dataset.id)}
+    to_create, to_update = [], []
+    for row in rows:
+        inputs = {"task": row["task"], "question": row["question"]}
+        outputs = {k: row[k] for k in ("section", "status", "confusion", "references")}
+        if row["task"] in existing:
+            to_update.append(ExampleUpdate(id=existing[row["task"]].id, inputs=inputs, outputs=outputs))
+        else:
+            to_create.append({"inputs": inputs, "outputs": outputs})
+    if to_create:
+        client.create_examples(dataset_id=dataset.id, examples=to_create)
+    if to_update:
+        client.update_examples(dataset_id=dataset.id, updates=to_update)
+    orphaned = [e.id for task, e in existing.items() if task not in {r["task"] for r in rows}]
+    if orphaned:
+        client.delete_examples(orphaned)
+
+
+def matches_website(run, example) -> dict:
+    outputs = run.outputs or {}
+    result = check_references(outputs.get("answer") or "", {"reference": example.outputs["references"]}, _REPLAY_CACHE)
+    problems = result.get("truth_problems", []) + result.get("reference_errors", []) + ([outputs["error"]] if outputs.get("error") else [])
+    return {"key": "matches_website", "score": float(result["truth_ok"]), "comment": "; ".join(problems) or None}
+
+
+def run_in_langsmith(rows: list[dict], toolsets: list[str], full: bool) -> None:
+    from langsmith import Client, evaluate
+
+    from backend.app.agent.singletons import warm_up
+
+    client = Client()
+    sync_dataset(client, build_rows(load_cases()))
+    wanted = {r["task"] for r in rows}
+    examples = [e for e in client.list_examples(dataset_name=DATASET_NAME) if e.inputs["task"] in wanted]
+    warm_up()
+    by_task = {r["task"]: r for r in rows}
+    for toolset in toolsets:
+        results = evaluate(
+            lambda inputs, toolset=toolset: _ask(inputs["question"], toolset),
+            data=examples,
+            evaluators=[matches_website],
+            experiment_prefix=f"website-parity-{toolset}",
+            metadata={"toolset": toolset, "subset": None if full else sorted(wanted)},
+            client=client,
+            max_concurrency=1,
+        )
+        print(f"{toolset}: {results.url}", flush=True)
+        for result in results:
+            by_task[result["example"].inputs["task"]][toolset] = dict(result["run"].outputs or {})
+    score_rows(rows, toolsets)
+    _write(rows, toolsets, datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--toolsets", nargs="+", default=["current", "consolidated"], choices=["current", "consolidated"])
     parser.add_argument("--tasks", nargs="*", help="only these audit task ids")
     parser.add_argument("--limit", type=int, help="first N cases")
     parser.add_argument("--check-references", action="store_true", help="replay every reference and print its value; no agent")
+    parser.add_argument("--langsmith", action="store_true", help="run as LangSmith experiments, one per toolset, against the website-parity dataset")
     parser.add_argument("--rescore", type=Path, help="re-score a saved parity-<stamp>.jsonl without asking the agent again")
     args = parser.parse_args()
 
@@ -194,6 +258,9 @@ def main() -> None:
     rows = build_rows(cases)
     if args.check_references:
         print(check_reference_values(rows))
+        return
+    if args.langsmith:
+        run_in_langsmith(rows, args.toolsets, full=not (args.tasks or args.limit))
         return
 
     from backend.app.agent.singletons import warm_up

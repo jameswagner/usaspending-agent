@@ -83,3 +83,56 @@ def test_a_broken_reference_is_reported_not_raised():
     refs = [{"label": "a", "kind": "amount", "extract": "missing"}]
     result = _check("$5", refs, {"other": 1})
     assert not result["truth_ok"] and result["reference_errors"]
+
+
+def test_matches_website_scores_and_explains():
+    from types import SimpleNamespace
+
+    from backend.app.agent.dev_tools.eval_website_parity import matches_website
+
+    example = SimpleNamespace(outputs={"references": [{"kind": "mentions", "label": "vehicle", "any": ["SEWP"]}]})
+    passed = matches_website(SimpleNamespace(outputs={"answer": "It's NASA SEWP V."}), example)
+    failed = matches_website(SimpleNamespace(outputs={"answer": "", "error": "TimeoutError: slow"}), example)
+    assert passed == {"key": "matches_website", "score": 1.0, "comment": None}
+    assert failed["score"] == 0.0 and "SEWP" in failed["comment"] and "TimeoutError" in failed["comment"]
+
+
+def test_sync_dataset_matches_examples_by_task():
+    from types import SimpleNamespace
+    from uuid import uuid4
+
+    from backend.app.agent.dev_tools.eval_website_parity import sync_dataset
+
+    kept, stale = uuid4(), uuid4()
+
+    class FakeClient:
+        def __init__(self):
+            self.created, self.updated, self.deleted = [], [], []
+
+        def has_dataset(self, dataset_name):
+            return True
+
+        def read_dataset(self, dataset_name):
+            return SimpleNamespace(id="ds")
+
+        def list_examples(self, dataset_id):
+            return [SimpleNamespace(id=kept, inputs={"task": "Q001"}), SimpleNamespace(id=stale, inputs={"task": "Q999"})]
+
+        def create_examples(self, dataset_id, examples):
+            self.created += examples
+
+        def update_examples(self, dataset_id, updates):
+            self.updated += updates
+
+        def delete_examples(self, ids):
+            self.deleted += ids
+
+    rows = [
+        {"task": t, "question": f"{t}?", "section": "s", "status": "covered", "confusion": None, "references": []}
+        for t in ("Q001", "Q002")
+    ]
+    client = FakeClient()
+    sync_dataset(client, rows)
+    assert [u.id for u in client.updated] == [kept]
+    assert [c["inputs"]["task"] for c in client.created] == ["Q002"]
+    assert client.deleted == [stale]

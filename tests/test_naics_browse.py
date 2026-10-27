@@ -43,3 +43,17 @@ def test_six_digit_codes_are_not_browsed(monkeypatch):
     monkeypatch.setattr("backend.app.agent.tools.naics._get_naics_retriever", lambda: Retriever())
     resolve_naics_code.func(description="541512")
     assert seen == []
+
+
+def test_browse_results_can_be_cited(monkeypatch):
+    from backend.app.agent.response_shaping import build_tool_citation
+
+    children = [NaicsNode(naics="5411", naics_description="Legal Services")]
+    monkeypatch.setattr("backend.app.agent.tools.naics._get_usaspending_client", lambda: _client(children, []))
+    recorded = []
+    monkeypatch.setattr(
+        "backend.app.agent.tools.naics._record_tool_call", lambda name, result, ctx: recorded.append((ctx, result))
+    )
+    resolve_naics_code.func(description="54")
+    context, result = recorded[0]
+    assert build_tool_citation("resolve_naics_code", context, result) is not None

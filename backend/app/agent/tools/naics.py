@@ -23,7 +23,9 @@ def _list_naics_children(code: str) -> str:
         children = _get_usaspending_client().get_naics_children(code)
     except USASpendingAPIError as e:
         return f"This query failed: {e}."
-    _record_tool_call("resolve_naics_code", children, {"description": code})
+    _record_tool_call(
+        "resolve_naics_code", [{"slug": c.naics, "term": c.naics_description} for c in children], {"description": code}
+    )
     if not children:
         return f"NAICS {code} has no sub-industries listed."
     lines = [f"{c.naics} - {c.naics_description}" + (f" (retired {c.year_retired})" if c.year_retired else "") for c in children]

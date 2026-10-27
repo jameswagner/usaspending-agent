@@ -237,9 +237,12 @@
    "question": "Which NASA government-wide acquisition contracts (GWACs) were active in FY2025?",
    "answers": [
     {
-     "label": "top vehicle ID",
-     "kind": "text",
-     "extract": "results.0.Award ID"
+     "label": "names the SEWP V vehicle series",
+     "kind": "mentions",
+     "any": [
+      "NNG15S",
+      "SEWP"
+     ]
     },
     {
      "label": "explains the vehicle's own amount is $0 because the money is on its orders",
@@ -254,7 +257,7 @@
      ]
     }
    ],
-   "confusion": "GWAC vehicles show $0 award amounts; the obligations sit on the orders placed under them."
+   "confusion": "NASA has 100+ GWAC vehicles (the SEWP V NNG15SC/SD/SE series), all at $0, so the website's first row is an arbitrary tie; the obligations sit on orders placed under them."
   },
   {
    "task": "Q007",

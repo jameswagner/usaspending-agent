@@ -87,6 +87,8 @@ _BETA_TOOLS = [
 
 This list is what the LangGraph agent actually sees — the order doesn't matter, but every tool here needs to be in `__all__` above, or the test fails.
 
+`_BETA_TOOLS` is the "current" toolset. The default (`AGENT_TOOLSET=consolidated`) is `CONSOLIDATED_TOOLS` in `backend/app/agent/consolidated_tools.py`, so also expose the tool there: as a new `section`/`kind` on an existing consolidated tool when it fits one, or as its own entry otherwise. Then add it to that tool's `COVERS` set, which the tool-selection eval uses to map current-toolset names onto consolidated ones.
+
 ### 4. Add a chart/citation decision in `backend/app/agent/response_shaping.py`
 
 Decide whether this tool's results are ever chart-worthy, and add an explicit decision (even if "no, never"). There are two places:

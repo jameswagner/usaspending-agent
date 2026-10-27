@@ -6,6 +6,7 @@ from backend.app.agent.dev_tools.eval_tool_selection import (
     _ordered_match_end,
     _trajectory_from_messages,
     tool_order_correct,
+    tool_selection_correct,
 )
 
 
@@ -128,3 +129,19 @@ class TestToolOrderCorrect:
 
         assert after["score"] == 1.0
         assert before["score"] == 0.0
+
+
+class TestConsolidatedToolNames:
+    def _consolidated_row(self, expected, tools_called):
+        return SimpleNamespace(outputs={"tools_called": tools_called, "toolset": "consolidated"}), SimpleNamespace(outputs=expected)
+
+    def test_current_tool_names_are_matched_by_the_consolidated_tool_covering_them(self):
+        run, example = self._consolidated_row(
+            {"expected_tools": ["lookup_agency", "get_award_details"]}, ["agency_profile", "award_detail"]
+        )
+        assert tool_selection_correct(run, example)["score"] == 1.0
+        assert tool_order_correct(run, example)["score"] == 1.0
+
+    def test_current_toolset_runs_are_not_translated(self):
+        run, example = _row({"expected_tool": "lookup_agency"}, ["agency_profile"])
+        assert tool_selection_correct(run, example)["score"] == 0.0

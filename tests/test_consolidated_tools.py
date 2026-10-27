@@ -118,6 +118,12 @@ def test_agency_profile_award_sections(fake, section, group_by):
     assert recorder.calls[0]["group_by"] == group_by
 
 
+def test_agency_profile_rewrites_group_by_hints_as_sections(fake):
+    fake("get_agency_award_breakdown", reply='This query failed: use group_by="sub_agency" instead of group_by="whole_agency".')
+    out = TOOLS["agency_profile"].invoke({"section": "award_activity", "agency_name": "NIH", "fiscal_year": 2024})
+    assert out == 'This query failed: use section="awards_by_sub_agency" instead of section="award_activity".'
+
+
 def test_agency_profile_overview_and_ranking(fake):
     overview = fake("lookup_agency")
     ranking = fake("list_top_agencies_by_budget")
@@ -183,10 +189,44 @@ def test_query_spending_award_type_routes_to_the_count_breakdown(fake):
 def test_query_spending_award_type_rejects_filters_the_breakdown_lacks(fake):
     counts = fake("get_award_type_breakdown")
     out = TOOLS["query_spending"].invoke({
-        "level": "award", "group_by": "award_type", "start_year": 2024, "end_year": 2024, "award_type": "grants",
+        "level": "award", "group_by": "award_type", "start_year": 2024, "end_year": 2024, "tas_code": "075-0849",
     })
-    assert "award_type cannot be combined" in out
+    assert "tas_code cannot be combined" in out
     assert counts.calls == []
+
+
+def test_query_spending_award_type_counts_ignore_an_award_type_filter_and_say_so(fake):
+    counts = fake("get_award_type_breakdown", reply="Grants: 14,986")
+    out = TOOLS["query_spending"].invoke({
+        "level": "award", "group_by": "award_type", "start_year": 2024, "end_year": 2024,
+        "award_type": "grants", "agency_name": "NIH", "date_type": "new_awards_only",
+    })
+    assert out.startswith("Note: award_type='grants' was not applied as a filter.")
+    assert out.endswith("Grants: 14,986")
+    assert "award_type" not in _set_values(counts.calls[0])
+    assert _set_values(counts.calls[0])["date_type"] == "new_awards_only"
+
+
+@pytest.mark.parametrize("group_by", ["naics", "psc"])
+@pytest.mark.parametrize("award_type", ["grants", "loans", "cooperative_agreement", "direct_payment_specified"])
+def test_query_spending_rejects_contract_only_breakdowns_of_assistance(fake, group_by, award_type):
+    spending = fake("query_spending")
+    out = TOOLS["query_spending"].invoke({
+        "level": "award", "group_by": group_by, "award_type": award_type, "start_year": 2023, "end_year": 2023,
+        "agency_name": "NSF",
+    })
+    assert "exist only on contracts and IDVs" in out
+    assert spending.calls == []
+
+
+@pytest.mark.parametrize("award_type", [None, "contracts", "idv", "definitive_contract"])
+def test_query_spending_allows_naics_breakdowns_of_contracts_or_all_types(fake, award_type):
+    spending = fake("query_spending")
+    args = {"level": "award", "group_by": "naics", "start_year": 2023, "end_year": 2023, "agency_name": "NSF"}
+    if award_type:
+        args["award_type"] = award_type
+    TOOLS["query_spending"].invoke(args)
+    assert len(spending.calls) == 1
 
 
 def test_query_spending_other_group_bys_pass_through(fake):

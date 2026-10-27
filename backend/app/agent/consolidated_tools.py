@@ -20,6 +20,7 @@ from langchain_core.tools import tool as _lc_tool
 from pydantic import ConfigDict, Field
 
 from .langgraph_tools import _ARITHMETIC_TOOLS, _reject_invalid_args, _with_budget_guard
+from .tool_filters import AWARD_TYPE_GROUPS, _normalize_award_type
 from .tools import (
     download_records,
     download_single_award,
@@ -161,10 +162,10 @@ def agency_profile(
 ) -> str:
     """Everything about one federal agency as an organization: what it is, its appropriated budget, its bureaus, and its award obligations and counts by sub-agency or award category - or a ranking of all agencies by budget.
 
-    Two different kinds of number live here; never present one as the other. The budget sections ("budget", "budget_by_bureau", "rank_all_agencies") report budgetary resources, obligations, and outlays from the agency's accounts: use them for "what is X's budget" or "how much money does X have", never query_spending. The award sections ("awards_by_sub_agency", "awards_by_category", "award_activity") report obligations on specific contracts, grants, and loans, and are the only place with transaction and new-award COUNTS (query_spending's breakdowns have dollar amounts only). An agency's budgetary resources and its award obligations for the same year are different figures.
+    Two different kinds of number live here; never present one as the other. The budget sections ("budget", "budget_by_bureau", "rank_all_agencies") report budgetary resources, obligations, and outlays from the agency's accounts: use them for "what is X's budget" or "how much money does X have", never query_spending. The award sections ("awards_by_sub_agency", "awards_by_category", "award_activity") report obligations on specific contracts, grants, and loans, with transaction and new-award counts by sub-agency. For a count of awards by type under any other filter (a place, a recipient, new awards only), use query_spending(group_by="award_type"). An agency's budgetary resources and its award obligations for the same year are different figures.
 
     Args:
-        section: "overview": what the agency is - toptier code, abbreviation, mission, website, budget justification link, subtier count. "budget": yearly budgetary resources, obligations, and outlays for fiscal_year through end_fiscal_year (data from FY2017 on). "budget_by_bureau": the same figures for one fiscal year broken down by sub-component/bureau (e.g. NIH or CDC within HHS), or one bureau's own federal accounts when bureau is set. "awards_by_sub_agency": one fiscal year's award obligations plus transaction and new-award counts by sub-agency. "awards_by_category": one fiscal year's award obligations split by contracts/IDVs/grants/loans/direct payments/other. "award_activity": the agency's whole-agency award totals and counts for one fiscal year. "rank_all_agencies": all agencies ranked by budgetary resources with their share of the federal total, current fiscal year only (agency_name not used).
+        section: "overview": what the agency is - toptier code, abbreviation, mission, website, budget justification link, subtier count. "budget": yearly budgetary resources, obligations, and outlays for fiscal_year through end_fiscal_year (data from FY2017 on). "budget_by_bureau": the same figures for one fiscal year broken down by sub-component/bureau (e.g. NIH or CDC within HHS), or one bureau's own federal accounts when bureau is set. "awards_by_sub_agency": one fiscal year's award obligations plus transaction and new-award counts by sub-agency. "awards_by_category": one fiscal year's award obligations split by contracts/IDVs/grants/loans/direct payments/other. "award_activity": the agency's whole-agency award obligations and transaction count for one fiscal year (no new-award count; a top-tier agency only, not a sub-agency like NIH). "rank_all_agencies": all agencies ranked by budgetary resources with their share of the federal total, current fiscal year only (agency_name not used).
         agency_name: The agency's name, e.g. "National Science Foundation" or "NSF". Required for every section except "rank_all_agencies". A sub-agency name also works for the award sections.
         fiscal_year: The fiscal year, e.g. 2024 for FY2024. Required for every section except "overview" and "rank_all_agencies". For "budget" it is the first year of the range.
         end_fiscal_year: "budget" only. Last fiscal year of the range; defaults to fiscal_year.
@@ -209,12 +210,19 @@ def agency_profile(
             agency_name=agency_name, start_fiscal_year=fiscal_year, end_fiscal_year=fiscal_year,
             group_by="sub_component", bureau=bureau,
         )
-    group_by = {"awards_by_sub_agency": "sub_agency", "awards_by_category": "award_category", "award_activity": "whole_agency"}[section]
-    return get_agency_award_breakdown.func(
+    group_by = {section_name: mode for mode, section_name in _AWARD_SECTION_BY_GROUP_BY.items()}[section]
+    result = get_agency_award_breakdown.func(
         agency_name=agency_name, fiscal_year=fiscal_year, award_type=award_type,
         include_offices=include_offices, group_by=group_by, sub_agency=sub_agency,
     )
+    for mode, section_name in _AWARD_SECTION_BY_GROUP_BY.items():
+        result = result.replace(f'group_by="{mode}"', f'section="{section_name}"')
+    return result
 
+
+_AWARD_SECTION_BY_GROUP_BY = {
+    "sub_agency": "awards_by_sub_agency", "award_category": "awards_by_category", "whole_agency": "award_activity",
+}
 
 AwardSection = Literal["summary", "transactions", "subawards", "funding"]
 
@@ -276,31 +284,61 @@ _AWARD_TYPE_COUNT_DOC = (
     ' "award_type" for the COUNT of awards by type (Contracts, Contract IDVs, Grants, Direct Payments, '
     "Loans, Other) - use it for \"how many contracts vs. grants\" or award-type-mix questions instead of "
     "querying once per award type; it needs no scoping filter (a bare year range is a government-wide split), "
-    "ignores level, and cannot be combined with award_type, scope/geo_layer, tas_code, federal_account, "
-    "def_codes, or the contract-only filters."
+    "ignores level and award_type (the counts are already split by type), and cannot be combined with "
+    "scope/geo_layer, tas_code, federal_account, def_codes, or the contract-only filters."
 )
+
+_AWARD_TYPE_SCOPE_DOC = (
+    " On a breakdown (group_by set), set award_type only when the question is about one award type: "
+    "it narrows every figure to that type."
+)
+_CONTRACT_ONLY_GROUP_BYS = {"naics", "psc"}
+
+
+def _is_assistance(award_type: str) -> bool:
+    codes = AWARD_TYPE_GROUPS.get(_normalize_award_type(award_type), [])
+    contract_codes = set(AWARD_TYPE_GROUPS["contracts"]) | set(AWARD_TYPE_GROUPS["idv"])
+    return bool(codes) and not contract_codes & set(codes)
 
 
 def _query_spending(**kwargs) -> str:
-    if kwargs.get("group_by") != "award_type":
+    group_by, award_type = kwargs.get("group_by"), kwargs.get("award_type")
+    if group_by in _CONTRACT_ONLY_GROUP_BYS and award_type and _is_assistance(award_type):
+        return (
+            f"This query failed: {group_by.upper()} codes exist only on contracts and IDVs, so a {group_by} "
+            f"breakdown of award_type={award_type!r} is always empty. Use group_by='cfda' for assistance "
+            "programs, or omit award_type to cover every award type."
+        )
+    if group_by != "award_type":
         return query_spending.func(**kwargs)
+    note = ""
+    if award_type is not None:
+        kwargs = {**kwargs, "award_type": None}
+        note = (
+            f"Note: award_type={award_type!r} was not applied as a filter. group_by='award_type' already "
+            "splits the counts by type, so read the matching line below.\n\n"
+        )
     unsupported = sorted(
         name for name, value in kwargs.items()
         if value is not None and name not in _AWARD_TYPE_COUNT_PARAMS | _AWARD_TYPE_COUNT_IGNORED
     )
     if unsupported:
         return f"This query failed: {', '.join(unsupported)} cannot be combined with group_by='award_type'."
-    return get_award_type_breakdown.func(**{k: v for k, v in kwargs.items() if k in _AWARD_TYPE_COUNT_PARAMS})
+    return note + get_award_type_breakdown.func(**{k: v for k, v in kwargs.items() if k in _AWARD_TYPE_COUNT_PARAMS})
 
 
 def _build_query_spending_tool():
     tool = _bind(_with_renamed_doc(query_spending.func))
     base_schema = tool.args_schema
     base_doc = base_schema.model_fields["group_by"].description or ""
+    award_type_field = base_schema.model_fields["award_type"]
 
     class ConsolidatedQuerySpendingArgs(base_schema):
         model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
         group_by: ConsolidatedGroupBy | None = Field(None, description=base_doc + _AWARD_TYPE_COUNT_DOC)
+        award_type: award_type_field.annotation = Field(
+            None, description=(award_type_field.description or "") + _AWARD_TYPE_SCOPE_DOC
+        )
 
     tool.args_schema = ConsolidatedQuerySpendingArgs
     tool.func = _with_budget_guard(_renaming_results(_query_spending))

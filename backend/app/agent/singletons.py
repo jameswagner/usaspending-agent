@@ -32,7 +32,7 @@ ANTHROPIC_WORKSPACE_ID = os.environ.get("ANTHROPIC_WORKSPACE_ID")
 MODEL = os.environ.get("AGENT_MODEL", "claude-haiku-5-5")
 
 # "current" (LANGGRAPH_TOOLS) or "consolidated" (CONSOLIDATED_TOOLS); both graphs are built at warm_up.
-AGENT_TOOLSET = os.environ.get("AGENT_TOOLSET", "current")
+AGENT_TOOLSET = os.environ.get("AGENT_TOOLSET", "consolidated")
 
 # Same floor as main.py, calibrated via dev_tools/calibrate_threshold.py
 # (data-driven optimum -1.89, using -2.0 for a small safety margin).

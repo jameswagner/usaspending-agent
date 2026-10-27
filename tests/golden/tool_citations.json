@@ -479,6 +479,13 @@
     "tool_name": "search_recipients",
     "url": null
   },
+  "search_recipients_no_keyword": {
+    "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
+    "description": "Top recipients, all federal awards",
+    "parameters": {},
+    "tool_name": "search_recipients",
+    "url": null
+  },
   "search_subawards": {
     "curl": "curl -X POST 'https://api.usaspending.gov/api/v2/search/spending_by_award/' -H 'Content-Type: application/json' -d '{\"filters\": {\"a\": 1}}'",
     "description": "contracts subawards search, National Science Foundation, MIT, performed in CA, NAICS 541511, DEFC L, M, FY2021-FY2024 (auto-resolved from 'software')",

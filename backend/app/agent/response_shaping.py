@@ -1007,11 +1007,11 @@ def _spending_explorer_citation(tool_name: str, context: dict, result=None) -> T
 
 @_citation_builder("search_recipients")
 def _search_recipients_citation(tool_name: str, context: dict, result=None) -> ToolCitation:
-    keyword = context["keyword"]
+    keyword = context.get("keyword")
     return ToolCitation(
         tool_name=tool_name,
-        parameters={"keyword": keyword},
-        description=f"Recipient search: {keyword}",
+        parameters={"keyword": keyword} if keyword else {},
+        description=f"Recipient search: {keyword}" if keyword else "Top recipients, all federal awards",
         curl=_curl_from_context(context),
     )
 

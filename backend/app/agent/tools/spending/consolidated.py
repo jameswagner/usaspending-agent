@@ -202,9 +202,18 @@ def _route_aggregate(
         return get_spending_by_geography(
             **shared, scope=scope, geo_layer=geo_layer, geo_layer_filters=geo_layer_filters,
         )
-    return get_spending_by_category(
+    if group_by == "defc" and spending_level == "transactions":
+        # DEFC is recorded on account (File C) rows, not transactions; the website ranks laws this way too.
+        spending_level = "award_financial"
+    result = get_spending_by_category(
         category=group_by, **shared, limit=limit, def_codes=def_codes, spending_level=spending_level,
     )
+    if group_by == "defc" and not def_codes:
+        result += (
+            "\n\nNote: \"Not Designated...\" is all regular, non-emergency money, not a disaster or emergency "
+            "law - leave it out when ranking laws, or pass def_codes to rank only emergency funding."
+        )
+    return result
 
 
 @beta_tool

@@ -191,7 +191,7 @@ def warm_up() -> None:
     conn = sqlite3.connect(CONVERSATIONS_DB_PATH, check_same_thread=False)
     _checkpointer = SqliteSaver(conn)
     headers = {"anthropic-workspace-id": ANTHROPIC_WORKSPACE_ID} if ANTHROPIC_WORKSPACE_ID else None
-    _chat_model = ChatAnthropic(model=MODEL, max_tokens=2048, default_headers=headers)
+    _chat_model = ChatAnthropic(model=MODEL, max_tokens=16000, default_headers=headers)
 
     _conversation_graphs["current"] = _build_conversation_graph(LANGGRAPH_TOOLS, _build_system_prompt)
     _conversation_graphs["consolidated"] = _build_conversation_graph(CONSOLIDATED_TOOLS, _build_consolidated_system_prompt)

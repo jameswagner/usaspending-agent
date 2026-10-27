@@ -135,6 +135,12 @@ def _format_award_type_counts(response: SpendingByAwardCountResponse) -> str:
         f"Other: {counts.other:,}",
         f"Total: {total:,}",
     ]
+    if counts.grants or counts.direct_payments or counts.loans or counts.other:
+        lines.append(
+            "Note: these counts include the newer F-prefixed assistance records (F001-F010). "
+            "usaspending.gov's award-type tabs leave those out, so its Grants/Loans/Direct Payments/Other "
+            "counts can be lower than these - say so if the user may compare against the website."
+        )
     return "\n".join(lines) + _format_api_messages(response.messages)
 
 

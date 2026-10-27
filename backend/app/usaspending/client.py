@@ -732,6 +732,10 @@ class USASpendingClient:
         return [ChildRecipient(**c) for c in data]
 
     @traceable(run_type="tool", name="get_naics_children")
+    def get_naics_sectors(self) -> list[NaicsNode]:
+        """GET /api/v2/references/naics/ - the top-level 2-digit sectors."""
+        return [NaicsNode(**c) for c in self._get("/api/v2/references/naics/").get("results", [])]
+
     def get_naics_children(self, code: str) -> list[NaicsNode]:
         """GET /api/v2/references/naics/{code}/ - the code's direct sub-industries.
         A 6-digit code has none; the response is then just the code itself."""

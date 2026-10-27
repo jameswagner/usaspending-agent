@@ -89,6 +89,15 @@ def _route_records(
         "naics_code": naics_code, "psc_code": psc_code, "cfda_program": cfda_program,
         "award_id": award_id, "recipient_type": recipient_type, "description": description,
     }
+    unsupported = {} if level == "award" else {
+        "contract_pricing_type": contract_pricing_type, "set_aside_type": set_aside_type,
+        "extent_competed_type": extent_competed_type,
+    }
+    if level == "subaward":
+        unsupported |= {"tas_code": tas_code, "federal_account": federal_account, "def_codes": def_codes}
+    named = [k for k, v in unsupported.items() if v]
+    if named:
+        return f"This query failed: level='{level}' records can't filter by {', '.join(named)} - use level='award'."
     if level == "subaward":
         return search_subawards(
             **shared,
@@ -168,6 +177,11 @@ def _route_aggregate(
     recipient_type: RecipientType | None,
     description: str | None,
     def_codes: list[str] | None,
+    tas_code: str | None,
+    federal_account: str | None,
+    contract_pricing_type: list[ContractPricingType] | None,
+    set_aside_type: list[SetAsideType] | None,
+    extent_competed_type: list[ExtentCompetedType] | None,
 ) -> str:
     shared = {
         "time_period_type": time_period_type, "start_year": start_year, "end_year": end_year,
@@ -191,9 +205,19 @@ def _route_aggregate(
             "This query failed: recipient_id is not supported for subaward "
             "queries (a live API restriction, not a bug) - use recipient_name instead."
         )
+    account_and_contract = {
+        "tas_code": tas_code, "federal_account": federal_account,
+        "contract_pricing_type": contract_pricing_type, "set_aside_type": set_aside_type,
+        "extent_competed_type": extent_competed_type,
+    }
     if group_by == "time":
-        return get_spending_over_time(**shared, group=time_grouping, def_codes=def_codes, spending_level=spending_level)
+        return get_spending_over_time(
+            **shared, **account_and_contract, group=time_grouping, def_codes=def_codes, spending_level=spending_level,
+        )
     if group_by == "geography":
+        unsupported = [k for k, v in {**account_and_contract, "def_codes": def_codes}.items() if v]
+        if unsupported:
+            return f"This query failed: group_by='geography' can't filter by {', '.join(unsupported)} yet."
         if scope is None or geo_layer is None:
             return "This query failed: group_by='geography' requires scope and geo_layer."
         # spending_by_geography has no spending_level - hardcoded to "transactions" by
@@ -206,7 +230,8 @@ def _route_aggregate(
         # DEFC is recorded on account (File C) rows, not transactions; the website ranks laws this way too.
         spending_level = "award_financial"
     result = get_spending_by_category(
-        category=group_by, **shared, limit=limit, def_codes=def_codes, spending_level=spending_level,
+        category=group_by, **shared, **account_and_contract, limit=limit, def_codes=def_codes,
+        spending_level=spending_level,
     )
     if group_by == "defc" and not def_codes:
         result += (
@@ -391,15 +416,15 @@ def query_spending(
             recipient's business type even when scoping a subaward-level call.
         description: Optional. Award (or, if level="subaward", the sub-award's own) description
             text match - distinct from keywords, which also matches recipient name/PIID/FAIN/NAICS/PSC.
-        tas_code: Optional. Exact Treasury Account Symbol, records only (award/transaction levels).
+        tas_code: Optional. Exact Treasury Account Symbol. Not with level="subaward" or group_by="geography".
             Must be a real code - get it from a get_award_funding_breakdown call, not guessed.
         federal_account: Optional. Exact federal account (the AID-MAIN pair one level up from a
-            full TAS), records only - the value shown on a get_award_funding_breakdown row.
+            full TAS), e.g. "080-0124". Not with level="subaward" or group_by="geography".
         def_codes: Optional. Disaster Emergency Fund Codes, or group aliases like "covid"/"infrastructure".
             For a spending-by-DEFC breakdown instead of filtering to a specific one, use group_by="defc".
-        contract_pricing_type: Optional. Records only, level="award". Contract-only.
-        set_aside_type: Optional. Records only, level="award". Contract-only.
-        extent_competed_type: Optional. Records only, level="award". Contract-only.
+        contract_pricing_type: Optional. Contract-only. level="award" records or any non-geography group_by.
+        set_aside_type: Optional. Contract-only. level="award" records or any non-geography group_by.
+        extent_competed_type: Optional. Contract-only. level="award" records or any non-geography group_by.
     """
     if group_by is None:
         if award_type is None:
@@ -443,5 +468,7 @@ def query_spending(
         place_of_performance_scope=place_of_performance_scope, recipient_scope=recipient_scope,
         naics_code=naics_code, psc_code=psc_code, cfda_program=cfda_program,
         award_id=award_id, recipient_type=recipient_type, description=description,
-        def_codes=def_codes,
+        def_codes=def_codes, tas_code=tas_code, federal_account=federal_account,
+        contract_pricing_type=contract_pricing_type, set_aside_type=set_aside_type,
+        extent_competed_type=extent_competed_type,
     )

@@ -140,7 +140,8 @@ AgencySection = Literal[
 ]
 AgencyAwardType = Literal[
     "contracts", "grants", "loans", "bpa_call", "purchase_order", "delivery_order", "definitive_contract",
-    "idv", "direct_loan", "guaranteed_loan", "block_grant", "formula_grant", "project_grant",
+    "idv", "idv_gwac", "idv_idc", "idv_fss", "idv_boa", "idv_bpa",
+    "direct_loan", "guaranteed_loan", "block_grant", "formula_grant", "project_grant",
     "cooperative_agreement", "insurance", "other_financial_assistance", "direct_payment_specified",
     "direct_payment_unrestricted",
 ]

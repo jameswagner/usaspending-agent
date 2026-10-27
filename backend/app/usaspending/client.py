@@ -54,6 +54,7 @@ from .models import (
     IDVAmountsResponse,
     IDVFundingRollup,
     LocationAutocompleteResponse,
+    NaicsNode,
     RecipientOverview,
     SearchAwardsResponse,
     SearchRecipientsResponse,
@@ -729,6 +730,14 @@ class USASpendingClient:
         params = {"year": year} if year else None
         data = self._get(f"/api/v2/recipient/children/{duns_or_uei}/", params=params)
         return [ChildRecipient(**c) for c in data]
+
+    @traceable(run_type="tool", name="get_naics_children")
+    def get_naics_children(self, code: str) -> list[NaicsNode]:
+        """GET /api/v2/references/naics/{code}/ - the code's direct sub-industries.
+        A 6-digit code has none; the response is then just the code itself."""
+        results = self._get(f"/api/v2/references/naics/{code}/").get("results", [])
+        children = results[0].get("children", []) if results else []
+        return [NaicsNode(**c) for c in children]
 
     @traceable(run_type="tool", name="spending_by_geography")
     def spending_by_geography(

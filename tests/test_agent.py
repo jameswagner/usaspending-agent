@@ -1799,6 +1799,12 @@ class TestAwardTypeNormalization:
         ]
         assert set(AWARD_TYPE_GROUPS["idv"]).isdisjoint(AWARD_TYPE_GROUPS["contracts"])
 
+    def test_idv_subtypes_partition_the_idv_codes(self):
+        subtypes = ["idv_gwac", "idv_idc", "idv_fss", "idv_boa", "idv_bpa"]
+        codes = [code for key in subtypes for code in AWARD_TYPE_GROUPS[key]]
+        assert sorted(codes) == sorted(AWARD_TYPE_GROUPS["idv"])
+        assert AWARD_TYPE_GROUPS["idv_gwac"] == ["IDV_A"]
+
 
 class TestOtherAwardTypeCategoriesToTry:
     # Regression coverage for the real bug: asked for the top awards under

@@ -629,6 +629,15 @@ class RecipientOverview(BaseModel):
     total_face_value_loan_transactions: int
 
 
+class NaicsNode(BaseModel):
+    """references/naics/{code}/ - one NAICS code; count is how many codes sit under it."""
+
+    naics: str
+    naics_description: str
+    year_retired: int | None = None
+    count: int | None = None
+
+
 class ChildRecipient(BaseModel):
     """recipient/children/duns_or_uei.md. One row per child recipient
     under a given parent - amount respects `year` like RecipientOverview's

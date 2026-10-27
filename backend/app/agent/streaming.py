@@ -29,6 +29,7 @@ import queue
 from collections.abc import AsyncIterator
 
 from .orchestrator import (
+    NO_ANSWER_MESSAGE,
     NOT_FOUND_MESSAGE,
     AgentResult,
     _build_result,
@@ -126,7 +127,7 @@ def _run_graph_stream(question: str, conversation_id: str, event_queue: queue.Qu
                                 ("tool_result", {"tool_name": message.name, "summary": _summarize_tool_result(content)})
                             )
 
-        answer_text = last_ai_message.text if last_ai_message is not None else ""
+        answer_text = (last_ai_message.text if last_ai_message is not None else "").strip() or NO_ANSWER_MESSAGE
         result = _build_result(answer_text, conversation_id)
         event_queue.put(("done", _build_done_payload(result)))
     except Exception as e:

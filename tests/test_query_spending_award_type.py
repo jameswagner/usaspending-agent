@@ -35,3 +35,15 @@ def test_records_with_award_type_keep_it():
     with patch.object(consolidated, "search_awards", return_value="ok") as rec:
         _call(level="award", award_type="grants", **_BASE)
     assert rec.call_args.kwargs["award_type"] == "grants"
+
+
+def test_defc_breakdown_uses_account_level_spending():
+    with patch.object(consolidated, "get_spending_by_category", return_value="ok") as agg:
+        _call(level="award", group_by="defc", **_BASE)
+    assert agg.call_args.kwargs["spending_level"] == "award_financial"
+
+
+def test_other_breakdowns_keep_transaction_level_spending():
+    with patch.object(consolidated, "get_spending_by_category", return_value="ok") as agg:
+        _call(level="award", group_by="naics", **_BASE)
+    assert agg.call_args.kwargs["spending_level"] == "transactions"
